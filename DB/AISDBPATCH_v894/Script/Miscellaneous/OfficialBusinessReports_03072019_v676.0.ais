@@ -1,0 +1,240 @@
+SET NOCOUNT ON
+/*start deleting existing report configs*/
+DELETE FROM report.Report WHERE ReportId IN (213,228)
+DELETE FROM report.ReportData WHERE ReportId IN (213,228)
+DELETE FROM report.ReportParameter WHERE ReportCode IN ('OfficialBusinessListReport','OfficialBusinessSchedule')
+DELETE FROM report.ReportSubReport WHERE ReportCode  IN ('OfficialBusinessListReport','OfficialBusinessSchedule')
+/*end deleting existing report configs*/
+
+/*start insert data to report.Report*/
+SET IDENTITY_INSERT [report].[Report] ON
+INSERT [report].[Report] ([ReportId],[ReportCode],[ReportName],[ReportFile],[ReportExcelFile],[EmploymentStatus],[TableSPUsed],[SPUsed],[NoOrderBy],[QueryType],[InsertToReportTempTable],[Description],[ImageFile],[SortFields],[Event],[ExportFormat],[CreateId],[Createdate],[LastUpdateId],[LastUpdateDate],[UseExportToExcelAPI],[DetailColStartPos],[DetailRowStartPos],[HeaderRowStartPos],[IncludeColHeader],[InsertNewRowAtRowPos],[Template],[SourceName],[ShowGrandTotals],[RepeatColumnHeaderOnHeaderGroup],[RepeatColumnHeaderOnGroupLevel],[AutoSizeColumn],[MaxRowPerPage],[DisplayReportHeader])VALUES(213,'OfficialBusinessSchedule','Official Business Schedule','\Reports\Schedule\OfficialBusinessSchedule.rpt',NULL,NULL,'SELECT			    
+	OB.OfficialBusinessDate
+	,E.LastFirstMIName
+	,E.DepartmentName
+	,E.JobPosition
+	,Reason = EV.DisplayText
+	,OBTime = 
+	(
+		CASE WHEN CAST(ISNULL(OB.StartTime, ''1/1/1900'') AS DATE) > CAST(''1/1/1900'' AS DATE) AND (CONVERT(VARCHAR,OB.StartTime,108) <> CONVERT(VARCHAR,OB.EndTime,108))
+		THEN 
+			CONCAT(FORMAT(OB.StartTime, N''hh:mm tt'') , '' - '' , FORMAT(OB.EndTime, N''hh:mm tt'')) 
+		ELSE '''' END
+	)
+	,OB.NoOfHours
+	,OB.Remarks
+	,E.CompanyId
+	,OB.OBTypeId
+	,EV.Value
+	,E.ProjectId
+	,ExtraSpace = ''''
+	,OB.StatusId
+	,[Status] = ISNULL(STAT.Name,'''')
+FROM schedule.OfficialBusiness OB
+OUTER APPLY
+(
+    SELECT TOP 1
+	   ev.DisplayText
+	   ,ev.Value
+    FROM maintenance.EnumValues ev
+    WHERE ev.Value = OB.OBTypeId
+    AND ev.SourceName = ''OfficialBusinessType''
+) EV
+CROSS APPLY 
+(
+    SELECT TOP 1
+	   e.LastFirstMIName
+	   ,e.CompanyId
+	   ,e.DepartmentName
+	   ,e.Position AS JobPosition
+	   ,e.ProjectId
+    FROM dbo.fnProfileInfo(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0) e
+    WHERE e.ProfileId = OB.ProfileId
+) E
+OUTER APPLY
+(
+	SELECT TOP 1 
+		S.Name 
+	FROM maintenance.Status S WHERE S.Value = OB.StatusId
+)STAT
+WHERE 
+(
+	(
+		CAST(COALESCE(@StartWorkDate,''1/1/1900'') AS DATETIME) <= CAST(''1/1/1900'' AS DATETIME) OR
+		OB.OfficialBusinessDate >= CAST(@StartWorkDate AS DATETIME)
+	)
+	AND
+	(
+		CAST(COALESCE(@EndWorkDate,''1/1/1900'') AS DATETIME) <= CAST(''1/1/1900'' AS DATETIME) OR
+		OB.OfficialBusinessDate <= CAST(@EndWorkDate AS DATETIME)
+	)
+)
+AND
+(
+    (COALESCE(@StatusId, '''') = '''' AND OB.StatusId = ''2'') OR 
+    (CHARINDEX(''''''''+CAST(StatusId AS VARCHAR)+'''''''',@StatusId) > 0)
+)
+AND
+(
+    OB.TypeId = 1
+)
+',NULL,NULL,'QUERY',1,'This report will show which employees have an OB schedule for a particular period.','\Schedule\OfficialBusinessSchedule.png',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[Report] ([ReportId],[ReportCode],[ReportName],[ReportFile],[ReportExcelFile],[EmploymentStatus],[TableSPUsed],[SPUsed],[NoOrderBy],[QueryType],[InsertToReportTempTable],[Description],[ImageFile],[SortFields],[Event],[ExportFormat],[CreateId],[Createdate],[LastUpdateId],[LastUpdateDate],[UseExportToExcelAPI],[DetailColStartPos],[DetailRowStartPos],[HeaderRowStartPos],[IncludeColHeader],[InsertNewRowAtRowPos],[Template],[SourceName],[ShowGrandTotals],[RepeatColumnHeaderOnHeaderGroup],[RepeatColumnHeaderOnGroupLevel],[AutoSizeColumn],[MaxRowPerPage],[DisplayReportHeader])VALUES(228,'OfficialBusinessListReport','Official Business List Report','\Reports\Schedule\OfficialBusinessListReport.rpt',NULL,NULL,'SELECT		 
+    EmployeeNo = E.EmployeeNo
+    ,EmployeeName = E.LastFirstMIName
+    ,CostCenter = E.CostCenterGroupCode
+    ,LineCostCenter = E.CostCenterCode
+    ,Section = E.DepartmentName
+    ,Line = E.LineCode
+    ,ManpowerClass = E.ManpowerClassificationDescription
+    ,OBStartDate = MIN(OB.OfficialBusinessDate)
+    ,OBEndDate = MAX(OB.OfficialBusinessDate)
+    ,Reason = 
+	(
+		ISNULL
+		(
+		(SELECT TOP 1 ev.DisplayText FROM maintenance.EnumValues ev WHERE ev.Value = OB.OBTypeId AND ev.SourceName = ''OfficialBusinessType'')
+		,'''')
+	)
+    ,WS.ShiftId
+    ,ShiftCode = WS.Code
+    ,EmployeeId = OB.ProfileId
+    ,E.CompanyId
+    ,OB.StatusId
+    ,OB.OfficialBusinessId
+	,[Status] = ISNULL(STAT.Name,'''')
+FROM schedule.OfficialBusiness OB
+CROSS APPLY 
+(
+    SELECT TOP 1
+	   e.EmployeeNo
+	   ,e.LastFirstMIName
+	   ,e.CostCenterGroupCode
+	   ,e.LineCodeId
+	   ,e.DepartmentName
+	   ,e.LineName
+	   ,e.ManpowerClassificationDescription
+	   ,e.CompanyId
+	   ,e.LineCode
+	   ,e.CostCenterId
+	   ,e.CostCenterCode
+    FROM dbo.fnProfileInfo(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0) e
+    WHERE e.ProfileId = OB.ProfileId
+) E
+OUTER APPLY 
+(
+    SELECT
+	   ShiftId
+	   ,Code = (SELECT TOP 1 s.Code FROM schedule.Shift s WHERE s.ShiftId = es.ShiftId)
+    FROM report.fnEmployeeSchedule(OB.ProfileId, OB.OfficialBusinessDate, OB.OfficialBusinessDate) es
+) WS
+OUTER APPLY
+(
+	SELECT TOP 1 
+		S.Name
+	FROM maintenance.Status S WHERE S.Value = OB.StatusId
+)STAT
+WHERE 
+(
+    (
+	   CAST(COALESCE(@StartDate,''1/1/1900'') AS DATETIME) <= CAST(''1/1/1900'' AS DATETIME) OR
+	   (OB.OfficialBusinessDate >= CAST(@StartDate as DATETIME))
+    )
+    AND
+    (
+	   CAST(COALESCE(@EndDate,''1/1/1900'') AS DATETIME) <= CAST(''1/1/1900'' AS DATETIME) OR
+	   (OB.OfficialBusinessDate <= CAST(@EndDate as DATETIME))
+    )
+)
+AND
+(
+    (COALESCE(@StatusId, '''') = '''' AND OB.StatusId = ''2'') OR 
+    (CHARINDEX(''''''''+CAST(StatusId AS VARCHAR)+'''''''',@StatusId) > 0)
+)
+AND
+(
+    OB.TypeId = 1
+)
+GROUP BY	
+		OB.ProfileId
+		,E.EmployeeNo
+		,E.LastFirstMIName
+		,E.CostCenterGroupCode
+		,E.LineCodeId
+		,E.DepartmentName
+		,E.LineName
+		,E.ManpowerClassificationDescription
+		,OB.OBTypeId
+		,OB.NoOfHours
+		,WS.ShiftId
+		,WS.Code
+		,E.CompanyId
+		,OB.StatusId
+		,E.CostCenterId
+		,E.LineCode
+		,OB.OfficialBusinessId
+		,E.CostCenterCode
+		,STAT.Name',NULL,NULL,'QUERY',1,'The Official Business List Report will show the list of employees that had Official Business for a particular period.','\Schedule\OfficialBusinessListReport.png',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+SET IDENTITY_INSERT [report].[Report] OFF
+/*end insert data to report.Report*/
+
+/*start insert data to report.ReportData*/
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(228,'Employee No.','EmployeeNo','string','','',NULL,1,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(228,'Employee Name','EmployeeName','string','','',NULL,2,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(228,'Cost Center','CostCenter','string','','',NULL,3,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(228,'Cost Center Line','LineCostCenter','string','','',NULL,4,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(228,'Section','Section','string','','',NULL,5,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(228,'Line','Line','string','','',NULL,6,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(228,'Manpower Class','ManpowerClass','string','','',NULL,7,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(228,'OB Start Date','OBStartDate','date','','',NULL,8,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(228,'OB End Date','OBEndDate','date','','',NULL,9,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(228,'Reason','Reason','string','','',NULL,10,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(228,'Shift Code','ShiftCode','string','','',NULL,11,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(213,'Date','OfficialBusinessDate','date','','',NULL,1,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(213,'Employee Name','LastFirstMIName','string','','',NULL,2,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(213,'Department','DepartmentName','string','','',NULL,3,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(213,'Job Position','JobPosition','string','','',NULL,4,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(213,'Reason','Reason','string','','',NULL,5,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(213,'OB Time','OBTime','string','','',NULL,6,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(213,'# Hours','NoOfHours','decimal','','',NULL,7,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(213,'Details','Remarks','string','','',NULL,8,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(213,'Status','Status','string','','',NULL,9,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(228,'Status','Status','string','','',NULL,12,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+/*end insert data to report.ReportData*/
+
+/*start insert data to report.ReportParameter*/
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat])VALUES('OfficialBusinessSchedule','@StartWorkDate,@EndWorkDate','Work Date','daterange','','',1,'','Param1','Stored','>=,<=','date',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat])VALUES('OfficialBusinessSchedule','Value','OB Reason','dropdownList','$enum:OfficialBusinessType','',2,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat])VALUES('OfficialBusinessSchedule','CompanyId','Company','dropdownList','$table:maintenance.Company,CompanyId,Name','$table:maintenance.Branch WHERE CompanyId =  ,BranchId,Name|BranchId,',3,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat])VALUES('OfficialBusinessSchedule','BranchId','Branch','dropdownList','$table:maintenance.Branch,BranchId,Name','',4,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat])VALUES('OfficialBusinessSchedule','DepartmentId','Department','dropdownList','$table:maintenance.Department,DepartmentId,DepartmentName','',5,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat])VALUES('OfficialBusinessSchedule','OfficeId','Office','dropdownList','$table:maintenance.Office,OfficeId,Name','',6,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat])VALUES('OfficialBusinessSchedule','DivisionId','Division','dropdownList','$table:maintenance.Division,DivisionId,Description','',7,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat])VALUES('OfficialBusinessSchedule','GroupId','Group','dropdownList','$table:maintenance.Groups,GroupsId,Description','',8,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat])VALUES('OfficialBusinessSchedule','TeamId','Team','dropdownList','$table:maintenance.Team,TeamId,Description','',9,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat])VALUES('OfficialBusinessSchedule','LineId','Line','dropdownList','$table:maintenance.Line,LineId,Description','',10,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat])VALUES('OfficialBusinessSchedule','UnitId','Unit','dropdownList','$table:maintenance.Unit,UnitId,Description','',11,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat])VALUES('OfficialBusinessSchedule','DistrictId','District','dropdownList','$table:maintenance.District,DistrictId,Description','',12,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat])VALUES('OfficialBusinessSchedule','ProjectId','Project','dropdownList','$table:projecttracking.ProjectProfile,ProjectProfileId,ProjectName','',13,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat])VALUES('OfficialBusinessListReport','@StartDate,@EndDate','Period','daterange','','',1,'','Param1','Stored','>=,<=','date',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat])VALUES('OfficialBusinessListReport','CompanyId','Company','dropdownList','$table:maintenance.Company,CompanyId,Name','$table:maintenance.Branch WHERE CompanyId =  ,BranchId,Name|BranchId,',2,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat])VALUES('OfficialBusinessListReport','BranchId','Branch','dropdownList','$table:maintenance.Branch,BranchId,Name','',3,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat])VALUES('OfficialBusinessListReport','DepartmentId','Section','dropdownList','$table:maintenance.Department,DepartmentId,DepartmentName','',4,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat])VALUES('OfficialBusinessListReport','OfficeId','Office','dropdownList','$table:maintenance.Office,OfficeId,Name','',5,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat])VALUES('OfficialBusinessListReport','DistrictId','District','dropdownList','$table:maintenance.District,DistrictId,Description','',6,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat])VALUES('OfficialBusinessListReport','LineId','Line','dropdownList','$table:maintenance.Line,LineId,Description','',7,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat])VALUES('OfficialBusinessListReport','UnitId','Unit','dropdownList','$table:maintenance.Unit,UnitId,Description','',8,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat])VALUES('OfficialBusinessSchedule','@StatusId','Status','checkboxList','$table:maintenance.Status WHERE Value = 1 OR Value = -2 OR Value = 2 OR Value = 9 OR Value = 13,Value,Name','',14,'','Param1','Stored','IN','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat])VALUES('OfficialBusinessListReport','@StatusId','Status','checkboxList','$table:maintenance.Status WHERE Value = 1 OR Value = -2 OR Value = 2 OR Value = 9 OR Value = 13,Value,Name','',9,'','Param1','Stored','IN','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+/*end insert data to report.ReportParameter*/
+
+/*start insert data to report.ReportSubReport*/
+/*end insert data to report.ReportSubReport*/
+
+/*start insert data to report.ReportMenu*/
+/*end insert data to report.ReportMenu*/
+
+/*start insert data to security.Module_Forms*/
+/*end insert data to security.Module_Forms*/
+
+SET NOCOUNT OFF

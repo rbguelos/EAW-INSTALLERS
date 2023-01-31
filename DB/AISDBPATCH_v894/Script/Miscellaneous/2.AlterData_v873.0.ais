@@ -1,0 +1,1 @@
+UPDATE maintenance.CompanyConfig SET [Value] = [Value] + '|4:0' WHERE [Type] = 'LVEConfiguration'

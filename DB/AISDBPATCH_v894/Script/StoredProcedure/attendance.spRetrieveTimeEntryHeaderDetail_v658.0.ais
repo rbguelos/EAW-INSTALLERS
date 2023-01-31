@@ -1,0 +1,169 @@
+IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[attendance].[spRetrieveTimeEntryHeaderDetail]') AND type in (N'P', N'PC'))
+DROP PROCEDURE [attendance].[spRetrieveTimeEntryHeaderDetail]
+GO
+/*===========================================*
+**	   Last Update Date: 01/31/2019
+**	   Last Update By: v658
+**	   Last DBVersion executed: v658
+\*===========================================*/
+CREATE PROCEDURE [attendance].[spRetrieveTimeEntryHeaderDetail]
+(
+	@TimeEntryHeaderId BIGINT = 0
+)
+AS
+BEGIN
+
+DECLARE @NULLDATE DATETIME = '01/01/1900'
+DECLARE @DATEFORMAT VARCHAR(50)= 'MM/dd/yyyy hh:mm:ss tt'
+
+SELECT
+    --TimeEntryHeaderId
+    TimeEntryHeaderId = TimeEntryHeader.TimeEntryHeaderId
+
+    --StartDate
+   ,StartDate = TimeEntryHeader.StartDate
+
+    --EndDate
+   ,EndDate = TimeEntryHeader.EndDate
+
+    --AssumeStartDate
+   ,AssumeStartDate = COALESCE(TimeEntryHeader.AssumeStartDate, @NULLDATE)
+
+    --AssumeEndDate
+   ,AssumeEndDate = COALESCE(TimeEntryHeader.AssumeEndDate, @NULLDATE)
+
+    --AdjustmentAttendance
+   ,AdjustmentAttendance =
+   (
+    CASE AdjustmentAttendance
+	   WHEN 1   THEN 'Yes' ELSE 'No'
+    END
+   )
+    --IsAssumeLogs
+   ,IsAssumeLogs = COALESCE(IsAssumeLogs, CAST(0 AS BIT))
+
+    --ReferenceNumber
+   ,ReferenceNumber = TimeEntryHeader.ReferenceNumber
+
+    --CompanyId
+   ,CompanyId = COALESCE(TimeEntryHeader.CompanyId, 0)
+
+    --Company
+   ,Company = COALESCE(Company.Name, '')
+
+    --BranchId
+   ,BranchId = COALESCE(TimeEntryHeader.BranchId, 0)
+
+    --Branch
+   ,Branch = COALESCE(Branch.Name, '')
+
+    --DepartmentId
+   ,DepartmentId = COALESCE(TimeEntryHeader.DepartmentId, 0)
+
+    --Department
+   ,Department = COALESCE(Department.DepartmentName, '')
+
+    --PositionId
+   ,PositionId = COALESCE(JobPosition.JobPositionId, 0)
+
+    --Position
+   ,Position = COALESCE(JobPosition.Name, '')
+
+    --UnitId
+   ,UnitId = COALESCE(TimeEntryHeader.UnitId, 0)
+
+    --Unit
+   ,Unit = COALESCE(Unit.Code, '')
+
+    --ProjectId
+   ,ProjectId = COALESCE(TimeEntryHeader.ProjectId, 0)
+
+    --Project
+   ,Project = COALESCE(ProjectProfile.ProjectCode, '')
+
+    --LocationId
+   ,LocationId = COALESCE(TimeEntryHeader.LocationId, 0)
+
+    --Location
+   ,Location = COALESCE(Location.Location, '')
+
+    --OfficeId
+   ,OfficeId = COALESCE(TimeEntryHeader.OfficeId, 0)
+
+    --Office
+   ,Office = COALESCE(Office.Name, '')
+
+    --JobRankId
+   ,JobRankId = COALESCE(TimeEntryHeader.JobRankId, 0)
+
+    --JobRank
+   ,JobRank = COALESCE(JobRank.Code, '')
+
+   --DivisionId
+   ,DivisionId = COALESCE(TimeEntryHeader.DivisionId, 0)
+
+   --Division
+   ,Division = COALESCE(Division.Description, '')
+
+   --LineId
+   ,LineId = COALESCE(TimeEntryHeader.LineId, 0)
+
+   --Line
+   ,Line = COALESCE(Line.Description, '')
+
+    --StatusId
+   ,StatusId = COALESCE(TimeEntryHeader.StatusId, 0)
+
+    --Status
+   ,Status = COALESCE(Status.Name, '')
+
+    --CreateDate
+   ,CreateDate = CAST(FORMAT(TimeEntryHeader.CreateDate, @DATEFORMAT) AS VARCHAR(50))
+
+    --LastUpdateDate
+   ,LastUpdateDate =
+    (
+    CASE
+	   WHEN COALESCE(TimeEntryHeader.LastUpdateDate, @NULLDATE) = @NULLDATE THEN CAST(FORMAT(TimeEntryHeader.CreateDate, @DATEFORMAT) AS VARCHAR(50))
+	   ELSE CAST(FORMAT(TimeEntryHeader.LastUpdateDate, @DATEFORMAT) AS VARCHAR(50))
+    END
+    )
+FROM attendance.TimeEntryHeader
+    --Company
+    LEFT JOIN maintenance.Company
+	   ON TimeEntryHeader.CompanyId = Company.CompanyId
+    --Branch
+    LEFT JOIN maintenance.Branch
+	   ON TimeEntryHeader.BranchId = Branch.BranchId
+    --Department
+    LEFT JOIN maintenance.Department
+	   ON TimeEntryHeader.DepartmentId = Department.DepartmentId
+    --JobPosition
+    LEFT JOIN maintenance.JobPosition
+	   ON TimeEntryHeader.PositionId = JobPosition.JobPositionId
+    --Unit
+    LEFT JOIN maintenance.Unit
+	   ON TimeEntryHeader.UnitId = Unit.UnitId
+    --Location
+    LEFT JOIN recruitment.Location
+	   ON TimeEntryHeader.LocationId = Location.LocationId
+    --ProjectProfile
+    LEFT JOIN projecttracking.ProjectProfile
+	   ON TimeEntryHeader.ProjectId = ProjectProfile.ProjectProfileId
+    --Office
+    LEFT JOIN maintenance.Office
+	   ON TimeEntryHeader.OfficeId = Office.OfficeId
+	--JobRank
+    LEFT JOIN maintenance.JobRank
+	   ON TimeEntryHeader.JobRankId = JobRank.JobRankId
+    --Division
+    LEFT JOIN maintenance.Division
+	   ON TimeEntryHeader.DivisionId = Division.DivisionId
+    --Line
+    LEFT JOIN maintenance.Line
+	   ON TimeEntryHeader.LineId = Line.LineId
+    --Status
+    LEFT JOIN maintenance.Status
+	   ON TimeEntryHeader.StatusId = Status.value
+WHERE TimeEntryHeader.TimeEntryHeaderId = COALESCE(@TimeEntryHeaderId, 0)
+END

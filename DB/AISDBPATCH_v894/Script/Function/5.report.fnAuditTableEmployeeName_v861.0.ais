@@ -1,0 +1,181 @@
+IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[report].[fnAuditTableEmployee]') AND type in (N'FN', N'IF', N'TF', N'FS', N'FT'))
+DROP FUNCTION [report].[fnAuditTableEmployee]
+GO
+
+-- =============================================
+-- Author:	 Abdiel Corda
+-- Create date: 05.08.2020
+-- Remarks: For Audit Table
+-- =============================================
+
+CREATE FUNCTION [report].[fnAuditTableEmployee]
+(
+
+--DECLARE
+@TableValueId BIGINT = 20018
+,@TableName VARCHAR(500) = 'Profile'
+
+)
+RETURNS TABLE 
+AS
+RETURN 
+(
+SELECT 
+	p.ProfileId
+	,p.LastName
+	,p.FirstName
+	,p.MiddleName 
+	,EmployeeNo = ISNULL(EI.CJI_EmployeeNo,0)
+	,EmployeeName = 
+	(
+		RTRIM(LastName) + ', ' + RTRIM(FirstName) +
+		CASE
+			WHEN ISNULL(Appellation, '') <> '' THEN +' ' + RTRIM(Appellation) + ' '
+			ELSE ''
+		END +
+		CASE
+			WHEN RTRIM(MiddleName) <> '' THEN ' ' + LEFT(MiddleName, 1) + '.'
+			ELSE ''
+		END
+	)
+FROM
+(
+SELECT TableId = object_id('perdev.EmployeeTrainingProgram'), [ProfileId] FROM perdev.EmployeeTrainingProgram EmployeeTrainingProgram WHERE @TableName = 'EmployeeTrainingProgram'  AND EmployeeTrainingProgram.EmployeeTrainingProgramId = @TableValueId UNION ALL
+SELECT TableId = object_id('employee.SalaryInformation'), [ProfileId] FROM employee.SalaryInformation SalaryInformation WHERE @TableName = 'SalaryInformation'  AND SalaryInformation.SalaryInformationId = @TableValueId UNION ALL
+SELECT TableId = object_id('maintenance.EmployeeQuickLink'), [ProfileId] FROM maintenance.EmployeeQuickLink EmployeeQuickLink WHERE @TableName = 'EmployeeQuickLink'  AND EmployeeQuickLink.EmployeeQuickLinkId = @TableValueId UNION ALL
+SELECT TableId = object_id('onboarding.EmployeeOnboarding'), [ProfileId] FROM onboarding.EmployeeOnboarding EmployeeOnboarding WHERE @TableName = 'EmployeeOnboarding'  AND EmployeeOnboarding.EmployeeOnboardingId = @TableValueId UNION ALL
+SELECT TableId = object_id('employeerelation.Violation'), [ProfileId] FROM employeerelation.Violation Violation WHERE @TableName = 'Violation'  AND Violation.ViolationId = @TableValueId UNION ALL
+SELECT TableId = object_id('employee.Certification'), [ProfileId] FROM employee.Certification Certification WHERE @TableName = 'Certification'  AND Certification.CertificationId = @TableValueId UNION ALL
+SELECT TableId = object_id('payroll.BankFileDtl'), [ProfileId] FROM payroll.BankFileDtl BankFileDtl WHERE @TableName = 'BankFileDtl'  AND BankFileDtl.BankFileDtlId = @TableValueId UNION ALL
+SELECT TableId = object_id('schedule.ChangeWorkScheduleTrail'), [ProfileId] FROM schedule.ChangeWorkScheduleTrail ChangeWorkScheduleTrail WHERE @TableName = 'ChangeWorkScheduleTrail'  AND ChangeWorkScheduleTrail.ChangeWorkScheduleTrailId = @TableValueId UNION ALL
+SELECT TableId = object_id('schedule.OfficialBusiness'), [ProfileId] FROM schedule.OfficialBusiness OfficialBusiness WHERE @TableName = 'OfficialBusiness'  AND OfficialBusiness.OfficialBusinessId = @TableValueId UNION ALL
+SELECT TableId = object_id('attendance.TimeEntryDetail'), [ProfileId] FROM attendance.TimeEntryDetail TimeEntryDetail WHERE @TableName = 'TimeEntryDetail'  AND TimeEntryDetail.TimeEntryDetailId = @TableValueId UNION ALL
+SELECT TableId = object_id('payroll.BankFileHeldDtl'), [ProfileId] FROM payroll.BankFileHeldDtl BankFileHeldDtl WHERE @TableName = 'BankFileHeldDtl'  AND BankFileHeldDtl.BankFileHeldDtlId = @TableValueId UNION ALL
+SELECT TableId = object_id('workflow.ApproverSetup'), [ProfileId] FROM workflow.ApproverSetup ApproverSetup WHERE @TableName = 'ApproverSetup'  AND ApproverSetup.ApproverSetupId = @TableValueId UNION ALL
+SELECT TableId = object_id('employee.RequestUpdate'), [ProfileId] FROM employee.RequestUpdate RequestUpdate WHERE @TableName = 'RequestUpdate'  AND RequestUpdate.RequestUpdateId = @TableValueId UNION ALL
+SELECT TableId = object_id('payroll.ProvidentFundEnrollee'), [ProfileId] FROM payroll.ProvidentFundEnrollee ProvidentFundEnrollee WHERE @TableName = 'ProvidentFundEnrollee'  AND ProvidentFundEnrollee.ProvidentFundEnrolleeId = @TableValueId UNION ALL
+SELECT TableId = object_id('schedule.ChangeRestDay'), [ProfileId] FROM schedule.ChangeRestDay ChangeRestDay WHERE @TableName = 'ChangeRestDay'  AND ChangeRestDay.ChangeRestDayId = @TableValueId UNION ALL
+SELECT TableId = object_id('employee.Document'), [ProfileId] FROM employee.Document Document WHERE @TableName = 'Document'  AND Document.DocumentId = @TableValueId UNION ALL
+SELECT TableId = object_id('safetyandhealth.MedicalServiceScheduleRequest'), [ProfileId] FROM safetyandhealth.MedicalServiceScheduleRequest MedicalServiceScheduleRequest WHERE @TableName = 'MedicalServiceScheduleRequest'  AND MedicalServiceScheduleRequest.MedicalServiceScheduleRequestId = @TableValueId UNION ALL
+SELECT TableId = object_id('recruitment.ManpowerRequest'), [ProfileId] FROM recruitment.ManpowerRequest ManpowerRequest WHERE @TableName = 'ManpowerRequest'  AND ManpowerRequest.ManpowerRequestId = @TableValueId UNION ALL
+SELECT TableId = object_id('schedule.ImportOvertime'), [ProfileId] FROM schedule.ImportOvertime ImportOvertime WHERE @TableName = 'ImportOvertime'  AND ImportOvertime.ImportOvertimeId = @TableValueId UNION ALL
+SELECT TableId = object_id('attendance.TimeEntryLeaveDetail'), [ProfileId] FROM attendance.TimeEntryLeaveDetail TimeEntryLeaveDetail WHERE @TableName = 'TimeEntryLeaveDetail'  AND TimeEntryLeaveDetail.TimeEntryLeaveDetailId = @TableValueId UNION ALL
+SELECT TableId = object_id('schedule.WorkScheduleTrail'), [ProfileId] FROM schedule.WorkScheduleTrail WorkScheduleTrail WHERE @TableName = 'WorkScheduleTrail'  AND WorkScheduleTrail.WorkScheduleTrailId = @TableValueId UNION ALL
+SELECT TableId = object_id('payroll.LoanRequest'), [ProfileId] FROM payroll.LoanRequest LoanRequest WHERE @TableName = 'LoanRequest'  AND LoanRequest.LoanRequestId = @TableValueId UNION ALL
+SELECT TableId = object_id('schedule.ChangeWorkSchedule'), [ProfileId] FROM schedule.ChangeWorkSchedule ChangeWorkSchedule WHERE @TableName = 'ChangeWorkSchedule'  AND ChangeWorkSchedule.ChangeWorkScheduleId = @TableValueId UNION ALL
+SELECT TableId = object_id('schedule.ImportOfficialBusiness'), [ProfileId] FROM schedule.ImportOfficialBusiness ImportOfficialBusiness WHERE @TableName = 'ImportOfficialBusiness'  AND ImportOfficialBusiness.ImportOfficialBusinessId = @TableValueId UNION ALL
+SELECT TableId = object_id('employee.BankAccount'), [ProfileId] FROM employee.BankAccount BankAccount WHERE @TableName = 'BankAccount'  AND BankAccount.BankAccountId = @TableValueId UNION ALL
+SELECT TableId = object_id('payroll.EmployeeSavings'), [ProfileId] FROM payroll.EmployeeSavings EmployeeSavings WHERE @TableName = 'EmployeeSavings'  AND EmployeeSavings.EmployeeSavingsId = @TableValueId UNION ALL
+SELECT TableId = object_id('perdev.TrainingRequest'), [ProfileId] FROM perdev.TrainingRequest TrainingRequest WHERE @TableName = 'TrainingRequest'  AND TrainingRequest.TrainingRequestId = @TableValueId UNION ALL
+SELECT TableId = object_id('employee.EmployeeAssignment'), [ProfileId] FROM employee.EmployeeAssignment EmployeeAssignment WHERE @TableName = 'EmployeeAssignment'  AND EmployeeAssignment.EmployeeAssignmentId = @TableValueId UNION ALL
+SELECT TableId = object_id('payroll.LoanRemittanceDetail'), [ProfileId] FROM payroll.LoanRemittanceDetail LoanRemittanceDetail WHERE @TableName = 'LoanRemittanceDetail'  AND LoanRemittanceDetail.LoanRemittanceDetailId = @TableValueId UNION ALL
+SELECT TableId = object_id('employee.Affiliation'), [ProfileId] FROM employee.Affiliation Affiliation WHERE @TableName = 'Affiliation'  AND Affiliation.AffiliationId = @TableValueId UNION ALL
+SELECT TableId = object_id('leave.LeaveBalanceHeader'), [ProfileId] FROM leave.LeaveBalanceHeader LeaveBalanceHeader WHERE @TableName = 'LeaveBalanceHeader'  AND LeaveBalanceHeader.LeaveBalanceHeaderId = @TableValueId UNION ALL
+SELECT TableId = object_id('perdev.TrainingScheduleRequest'), [ProfileId] FROM perdev.TrainingScheduleRequest TrainingScheduleRequest WHERE @TableName = 'TrainingScheduleRequest'  AND TrainingScheduleRequest.TrainingScheduleRequestId = @TableValueId UNION ALL
+SELECT TableId = object_id('safetyandhealth.MIClaim'), [ProfileId] FROM safetyandhealth.MIClaim MIClaim WHERE @TableName = 'MIClaim'  AND MIClaim.MIClaimId = @TableValueId UNION ALL
+SELECT TableId = object_id('employee.DocumentRequest'), [ProfileId] FROM employee.DocumentRequest DocumentRequest WHERE @TableName = 'DocumentRequest'  AND DocumentRequest.DocumentRequestId = @TableValueId UNION ALL
+SELECT TableId = object_id('leave.LeaveConversion'), [ProfileId] FROM leave.LeaveConversion LeaveConversion WHERE @TableName = 'LeaveConversion'  AND LeaveConversion.LeaveConversionId = @TableValueId UNION ALL
+SELECT TableId = object_id('schedule.RestDayTrail'), [ProfileId] FROM schedule.RestDayTrail RestDayTrail WHERE @TableName = 'RestDayTrail'  AND RestDayTrail.RestDayTrailId = @TableValueId UNION ALL
+SELECT TableId = object_id('performanceappraisal.Evaluation'), [ProfileId] FROM performanceappraisal.Evaluation Evaluation WHERE @TableName = 'Evaluation'  AND Evaluation.EvaluationId = @TableValueId UNION ALL
+SELECT TableId = object_id('recruitment.Registration'), [ProfileId] FROM recruitment.Registration Registration WHERE @TableName = 'Registration'  AND Registration.RegistrationId = @TableValueId UNION ALL
+SELECT TableId = object_id('performanceappraisal.IndividualDevelopmentPlan'), [ProfileId] FROM performanceappraisal.IndividualDevelopmentPlan IndividualDevelopmentPlan WHERE @TableName = 'IndividualDevelopmentPlan'  AND IndividualDevelopmentPlan.IndividualDevelopmentPlanId = @TableValueId UNION ALL
+SELECT TableId = object_id('schedule.ImportRestDaySchedule'), [ProfileId] FROM schedule.ImportRestDaySchedule ImportRestDaySchedule WHERE @TableName = 'ImportRestDaySchedule'  AND ImportRestDaySchedule.ImportRestDayScheduleId = @TableValueId UNION ALL
+SELECT TableId = object_id('hrservices.TravelRequest'), [ProfileId] FROM hrservices.TravelRequest TravelRequest WHERE @TableName = 'TravelRequest'  AND TravelRequest.TravelRequestId = @TableValueId UNION ALL
+SELECT TableId = object_id('employee.FringeBenefit'), [ProfileId] FROM employee.FringeBenefit FringeBenefit WHERE @TableName = 'FringeBenefit'  AND FringeBenefit.FringeBenefitId = @TableValueId UNION ALL
+SELECT TableId = object_id('admin.AccessTableForm'), [ProfileId] FROM admin.AccessTableForm AccessTableForm WHERE @TableName = 'AccessTableForm'  AND AccessTableForm.AccessTableFormId = @TableValueId UNION ALL
+SELECT TableId = object_id('attendance.ImportTimeEntryLog'), [ProfileId] FROM attendance.ImportTimeEntryLog ImportTimeEntryLog WHERE @TableName = 'ImportTimeEntryLog'  AND ImportTimeEntryLog.ImportTimeEntryLogId = @TableValueId UNION ALL
+SELECT TableId = object_id('employee.ProfileImage'), [ProfileId] FROM employee.ProfileImage ProfileImage WHERE @TableName = 'ProfileImage'  AND ProfileImage.ProfileImageId = @TableValueId UNION ALL
+SELECT TableId = object_id('safetyandhealth.AccidentInjuryReport'), [ProfileId] FROM safetyandhealth.AccidentInjuryReport AccidentInjuryReport WHERE @TableName = 'AccidentInjuryReport'  AND AccidentInjuryReport.AccidentInjuryReportId = @TableValueId UNION ALL
+SELECT TableId = object_id('admin.AccessTableFormTrail'), [ProfileId] FROM admin.AccessTableFormTrail AccessTableFormTrail WHERE @TableName = 'AccessTableFormTrail'  AND AccessTableFormTrail.AccessTableFormTrailId = @TableValueId UNION ALL
+SELECT TableId = object_id('employee.EmployeeBeneficiaries'), [ProfileId] FROM employee.EmployeeBeneficiaries EmployeeBeneficiaries WHERE @TableName = 'EmployeeBeneficiaries'  AND EmployeeBeneficiaries.EmployeeBeneficiariesId = @TableValueId UNION ALL
+SELECT TableId = object_id('payroll.OvertimeAllowanceDetail'), [ProfileId] FROM payroll.OvertimeAllowanceDetail OvertimeAllowanceDetail WHERE @TableName = 'OvertimeAllowanceDetail'  AND OvertimeAllowanceDetail.OvertimeAllowanceDetailId = @TableValueId UNION ALL
+SELECT TableId = object_id('leave.LeaveBenefit'), [ProfileId] FROM leave.LeaveBenefit LeaveBenefit WHERE @TableName = 'LeaveBenefit'  AND LeaveBenefit.LeaveBenefitId = @TableValueId UNION ALL
+SELECT TableId = object_id('schedule.WorkSchedule'), [ProfileId] FROM schedule.WorkSchedule WorkSchedule WHERE @TableName = 'WorkSchedule'  AND WorkSchedule.WorkScheduleId = @TableValueId UNION ALL
+SELECT TableId = object_id('payroll.PaySheetDetail'), [ProfileId] FROM payroll.PaySheetDetail PaySheetDetail WHERE @TableName = 'PaySheetDetail'  AND PaySheetDetail.PaySheetDetailId = @TableValueId UNION ALL
+SELECT TableId = object_id('schedule.ImportBasicRestDaySchedule'), [ProfileId] FROM schedule.ImportBasicRestDaySchedule ImportBasicRestDaySchedule WHERE @TableName = 'ImportBasicRestDaySchedule'  AND ImportBasicRestDaySchedule.ImportBasicRestDayScheduleId = @TableValueId UNION ALL
+SELECT TableId = object_id('payroll.PreviousPaysheetImportType'), [ProfileId] FROM payroll.PreviousPaysheetImportType PreviousPaysheetImportType WHERE @TableName = 'PreviousPaysheetImportType'  AND PreviousPaysheetImportType.PreviousPaysheetImportTypeId = @TableValueId UNION ALL
+SELECT TableId = object_id('payroll.NetPayBrkdownHdr'), [ProfileId] FROM payroll.NetPayBrkdownHdr NetPayBrkdownHdr WHERE @TableName = 'NetPayBrkdownHdr'  AND NetPayBrkdownHdr.NetPayBrkdownHdrId = @TableValueId UNION ALL
+SELECT TableId = object_id('attendance.LateApprovalAttendance'), [ProfileId] FROM attendance.LateApprovalAttendance LateApprovalAttendance WHERE @TableName = 'LateApprovalAttendance'  AND LateApprovalAttendance.LateApprovalAttendanceId = @TableValueId UNION ALL
+SELECT TableId = object_id('accountability.ItemReturn'), [ProfileId] FROM accountability.ItemReturn ItemReturn WHERE @TableName = 'ItemReturn'  AND ItemReturn.ItemReturnId = @TableValueId UNION ALL
+SELECT TableId = object_id('projecttracking.ProjectAssignment'), [ProfileId] FROM projecttracking.ProjectAssignment ProjectAssignment WHERE @TableName = 'ProjectAssignment'  AND ProjectAssignment.ProjectAssignmentId = @TableValueId UNION ALL
+SELECT TableId = object_id('safetyandhealth.DrugTestDtl'), [ProfileId] FROM safetyandhealth.DrugTestDtl DrugTestDtl WHERE @TableName = 'DrugTestDtl'  AND DrugTestDtl.DrugTestDtlId = @TableValueId UNION ALL
+SELECT TableId = object_id('schedule.OffsetRequest'), [ProfileId] FROM schedule.OffsetRequest OffsetRequest WHERE @TableName = 'OffsetRequest'  AND OffsetRequest.OffsetRequestId = @TableValueId UNION ALL
+SELECT TableId = object_id('payroll.PreviousPaysheetImport'), [ProfileId] FROM payroll.PreviousPaysheetImport PreviousPaysheetImport WHERE @TableName = 'PreviousPaysheetImport'  AND PreviousPaysheetImport.PreviousPaysheetImportId = @TableValueId UNION ALL
+SELECT TableId = object_id('projecttracking.ProjectTimeEntry'), [ProfileId] FROM projecttracking.ProjectTimeEntry ProjectTimeEntry WHERE @TableName = 'ProjectTimeEntry'  AND ProjectTimeEntry.ProjectTimeEntryId = @TableValueId UNION ALL
+SELECT TableId = object_id('attendance.SeparateInOutTimeEntryLog'), [ProfileId] FROM attendance.SeparateInOutTimeEntryLog SeparateInOutTimeEntryLog WHERE @TableName = 'SeparateInOutTimeEntryLog'  AND SeparateInOutTimeEntryLog.SeparateInOutTimeEntryLogId = @TableValueId UNION ALL
+SELECT TableId = object_id('employeerelation.GrievanceHeader'), [ProfileId] FROM employeerelation.GrievanceHeader GrievanceHeader WHERE @TableName = 'GrievanceHeader'  AND GrievanceHeader.GrievanceHeaderId = @TableValueId UNION ALL
+SELECT TableId = object_id('employee.AwardAndCitation'), [ProfileId] FROM employee.AwardAndCitation AwardAndCitation WHERE @TableName = 'AwardAndCitation'  AND AwardAndCitation.AwardAndCitationId = @TableValueId UNION ALL
+SELECT TableId = object_id('accountability.CashIssuance'), [ProfileId] FROM accountability.CashIssuance CashIssuance WHERE @TableName = 'CashIssuance'  AND CashIssuance.CashIssuanceId = @TableValueId UNION ALL
+SELECT TableId = object_id('leave.LeaveRequest'), [ProfileId] FROM leave.LeaveRequest LeaveRequest WHERE @TableName = 'LeaveRequest'  AND LeaveRequest.LeaveRequestId = @TableValueId UNION ALL
+SELECT TableId = object_id('schedule.OffsetUsage'), [ProfileId] FROM schedule.OffsetUsage OffsetUsage WHERE @TableName = 'OffsetUsage'  AND OffsetUsage.OffsetUsageId = @TableValueId UNION ALL
+SELECT TableId = object_id('leave.LeaveRequestHeader'), [ProfileId] FROM leave.LeaveRequestHeader LeaveRequestHeader WHERE @TableName = 'LeaveRequestHeader'  AND LeaveRequestHeader.LeaveRequestHeaderId = @TableValueId UNION ALL
+SELECT TableId = object_id('accountability.ExpenseReport'), [ProfileId] FROM accountability.ExpenseReport ExpenseReport WHERE @TableName = 'ExpenseReport'  AND ExpenseReport.ExpenseReportId = @TableValueId UNION ALL
+SELECT TableId = object_id('leave.LeaveProcessDetail'), [ProfileId] FROM leave.LeaveProcessDetail LeaveProcessDetail WHERE @TableName = 'LeaveProcessDetail'  AND LeaveProcessDetail.LeaveProcessDetailId = @TableValueId UNION ALL
+SELECT TableId = object_id('schedule.RestDay'), [ProfileId] FROM schedule.RestDay RestDay WHERE @TableName = 'RestDay'  AND RestDay.RestDayId = @TableValueId UNION ALL
+SELECT TableId = object_id('payroll.CCShare'), [ProfileId] FROM payroll.CCShare CCShare WHERE @TableName = 'CCShare'  AND CCShare.CCShareId = @TableValueId UNION ALL
+SELECT TableId = object_id('employee.ProfileCustomField'), [ProfileId] FROM employee.ProfileCustomField ProfileCustomField WHERE @TableName = 'ProfileCustomField'  AND ProfileCustomField.ProfileCustomFieldId = @TableValueId UNION ALL
+SELECT TableId = object_id('payroll.Bereavement'), [ProfileId] FROM payroll.Bereavement Bereavement WHERE @TableName = 'Bereavement'  AND Bereavement.BereavementId = @TableValueId UNION ALL
+SELECT TableId = object_id('workflow.Employee'), [ProfileId] FROM workflow.Employee Employee WHERE @TableName = 'Employee'  AND Employee.EmployeeId = @TableValueId UNION ALL
+SELECT TableId = object_id('employee.PresentationSeminar'), [ProfileId] FROM employee.PresentationSeminar PresentationSeminar WHERE @TableName = 'PresentationSeminar'  AND PresentationSeminar.PresentationSeminarId = @TableValueId UNION ALL
+SELECT TableId = object_id('attendance.RoundingRulesAssignment'), [ProfileId] FROM attendance.RoundingRulesAssignment RoundingRulesAssignment WHERE @TableName = 'RoundingRulesAssignment'  AND RoundingRulesAssignment.RoundingRulesAssignmentId = @TableValueId UNION ALL
+SELECT TableId = object_id('employeerelation.Jotter'), [ProfileId] FROM employeerelation.Jotter Jotter WHERE @TableName = 'Jotter'  AND Jotter.JotterId = @TableValueId UNION ALL
+SELECT TableId = object_id('schedule.Overtime'), [ProfileId] FROM schedule.Overtime Overtime WHERE @TableName = 'Overtime'  AND Overtime.OvertimeId = @TableValueId UNION ALL
+SELECT TableId = object_id('attendance.TimeEntryHeaderDetailBreakdown'), [ProfileId] FROM attendance.TimeEntryHeaderDetailBreakdown TimeEntryHeaderDetailBreakdown WHERE @TableName = 'TimeEntryHeaderDetailBreakdown'  AND TimeEntryHeaderDetailBreakdown.TimeEntryHeaderDetailBreakdownId = @TableValueId UNION ALL
+SELECT TableId = object_id('payroll.PaySheetHeaderDetail'), [ProfileId] FROM payroll.PaySheetHeaderDetail PaySheetHeaderDetail WHERE @TableName = 'PaySheetHeaderDetail'  AND PaySheetHeaderDetail.PaySheetHeaderDetailId = @TableValueId UNION ALL
+SELECT TableId = object_id('performanceappraisal.PerformanceAppraisalSchedule'), [ProfileId] FROM performanceappraisal.PerformanceAppraisalSchedule PerformanceAppraisalSchedule WHERE @TableName = 'PerformanceAppraisalSchedule'  AND PerformanceAppraisalSchedule.PerformanceAppraisalScheduleId = @TableValueId UNION ALL
+SELECT TableId = object_id('employeerelation.LegalCase'), [ProfileId] FROM employeerelation.LegalCase LegalCase WHERE @TableName = 'LegalCase'  AND LegalCase.LegalCaseId = @TableValueId UNION ALL
+SELECT TableId = object_id('attendance.TimeEntryHeaderDetail'), [ProfileId] FROM attendance.TimeEntryHeaderDetail TimeEntryHeaderDetail WHERE @TableName = 'TimeEntryHeaderDetail'  AND TimeEntryHeaderDetail.TimeEntryHeaderDetailId = @TableValueId UNION ALL
+SELECT TableId = object_id('payroll.ImportAllowanceOther'), [ProfileId] FROM payroll.ImportAllowanceOther ImportAllowanceOther WHERE @TableName = 'ImportAllowanceOther'  AND ImportAllowanceOther.ImportAllowanceOtherId = @TableValueId UNION ALL
+SELECT TableId = object_id('schedule.Undertime'), [ProfileId] FROM schedule.Undertime Undertime WHERE @TableName = 'Undertime'  AND Undertime.UndertimeId = @TableValueId UNION ALL
+SELECT TableId = object_id('employeerelation.Suggestion'), [ProfileId] FROM employeerelation.Suggestion Suggestion WHERE @TableName = 'Suggestion'  AND Suggestion.SuggestionId = @TableValueId UNION ALL
+SELECT TableId = object_id('safetyandhealth.MedicalExaminationReport'), [ProfileId] FROM safetyandhealth.MedicalExaminationReport MedicalExaminationReport WHERE @TableName = 'MedicalExaminationReport'  AND MedicalExaminationReport.MedicalExaminationReportId = @TableValueId UNION ALL
+SELECT TableId = object_id('performanceappraisal.PerformanceObjectiveHeader'), [ProfileId] FROM performanceappraisal.PerformanceObjectiveHeader PerformanceObjectiveHeader WHERE @TableName = 'PerformanceObjectiveHeader'  AND PerformanceObjectiveHeader.PerformanceObjectiveHeaderId = @TableValueId UNION ALL
+SELECT TableId = object_id('payroll.RemittanceDetail'), [ProfileId] FROM payroll.RemittanceDetail RemittanceDetail WHERE @TableName = 'RemittanceDetail'  AND RemittanceDetail.RemittanceDetailId = @TableValueId UNION ALL
+SELECT TableId = object_id('schedule.ExtendedTimeAndOffset'), [ProfileId] FROM schedule.ExtendedTimeAndOffset ExtendedTimeAndOffset WHERE @TableName = 'ExtendedTimeAndOffset'  AND ExtendedTimeAndOffset.ExtendedTimeAndOffsetId = @TableValueId UNION ALL
+SELECT TableId = object_id('attendance.CardAccessTimeEntryLog'), [ProfileId] FROM attendance.CardAccessTimeEntryLog CardAccessTimeEntryLog WHERE @TableName = 'CardAccessTimeEntryLog'  AND CardAccessTimeEntryLog.CardAccessTimeEntryLogId = @TableValueId UNION ALL
+SELECT TableId = object_id('schedule.ImportWorkSchedule'), [ProfileId] FROM schedule.ImportWorkSchedule ImportWorkSchedule WHERE @TableName = 'ImportWorkSchedule'  AND ImportWorkSchedule.ImportWorkScheduleId = @TableValueId UNION ALL
+SELECT TableId = object_id('attendance.CalculatedOTBreakdown'), [ProfileId] FROM attendance.CalculatedOTBreakdown CalculatedOTBreakdown WHERE @TableName = 'CalculatedOTBreakdown'  AND CalculatedOTBreakdown.CalculatedOTBreakdownId = @TableValueId UNION ALL
+SELECT TableId = object_id('maintenance.AcknowledgedMemorandumAndAnnouncement'), [ProfileId] FROM maintenance.AcknowledgedMemorandumAndAnnouncement AcknowledgedMemorandumAndAnnouncement WHERE @TableName = 'AcknowledgedMemorandumAndAnnouncement'  AND AcknowledgedMemorandumAndAnnouncement.AcknowledgedMemorandumAndAnnouncementId = @TableValueId UNION ALL
+SELECT TableId = object_id('attendance.TimeEntryLogSeparateDateTime'), [ProfileId] FROM attendance.TimeEntryLogSeparateDateTime TimeEntryLogSeparateDateTime WHERE @TableName = 'TimeEntryLogSeparateDateTime'  AND TimeEntryLogSeparateDateTime.TimeEntryLogSeparateDateTimeId = @TableValueId UNION ALL
+SELECT TableId = object_id('compben.BenefitIssuance'), [ProfileId] FROM compben.BenefitIssuance BenefitIssuance WHERE @TableName = 'BenefitIssuance'  AND BenefitIssuance.BenefitIssuanceId = @TableValueId UNION ALL
+SELECT TableId = object_id('employee.FamilyBackground'), [ProfileId] FROM employee.FamilyBackground FamilyBackground WHERE @TableName = 'FamilyBackground'  AND FamilyBackground.FamilyBackgroundId = @TableValueId UNION ALL
+SELECT TableId = object_id('accountability.ItemRequest'), [ProfileId] FROM accountability.ItemRequest ItemRequest WHERE @TableName = 'ItemRequest'  AND ItemRequest.ItemRequestId = @TableValueId UNION ALL
+SELECT TableId = object_id('payroll.PaySheetDetailFX'), [ProfileId] FROM payroll.PaySheetDetailFX PaySheetDetailFX WHERE @TableName = 'PaySheetDetailFX'  AND PaySheetDetailFX.PaySheetDetailFXId = @TableValueId UNION ALL
+SELECT TableId = object_id('employee.TrainingsAttended'), [ProfileId] FROM employee.TrainingsAttended TrainingsAttended WHERE @TableName = 'TrainingsAttended'  AND TrainingsAttended.TrainingsAttendedId = @TableValueId UNION ALL
+SELECT TableId = object_id('employee.EducationalBackground'), [ProfileId] FROM employee.EducationalBackground EducationalBackground WHERE @TableName = 'EducationalBackground'  AND EducationalBackground.EducationalBackgroundId = @TableValueId UNION ALL
+SELECT TableId = object_id('workflows.GenericNotification'), [ProfileId] FROM workflows.GenericNotification GenericNotification WHERE @TableName = 'GenericNotification'  AND GenericNotification.GenericNotificationId = @TableValueId UNION ALL
+SELECT TableId = object_id('schedule.WorkScheduleRequest'), [ProfileId] FROM schedule.WorkScheduleRequest WorkScheduleRequest WHERE @TableName = 'WorkScheduleRequest'  AND WorkScheduleRequest.WorkScheduleRequestId = @TableValueId UNION ALL
+SELECT TableId = object_id('attendance.TimeEntryLog'), [ProfileId] FROM attendance.TimeEntryLog TimeEntryLog WHERE @TableName = 'TimeEntryLog'  AND TimeEntryLog.TimeEntryLogId = @TableValueId UNION ALL
+SELECT TableId = object_id('compben.ImportSalaryInformation'), [ProfileId] FROM compben.ImportSalaryInformation ImportSalaryInformation WHERE @TableName = 'ImportSalaryInformation'  AND ImportSalaryInformation.ImportSalaryInformationId = @TableValueId UNION ALL
+SELECT TableId = object_id('attendance.TimeEntryException'), [ProfileId] FROM attendance.TimeEntryException TimeEntryException WHERE @TableName = 'TimeEntryException'  AND TimeEntryException.TimeEntryExceptionId = @TableValueId UNION ALL
+SELECT TableId = object_id('payroll.EmpOnHold'), [ProfileId] FROM payroll.EmpOnHold EmpOnHold WHERE @TableName = 'EmpOnHold'  AND EmpOnHold.EmpOnHoldId = @TableValueId UNION ALL
+SELECT TableId = object_id('employee.PastEmployment'), [ProfileId] FROM employee.PastEmployment PastEmployment WHERE @TableName = 'PastEmployment'  AND PastEmployment.PastEmploymentId = @TableValueId UNION ALL
+SELECT TableId = object_id('payroll.JVDetail'), [ProfileId] FROM payroll.JVDetail JVDetail WHERE @TableName = 'JVDetail'  AND JVDetail.JVDetailId = @TableValueId UNION ALL
+SELECT TableId = object_id('employee.EmployeeSkill'), [ProfileId] FROM employee.EmployeeSkill EmployeeSkill WHERE @TableName = 'EmployeeSkill'  AND EmployeeSkill.EmployeeSkillId = @TableValueId UNION ALL
+SELECT TableId = object_id('employee.EmploymentInformation'), [ProfileId] FROM employee.EmploymentInformation EmploymentInformation WHERE @TableName = 'EmploymentInformation'  AND EmploymentInformation.EmploymentInformationId = @TableValueId UNION ALL
+SELECT TableId = object_id('schedule.WorkScheduleTemp'), [ProfileId] FROM schedule.WorkScheduleTemp WorkScheduleTemp WHERE @TableName = 'WorkScheduleTemp'  AND WorkScheduleTemp.WorkScheduleTempId = @TableValueId UNION ALL
+SELECT TableId = object_id('employee.CharacterReference'), [ProfileId] FROM employee.CharacterReference CharacterReference WHERE @TableName = 'CharacterReference'  AND CharacterReference.CharacterReferenceId = @TableValueId UNION ALL
+SELECT TableId = object_id('accountability.CashAdvance'), [ProfileId] FROM accountability.CashAdvance CashAdvance WHERE @TableName = 'CashAdvance'  AND CashAdvance.CashAdvanceId = @TableValueId UNION ALL
+SELECT TableId = object_id('compben.EmployeeFlexBenLimit'), [ProfileId] FROM compben.EmployeeFlexBenLimit EmployeeFlexBenLimit WHERE @TableName = 'EmployeeFlexBenLimit'  AND EmployeeFlexBenLimit.EmployeeFlexBenLimitId = @TableValueId UNION ALL
+SELECT TableId = object_id('leave.ImportLeaveBalance'), [ProfileId] FROM leave.ImportLeaveBalance ImportLeaveBalance WHERE @TableName = 'ImportLeaveBalance'  AND ImportLeaveBalance.ImportLeaveBalanceId = @TableValueId UNION ALL
+SELECT TableId = object_id('employee.Profile'), [ProfileId] FROM employee.Profile Profile WHERE @TableName = 'Profile'  AND Profile.ProfileId = @TableValueId UNION ALL
+SELECT TableId = object_id('compben.FlexBenRequestHdr'), [ProfileId] FROM compben.FlexBenRequestHdr FlexBenRequestHdr WHERE @TableName = 'FlexBenRequestHdr'  AND FlexBenRequestHdr.FlexBenRequestHdrId = @TableValueId UNION ALL
+SELECT TableId = object_id('onboarding.TaskCheckListDetailAssigned'), [ProfileId] FROM onboarding.TaskCheckListDetailAssigned TaskCheckListDetailAssigned WHERE @TableName = 'TaskCheckListDetailAssigned'  AND TaskCheckListDetailAssigned.TaskCheckListDetailAssignedId = @TableValueId UNION ALL
+SELECT TableId = object_id('payroll.AllowanceOther'), [ProfileId] FROM payroll.AllowanceOther AllowanceOther WHERE @TableName = 'AllowanceOther'  AND AllowanceOther.AllowanceOtherId = @TableValueId UNION ALL
+SELECT TableId = object_id('leave.ImportLeaveRequest'), [ProfileId] FROM leave.ImportLeaveRequest ImportLeaveRequest WHERE @TableName = 'ImportLeaveRequest'  AND ImportLeaveRequest.ImportLeaveRequestId = @TableValueId UNION ALL
+SELECT TableId = object_id('employee.Allowance'), [ProfileId] FROM employee.Allowance Allowance WHERE @TableName = 'Allowance'  AND Allowance.AllowanceId = @TableValueId UNION ALL
+SELECT TableId = object_id('attendance.MHClassDetail'), [ProfileId] FROM attendance.MHClassDetail MHClassDetail WHERE @TableName = 'MHClassDetail'  AND MHClassDetail.MHClassDetailId = @TableValueId UNION ALL
+SELECT TableId = object_id('schedule.RestDayTemp'), [ProfileId] FROM schedule.RestDayTemp RestDayTemp WHERE @TableName = 'RestDayTemp'  AND RestDayTemp.RestDayTempId = @TableValueId UNION ALL
+SELECT TableId = object_id('payroll.Deduction'), [ProfileId] FROM payroll.Deduction Deduction WHERE @TableName = 'Deduction'  AND Deduction.DeductionId = @TableValueId UNION ALL
+SELECT TableId = object_id('payroll.DeputisingPay'), [ProfileId] FROM payroll.DeputisingPay DeputisingPay WHERE @TableName = 'DeputisingPay'  AND DeputisingPay.DeputisingPayId = @TableValueId 
+UNION ALL
+SELECT TableId = object_id('employee.GovernmentDeduction'), [ProfileId] FROM employee.GovernmentDeduction GovernmentDeduction
+INNER JOIN employee.SalaryInformation SalaryInformation ON SalaryInformation.SalaryInformationId = GovernmentDeduction.SalaryInformationId
+WHERE @TableName = 'GovernmentDeduction'  AND GovernmentDeduction.GovernmentDeductionId = @TableValueId 
+	
+)PID
+
+INNER JOIN employee.Profile P on P.ProfileId = PID.ProfileId
+LEFT JOIN employee.EmploymentInformation EI ON EI.ProfileId = P.ProfileId
+
+)

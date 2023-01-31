@@ -1,0 +1,10 @@
+/*
+Missing Index Details from SQLQuery3.sql - ALGAR-WS0010\SQLDEVELOPER2017.EatWork_ReportProd (sa)
+The Query Processor estimates that implementing the following index could improve the query cost by 15.1409%.
+*/
+
+
+IF NOT EXISTS(SELECT index_id FROM SYS.indexes WHERE name = 'IX_PayrollTypeDetailPayrollTypeIdPaySheetColumnsId' AND object_id = object_id('[payroll].[PayrollTypeDetail]'))
+	CREATE NONCLUSTERED INDEX [IX_PayrollTypeDetailPayrollTypeIdPaySheetColumnsId]
+	ON [payroll].[PayrollTypeDetail] ([PayrollTypeId],[PaySheetColumnsId])INCLUDE ([Label])
+GO

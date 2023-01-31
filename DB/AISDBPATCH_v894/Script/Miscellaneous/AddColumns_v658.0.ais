@@ -1,0 +1,4 @@
+EXEC dbo.AddColumn @SCHEMA = 'attendance', @TABLENAME = 'TimeEntryHeader', @COLUMNNAME = 'DivisionId', @DEFAULTVALUE = 'bigint'
+EXEC dbo.AddColumn @SCHEMA = 'attendance', @TABLENAME = 'TimeEntryHeader', @COLUMNNAME = 'LineId', @DEFAULTVALUE = 'bigint'
+EXEC dbo.AddColumn @SCHEMA = 'payroll', @TABLENAME = 'PaySheetHeader', @COLUMNNAME = 'DivisionId', @DEFAULTVALUE = 'bigint'
+EXEC dbo.AddColumn @SCHEMA = 'payroll', @TABLENAME = 'PaySheetHeader', @COLUMNNAME = 'LineId', @DEFAULTVALUE = 'bigint'

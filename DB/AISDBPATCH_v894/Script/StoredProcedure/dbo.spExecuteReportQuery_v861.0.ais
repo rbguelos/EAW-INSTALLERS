@@ -1,0 +1,740 @@
+  
+/*===========================================*\    
+** Last Update Date: 05/4/2020    
+** Last Update By: Ronald    
+** Last DBVersion executed: v    
+** Changes: Added audit trail   
+\*===========================================*/    
+    
+ALTER PROCEDURE [dbo].[spExecuteReportQuery]    
+  --Add the parameters for the stored procedure here    
+--DECLARE    
+ @ReportCode varchar(150) = 'IndividualAttendanceReport'    
+ ,@ReportParameter varchar(max) = '@StartWorkDate=''01/01/2019''|@EndWorkDate=''01/31/2019''|@IncludeInactiveEmployees=''false''|@HideExcessHours=''true''|@ShowMissingLogs=''true''|@OrgBasedOnProfileTable=''true'''    
+ ,@ReportProcessId varchar(50) = 'AAA'    
+ ,@TestQuery bit = 0  
+ ,@UserSecurityId bigint = 10165 -- to be use in report security    
+ ,@NoOrderBy bit = 0    
+ ,@DoNotUseScope bit = 0   
+ ,@DoNotInsertToTempTable bit = 0 /*added by RME.07.03.2018*/  
+AS    
+BEGIN    
+-- SET NOCOUNT ON added to prevent extra result sets from    
+-- interfering with SELECT statements.    
+SET NOCOUNT ON;    
+    
+-- Insert statements for procedure here    
+DECLARE    
+@CMD nvarchar(max)    
+, @COLUMNS varchar(max)    
+, @TABLE varchar(max)    
+, @QUERYTYPE varchar(15)    
+, @INSERTTOREPORTTEMPTABLE smallint    
+, @INSERTSTATEMENT varchar(max)    
+, @REPORTID bigint    
+, @SELECTTMPTABLE varchar(max)    
+, @WHERECLAUSE varchar(max) -- PARAMETERS THAT WERE NOT INCLUDED IN FUNCTION PARAMETERS    
+, @PARAMVALUES varchar(max) -- FUNCTION PARAMETER VALUES    
+, @DEFAULTSORTBY varchar(MAX)    
+, @ISPAYSHEET bit --flag to check if the table is paysheet    
+, @PIVOTCOL VARCHAR(MAX)    
+, @PIVOTCOLDATATYPE VARCHAR(10) = 'decimal'    
+--, @ProfileIds_Security varchar(max) = ''    
+, @SPUSED varchar(250) = '' -- if stored procedure    
+, @EmployeeTypeId smallint    
+, @COLCOUNT INT = 0    
+, @USESPTEMPTABLE VARCHAR(250)    
+,@PARAMVALUETMPTABLENAME VARCHAR(250)    
+    
+DECLARE @ACTUALPARAMS TABLE(RowId int IDENTITY (1, 1),ParamName varchar(250),[Value] varchar(max),DefaultParams bit,Operator varchar(10),DataType varchar(10))    
+DECLARE @DEFAULTPARAMS TABLE(RowId int IDENTITY (1, 1),ParamName varchar(250),[Value] varchar(max))    
+DECLARE @MYPARAMS TABLE (ParameterName varchar(250),DataType varchar(50),ConditionalOperator varchar(50),DefaultValue varchar(50))    
+    
+DECLARE @IncludeInactiveEmployees VARCHAR(10) = 'false'    
+DECLARE @OrgBasedOnProfileTable VARCHAR(10) = 'false'    
+    
+    
+BEGIN TRY    
+    
+--SET @EmployeeTypeId = (SELECT EmploymentStatus = CASE EmploymentStatus WHEN 3 THEN 0 WHEN 2 THEN 2 ELSE 1 END FROM report.Report WHERE ReportCode = @ReportCode)    
+SELECT @EmployeeTypeId = CASE ISNULL(EmploymentStatus,0) WHEN 0 THEN 0 ELSE EmploymentStatus END, @NoOrderBy = NoOrderBy FROM report.Report WHERE ReportCode = @ReportCode    
+    
+/*******EXTRACT REPORT PARAMETER NAME AND VALUES******/    
+BEGIN    
+    --FUNCTION DEFAULT PARAMETERS AND VALUES    
+    INSERT INTO @DEFAULTPARAMS    
+    SELECT    
+     ParamName =  RTRIM(SUBSTRING(DP.PARAMETER_NAME, 2,50))    
+     ,Value = CASE WHEN RTRIM(SUBSTRING(DP.PARAMETER_NAME, 2,50)) = 'EmployeeStatusId' THEN @EmployeeTypeId ELSE 0 END    
+    FROM INFORMATION_SCHEMA.PARAMETERS DP    
+    WHERE DP.SPECIFIC_NAME = 'fnProfileInfoWithScope'    
+
+ INSERT INTO @MYPARAMS(ParameterName,ConditionalOperator,DataType,DefaultValue)    
+ SELECT T.VALUE     
+ ,op.VALUE,case when dt.DataType = '' then 'string' else DT.DataType END    
+ ,DT.DefaultValue    
+ FROM DBO.FN_SPLITWITHID((SELECT STUFF((SELECT ','+ParameterName FROM report.ReportParameter WHERE ReportCode = @ReportCode FOR XML PATH(''), ROOT ('MyString'), TYPE).value('/MyString[1]', 'varchar(max)'),1,1,'')),',')T    
+ INNER JOIN (SELECT ROWID, VALUE FROM DBO.FN_SPLITWITHID((SELECT STUFF((SELECT ','+ISNULL((CASE WHEN ConditionalOperator = '' THEN '=' ELSE ConditionalOperator END),'=') FROM report.ReportParameter WHERE ReportCode = @ReportCode FOR XML PATH(''), ROOT ('MyString'), TYPE).value('/MyString[1]', 'varchar(max)'),1,1,'')),','))OP    
+ ON OP.ROWID = T.ROWID    
+ OUTER APPLY(SELECT TOP 1 ISNULL(DataType,'string')DataType,     
+ DefaultValue =     
+ CASE WHEN ISNULL(DefaultValue,'') = '' THEN     
+  CASE DataType WHEN 'string' THEN ''    
+  WHEN 'date' THEN '1/1/1900'    
+  WHEN 'datetime' THEN '1/1/1900'    
+  WHEN 'decimal' THEN '0'    
+  WHEN 'number' THEN '0'    
+  ELSE '' END     
+ ELSE DefaultValue END    
+ FROM report.ReportParameter WHERE ReportCode = @ReportCode AND CHARINDEX(T.VALUE,ParameterName) > 0)DT    
+    
+    INSERT INTO @ACTUALPARAMS(ParamName,Value,DefaultParams,Operator,DataType)    
+    SELECT    
+     ParamName = P.ParameterName,    
+     Value = ISNULL(CASE WHEN P.ConditionalOperator = 'IN' AND LEFT(P.ParameterName,1) = '@'     
+     THEN ''''+REPLACE((SUBSTRING(T.VALUE, CHARINDEX('=', T.VALUE) + 1, len(t.VALUE))),'''','''''')+''''     
+     ELSE (SUBSTRING(T.VALUE, CHARINDEX('=', T.VALUE) + 1, len(t.VALUE))) END,''''+ P.DefaultValue + '''')    
+     --(CASE P.DataType WHEN 'date' THEN '''''1/1/1900''''' WHEN 'decimal' THEN '0' ELSE '''''' END))    
+     ,DefaultParams = CASE WHEN P.ParameterName IN (SELECT ParamName FROM @DEFAULTPARAMS) THEN 1 ELSE 0 END    
+     ,Operator = CASE WHEN ISNULL(P.ConditionalOperator,'') <> '' THEN P.ConditionalOperator ELSE '=' END    
+     ,DataType = isnull(DataType,'string')    
+     --,DataType = isnull(DataType,'varchar(500)')    
+    FROM @MYPARAMS P    
+ LEFT JOIN dbo.FN_SPLITWITHID(@ReportParameter, '|') T    
+  ON (P.ParameterName = SUBSTRING(T.VALUE, 1, CHARINDEX('=', T.VALUE) - 1))    
+ WHERE 1=1 --P.ReportCode = @ReportCode    
+ AND (NOT (SUBSTRING(T.VALUE, CHARINDEX('=', T.VALUE) + 1, 5000)) IS NULL OR LEFT(P.ParameterName,1) = '@')    
+    
+    
+ /* OVERRIDE VALUE OF EMPLOYEESTATUSID */    
+ SET @IncludeInactiveEmployees = ISNULL((SELECT TOP 1 [Value] FROM @ACTUALPARAMS WHERE ParamName = '@IncludeInactiveEmployees'),'''false''')    
+ SET @OrgBasedOnProfileTable = ISNULL((SELECT TOP 1 [Value] FROM @ACTUALPARAMS WHERE ParamName = '@OrgBasedOnProfileTable'),'''false''')  
+   
+ UPDATE @DEFAULTPARAMS     
+    SET [Value] = (CASE WHEN ISNULL(@IncludeInactiveEmployees,'''false''') = '''true''' THEN 3 ELSE [Value] END)     
+ WHERE ParamName = 'EmployeeStatusId'    
+
+UPDATE @DEFAULTPARAMS     
+    SET [Value] = (CASE WHEN ISNULL(@IncludeInactiveEmployees,'''false''') = '''true''' THEN 0 ELSE [Value] END)     
+WHERE ParamName IN ('SourceTableType','SourceTableId')
+END    
+/*******----------------------------------------******/    
+
+--SELECT * FROM @DEFAULTPARAMS;RETURN;
+    
+SET @WHERECLAUSE = ''    
+SET @INSERTSTATEMENT = ''    
+  
+/* WILL HANDLE REPORT COLUMNS FROM report.ReportData */  
+DECLARE @REPORTDATA TABLE   
+( [ReportDataId] [bigint] PRIMARY KEY NOT NULL,  
+ [ReportId] [bigint] NULL,  
+ [ReportColumn] [varchar](500) NULL,  
+ [ReportDataValue] [varchar](500) NULL,  
+ [ReportDataType] [varchar](50) NULL,  
+ [DataSection] [varchar](50) NULL,  
+ [DataAlignment] [varchar](50) NULL,  
+ [LineNumber] [smallint] NULL,  
+ [ColumnOrderNumber] [int] NULL,  
+ [SourceTable] [varchar](100) NULL  
+)  
+  
+  
+  
+    
+--RETRIEVE CONFIG FROM Report TABLE    
+SELECT TOP 1    
+ @TABLE = TableSPUsed,    
+ @QUERYTYPE = QueryType,    
+ @INSERTTOREPORTTEMPTABLE = case when isnull(@DoNotInsertToTempTable,0) = 1 THEN 0 ELSE InsertToReportTempTable END,    
+ @REPORTID = ReportId    
+ ,@ISPAYSHEET = CASE WHEN CHARINDEX('vwPaysheetDetail',TableSPUsed) > 0 THEN 1 ELSE 0 END    
+ ,@COLCOUNT = ISNULL((SELECT COUNT(ReportDataId) FROM @REPORTDATA WHERE ReportId = Report.ReportId),0)    
+ ,@SPUSED = isnull(SPUsed,'')    
+ ,@USESPTEMPTABLE = TableSPUsed    
+FROM report.Report    
+WHERE ReportCode = @ReportCode    
+    
+  
+  
+   
+     
+/****--EXECUTE STORED PROC - ADDED 02.15.2017     
+NOTE: stored procedure only use to insert data to the actual table to be call in this procedure)    
+****/    
+ IF ISNULL(@SPUSED,'') <> ''    
+ BEGIN    
+  DECLARE @STOREPARAM NVARCHAR(MAX),@spCmd NVARCHAR(MAX)    
+      
+  --SET @USESPTEMPTABLE = CONCAT(@USESPTEMPTABLE,    
+    
+  SET @STOREPARAM = ' ' + isnull(stuff((SELECT ','+t.ParamName + '=' + t.Value FROM @ACTUALPARAMS T FOR XML PATH(''), ROOT ('MyString'), TYPE).value('/MyString[1]', 'varchar(max)'),1,1,''),'')+ N',@UserSecurityId ='+ cast(@UserSecurityId as nvarchar)    
+    
+  /*REGENERATE NEW STORED PROC AND EXECUTE IT WITH SUPPLIED PARAMETERS*/    
+  EXEC report.spReCreateAndExecuteProcWithTempTable    
+   -- Add the parameters for the stored procedure here    
+   @STOREDPROCNAME = @SPUSED    
+   ,@TMPTABLENAME = @TABLE    
+   ,@STOREPARAMS = @STOREPARAM    
+   ,@GENERATEOUTPUT = 0    
+   ,@NEWTEMPTABLE = @TABLE OUT--NVARCHAR(250) = '' OUT    
+    
+   --SELECT @NEWTEMPTABLE = ' SELECT * FROM ' + @NEWTEMPTABLE    
+    
+   --EXEC sys.sp_executesql @NEWTEMPTABLE    
+    
+    
+    
+ END    
+    
+  
+  /* added RME.05.15.2018 REPORT COLUMNS */  
+IF ISNULL(@SPUSED,'') <> ''  
+BEGIN  
+ INSERT INTO @REPORTDATA  
+ SELECT  T.ReportDataId,T.ReportId,T.ReportColumn,T.ReportDataValue,T.ReportDataType,T.DataSection,T.DataAlignment,T.LineNumber,T.ColumnOrderNumber,T.SourceTable FROM (SELECT COLID = ROW_NUMBER() OVER(ORDER BY ColumnOrderNumber),* FROM report.ReportData WHERE ReportId = @REPORTID) T   
+ INNER JOIN sys.columns c on c.name = t.ReportDataValue and c.object_id = object_id(@TABLE)  
+  WHERE T.COLID <= 250  
+  
+END  
+ELSE  
+BEGIN  
+ INSERT INTO @REPORTDATA  
+ SELECT  T.ReportDataId,T.ReportId,T.ReportColumn,T.ReportDataValue,T.ReportDataType,T.DataSection,T.DataAlignment,T.LineNumber,T.ColumnOrderNumber,T.SourceTable FROM (SELECT COLID = ROW_NUMBER() OVER(ORDER BY ColumnOrderNumber),* FROM report.ReportData WHERE ReportId = @REPORTID) T   
+  WHERE T.COLID <= 250  
+END  
+  
+--select * from @REPORTDATA  
+    
+ /*store array parameter values in parametervalue table    
+ this will be use as source param values with "IN" operator    
+ */    
+ IF EXISTS(SELECT * FROM @ACTUALPARAMS WHERE Operator = 'IN')    
+ BEGIN    
+  DELETE FROM [report].[ParameterValue] WHERE ReportId = @REPORTID AND ReportProcessId = @ReportProcessId;/*clear existing paramemeter values*/    
+    
+  INSERT INTO [report].[ParameterValue]    
+  SELECT
+   @REPORTID
+  ,@ReportProcessId
+  ,PN.PARAMNAME
+  ,CASE WHEN CHARINDEX('''',PVD.PARAMVALUE)>0 THEN substring(PVD.PARAMVALUE,2,len(PVD.PARAMVALUE) - 2)/*remove single quote*/ ELSE PVD.PARAMVALUE END
+  from dbo.FN_SPLITWITHID(@ReportParameter,'|') A  
+  cross APPLY(select SEPPOS = CHARINDEX('=',A.[VALUE]))OP  
+  cross APPLY(select PARAMNAME  = substring(A.VALUE,0,OP.SEPPOS))PN  
+  cross APPLY(select paramvalue  = substring(A.VALUE,OP.SEPPOS+1,8000))PV  
+  cross APPLY(select [PARAMVALUE] = [VALUE] FROM dbo.FN_SPLITWITHID(pv.paramvalue,','))PVD  
+  INNER JOIN @ACTUALPARAMS P ON P.ParamName = PN.PARAMNAME AND P.Operator = 'IN';  
+    
+ END    
+    
+    
+    
+  --SET DEFAULT PARAM VALUES    
+  SET @PARAMVALUES = 'fnProfileInfoWithScope(''' + cast(@UserSecurityId as varchar) + ''',''0'''     
+  + STUFF((SELECT ',' + '''' + COALESCE(REPLACE(AP.Value,'''',''),DP.[Value], '0') + ''''    
+  FROM @DEFAULTPARAMS DP    
+  LEFT JOIN @ACTUALPARAMS AS AP    
+   ON AP.ParamName = DP.ParamName    
+   --WHERE AP.DefaultParams = 1    
+   FOR XML PATH(''), ROOT ('MyString'), TYPE).value('/MyString[1]', 'varchar(max)'),1,1,'')    
+
+    
+  --SET DEFAULT WHERE CLAUSE VALUES    
+   SET @WHERECLAUSE = STUFF((SELECT ' AND '     
+   --+ ' CAST('+ParamName + CASE WHEN ISNULL(DataType,'') <> '' THEN ' AS ' + DataType ELSE ' AS VARCHAR(500)' END +')' /*convert to datatype default is varchar (updated 04.03.2018)*/    
+   + ' CAST('+ParamName + CASE WHEN ISNULL(DataType,'') <> '' THEN ' AS ' + (CASE DataType WHEN 'string' THEN ' VARCHAR(500)' ELSE DataType END) ELSE ' AS VARCHAR(500)' END +')' /*convert to datatype default is varchar (updated 04.03.2018)*/    
+     --+ ' CAST('+ParamName + ' AS VARCHAR(150))' /*convert to varchar*/    
+     --+ CASE WHEN ISNULL(Operator,'') = 'IN' THEN ' IN(' + Value + ')' /*replaced by RME 11.17.2017*/    
+     + CASE WHEN ISNULL(Operator,'') = 'IN' THEN ' IN(SELECT ParameterValue FROM [report].[ParameterValue] WHERE ParameterName = '''+ ParamName +''' AND ReportId = ' + cast(@REPORTID as varchar) + ' AND ReportProcessId = ''' + cast(@ReportProcessId as varchar(150)) + ''')'     
+     ELSE ISNULL(Operator,'=') + Value END FROM @ACTUALPARAMS WHERE DefaultParams = 0 AND LEFT(ParamName,1) <> '@' FOR XML PATH(''), ROOT ('MyString'), TYPE).value('/MyString[1]', 'varchar(max)'),1,5,'')    
+       
+   /* SORT FIELDS */    
+   IF ISNULL(@NoOrderBy,0) = 0    
+   BEGIN    
+    SET @DEFAULTSORTBY = STUFF((SELECT ',' + CASE ReportDataType WHEN 'date' THEN + ' CASE WHEN ISDATE(CAST(' + ISNULL(SourceTable,'T') + '.[' + ReportDataValue +'] AS VARCHAR)) = 1 THEN CAST ('+ ISNULL(SourceTable,'T') + '.'+'[' + ReportDataValue + '] AS
+  
+ DATETIME) ELSE  CAST ('+ ISNULL(SourceTable,'T') + '.'+'[' + ReportDataValue + '] AS DATE) END'     
+      WHEN 'decimal' THEN + 'CAST ('+ ISNULL(SourceTable,'T') + '.'+'[' + ReportDataValue + '] AS DECIMAL(18,4))' ELSE ISNULL(SourceTable,'T') + '.' + '[' + ReportDataValue + ']' END    
+     FROM @REPORTDATA T WHERE ReportId = @REPORTID     
+     AND T.ReportDataValue NOT IN (SELECT ReportPivotCode FROM report.ReportPivot)-- do not include in sorting    
+     AND T.ColumnOrderNumber < 5 -- SORT FIELDS UPTO FIELD4 ONLY    
+     order by ColumnOrderNumber FOR XML PATH(''), ROOT ('MyString'), TYPE).value('/MyString[1]', 'varchar(max)'),1,1,'')    
+   END    
+    
+ /* generate profile function parameter values and inject it on the table query - added by RME.09.20.2017*/    
+ IF ISNULL(@SPUSED,'') = ''    
+ BEGIN    
+  declare     
+  @usedProfilefunction varchar(250) = 'fnProfileInfo'    
+  ,@profilefunction varchar(1000)    
+  ,@profileparamvalues varchar(1000)    
+  ,@profileparamvalueresults varchar(max) = ''    
+  ,@profiletable varchar(max) = ''    
+      
+  SELECT @usedProfilefunction = CASE WHEN CHARINDEX('fnProfileInfoWithScope',@TABLE) > 0 THEN 'fnProfileInfoWithScope'     
+  WHEN CHARINDEX('fnProfileInfo',@TABLE) > 0 THEN 'fnProfileInfo'     
+  WHEN CHARINDEX('fnEmployeeProfileInfo',@TABLE) > 0 THEN 'fnEmployeeProfileInfo' ELSE '' END    
+     
+  if (isnull(@usedProfilefunction,'') <> '')    
+  BEGIN    
+   set @profilefunction = substring(@TABLE,charindex(@usedProfilefunction,@table),1000);    
+   set @profilefunction = SUBSTRING(@profilefunction,1,charindex(')',@profilefunction));    
+   set @profileparamvalues = substring(@profilefunction,15,LEN(@profilefunction)-15);    
+    
+   select    
+   --@profileparamvalueresults = @profileparamvalueresults + ',' + case when dp.ParamName = 'UserSecurityId' THEN cast(@UserSecurityId as varchar) ELSE coalesce(ap.Value,pv.VALUE,'0') END    
+    
+   /*UPDATED BY AGC: 01.12.2018*/    
+   @profileparamvalueresults = @profileparamvalueresults + ','     
+   + CASE     
+     WHEN dp.ParamName = 'UserSecurityId' THEN CAST(@UserSecurityId AS VARCHAR)     
+     WHEN (dp.ParamName = 'EmployeeStatusId' AND dp.Value = 3) THEN '''1,2'''    
+     WHEN (dp.ParamName = 'SourceTableType' AND @OrgBasedOnProfileTable = '''true''') THEN '0'    
+     WHEN (dp.ParamName = 'SourceTableId' AND @OrgBasedOnProfileTable = '''true''') THEN '0'    
+     ELSE COALESCE(ap.Value,pv.VALUE,'0')     
+     END    
+    
+   --, ap.ParamName    
+    from @DEFAULTPARAMS dp    
+    left join @ACTUALPARAMS ap on (case when left(ap.ParamName,1) = '@' THEN SUBSTRING(ap.ParamName,2,150) ELSE AP.ParamName END) = dp.ParamName    
+    left join (select * from dbo.SplitStrings_XML(@profileparamvalues,','))pv on (pv.ROWID + 2) = dp.RowId    
+    
+   set @profiletable = concat('fnProfileInfoWithScope(',stuff(@profileparamvalueresults,1,1,''),')')    
+    
+   IF ISNULL(@DoNotUseScope,0) = 0    
+    SELECT @TABLE  = replace(@table,@profilefunction,@profiletable)    
+  END    
+ --select @table;RETURN    
+ END    
+
+    
+  /************************************************************    
+  --RETRIEVE COLUMNS    
+  ************************************************************/    
+  BEGIN    
+   IF (ISNULL(@QUERYTYPE,'STORED') =  'TABLE' OR ISNULL(@QUERYTYPE,'SP') =  'STORED')    
+   BEGIN    
+    SET @COLUMNS = 'SELECT ' + STUFF((SELECT ',' + ISNULL(SourceTable,'T') + '.[' + ReportDataValue + ']' FROM @REPORTDATA WHERE ReportId = @REPORTID order by ColumnOrderNumber FOR XML PATH(''), ROOT ('MyString'), TYPE).value('/MyString[1]', 'varchar(max)
+'),1,1,'')    
+   END    
+   ELSE IF ISNULL(@QUERYTYPE,'SP') =  'QUERY'    
+   BEGIN    
+    SET @COLUMNS = 'SELECT ' + STUFF((SELECT ',' + ISNULL(SourceTable,'T') + '.[' + ReportDataValue + ']' FROM @REPORTDATA WHERE ReportId = @REPORTID order by ColumnOrderNumber FOR XML PATH(''), ROOT ('MyString'), TYPE).value('/MyString[1]', 'varchar(max)
+'),1,1,'')    
+    SET @TABLE = '('+@TABLE+')'    
+   END    
+   ELSE IF ISNULL(@QUERYTYPE,'SP') =  'FUNCTION'    
+   BEGIN    
+    SELECT @WHERECLAUSE = CASE WHEN ISNULL(@ReportParameter,'') <> '' THEN ' WHERE ' + REPLACE(@ReportParameter,'|',' AND ') ELSE ' ' END    
+    SET @COLUMNS = 'SELECT ' + STUFF((SELECT ',' + ISNULL(SourceTable,'T') + '.[' + ReportDataValue + ']' FROM @REPORTDATA WHERE ReportId = @REPORTID  order by ColumnOrderNumber FOR XML PATH(''), ROOT ('MyString'), TYPE).value('/MyString[1]', 'varchar(max
+)'),1,1,'')    
+   END    
+   ELSE IF ISNULL(@QUERYTYPE,'SP') =  'SP'    
+   BEGIN    
+    SET @WHERECLAUSE = REPLACE(@ReportParameter,'|',', ')    
+    SET @COLUMNS = ''    
+   END    
+    
+   /* fixes on insert col not equal to insert value col (error in dynamic column with temp table - 08242017)*/    
+   SET @COLCOUNT = ISNULL((SELECT COUNT(ReportDataId) FROM @REPORTDATA WHERE ReportId = @REPORTID),0)    
+    
+   IF ISNULL(@COLCOUNT,0) > 0    
+   BEGIN    
+    
+    IF (ISNULL(@INSERTTOREPORTTEMPTABLE,0) = 1)    
+    BEGIN    
+     SET @COLUMNS = 'SELECT ReportId =' + cast(@REPORTID as varchar) + ',ReportProcessId = ''' + ISNULL(@ReportProcessId,'') + ''',T.CompanyId,'  + RIGHT(@COLUMNS,LEN(@COLUMNS) - 7)    
+    END    
+    
+   END    
+  END    
+    
+    
+ /*********************************************************    
+ generate pivot query     
+ **********************************************************/    
+ BEGIN    
+  DECLARE    
+   --for pivot query    
+   @PIVOTCOLNUMS VARCHAR(MAX) -- to be use in getting the pivot columns from paysheet detail fields    
+   ,@PIVOTCOLUMNCOUNT SMALLINT    
+   ,@PIVOTQUERY VARCHAR(MAX)  -- will handle the pivot query    
+   ,@PIVOTCOLUMNLIST VARCHAR(MAX)    
+    
+   ,@PivotTableQuery varchar(max)    
+   ,@ARRAYSEPERATOR VARCHAR(10) = '^'    
+   ,@JOINMETHOD smallint = 0    
+     
+    
+   DECLARE @PIVOTDETAILS TABLE    
+   (    
+    PIVOTID INT IDENTITY(1,1) PRIMARY KEY    
+    ,PIVOTCOLUMNNAME VARCHAR(50)    
+    ,PIVOTCOLNUMS VARCHAR(MAX) -- to be use in getting the pivot columns from paysheet detail fields    
+    ,PIVOTQUERY VARCHAR(MAX)  -- will handle the pivot query    
+    ,PIVOTALIAS VARCHAR(50)    
+   )    
+    
+    
+   --WILL HANDLE THE COLUMN HEADER FROM @REPORTDATA -- to be use in dynamic column headers    
+   DECLARE @COLUMNHEADERDETAILS TABLE    
+   (    
+    ROWID INT IDENTITY(1,1)    
+    ,COUMNNAME VARCHAR(150)    
+    ,COLUMNCODE VARCHAR(150)    
+    ,PIVOTCOLUMNNAMES VARCHAR(MAX)    
+    ,DATATYPE VARCHAR(20)    
+   )    
+   INSERT INTO @COLUMNHEADERDETAILS    
+   SELECT T.ReportColumn,T.ReportDataValue,T.ReportColumn,T.ReportDataType FROM @REPORTDATA T WHERE T.ReportId = @REPORTID ORDER BY T.ColumnOrderNumber    
+    
+    
+   --RETRIEVE ALL PIVOT COLUMNS    
+   INSERT INTO @PIVOTDETAILS(PIVOTCOLUMNNAME)    
+   SELECT ReportDataValue FROM @REPORTDATA WHERE ReportId = @REPORTID AND ReportDataValue IN (SELECT ReportPivotCode FROM report.ReportPivot)    
+    
+   SET @PIVOTCOLUMNCOUNT = 0    
+    
+  --IF ISNULL(@ISPAYSHEET,0) = 1    
+  IF EXISTS(SELECT * FROM @PIVOTDETAILS)    
+  BEGIN    
+    
+   DECLARE     
+    @ID INT    
+    ,@CNT INT    
+    ,@TableQuery varchar(max) = 'payroll.PaySheetDetail'-- THE MAIN TABLE OR QUERY THAT WILL RETRIEVE THE PIVOT COLUMN AND VALUES    
+    ,@PivotColumn varchar(150) = 'Type' --COLUMN TO BE PIVOT    
+    ,@AggregateColumn varchar(150) = 'Value' --VALUE OF PIVOT COLUMNS    
+    ,@ColumnGroups varchar(max) = 'PaySheetHeaderDetailId' --MAIN COLUMN GROUP OF THE PIVOT QUERY    
+    ,@AggregateFunctionToUse varchar(10) = 'SUM' --AGGREGATE FUNCTION TO BE USE    
+    ,@AgggregateColumnDataType varchar(10) = 'decimal' -- THE DATA TYPE OF VALUE OF THE PIVOT COLUMN    
+    ,@OrderByColumn varchar(100) = 'InclusiveDate'    
+    ,@ReplaceNullWith varchar(50) = '0' --DEFAULT VALUES FOR NULL    
+    ,@JoinPivotAs varchar(20) = 'paysheet' --TO BE USED IF THIS WILL BE LINKED IN OTHER TABLE    
+    ,@LinkedColumns varchar(max) = '' -- joining links (field array)    
+    ,@SuffixForPivotColumn varchar(20) = ''    
+    ,@OUTPUTCOLNUMS VARCHAR(MAX)     
+    ,@OUTPUTQUERY VARCHAR(MAX)     
+    ,@PIVOTCOLUMNNAME VARCHAR(50)    
+    ,@OUTPUTCOLNUMSISNULL VARCHAR(MAX)    
+    ,@SHOWTOTAL BIT = 0    
+    
+   SET @ID = 1    
+   SET @CNT = (SELECT COUNT(*) FROM @PIVOTDETAILS)    
+    
+    
+   WHILE @ID <= @CNT    
+   BEGIN    
+    /*    
+    1 Earning    
+    2 Deduction    
+    3 Allowance    
+    4 Savings    
+    5 Loan    
+    6 Other Income    
+    7 Other Deduction    
+    */    
+    
+    
+     SELECT      
+      @PivotTableQuery = T.TableQuery    
+      ,@PivotColumn = T.PivotColumn    
+      ,@AggregateColumn = T.AggregateColumn    
+      ,@ColumnGroups = T.ColumnGroups    
+      ,@AggregateFunctionToUse = T.AggregateFunctionToUse    
+      ,@AgggregateColumnDataType = T.AgggregateColumnDataType    
+      ,@OrderByColumn = T.OrderByColumn    
+      ,@ReplaceNullWith = T.ReplaceNullWith    
+      ,@JoinPivotAs = T.PivotAlias    
+      ,@LinkedColumns = T.LinkedColumns    
+      ,@PIVOTCOLUMNNAME = T.ReportPivotCode    
+      ,@SHOWTOTAL = T.ShowTotal    
+      ,@JOINMETHOD = ISNULL(T.JoinMethod,0)    
+     FROM report.ReportPivot T WHERE T.ReportPivotCode = (SELECT TOP 1 A.PIVOTCOLUMNNAME FROM @PIVOTDETAILS A WHERE A.PIVOTID = @ID)    
+    
+    
+   EXEC dbo.[spCreatePivotQuery]     
+    @TableQuery = @PivotTableQuery    
+    ,@PivotColumn = @PivotColumn --COLUMN TO BE PIVOT    
+    ,@AggregateColumn = @AggregateColumn --VALUE OF PIVOT COLUMNS    
+    ,@ColumnGroups = @ColumnGroups --MAIN COLUMN GROUP OF THE PIVOT QUERY    
+    ,@AggregateFunctionToUse = @AggregateFunctionToUse --AGGREGATE FUNCTION TO BE USE    
+    ,@AgggregateColumnDataType = @AgggregateColumnDataType -- THE DATA TYPE OF VALUE OF THE PIVOT COLUMN    
+    ,@OrderByColumn = @OrderByColumn    
+    ,@ReplaceNullWith = @ReplaceNullWith --DEFAULT VALUES FOR NULL    
+    ,@JoinPivotAs = @JoinPivotAs --TO BE USED IF THIS WILL BE LINKED IN OTHER TABLE    
+    ,@LinkedColumns = @LinkedColumns -- joining links (field array)    
+    ,@Parameter = @ReportParameter    
+    ,@ShowTotalColumn = @SHOWTOTAL    
+    --,@SuffixForPivotColumn = ' (Earning)'    
+    ,@ReportCode = @ReportCode    
+    ,@OUTPUTCOLNUMS = @PIVOTCOLNUMS out    
+    ,@OUTPUTQUERY = @PIVOTQUERY out    
+    ,@OUTPUTCOLNUMSISNULL = @OUTPUTCOLNUMSISNULL OUT    
+    
+    --GENERATE PIVOT COLUMN NAMES    
+    DECLARE @TMPPIVOTCOLUMNLIST VARCHAR(MAX)    
+    SET @TMPPIVOTCOLUMNLIST = STUFF(REPLACE(REPLACE(ISNULL(','+@PIVOTCOLNUMS,''),','+@JoinPivotAs + '.[',@ARRAYSEPERATOR),']',''),1,1,'')    
+    
+    SET @PIVOTCOLUMNCOUNT = ISNULL(@PIVOTCOLUMNCOUNT,0) + ISNULL((LEN(@PIVOTCOLNUMS) - LEN(REPLACE(@PIVOTCOLNUMS,'[',''))),0)    
+    SET @COLUMNS = REPLACE(@COLUMNS,',T.['+@PIVOTCOLUMNNAME+']',ISNULL(','+@OUTPUTCOLNUMSISNULL,''))    
+    SET @PIVOTCOLUMNLIST = ISNULL(@PIVOTCOLUMNLIST,'') + ISNULL(','+ @TMPPIVOTCOLUMNLIST,'')    
+    
+    --INSERT PIVOT COLUMN IN @COLUMNHEADERDETAILS    
+    UPDATE @COLUMNHEADERDETAILS     
+     SET PIVOTCOLUMNNAMES = @TMPPIVOTCOLUMNLIST     
+     WHERE COLUMNCODE = @PIVOTCOLUMNNAME    
+    
+    IF ISNULL(@PIVOTCOLNUMS,'') <> ''    
+    SET @PIVOTCOL = ISNULL(@PIVOTCOL,'') + ',' + REPLACE(@PIVOTCOLNUMS,@JoinPivotAs + '.','')    
+    
+    
+    UPDATE @PIVOTDETAILS SET     
+     [@PIVOTDETAILS].PIVOTALIAS = @JoinPivotAs,    
+     [@PIVOTDETAILS].PIVOTQUERY = @PIVOTQUERY,    
+     [@PIVOTDETAILS].PIVOTCOLNUMS = @PIVOTCOLNUMS    
+    WHERE PIVOTID = @ID    
+    
+    --INSERT INTO     
+    --@PIVOTDETAILS (PIVOTCOLUMNNAME, PIVOTCOLNUMS, PIVOTQUERY)    
+    --VALUES (@EARNINGDETAIL,@PIVOTCOLNUMS, @PIVOTQUERY)    
+    
+    SET @ID = @ID + 1    
+    SET @COLCOUNT = @COLCOUNT - 1    
+   END    
+    
+  END    
+  /**********************************************************/    
+ END    
+    
+    
+/**********************************************************/    
+--UPDATE INSERT STATEMENT AND ADD THE PIVOT DETAIL COLUMNS    
+/**********************************************************/    
+DECLARE @EXCESSCOL INT  
+  
+IF ISNULL(@INSERTTOREPORTTEMPTABLE,0) = 1    
+BEGIN    
+  DECLARE @FLDFROM SMALLINT = 1    
+  ,@FLDTO SMALLINT = 50    
+  ,@PIVOTCOLUMNDETAIL VARCHAR(MAX)    
+    
+  SELECT @FLDTO = @COLCOUNT + @PIVOTCOLUMNCOUNT    
+  
+ -- SELECT @FLDTO  
+  IF @FLDTO > 250 /* LIMIT NUMBER OF COLUMNS TO 250 ONLY (MAX TMP TABLE CAPACITY) */  
+  BEGIN  
+ SELECT @EXCESSCOL = @FLDTO - 250, @FLDTO = 250  
+  END  
+  
+ -- SELECT * FROM DBO.SplitStrings_XML(@COLUMNS,',[');RETURN  
+    
+  SET @PIVOTCOLUMNDETAIL = (SELECT ',' + '[FIELD' + CAST( number AS varchar) + ']' FROM master..spt_values WHERE number BETWEEN @FLDFROM AND @FLDTO GROUP BY number FOR XML PATH(''), ROOT ('MyString'), TYPE).value('/MyString[1]', 'varchar(max)')    
+  
+  IF ISNULL(@PIVOTCOLUMNDETAIL,'') <> ''    
+  SET @INSERTSTATEMENT = 'INSERT INTO report.ReportDetail(ReportId,ReportProcessId,CompanyId' + @PIVOTCOLUMNDETAIL + ') '    
+    
+END    
+/**********************************************************/    
+    
+    
+ IF (ISNULL(@INSERTTOREPORTTEMPTABLE,0) = 1)    
+ BEGIN    
+      
+  SET @PIVOTCOL = REPLACE(@PIVOTCOL,'],[',@ARRAYSEPERATOR)    
+  SET @PIVOTCOL = SUBSTRING(@PIVOTCOL,3,LEN(@PIVOTCOL) - 2)    
+  DECLARE @GENERATEPIVOT VARCHAR(MAX)    
+    
+  IF ISNULL(@PIVOTCOL,'') = ''    
+   BEGIN    
+    SET @PIVOTCOLDATATYPE = ''    
+    SET @GENERATEPIVOT = ''    
+   END    
+  ELSE    
+   BEGIN    
+    SET @GENERATEPIVOT = ',     
+    @PivotCol = ''' + @PIVOTCOLUMNLIST + ''',     
+    @DATATYPE = ''' + @PIVOTCOLDATATYPE + ''''     
+   END    
+   --select @PIVOTCOLUMNLIST    
+    
+/*  
+DECLARE @DUMMYDATA VARCHAR(MAX)    
+    
+--IF NO DATA, INSERT DUMMY DATA-- FIXES IN SHOW REPORT HEADER EVEN IF NO DATA    
+SET @DUMMYDATA = '    
+ ;IF NOT EXISTS(SELECT ReportProcessId FROM report.ReportDetail WHERE ReportProcessId = '''+ @ReportProcessId  +''' AND ReportId = '+CAST(@REPORTID AS VARCHAR)+')    
+ BEGIN    
+  INSERT INTO report.ReportDetail(ReportId,ReportProcessId) VALUES('+CAST(@REPORTID AS VARCHAR)+','''+ @ReportProcessId  +''')    
+ END;    
+ ';    
+    
+  SET @SELECTTMPTABLE = ';    
+   EXEC report.sprptReportDetails     
+   @ReportId = ' + cast(@REPORTID as varchar) + ',     
+   @ProcessId = ''' + @ReportProcessId + '''' --+ @GENERATEPIVOT    
+    
+    
+  --SET @SELECTTMPTABLE = @DUMMYDATA + @SELECTTMPTABLE    
+  
+  */  
+    
+ END    
+    
+DECLARE @TABLECOLUMNS VARCHAR(MAX)    
+IF ISNULL(@SPUSED,'') <> ''    
+BEGIN    
+ SET @TABLECOLUMNS = stuff((SELECT ',['+t.ReportDataValue + ']' FROM @REPORTDATA t /* LIMIT COLUMN NUMBER TO 250 CHARACTERS */  
+ FOR XML PATH(''), ROOT ('MyString'), TYPE).value('/MyString[1]', 'varchar(max)'),1,1,'')    
+  
+END  
+  
+   
+  --SELECT @COLUMNS,@TABLECOLUMNS,@EXCESSCOL;RETURN  
+/**********************************************************/    
+--GENERATE INSERT QUERY STATEMENTS    
+ SET @CMD = @INSERTSTATEMENT + '    
+ ' + ISNULL(@COLUMNS,'SELECT * ')    
+ + ' FROM ' + @TABLE + ' AS T '    
+ + ISNULL((SELECT CASE WHEN @JOINMETHOD = 1 THEN     
+ '    
+ CROSS APPLY(' ELSE -- USE CROSS APPLY JOIN    
+ '    
+ OUTER APPLY('  -- USE OUTER APPLY JOIN (DEFAULT)    
+ END     
+ + T.PIVOTQUERY + ') AS ' + T.PIVOTALIAS FROM @PIVOTDETAILS T WHERE ISNULL(T.PIVOTQUERY,'') <> '' FOR XML PATH(''), ROOT ('MyString'), TYPE).value('/MyString[1]', 'varchar(max)'),'')    
+    
+ + CASE WHEN ISNULL(RTRIM(@WHERECLAUSE),'') <> '' THEN ' WHERE ' + @WHERECLAUSE ELSE '' END    
+ + CASE WHEN ISNULL(@DEFAULTSORTBY,'')<> '' AND ISNULL(@NoOrderBy,0) = 0 THEN ' ORDER BY ' + @DEFAULTSORTBY ELSE '' END --+ ISNULL(@SELECTTMPTABLE,'')    
+    
+    
+IF ISNULL(@INSERTTOREPORTTEMPTABLE,0) = 1    
+BEGIN    
+------ GENERATE COLUMN HEADERS AND DATATYPE    
+----------------------------------------------------------------------------------------------------------------    
+ DELETE FROM report.TMPREPORTCOLUMN WHERE ReportId = @REPORTID--CLEAR PIVOT COLUMN HEADER    
+ --DECLARE @COLUMNHEADERLIST VARCHAR(MAX) = ''    
+ --SET @COLUMNHEADERLIST = STUFF((SELECT @ARRAYSEPERATOR + T.PIVOTCOLUMNNAMES FROM @COLUMNHEADERDETAILS T FOR XML PATH(''), ROOT ('MyString'), TYPE).value('/MyString[1]', 'varchar(max)'),1,1,'')    
+    
+  DECLARE @ROWID INT = 1    
+    
+   INSERT INTO report.TMPREPORTCOLUMN(ReportProcessId,ReportId,ReportColumn,ReportDataValue,ReportDataType,ColumnOrderNumber)    
+   SELECT    
+   ReportProcessId = @ReportProcessId,    
+   ReportId = @REPORTID,    
+   ReportColumn = C.VALUE,    
+   ReportDataValue = T.COLUMNCODE,    
+   ReportDataType = T.DATATYPE,    
+   ColumnOrderNumber = ROW_NUMBER() OVER(ORDER BY T.ROWID)    
+   FROM @COLUMNHEADERDETAILS T     
+   CROSS APPLY(SELECT * FROM DBO.FN_SPLITWITHID((SELECT TOP 1 REPLACE(PIVOTCOLUMNNAMES,'[ TOTAL',@ARRAYSEPERATOR + 'TOTAL') FROM @COLUMNHEADERDETAILS WHERE ROWID = T.ROWID),@ARRAYSEPERATOR))C    
+    
+    
+   --SELECT * FROM report.TMPREPORTCOLUMN WHERE ReportId = @REPORTID    
+   --SELECT REPLACE(PIVOTCOLUMNNAMES,'[ TOTAL',@ARRAYSEPERATOR + 'TOTAL') FROM @COLUMNHEADERDETAILS    
+----------------------------------------------------------------------------------------------------------------    
+END    
+    
+    
+--REPLACE STORE PARAMETER WITH VALUES    
+BEGIN    
+ DECLARE @TMPID int    
+ SET @TMPID = 1    
+  WHILE EXISTS (SELECT * FROM @ACTUALPARAMS WHERE RowId = @TMPID)    
+  BEGIN    
+   DECLARE @ParamName varchar(150),@ParamValue varchar(max)    
+    
+   SELECT @ParamName = ParamName, @ParamValue = Value FROM @ACTUALPARAMS WHERE RowId = @TMPID AND LEFT(ParamName,1) = '@'    
+    
+   IF NOT @ParamName IS NULL    
+   BEGIN    
+    SET @CMD = REPLACE(@CMD,RTRIM(@ParamName),@ParamValue)    
+   END    
+    
+   SET @TMPID = @TMPID + 1    
+  END    
+END    
+    
+  --PRINT @CMD ;RETURN  
+  
+--EXECUTE PROCESS    
+  IF ISNULL(@TestQuery,0) = 1     
+   SELECT @CMD    
+  ELSE    
+  BEGIN  
+ BEGIN TRY  
+  EXEC sys.sp_executesql @CMD,N'@UserSecurityId bigint',@UserSecurityId  
+ END TRY  
+ BEGIN CATCH  
+  SELECT @COLUMNS,@TABLECOLUMNS  
+  PRINT ERROR_MESSAGE()  
+ END CATCH  
+  
+ IF (ISNULL(@INSERTTOREPORTTEMPTABLE,0) = 1)  
+ BEGIN  
+  SET @CMD = ';IF NOT EXISTS(SELECT * FROM report.ReportDetail WHERE ReportId=@ReportId AND ReportProcessId = @ReportProcessId)  
+  BEGIN   
+   INSERT INTO report.ReportDetail(ReportId,ReportProcessId)VALUES(@REPORTID,@ReportProcessId);  
+  END  
+  '  
+  /* generate dummy data if no generated result */  
+  EXEC sys.sp_executesql @CMD,N'@REPORTID bigint,@ReportProcessId VARCHAR(50)',@REPORTID, @ReportProcessId;  
+  
+  /* show generated result */  
+  EXEC report.sprptReportDetails @ReportId = @REPORTID, @ProcessId = @ReportProcessId;  
+ END  
+  
+  END  
+  
+    
+      
+/**********************************************************/    
+    
+ BEGIN TRY    
+ /*DROPS GENERATED UNIQUE TETMP TABLE*/    
+ IF ISNULL(@SPUSED,'') <> ''     
+ BEGIN    
+  SET @CMD = 'DROP TABLE ' + @TABLE    
+  EXEC sys.sp_executesql @CMD    
+ END    
+ END TRY    
+ BEGIN CATCH    
+  PRINT ERROR_MESSAGE()    
+  SELECT @CMD  
+ END CATCH    
+    
+--CLEAR REPORT TEMP TABLE    
+ DELETE FROM report.ReportDetail WHERE ReportProcessId = @ReportProcessId AND ReportId = @REPORTID    
+ DELETE FROM [report].[ParameterValue] WHERE ReportId = @REPORTID AND ReportProcessId = @ReportProcessId
+ 
+
+/*AUDIT TRAIL -- added by RME.05.04.2020*/
+BEGIN
+	 DECLARE @USER VARCHAR(50),@OLDVALUES VARCHAR (MAX), @NEWVALUES varchar(max)
+	 SELECT TOP 1 @USER = Username FROM security.UserSecurity WHERE UserSecurityId = @UserSecurityId
+	 SELECT TOP 1 @OLDVALUES = OldData FROM maintenance.Audit WHERE TableName = @ReportCode AND UserId = @USER AND TableIdValue = @REPORTID ORDER BY Id DESC
+
+
+	SELECT @NEWVALUES = STUFF((
+	SELECT concat(' || ',rp.LabelName,'=',pv.ParamValue) FROM report.ReportParameter rp
+	CROSS APPLY(SELECT [VALUE] FROM dbo.SplitStrings_XML(rp.ParameterName,','))p
+	JOIN (SELECT ParamName = replace(pn.ParamName,'=',''), ParamValue = replace(replace(p.[VALUE],pn.ParamName,''),'''','') FROM dbo.SplitStrings_XML(@ReportParameter,'|') p
+	cross APPLY(select ParamName = substring(p.[VALUE],1, charindex('=',p.[VALUE])), td = charindex('=',p.[VALUE]))pn)pv ON replace(pv.ParamName,'@','') = replace(p.[VALUE],'@','')
+	where isnull(rp.Hidden,0) = 0
+	and rp.ReportCode = @ReportCode FOR XML PATH(''), ROOT ('MyString'), TYPE).value('/MyString[1]', 'varchar(max)'),1,4,'')
+
+
+	INSERT INTO maintenance.[Audit](TableName, UserId, Actions, OldData, NewData, TableIdValue, UpdateDate, CreateId, CreateDate)
+	VALUES(@ReportCode,@USER, 'Print', @OLDVALUES, @NEWVALUES, @REPORTID, GETDATE(), @UserSecurityId, GETDATE());
+END
+
+    
+END TRY    
+BEGIN CATCH    
+END CATCH    
+     
+ DELETE FROM [report].[ParameterValue] WHERE ReportId = @REPORTID AND ReportProcessId = @ReportProcessId    
+    
+END    
+   

@@ -1,0 +1,130 @@
+SET NOCOUNT ON
+/*start deleting existing report configs*/
+DELETE FROM report.Report WHERE ReportId IN (202)
+DELETE FROM report.ReportData WHERE ReportId IN (202)
+DELETE FROM report.ReportParameter WHERE ReportCode IN ('ExpenseReport')
+DELETE FROM report.ReportSubReport WHERE ReportCode  IN ('ExpenseReport')
+DELETE FROM report.ReportMenu WHERE ReportId IN (202)
+/*end deleting existing report configs*/
+
+/*start insert data to report.Report*/
+SET IDENTITY_INSERT [report].[Report] ON
+INSERT [report].[Report] ([ReportId],[ReportCode],[ReportName],[ReportFile],[ReportExcelFile],[EmploymentStatus],[TableSPUsed],[SPUsed],[NoOrderBy],[QueryType],[InsertToReportTempTable],[Description],[ImageFile],[SortFields],[Event],[ExportFormat],[CreateId],[Createdate],[LastUpdateId],[LastUpdateDate],[UseExportToExcelAPI],[DetailColStartPos],[DetailRowStartPos],[HeaderRowStartPos],[IncludeColHeader],[InsertNewRowAtRowPos],[Template],[SourceName],[ShowGrandTotals],[RepeatColumnHeaderOnHeaderGroup],[RepeatColumnHeaderOnGroupLevel],[AutoSizeColumn],[MaxRowPerPage],[DisplayReportHeader])VALUES(202,'ExpenseReport','Expense Report','\Reports\AccountabilityReports\ExpenseReport.rpt',NULL,NULL,'SELECT      
+	ExpenseType = 
+	(
+		SELECT TOP 1
+			es.ExpenseType
+		FROM accountability.ExpenseSetup es
+		WHERE es.ExpenseSetupId = ERP.ExpenseSetupId
+	)
+	,ERP.ExpenseDate
+	,ERP.ORNo
+	,Vendor = 
+	(
+		SELECT TOP 1
+			v.Name
+		FROM accountability.Vendor v
+		WHERE v.VendorId = ERP.VendorId
+	)
+	,ERP.Amount
+	,ExpenseReportNo = ER.ReportNo
+	,ER.ReportDate
+	,TotalAmount = SUM(ISNULL(ER.Amount, 0))
+	,ER.AmountIssued
+	,Balance = SUM(ISNULL(ER.Balance, 0))
+	,SubmittedBy = ISNULL(E.LastFirstMIName,'''')
+	,ER.ExpenseReportId
+	,Notes = ISNULL(ERP.Notes,'''')
+	,ApprovedBy = ISNULL(WFT.ApproverName,'''')
+	,E.CompanyId
+FROM accountability.ExpenseReportDetail ERP
+OUTER APPLY 
+(
+	SELECT TOP 1
+		er.ReportNo
+		,er.ReportDate
+		,er.AmountIssued
+		,er.Balance
+		,er.Amount
+		,er.ProfileId
+		,er.ExpenseReportId
+	FROM accountability.ExpenseReport er
+	WHERE er.ExpenseReportId = ERP.ExpenseReportId
+) ER
+INNER JOIN employee.Profile EP ON EP.ProfileId = ER.ProfileId
+CROSS APPLY 
+(
+	SELECT TOP 1
+		e.LastFirstMIName
+		,e.CompanyId
+	FROM dbo.fnProfileInfo(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0) e
+	WHERE e.ProfileId = EP.ProfileId
+) E
+
+OUTER APPLY
+(
+	SELECT TOP 1
+		ApproverName = EI.FullNameMiddleInitialOnly
+		,EI.Position
+		,WFTH.ApproverId 
+	FROM workflow.WFTransactionHistory WFTH
+	JOIN employee.FN_GETEmployeeInformation() EI ON EI.ProfileId = WFTH.ApproverId
+	WHERE WFTH.TransactionTypeId = 18 /*EXPENSE REPORT*/
+	AND WFTH.ActionTriggeredId = 1
+	AND WFTH.TransactionId = @ExpenseReportId
+	ORDER BY WFTH.WFTransactionHistoryId 
+)WFT
+
+WHERE 1=1
+AND ER.ExpenseReportId = @ExpenseReportId
+
+GROUP BY	
+	ERP.ExpenseSetupId
+	,ERP.ExpenseDate
+	,ERP.ORNo
+	,ERP.VendorId
+	,ERP.Amount
+	,ER.ReportNo
+	,ER.ReportDate
+	,ER.AmountIssued
+	,E.LastFirstMIName
+	,ER.ExpenseReportId
+	,E.CompanyId
+	,ERP.Notes
+	,WFT.ApproverName',NULL,NULL,'QUERY',1,'',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+SET IDENTITY_INSERT [report].[Report] OFF
+/*end insert data to report.Report*/
+
+/*start insert data to report.ReportData*/
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(202,'ExpenseType','ExpenseType','string','','',NULL,1,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(202,'ExpenseDate','ExpenseDate','date','','',NULL,2,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(202,'ORNo','ORNo','string','','',NULL,3,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(202,'Vendor','Vendor','string','','',NULL,4,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(202,'Amount','Amount','decimal','','',NULL,5,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(202,'ExpenseReportNo','ExpenseReportNo','string','','',NULL,6,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(202,'ReportDate','ReportDate','date','','',NULL,7,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(202,'Amount','TotalAmount','decimal','','',NULL,8,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(202,'AmountIssued','AmountIssued','decimal','','',NULL,9,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(202,'Balance','Balance','decimal','','',NULL,10,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(202,'SubmittedBy','SubmittedBy','string','','',NULL,11,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(202,'Notes','Notes','string','','',NULL,12,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(202,'Approved By','ApprovedBy','string','','',NULL,13,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+/*end insert data to report.ReportData*/
+
+/*start insert data to report.ReportParameter*/
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat])VALUES('ExpenseReport','@ExpenseReportId','Expense ID','textbox','','',1,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+/*end insert data to report.ReportParameter*/
+
+/*start insert data to report.ReportSubReport*/
+/*end insert data to report.ReportSubReport*/
+
+/*start insert data to report.ReportMenu*/
+INSERT [report].[ReportMenu] ([ReportId],[AdminMenuModuleId],[MenuModuleId],[ReportGroupId],[ModuleFormId],[FileGeneratorHdrId],[XMLReportId],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES(202,0,0,NULL,218,0,0,NULL,NULL,NULL,NULL)
+/*end insert data to report.ReportMenu*/
+
+/*start insert data to security.Module_Forms*/
+SET IDENTITY_INSERT [security].[Module_Forms] ON
+SET IDENTITY_INSERT [security].[Module_Forms] OFF
+/*end insert data to security.Module_Forms*/
+
+SET NOCOUNT OFF

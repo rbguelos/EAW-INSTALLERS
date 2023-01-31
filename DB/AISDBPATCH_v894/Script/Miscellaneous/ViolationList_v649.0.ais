@@ -1,0 +1,4 @@
+EXEC [maintenance].[UpdateJQListColumns]
+	@ListType = 'ViolationColumnList', @ColumnType = 'date',
+	@Name = 'ViolationDate', @Label = 'ViolationDate', @Width = '120',
+	@Align = '', @Formatter = 'AIS_JQChildCustomDate', @FormatterOption = '', @Others = ''

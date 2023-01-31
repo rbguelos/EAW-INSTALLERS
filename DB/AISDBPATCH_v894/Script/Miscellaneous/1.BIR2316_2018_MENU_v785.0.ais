@@ -1,0 +1,58 @@
+SET NOCOUNT ON
+/*start deleting existing menu configs*/
+DELETE FROM admin.MenuSubMenu WHERE MenuSubMenuId = 156
+DELETE FROM admin.SecurityMapping WHERE MenuSubMenuId = 156
+DELETE FROM security.Module_Forms WHERE ModuleFormId = 133
+/*end deleting existing menu configs*/
+
+/* start insert data to admin.MenuSubMenu */
+SET IDENTITY_INSERT [admin].[MenuSubMenu] ON
+INSERT [admin].[MenuSubMenu] ([MenuSubMenuId],[MenuMenuId],[SubMenuName],[SubMenuIcon],[SubMenuLink],[SortOrder],[Hidden],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES(156,92,'BIR 2316 (NEW)','','/XMLExcelReportGenerator/Form?reportName=BIR2316_v2018&reportType=E',10,0,NULL,NULL,NULL,NULL)
+SET IDENTITY_INSERT [admin].[MenuSubMenu] OFF
+/* end insert data to admin.MenuSubMenu */
+
+/* start insert data to admin.SecurityMapping */
+INSERT [admin].[SecurityMapping] ([MenuMenuId],[MenuSubMenuId],[SecurityFormId],[AccessTypeId],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES(92,156,133,'1',NULL,NULL,NULL,NULL)
+/* end insert data to admin.SecurityMapping */
+
+/* start insert data to security.Module_Forms */
+SET IDENTITY_INSERT [security].[Module_Forms] ON
+INSERT [security].[Module_Forms] ([ModuleFormId],[ModuleId],[Name],[Form],[AccessTypeId],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES(133,40,'BIR 2316','BIR 2316','1,25,26',NULL,NULL,-999,'Nov  9 2016  9:59:47:157AM')
+SET IDENTITY_INSERT [security].[Module_Forms] OFF
+/* end insert data to security.Module_Forms */
+
+/*start insert data to security.Role_FormAccess*/
+INSERT INTO security.Role_FormAccess([RoleId],[ModuleId],[ModuleFormId],[AccessTypeId]) 
+				SELECT 
+				[RoleId] = RF.RoleId,
+				[ModuleId] = F.ModuleId,
+				[ModuleFormId] = F.ModuleFormId,
+				[AccessTypeId] = F.AccessTypeId
+				FROM security.Module_Forms F
+				OUTER APPLY (SELECT DISTINCT RoleId FROM security.Role_FormAccess WHERE ModuleId = 40) RF
+				WHERE F.ModuleFormId = 133
+				AND RF.RoleId NOT IN (SELECT DISTINCT RoleId FROM security.Role_FormAccess WHERE ModuleFormId = 133)
+/*end insert data to security.Role_FormAccess*/
+
+/*start insert data to security.UserSecurity_Detail*/
+INSERT INTO security.UserSecurity_Detail([UserSecurityId],[ModuleFormId],[AccessTypeId],[ModuleId])
+				SELECT
+				[UserSecurityId] = US.UserSecurityId
+				,[ModuleFormId] = F.ModuleFormId
+				,[AccessTypeId] = F.AccessTypeId
+				,[ModuleId] = F.ModuleId
+				FROM security.Module_Forms F
+				OUTER APPLY (SELECT DISTINCT UserSecurityId FROM security.UserSecurity_Detail WHERE ModuleId = 40) US
+				WHERE F.ModuleFormId = 133
+				AND US.UserSecurityId NOT IN (SELECT UserSecurityId FROM security.UserSecurity_Detail WHERE ModuleFormId = 133 AND UserSecurityId IS NOT NULL)
+/*end insert data to security.UserSecurity_Detail*/
+SET NOCOUNT OFF
+
+/*UPDATE SORTING*/
+UPDATE admin.MenuSubMenu SET SortOrder = 4 WHERE MenuSubMenuId = 156
+UPDATE admin.MenuSubMenu SET SortOrder = 5 WHERE MenuSubMenuId = 54
+UPDATE admin.MenuSubMenu SET SortOrder = 6 WHERE MenuSubMenuId = 55
+UPDATE admin.MenuSubMenu SET SortOrder = 7 WHERE MenuSubMenuId = 56
+UPDATE admin.MenuSubMenu SET SortOrder = 8 WHERE MenuSubMenuId = 57
+UPDATE admin.MenuSubMenu SET SortOrder = 9 WHERE MenuSubMenuId = 58
+UPDATE admin.MenuSubMenu SET SortOrder = 10 WHERE MenuSubMenuId = 143

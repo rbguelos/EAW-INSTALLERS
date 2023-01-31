@@ -1,0 +1,181 @@
+IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[payroll].[spGenerateLoanRemittance]') AND type in (N'P', N'PC'))
+DROP PROCEDURE [payroll].[spGenerateLoanRemittance]
+GO
+/****** Object:  StoredProcedure [payroll].[spGenerateLoanRemittance]    Script Date: 5/30/2019 5:06:50 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[payroll].[spGenerateLoanRemittance]') AND type in (N'P', N'PC'))
+BEGIN
+EXEC dbo.sp_executesql @statement = N'CREATE PROCEDURE [payroll].[spGenerateLoanRemittance] AS' 
+END
+GO
+/*===========================================*\
+**	   Last Update Date: 05/31/2019
+**	   Last Update By: Kris
+**	   Last DBVersion executed: v699
+\*===========================================*/
+ALTER PROCEDURE [payroll].[spGenerateLoanRemittance]
+(
+	 @MON SMALLINT = 0
+	,@YR SMALLINT = 0
+	,@LoanTypeSetupIds varchar(max) = '' 
+	,@CompanyId BIGINT = 0
+	,@BranchId BIGINT  = 0
+	,@LoanRemittancePaymentDetailId BIGINT = 0
+)
+AS
+BEGIN
+	SET NOCOUNT ON;
+
+--Constants - LenderValue
+DECLARE @LenderValue_SSS smallint = 1
+DECLARE @LenderValue_PAGIBIG smallint = 2
+DECLARE @LenderValue_COMPANY smallint = 3
+
+--Constants - LoanPaymentMethodType
+DECLARE @LoanPaymentMethodType_ManualPayment smallint = 1
+DECLARE @LoanPaymentMethodType_SalaryDeduction smallint = 2
+	
+;WITH
+	CTE_LOANPAYMENTS
+	(
+		 LoanRequestId 
+		,LoanRequestPaymentId 
+		,MonthYear 
+		,CompanyId 
+		,BranchId 
+		,ProfileId 
+		,EmployeeName
+		,IssuedDate 
+		,LenderName
+		,Membernumber 
+		,LoanTypeSetupId 
+		,LoanTypeSetupCode 
+		,LoanTypeSetupLenderName
+		,AmountPaid
+		,Penalty 
+		,Interest
+		,TotalAmount 
+	)
+	AS
+	(
+		--================================================
+		--LOAN PAID THRU ***PAYSHEET METHOD***
+		--================================================
+		SELECT 
+			--LoanRequestId
+			 LoanRequestId = LoanRequest.LoanRequestId
+			
+			--LoanRequestPaymentId
+			,LoanRequestPaymentId = LoanRequestPayment.LoanRequestPaymentId
+			
+			--MonthYear
+			,MonthYear = PaySheetHeader.MonthYear
+			
+			--CompanyId
+			,CompanyId = COALESCE(EMP.CompanyId,0)
+			
+			--BranchId
+			,BranchId = COALESCE(EMP.BranchId,0)
+			
+			--ProfileId
+			,ProfileId = EMP.ProfileId
+			
+			--EmployeeName
+			,EmployeeName = EMP.FullNameMiddleInitialOnly	
+			
+			--IssuedDate
+			,IssuedDate = PaySheetHeader.IssuedDate
+			
+			--LenderName
+			,LenderName = COALESCE(Lender.LenderName,'')
+			
+			--Membernumber
+			,Membernumber = 
+			(
+					case lender.value
+						--//==sss number
+						when @lendervalue_sss
+							then coalesce(EMP.sss,'')
+						--//==pagibig number
+						when @lendervalue_pagibig
+							then coalesce(EMP.pagibig,'')
+						else ''
+					end
+			)
+
+			--LoanTypeSetupId
+			,LoanTypeSetupId = LoanTypeSetup.LoanTypeSetupId
+			
+			--LoanTypeSetupCode
+			,LoanTypeSetupCode = LoanTypeSetup.Code
+			
+			--LoanTypeSetupLenderName
+			,LoanTypeSetupLenderName = LoanTypeSetup.LenderName
+			
+			--AmountPaid
+			,AmountPaid = LoanRequestPayment.Amount
+			
+			--Penalty
+			,Penalty = LoanRequestPayment.PenaltyAmount
+			
+			--Interest
+			,Interest = CAST(0 AS DECIMAL(18,4))
+			
+			--TotalAmount
+			,TotalAmount = (LoanRequestPayment.PenaltyAmount +  LoanRequestPayment.Amount)
+		FROM payroll.PaysheetLoan
+			--PaySheetHeaderDetail
+			LEFT JOIN payroll.PaySheetHeaderDetail ON PaysheetLoan.PaySheetHeaderDetailId =PaySheetHeaderDetail.PaySheetHeaderDetailId
+			--PaySheetHeader
+			LEFT JOIN payroll.PaySheetHeader ON PaySheetHeaderDetail.PaySheetHeaderId =PaySheetHeader.PaySheetHeaderId
+			--LoanRequest
+			LEFT JOIN payroll.LoanRequest ON PaysheetLoan.TransactionId = LoanRequest.LoanRequestId
+			--LoanRequestPayment
+			OUTER APPLY
+			(
+				SELECT *
+				FROM payroll.LoanRequestPayment
+				WHERE 
+					LoanRequestPayment.PaysheetHeaderId = PaySheetHeader.PaysheetHeaderId
+				AND LoanRequestPayment.LoanRequestId = PaysheetLoan.TransactionId
+			) LoanRequestPayment
+			--LoanTypeSetup
+			LEFT JOIN maintenance.LoanTypeSetup ON LoanRequest.LoanTypeSetupId =LoanTypeSetup.LoanTypeSetupId
+			--Lender
+			LEFT JOIN maintenance.Lender ON LoanTypeSetup.LenderValue =Lender.Value
+			--EMP
+			LEFT JOIN employee.FN_GETEmployeeInformation() EMP ON LoanRequest.ProfileId = EMP.ProfileId
+	)
+	--==END OF CTE==========
+	SELECT * 
+	FROM CTE_LOANPAYMENTS LP
+	WHERE	
+			(MONTH(LP.MonthYear)	= COALESCE(@MON,0))
+		AND	(YEAR(LP.MonthYear)		= COALESCE(@YR,0))
+		AND (COALESCE(@CompanyId,0) = 0 OR LP.CompanyId = COALESCE(@CompanyId,0))
+		AND (COALESCE(@BranchId,0)	= 0 OR LP.BranchId  = COALESCE(@BranchId,0))
+		--NOT ALL LoanTypeSetupId, ONLY ***SELECTED**** LoanTypeSetupIds..  
+		AND (LP.LoanTypeSetupId IN (
+									SELECT 
+										LoanTypeSetupIds.VALUE 
+									FROM dbo.FN_SPLITWITHID(COALESCE(@LoanTypeSetupIds,''),',') LoanTypeSetupIds
+									))
+		AND (LP.LoanRequestPaymentId NOT IN (
+												SELECT 
+													COALESCE(LoanRemittanceDetail.LoanRequestPaymentId,0) LoanRequestPaymentId
+												FROM payroll.LoanRemittanceDetail
+													join payroll.LoanRemittancePaymentDetail ON LoanRemittanceDetail.LoanRemittancePaymentDetailId = LoanRemittancePaymentDetail.LoanRemittancePaymentDetailId
+												WHERE
+													(LoanRemittancePaymentDetail.LoanRemittancePaymentDetailId != COALESCE(@LoanRemittancePaymentDetailId,0))
+											))
+
+	--Order by EmployeeName, IssuedDate
+	ORDER BY LP.EmployeeName,LP.IssuedDate
+	
+
+END
+
+GO

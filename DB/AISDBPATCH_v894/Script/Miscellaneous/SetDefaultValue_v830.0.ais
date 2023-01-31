@@ -1,0 +1,5 @@
+UPDATE maintenance.Company SET SSSLabel = 'SSS' WHERE ISNULL(SSSLabel, '') = ''
+  UPDATE maintenance.Company SET PhilhealthLabel = 'Philhealth' WHERE ISNULL(PhilhealthLabel, '') = ''
+  UPDATE maintenance.Company SET PAGIBIGLabel = 'Pagibig' WHERE ISNULL(PAGIBIGLabel, '') = ''
+  UPDATE maintenance.Company SET PAGIBIGESLabel = 'Pagibig ES' WHERE ISNULL(PAGIBIGESLabel, '') = ''
+  UPDATE maintenance.Company SET WHTLabel = 'WHT' WHERE ISNULL(WHTLabel, '') = ''

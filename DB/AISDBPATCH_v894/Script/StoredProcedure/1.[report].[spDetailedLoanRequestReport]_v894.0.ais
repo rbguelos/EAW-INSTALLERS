@@ -1,0 +1,224 @@
+
+IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[report].[spDetailedLoanRequestReport]') AND type in (N'P', N'PC'))
+DROP PROCEDURE [report].[spDetailedLoanRequestReport]
+GO
+-- =============================================
+-- Author:		    Jomari Rimbao
+-- Create date:     07/14/2020
+-- Description:     Used in Detailed Loan Request Report
+-- =============================================
+CREATE PROCEDURE [report].[spDetailedLoanRequestReport] 
+    --DECLARE
+ @StartDateRequest Date = '01/01/2016'
+,@EndDateRequest Date = '01/01/2016'
+,@PaymentDateFrom Date = '01/01/2016'
+,@PaymentDateTo Date = '01/01/2016'
+,@StatusId varchar(max) = ''
+,@LoanTypeSetupId varchar(max) = ''
+,@ShowPaymentDetail BIT = 0
+,@UserSecurityId Bigint = 10165
+,@BranchId BIGINT = 0
+,@DepartmentId BIGINT = 0
+,@OfficeId BIGINT = 0
+,@DivisionId BIGINT = 0
+,@GroupId BIGINT = 0
+,@IncludeInactiveEmployees BIT = 0
+
+AS
+BEGIN
+SET NOCOUNT ON;	
+
+
+DECLARE @ReportId BIGINT = (SELECT TOP 1 r.ReportId FROM report.Report r Where r.ReportCode = 'DetailedLoanRequestReport');
+DECLARE @TMPTABLENAME VARCHAR(200) = 'report.TMPDetailedLoanRequestReport'
+IF EXISTS(SELECT TOP 1 object_id FROM sys.tables WHERE object_id = object_id(@TMPTABLENAME))
+EXEC('DROP TABLE ' + @TMPTABLENAME)
+
+--DECLARE @StartDateRequest_ VARCHAR(100) =  @StartDateRequest 
+--DECLARE @EndDateRequest_ VARCHAR(100) = @EndDateRequest 
+--DECLARE @PaymentDateFrom_ VARCHAR(100) = @PaymentDateFrom 
+--DECLARE @PaymentDateTo_ VARCHAR(100) = @PaymentDateTo 
+DECLARE @UserSecurityId_ VARCHAR(10) = CAST(@UserSecurityId AS VARCHAR(100))
+DECLARE @BranchId_ VARCHAR(10) = CAST(@BranchId AS VARCHAR(10))
+--DECLARE @DepartmentId_ VARCHAR(200) = CAST(@DepartmentId AS VARCHAR(200))
+DECLARE @DepartmentId_ VARCHAR(10) = CAST(@DepartmentId AS VARCHAR(10))
+DECLARE @OfficeId_ VARCHAR(10) = CAST(@OfficeId AS VARCHAR(10))
+DECLARE @DivisionId_ VARCHAR(10) = CAST(@DivisionId AS VARCHAR(10))
+DECLARE @GroupId_ VARCHAR(10) = CAST(@GroupId AS VARCHAR(10))
+DECLARE @EmployeeTypeIds VARCHAR(10) = (CASE WHEN @IncludeInactiveEmployees = 1 THEN '''1,2''' ELSE '''0''' END)
+
+/*DROP TEMP TABLE IF EXISTS*/
+
+DECLARE @QUERY VARCHAR(MAX) = 
+'SELECT 
+	 [Employee Number] = E.EmployeeNo
+	,[Loan No.] = ISNULL(LR.LoanRequestNumber,'''')
+	,[Request Date] = LR.DateRequest
+	,[Loan Type] = ISNULL(LTS.Description,'''')
+	,[Purpose] = ISNULL(LR.Purpose,'''')
+	,[Requested Amount] = ISNULL(LR.RequestedAmount,0) /* Loan Request */
+	,[Loan Amount] = ISNULL(LR.LoanAmount,0) /* Loan Request */
+	,[Resume Date] = LR.ResumeDate	
+	,[Issuance Method] = ISNULL(IssuanceMethod.DisplayText,'''')
+	,[Voucher No] = ISNULL(LR.VoucherNumber,'''')
+	,[Voucher Date]= LR.VoucherDate
+	,[Charge Slip No] = ISNULL(LR.ChargeSlipNumber,'''')
+	,[Reference No.] = ISNULL(LR.ReferenceNumber,'''')
+	,[Remarks] = ISNULL(LR.Remarks,'''')
+	,[Interest Calculation] = ISNULL(InterestCalculation.DisplayText,'''')
+	,[Adv Interest Rate]= ISNULL(LR.AdvanceInterestPercent,0)  /* Loan Request */
+	,[Advance Interest Amount] = ISNULL(LR.AdvanceInterestAmount,0)  /* Loan Request */
+	,[Add On InterestRate] = ISNULL(LR.AddOnInterestPercent,0)  /* Loan Request */
+	,[Add On Interest Amount] = ISNULL(LR.AddOnInterestAmount,0)  /* Loan Request */
+	,[Actual Loan Amount] = ISNULL(LR.ActualLoanAmount,0) /* Loan Request */
+	,[Total Amount Due] = ISNULL(LR.TotalAmountDue,0) /* Loan Request */
+	,[Penalty Rate] = ISNULL(LR.PenaltyPercent,0) /* Loan Request */
+	,[Penalty Amount] = ISNULL(LR.PenaltyAmount,0) /* Loan Request */
+
+	,[Issue Date/Payment Date] =  LRP.PaymentDate 
+	,[Payment Method] = ISNULL(LoanPaymentMethodType.DisplayText,'''') 
+	,[Amount Paid] = ISNULL(LRP.Amount,0) 
+
+
+	,[Balance] = ISNULL(LR.Balance,0)  /* Loan Request */
+	,[Number Of Pay Period]= ISNULL(LR.NumberOfPayPeriod,0) /* Loan Request */
+	,[Amortization] = ISNULL(LR.Amortization,0) /* Loan Request */
+	,[Frequency] = ISNULL(DeductionPaymentFrequency.DisplayText,'''')
+	,[First Payment Date] = LR.FirstPaymentDate
+	,[Status] = Status.name
+	,[Approved By] = ISNULL((Select Username FROM security.UserSecurity Where UserSecurityId = LR.ApprovedId),'''')
+	,[Approved Date] = LR.DateOfApproval
+	,E.CompanyId
+	INTO '+@TMPTABLENAME+'
+FROM payroll.LoanRequest LR
+INNER JOIN dbo.fnProfileInfoWithScope(' + @UserSecurityId_ + ',0,0,0,0,0,0,0,0,0,0,0,0,0,' + @EmployeeTypeIds + ',0,0,0,0,0,0,0,0) E ON LR.ProfileId = E.ProfileId
+LEFT JOIN payroll.LoanRequestPayment LRP ON LRP.LoanRequestId = LR.LoanRequestId
+LEFT JOIN maintenance.LoanTypeSetup LTS ON LTS.LoanTypeSetupId = LR.LoanTypeSetupId 
+LEFT JOIN maintenance.Status Status ON Status.Value = LR.StatusId
+LEFT JOIN  maintenance.EnumValues IssuanceMethod ON IssuanceMethod.SourceName = ''IssuanceMethod'' AND IssuanceMethod.Value = LR.IssuanceMethodId
+LEFT JOIN  maintenance.EnumValues InterestCalculation ON InterestCalculation.SourceName = ''InterestCalculation'' AND InterestCalculation.Value = LR.InterestCalculationId
+LEFT JOIN  maintenance.EnumValues LoanPaymentMethodType  ON LoanPaymentMethodType.SourceName = ''LoanPaymentMethodType''  AND LoanPaymentMethodType.Value = LRP.PaymentMethodId
+LEFT JOIN  maintenance.EnumValues DeductionPaymentFrequency ON DeductionPaymentFrequency.SourceName = ''DeductionPaymentFrequency'' AND DeductionPaymentFrequency.Value = LR.PaymentFrequencyId
+WHERE
+
+    (
+	   CAST(ISNULL('''+ CAST(@StartDateRequest AS VARCHAR(MAX)) +''',''1/1/1900'') AS DATE) <= CAST(''1/1/1900'' AS DATE)
+	   OR (CAST(LR.DateRequest AS DATE) >= CAST('''+CAST(@StartDateRequest AS VARCHAR(max))+''' AS DATE))
+    )
+    AND
+    (
+	   CAST(ISNULL('''+CAST(@EndDateRequest AS VARCHAR(MAX))+''',''1/1/1900'') AS DATE) <= CAST(''1/1/1900'' AS DATE) 
+	   OR (CAST(LR.DateRequest AS DATE) <= CAST('''+CAST(@EndDateRequest AS VARCHAR(MAX))+''' AS DATE))
+    )
+	AND
+	(
+	   CAST(ISNULL('''+ CAST(@PaymentDateFrom AS VARCHAR(MAX)) +''',''1/1/1900'') AS DATE) <= CAST(''1/1/1900'' AS DATE)
+	   OR (CAST(LRP.PaymentDate AS DATE) >= CAST('''+CAST(@PaymentDateFrom AS VARCHAR(MAX))+''' AS DATE))
+    )
+    AND
+    (
+	   CAST(ISNULL('''+CAST(@PaymentDateTo AS VARCHAR(MAX)) +''',''1/1/1900'') AS DATE) <= CAST(''1/1/1900'' AS DATE) 
+	   OR (CAST(LRP.PaymentDate AS DATE) <= CAST('''+CAST(@PaymentDateTo AS VARCHAR(MAX))+''' AS DATE))
+    )
+	AND (ISNULL('+ @OfficeId_ +',0) = 0 OR E.OfficeId = '+ @OfficeId_ +')
+	AND (ISNULL('+ @GroupId_ +',0) = 0 OR E.GroupsCodeId = '+ @GroupId_ +')
+	AND (ISNULL('+ @DepartmentId_ +',0) = 0 OR E.TeamCodeId = '+ @DepartmentId_ +')
+	AND (ISNULL('+ @DivisionId_ +',0) = 0 OR E.DivisionId = '+ @DivisionId_ +')
+	AND (ISNULL('+ @BranchId_ +',0) = 0 OR E.BranchId = '+ @BranchId_ +')
+'
++ CASE WHEN ISNULL(@StatusId,'') <> '' THEN ' AND LR.StatusId IN (' + @StatusId + ')' ELSE '' END
++ CASE WHEN ISNULL(@LoanTypeSetupId,'') <> '' THEN ' AND LR.LoanTypeSetupId IN (' + @LoanTypeSetupId + ')' ELSE '' END 
+ 
+
+DECLARE @QUERY2 VARCHAR(MAX) = 
+'SELECT 
+	 [Employee Number] = E.EmployeeNo
+	,[Loan No.] = ISNULL(LR.LoanRequestNumber,'''')
+	,[Request Date] = LR.DateRequest
+	,[Loan Type] = ISNULL(LTS.Description,'''')
+	,[Purpose] = ISNULL(LR.Purpose,'''')
+	,[Requested Amount] = ISNULL(LR.RequestedAmount,0)
+	,[Loan Amount] = ISNULL(LR.LoanAmount,0)
+	,[Resume Date] = LR.ResumeDate
+	,[Issuance Method] = ISNULL(IssuanceMethod.DisplayText,'''')
+	,[Voucher No] = ISNULL(LR.VoucherNumber,'''')
+	,[Voucher Date]= LR.VoucherDate
+	,[Charge Slip No] = ISNULL(LR.ChargeSlipNumber,'''')
+	,[Reference No.] = ISNULL(LR.ReferenceNumber,'''')
+	,[Remarks] = ISNULL(LR.Remarks,'''')
+	,[Interest Calculation] = ISNULL(InterestCalculation.DisplayText,'''')
+	,[Adv Interest Rate]= ISNULL(LR.AdvanceInterestPercent,0)
+	,[Advance Interest Amount] = ISNULL(LR.AdvanceInterestAmount,0)
+	,[Add On InterestRate] = ISNULL(LR.AddOnInterestPercent,0)
+	,[Add On Interest Amount] = ISNULL(LR.AddOnInterestAmount,0)
+	,[Actual Loan Amount] = ISNULL(LR.ActualLoanAmount,0)
+	,[Total Amount Due] = ISNULL(LR.TotalAmountDue,0)
+	,[Amount Paid] = ISNULL(LR.AmountPaid,0)
+	,[Balance] = ISNULL(LR.Balance,0)
+	,[No of Pay Period] = ISNULL(LR.NumberOfPayPeriod,0)
+	,[Amortization] = ISNULL(LR.Amortization,0)
+	,[Frequency] = ISNULL(DeductionPaymentFrequency.DisplayText,'''')
+	,[First Payment Date] = LR.FirstPaymentDate
+	,[Status] = Status.name
+	,[Approved By] = ISNULL((Select Username FROM security.UserSecurity Where UserSecurityId = LR.ApprovedId),'''')
+	,[Approved Date] = LR.DateOfApproval 
+	,E.CompanyId
+INTO '+@TMPTABLENAME+'
+FROM payroll.LoanRequest LR 
+INNER JOIN dbo.fnProfileInfoWithScope(' + @UserSecurityId_ + ',0,0,0,0,0,0,0,0,0,0,0,0,0,' + @EmployeeTypeIds + ',0,0,0,0,0,0,0,0) E ON LR.ProfileId = E.ProfileId
+LEFT JOIN maintenance.LoanTypeSetup LTS ON LTS.LoanTypeSetupId = LR.LoanTypeSetupId 
+LEFT JOIN maintenance.Status Status ON Status.Value = LR.StatusId
+LEFT JOIN  maintenance.EnumValues IssuanceMethod ON IssuanceMethod.SourceName = ''IssuanceMethod'' AND IssuanceMethod.Value = LR.IssuanceMethodId
+LEFT JOIN  maintenance.EnumValues InterestCalculation ON InterestCalculation.SourceName = ''InterestCalculation'' AND InterestCalculation.Value = LR.InterestCalculationId
+LEFT JOIN  maintenance.EnumValues DeductionPaymentFrequency ON DeductionPaymentFrequency.SourceName = ''DeductionPaymentFrequency'' AND DeductionPaymentFrequency.Value = LR.PaymentFrequencyId
+
+WHERE
+
+    (
+	   CAST(ISNULL('''+ CAST(@StartDateRequest AS VARCHAR(MAX)) +''',''1/1/1900'') AS DATE) <= CAST(''1/1/1900'' AS DATE)
+	   OR (CAST(LR.DateRequest AS DATE) >= CAST('''+CAST(@StartDateRequest AS VARCHAR(max))+''' AS DATE))
+    )
+    AND
+    (
+	   CAST(ISNULL('''+CAST(@EndDateRequest AS VARCHAR(MAX))+''',''1/1/1900'') AS DATE) <= CAST(''1/1/1900'' AS DATE) 
+	   OR (CAST(LR.DateRequest AS DATE) <= CAST('''+CAST(@EndDateRequest AS VARCHAR(MAX))+''' AS DATE))
+    )
+AND (ISNULL('+ @OfficeId_ +',0) = 0 OR E.OfficeId = '+ @OfficeId_ +')
+AND (ISNULL('+ @GroupId_ +',0) = 0 OR E.GroupsCodeId = '+ @GroupId_ +')
+AND (ISNULL('+ @DepartmentId_ +',0) = 0 OR E.TeamCodeId = '+ @DepartmentId_ +')
+AND (ISNULL('+ @DivisionId_ +',0) = 0 OR E.DivisionId = '+ @DivisionId_ +')
+AND (ISNULL('+ @BranchId_ +',0) = 0 OR E.BranchId = '+ @BranchId_ +')
+'
++ CASE WHEN ISNULL(@StatusId,'') <> '' THEN ' AND LR.StatusId IN (' + @StatusId + ')' ELSE '' END
++ CASE WHEN ISNULL(@LoanTypeSetupId,'') <> '' THEN ' AND LR.LoanTypeSetupId IN (' + @LoanTypeSetupId + ')' ELSE '' END 
+
+	
+	--SELECT @QUERY2 RETURN ;
+
+    --BEGIN
+	   ----===================================================================================================================================
+	   ----GET THE TMP TABLE COLUMNS, INSERT INTO REPORTDATA TABLE
+	   ----===================================================================================================================================
+	   --EXEC (@QUERY)
+	   ----EXEC ('SELECT * FROM ' + @TMPTABLENAME)
+    --END
+
+IF(@ShowPaymentDetail = 1)
+BEGIN
+	EXEC(@QUERY);
+
+END
+ELSE
+BEGIN
+	EXEC(@QUERY2);
+
+END
+
+
+EXEC [report].[spCreateReportColumn] @TMPTABLENAME, @ReportId, 'CompanyId'
+
+
+
+END
+
+GO

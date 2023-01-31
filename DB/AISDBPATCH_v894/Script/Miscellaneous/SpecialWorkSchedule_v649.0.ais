@@ -1,0 +1,24 @@
+EXEC [admin].[UpdateListColumns]
+	@ListName = 'Special Work Schedule Request List',
+	@ListType = 'WorkScheduleRequestColumnList',
+	@DefaultColumn = 'WorkDate|EmployeeNo|EmployeeName|Department|Position|Status|Schedule|WorkingHours|RequestType|Reason|DateFiled'
+
+EXEC [maintenance].[UpdateJQListColumns]
+	@ListType = 'WorkScheduleRequestColumnList', @ColumnType = 'label',
+	@Name = 'Schedule', @Label = 'Schedule', @Width = '110',
+	@Align = '', @Formatter = '', @FormatterOption = '', @Others = ''
+
+EXEC [maintenance].[UpdateJQListColumns]
+	@ListType = 'WorkScheduleRequestColumnList', @ColumnType = 'label',
+	@Name = 'WorkingHours', @Label = 'Working Hours', @Width = '90',
+	@Align = 'right', @Formatter = '', @FormatterOption = '', @Others = ''
+
+EXEC [maintenance].[UpdateJQListColumns]
+	@ListType = 'WorkScheduleRequestColumnList', @ColumnType = 'label',
+	@Name = 'RequestType', @Label = 'Request Type', @Width = '90',
+	@Align = '', @Formatter = '', @FormatterOption = '', @Others = ''
+
+EXEC [maintenance].[UpdateJQListColumns]
+	@ListType = 'WorkScheduleRequestColumnList', @ColumnType = 'label',
+	@Name = 'Reason', @Label = 'Reason', @Width = '220',
+	@Align = '', @Formatter = '', @FormatterOption = '', @Others = ''

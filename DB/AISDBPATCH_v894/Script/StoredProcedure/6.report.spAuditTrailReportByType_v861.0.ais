@@ -1,0 +1,265 @@
+IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[report].[spAuditTrailReportByType]') AND type in (N'P', N'PC'))
+DROP PROCEDURE [report].[spAuditTrailReportByType]
+GO
+
+--=============================================
+--Author:      AGC
+--Update date: 04.30.2020
+--Description: For Audit trail report
+--=============================================
+
+CREATE PROCEDURE [report].[spAuditTrailReportByType]
+--DECLARE
+@StartDate date = '01/01/2018'
+,@EndDate date = '12/31/2018'
+,@PortalId tinyint = 1
+,@ModuleId bigint = 4
+,@MenuId bigint = 9
+,@SubMenuId BIGINT = 0
+,@RecordType varchar(250) = ''
+,@TransactionTypeId bigint = 0
+,@User varchar(250) = 'sa'
+,@DisplayId INT = 1
+,@UserSecurityId BIGINT = 0
+AS
+BEGIN
+
+SET NOCOUNT ON;
+
+--===================================================================================================================================
+--DECLARATIONS
+--===================================================================================================================================
+
+DECLARE @ReportId BIGINT = (CASE WHEN ISNULL(@DisplayId,0) = 1 THEN 502 ELSE 503 END)
+DECLARE @TMPTABLENAME VARCHAR(MAX) = 'report.TMPAuditTrailReports'
+
+/*DROP TEMP TABLE IF EXISTS*/
+IF EXISTS(SELECT * FROM sys.tables WHERE object_id = object_id(@TMPTABLENAME))
+EXEC('DROP TABLE ' + @TMPTABLENAME)
+
+
+DECLARE @TransactionType VARCHAR(500) = 
+(
+	CASE @TransactionTypeId
+		WHEN 1 THEN 'Added'
+		WHEN 2 THEN 'Updated'
+		WHEN 3 THEN 'Deleted'
+		WHEN 0 THEN ''
+	END
+)
+
+DECLARE @LOOKUPTABLE VARCHAR(500) = 
+(
+	SELECT TOP 1
+		TT.MenuMenuId 
+	FROM report.vwAuditTrailSystemTable TT
+	WHERE TT.MenuMenuId = @MenuId
+)
+
+DECLARE @LOOKUPSUBMENU VARCHAR(500) = 
+(
+	SELECT TOP 1
+		PSM.MenuSubMenuId 
+	FROM report.vwParamSubMenu PSM
+	WHERE 
+	( PSM.MenuSubMenuId = ISNULL (@SubMenuId,0))
+
+)
+
+DECLARE @LOOKUPSPORTAL VARCHAR(500) = 
+(
+	SELECT TOP 1
+		TT.PortalId 
+	FROM report.vwAuditTrailSystemTable TT
+	WHERE TT.PortalId = @PortalId
+
+)
+
+IF OBJECT_ID('tempdb..#AuditTrailReplaceField') IS NOT NULL
+DROP TABLE #AuditTrailReplaceField
+CREATE TABLE #AuditTrailReplaceField 
+(
+DetailId bigint identity(1,1)
+,TableValueId bigint
+,TableName varchar(250)
+,FieldNames varchar(MAX)
+,ReplaceValue varchar(250)
+,ReplaceName varchar(150)
+,UNIQUE NONCLUSTERED(TableValueId,TableName,DetailId)
+)
+
+
+--===================================================================================================================================
+--CREATE REPLACER
+--===================================================================================================================================
+
+DECLARE @SelectSourceTablesForValueReplacement VARCHAR(MAX) = STUFF((
+SELECT ' UNION ALL '+ char(10)+' SELECT TableValueId = '+ CAST(TableValueField AS VARCHAR(MAX)) + ',TableName = ''' + CAST(CASE WHEN CHARINDEX('WHERE',ReplaceTable) > 0 THEN LEFT(ReplaceTable,CHARINDEX(' ', ReplaceTable) - 1) ELSE ReplaceTable END AS VARCHAR(MAX)) + ''',FieldNames = ''' + CAST(FieldNames AS VARCHAR(MAX)) + ''',ReplaceValue = ' + CAST(ReplaceField  AS VARCHAR(MAX)) + ', ReplaceFieldName = '''+ CAST(DisplayFieldName AS VARCHAR(MAX)) +''' FROM ' + CAST(ReplaceTable AS VARCHAR(MAX)) 
+FROM maintenance.AuditTrailReplaceField 
+FOR XML PATH('')),1,10,'')
+
+INSERT INTO #AuditTrailReplaceField EXEC (@SelectSourceTablesForValueReplacement)
+
+/*SELECT * FROM #AuditTrailReplaceField;return*/
+
+--===================================================================================================================================
+--MAIN QUERY
+--===================================================================================================================================
+
+DECLARE 
+@CMD VARCHAR(MAX) = 
+'
+SELECT 
+	/*ATB.[Schema],ATB.TableName,ATB.IdentityColumn,ATB.TableIdValue,ATB.ProfileRelated*/
+	CompanyId = 1
+	'+CASE WHEN ISNULL(@DisplayId,0) = 1 
+	THEN 
+	',ATB.[User]
+	,[Date Time] = ATB.Date
+	,[Record] = LTRIM(REPLACE(COALESCE(ORF.ReplaceName,NRF.ReplaceName,ATB.ColumnName),''|'',''''))
+	,[Action] = ATB.TransactionType
+	,Details = 
+	(
+	CASE ISNULL(ATB.TransactionType,'''')
+	WHEN ''Added'' THEN CONCAT(''<b>'',COLS.[New],''</b>'',(CASE WHEN ISNULL(E.EmployeeName,'''') <> '''' THEN '' for <b>'' + E.EmployeeName + ''</b>'' ELSE '''' END))
+	WHEN ''Updated'' THEN CONCAT(''from <b>'',COLS.[Old],''</b> to <b>'',COLS.[New],''</b>'',(CASE WHEN ISNULL(E.EmployeeName,'''') <> '''' THEN '' for <b>'' + E.EmployeeName + ''</b>'' ELSE '''' END))
+	WHEN ''Deleted'' THEN CONCAT(''<b>'',COLS.[Old],''</b>'',(CASE WHEN ISNULL(E.EmployeeName,'''') <> '''' THEN '' for <b>'' + E.EmployeeName + ''</b>'' ELSE '''' END))
+	ELSE '''' END
+	)
+	/*
+	,[Old] = COLS.[Old]
+	,[New] = COLS.[New]
+	*/
+	'
+	ELSE 
+	',[Record] = LTRIM(REPLACE(COALESCE(ORF.ReplaceName,NRF.ReplaceName,ATB.ColumnName),''|'',''''))
+	,[Action] = ATB.TransactionType
+	,Details = 
+	(
+	CASE ISNULL(ATB.TransactionType,'''')
+	WHEN ''Added'' THEN CONCAT(''<b>'',COLS.[New],''</b>'',(CASE WHEN ISNULL(E.EmployeeName,'''') <> '''' THEN '' for <b>'' + E.EmployeeName + ''</b>'' ELSE '''' END))
+	WHEN ''Updated'' THEN CONCAT(''from <b>'',COLS.[Old],''</b> to <b>'',COLS.[New],''</b>'',(CASE WHEN ISNULL(E.EmployeeName,'''') <> '''' THEN '' for <b>'' + E.EmployeeName + ''</b>'' ELSE '''' END))
+	WHEN ''Deleted'' THEN CONCAT(''<b>'',COLS.[Old],''</b>'',(CASE WHEN ISNULL(E.EmployeeName,'''') <> '''' THEN '' for <b>'' + E.EmployeeName + ''</b>'' ELSE '''' END))
+	ELSE '''' END
+	)
+	/*
+	,[Old] = COLS.[Old]
+	,[New] = COLS.[New]
+	*/
+	,[Date Time] = ATB.Date
+	,ATB.[User]
+	' 
+	END+'
+INTO ' + @TMPTABLENAME + ' 
+FROM dbo.fnRetrieveAuditTrailPerTransaction('''+CAST(@StartDate AS VARCHAR)+''','''+CAST(@EndDate AS VARCHAR)+''','''+CAST(@TransactionType AS VARCHAR)+''','''+@LOOKUPTABLE+''','''','''+ISNULL(@LOOKUPSUBMENU,0)+ ''','''+@LOOKUPSPORTAL+ ''') ATB
+
+OUTER APPLY
+(
+	SELECT TOP 1 
+		EmployeeNo
+		,EmployeeName 
+	FROM report.fnAuditTableEmployee(ATB.TableIdValue,ATB.TableName)
+)E
+
+OUTER APPLY 
+(
+	SELECT TOP 1 
+	ReplaceName
+	,ReplaceValue 
+	FROM #AuditTrailReplaceField 
+	WHERE 
+	CHARINDEX('','' + ATB.ColumnName + '','','','' + FieldNames + '','') > 0
+	AND CAST(TableValueId AS VARCHAR) = ATB.OldValues
+) ORF
+
+OUTER APPLY 
+(
+	SELECT TOP 1 
+	ReplaceName
+	,ReplaceValue 
+	FROM #AuditTrailReplaceField 
+	WHERE 
+	CHARINDEX('','' + ATB.ColumnName + '','','','' + FieldNames + '','') > 0
+	AND (CAST(TableValueId AS VARCHAR) = ATB.NewValues)
+) NRF
+
+OUTER APPLY 
+(
+	SELECT TOP 1
+	 ReplaceName 
+	,ReplaceValue = CMDOLD.Txt1
+	,FieldNames
+	,TableValueId
+
+	FROM #AuditTrailReplaceField 
+	OUTER APPLY
+	(
+	SELECT 
+		Txt1 =  STUFF((SELECT '','' + CAST(ReplaceValue AS VARCHAR(MAX))  FROM #AuditTrailReplaceField WHERE CHARINDEX(CONCAT('','', TableValueId, '',''), CONCAT('','',ATB.OldValues,'','')) > 0  AND  CHARINDEX(CONCAT('','', ATB.ColumnName, '',''), CONCAT('','',FieldNames,'','')) > 0 
+            FOR XML PATH(''''), ROOT (''MyString''), TYPE).value(''/MyString[1]'', ''varchar(max)''), 1, 1, '''')
+	   ,Txt2 =  STUFF((SELECT '','' + CAST(TableValueId AS VARCHAR(MAX)) 
+	 FROM #AuditTrailReplaceField WHERE CHARINDEX(CONCAT('','', TableValueId, '',''), CONCAT('','',ATB.OldValues,'','')) > 0 AND  CHARINDEX(CONCAT('','',ATB.ColumnName, '''',''''), CONCAT('','',FieldNames,'','')) > 0 AND CHARINDEX(CONCAT('','', ATB.ColumnName, '',''), CONCAT('','',FieldNames,'','')) > 0
+            FOR XML PATH(''''), ROOT (''MyString''), TYPE).value(''/MyString[1]'', ''varchar(max)''), 1, 1, '''')
+
+	)CMDOLD
+	WHERE 
+	CHARINDEX(CONCAT('','', ATB.ColumnName, '',''), CONCAT('','',FieldNames,'','')) > 0
+	AND CHARINDEX(CONCAT('','',CMDOLD.Txt2, '',''), CONCAT('','',ATB.OldValues,'','')) >= 0
+) CDORF
+
+OUTER APPLY 
+(
+	SELECT TOP 1
+	 ReplaceName
+	,ReplaceValue = CMDNEW.Txt1
+	,FieldNames
+	,TableValueId
+	FROM #AuditTrailReplaceField 
+	OUTER APPLY
+
+	(
+	SELECT 
+		Txt1 =  STUFF((SELECT '','' + CAST(ReplaceValue AS VARCHAR(MAX))  FROM #AuditTrailReplaceField CMD  WHERE CHARINDEX(CONCAT('','',CMD.TableValueId, '',''), CONCAT('','',ATB.NewValues,'','')) > 0 AND  CHARINDEX(CONCAT('','',ATB.ColumnName, '',''), CONCAT('','',FieldNames,'','')) > 0 
+            FOR XML PATH(''''), ROOT (''MyString''), TYPE).value(''/MyString[1]'', ''varchar(max)''), 1, 1, '''')
+	   ,Txt2 =  STUFF((SELECT '','' + CAST(TableValueId AS VARCHAR(MAX)) 
+	 FROM #AuditTrailReplaceField  WHERE CHARINDEX(CONCAT('','',TableValueId, '',''), CONCAT('','',ATB.NewValues,'','')) > 0 AND  CHARINDEX(CONCAT('','',ATB.ColumnName, '',''), CONCAT('','',FieldNames,'','')) > 0 AND CHARINDEX(CONCAT('','',ATB.ColumnName, '',''), CONCAT('','',FieldNames,'','')) > 0
+            FOR XML PATH(''''), ROOT (''MyString''), TYPE).value(''/MyString[1]'', ''varchar(max)''), 1, 1, '''')
+	
+	)CMDNEW
+	WHERE 
+	CHARINDEX(CONCAT('','',ATB.ColumnName, '',''), CONCAT('','',FieldNames,'','')) > 0
+	AND CHARINDEX(CONCAT('','',CMDNEW.Txt2, '',''), CONCAT('','',ATB.NewValues,'','')) >= 0
+) CDNRF
+
+CROSS APPLY
+(
+	SELECT
+	[Old] = COALESCE(CDORF.ReplaceValue,ORF.ReplaceValue,ATB.OldValues,'''')
+	,[New] = COALESCE(CDNRF.ReplaceValue,NRF.ReplaceValue,ATB.NewValues,'''')
+)COLS
+
+WHERE ATB.ColumnName NOT IN
+(
+	SELECT T.IDENTITY_COLUMN FROM report.vwIdentityColumns T
+)
+
+'
+
+/*SELECT @CMD;RETURN*/
+
+EXEC(@CMD);
+
+/*
+EXEC('SELECT * FROM ' + @TMPTABLENAME);
+RETURN;
+*/
+
+
+--===================================================================================================================================
+--GET THE TMP TABLE COLUMNS, INSERT INTO REPORTDATA TABLE
+--===================================================================================================================================
+
+EXEC [report].[spCreateReportColumn] @TMPTABLENAME, @ReportId, 'CompanyId'
+
+
+END

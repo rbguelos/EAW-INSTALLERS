@@ -1,0 +1,29 @@
+EXEC admin.UpdateListColumns @ListName = 'Benefit Issuance List'
+							,@ListType = 'BenefitIssuanceColumnList'
+							,@DefaultColumn = 'IssuedDate|Status|Type|OENo|EmployeeNo|EmployeeName|Branch|Amount|Remarks|IssuedByFullName'
+
+--OENo
+EXEC maintenance.UpdateJQListColumns @ListType = 'BenefitIssuanceColumnList'
+									,@ColumnType = 'label'
+									,@Name = 'OENo'
+									,@Label = 'Ref No.'
+									,@Width = '85'
+									,@Align = ''
+									,@Formatter = ''
+									,@FormatterOption = ''
+									,@Others = ''
+
+--IssuedByFullName
+EXEC maintenance.UpdateJQListColumns @ListType = 'BenefitIssuanceColumnList'
+									,@ColumnType = 'label'
+									,@Name = 'IssuedByFullName'
+									,@Label = 'Issued By'
+									,@Width = '185'
+									,@Align = ''
+									,@Formatter = ''
+									,@FormatterOption = ''
+									,@Others = ''
+									
+
+
+

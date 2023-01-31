@@ -1,0 +1,35 @@
+-- =============================================
+-- Author:		Paul Parreno
+-- Create date: June 14, 2017
+-- =============================================
+/*===========================================***	   
+**  Last Update Date: 01/08/2020
+**  Last Update By: Michael
+**  Last DBVersion executed: 
+\*===========================================*/
+ALTER VIEW [workflow].[vwWorkFlowNotification]
+AS
+	SELECT
+		COALESCE(N.NotificationId, 0) PrimaryFieldId,
+		COALESCE(N.NotificationTemplateId, 0) NotificationTemplateId,
+		COALESCE(N.TransactionId, 0) TransactionId,
+		COALESCE(N.ActionTypeId, 0) ActionTypeId,
+		COALESCE(N.MemberId, 0) MemberId,
+		COALESCE(N.SubmitterId, 0) SubmitterId,
+		COALESCE(LTRIM(MemberNumbers.VALUE), '') MobileNumber,
+		COALESCE(P.EmailAddress, '') ReceiverTo,
+		COALESCE(N.TypeId, 0) TypeId,
+		'' Message,
+		'' Subject
+	FROM workflow.Notification N
+	INNER JOIN employee.Profile P
+		ON P.ProfileId = N.MemberId
+	OUTER APPLY (
+		SELECT T.VALUE FROM dbo.FN_SPLITWITHID(P.MobileNumber, ',') T 
+		WHERE N.TypeId = 1
+	) MemberNumbers
+	WHERE (N.TypeId = 1 /*SMS*/ OR N.TypeId = 2 /*EMAIL*/)
+	AND CAST(DATEADD(DAY, 1, N.CreateDate) AS DATE) >= CAST(GETDATE() AS DATE)
+GO
+
+

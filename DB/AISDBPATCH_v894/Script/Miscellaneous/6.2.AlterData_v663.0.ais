@@ -1,0 +1,5 @@
+EXEC [maintenance].[UpdateJQListColumns]
+	@ListType = 'RestDayColumnList', @ColumnType = 'label',
+	@Name = 'FixedSchedule', @Label = 'Fixed Schedule',
+	@Width = '100', @Align = '', @Formatter = '',
+	@FormatterOption = '', @Others = ''

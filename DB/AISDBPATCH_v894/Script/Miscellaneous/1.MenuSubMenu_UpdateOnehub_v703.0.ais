@@ -1,0 +1,6 @@
+SELECT * FROM admin.MenuSubMenu WHERE SubMenuName IN ('Union Bank Loan','Union Bank Monthly Contribution')
+
+UPDATE admin.MenuSubMenu SET SubMenuName = 'Union Bank ONEHUB' WHERE SubMenuName = 'Union Bank Monthly Contribution'
+UPDATE admin.MenuSubMenu SET [Hidden] = 1 WHERE SubMenuName = 'Union Bank Loan'
+
+SELECT * FROM admin.MenuSubMenu WHERE SubMenuName IN ('Union Bank Loan','Union Bank ONEHUB')

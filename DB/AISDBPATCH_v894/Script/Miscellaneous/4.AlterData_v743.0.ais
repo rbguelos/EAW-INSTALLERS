@@ -1,0 +1,15 @@
+EXEC [admin].[UpdateListColumns]
+	@ListName = 'Manpower Request List', @ListType = 'ManpowerRequestListColumn',
+	@DefaultColumn = 'RequestDate|RequestNo|RequestedByName|RequestStatus|Department|JobPosition|ApplicantsOpenings|JobOpeningStatus|RequestSpan'
+
+EXEC [maintenance].[UpdateJQListColumns]
+	@ListType = 'ManpowerRequestListColumn', @ColumnType = 'label', @Name = 'RequestSpan', @Label = 'Request Span',
+	@Width = '180', @Align = '', @Formatter = '', @FormatterOption = '', @Others = ''
+
+EXEC [admin].[UpdateListColumns]
+	@ListName = 'Applicant Profile List', @ListType = 'ApplicantProfileListColumn',
+	@DefaultColumn = 'Company|JobPosition|ApplicantFullName|Status|Tracking'
+
+EXEC [maintenance].[UpdateJQListColumns]
+	@ListType = 'ApplicantProfileListColumn', @ColumnType = 'label', @Name = 'Tracking', @Label = 'Remarks',
+	@Width = '300', @Align = '', @Formatter = '', @FormatterOption = '', @Others = ''

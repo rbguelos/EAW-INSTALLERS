@@ -1,0 +1,3 @@
+UPDATE maintenance.ConfigSetupDetail
+SET Type = 'tagList'
+WHERE ConfigSetupDetailId = 222

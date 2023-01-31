@@ -1,0 +1,9 @@
+/*
+Missing Index Details from 1.report.fnRunningLeaveBalance.sql - DATABASE-SERVER\SQLDEVELOPER2017.EatWork_PMCTest (aisapp)
+The Query Processor estimates that implementing the following index could improve the query cost by 37.8184%.
+*/
+
+IF NOT EXISTS(SELECT index_id FROM SYS.indexes WHERE name = 'IX_LeaveBalanceDetailEarnedHours' AND object_id = object_id('[leave].[LeaveBalanceDetail]'))
+CREATE NONCLUSTERED INDEX [IX_LeaveBalanceDetailEarnedHours]	
+	ON [leave].[LeaveBalanceDetail] ([LeaveBalanceHeaderId],[StatusId],[PostedDate]) INCLUDE ([EarnedHours])
+GO

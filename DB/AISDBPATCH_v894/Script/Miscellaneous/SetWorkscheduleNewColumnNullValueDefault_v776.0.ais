@@ -1,0 +1,4 @@
+/*UPDATE NULL VALUES*/
+;UPDATE schedule.WorkSchedule SET ForOffsetting = 0 WHERE ForOffsetting IS NULL
+;UPDATE schedule.WorkSchedule SET OffsettingExpirationDate = '1/1/1900' WHERE OffsettingExpirationDate IS NULL
+;UPDATE schedule.WorkSchedule SET SpecialNSRates = 0 WHERE SpecialNSRates IS NULL

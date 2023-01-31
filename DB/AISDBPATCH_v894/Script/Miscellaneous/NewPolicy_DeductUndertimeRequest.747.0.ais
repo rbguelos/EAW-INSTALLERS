@@ -1,0 +1,4 @@
+SET NOCOUNT ON
+DELETE FROM maintenance.ConfigSetupDetail WHERE PropertyName = 'DeductUndertimeRequest'
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupHeaderId],[PropertyName],[LabelName],[PropertyValue],[Type],[Source],[Group],[SubGroup],[SortOrder],[Alignment],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES(1,'DeductUndertimeRequest','Deduct Undertime Request','','checkbox','','2','0',13,'',NULL,NULL,NULL,NULL)
+SET NOCOUNT OFF

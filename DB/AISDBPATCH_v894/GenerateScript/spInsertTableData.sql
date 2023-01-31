@@ -1,0 +1,138 @@
+/****** Object:  StoredProcedure [dbo].[spInsertTableData]    Script Date: 7/15/2016 10:06:19 AM ******/
+IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[dbo].[spInsertTableData]') AND type in (N'P', N'PC'))
+DROP PROCEDURE [dbo].[spInsertTableData]
+GO
+
+
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+-- =============================================
+-- Author:		RME
+-- Create date: 1/21/2014
+-- Description:	Insert character separated values into specified table
+-- =============================================
+CREATE PROCEDURE [dbo].[spInsertTableData] 
+	-- Add the parameters for the stored procedure here
+	 @SCHEMA varchar(150) = 'dbo',
+	 @TABLENAME NVARCHAR(150),
+	 @COLUMNS NVARCHAR(MAX),
+	 @VALUETOINSERT NVARCHAR(MAX),
+	 @COLUMNSEPARATOR NVARCHAR(5) = '',
+	 @ROWSEPARATATOR NVARCHAR(5) = NULL,
+	 @OVERWRITE BIT = 0,
+	 @CHECKDUPLICATECOLUMNS NVARCHAR(MAX) = NULL
+AS
+BEGIN
+	-- SET NOCOUNT ON added to prevent extra result sets from
+	-- interfering with SELECT statements.
+	SET NOCOUNT ON;
+
+	DECLARE @TMPINSERTVALUES TABLE
+	(
+		ROWID BIGINT IDENTITY(1,1),
+		ValueToInsert NVARCHAR(MAX)
+	)
+
+	SET @TABLENAME = @SCHEMA + '.' + @TABLENAME--INCLUDE SCHEMA IN TABLE
+
+	SET @COLUMNSEPARATOR = COALESCE(@COLUMNSEPARATOR,',')
+	SET @ROWSEPARATATOR = COALESCE(@ROWSEPARATATOR,CHAR(13)+CHAR(10))
+
+	declare @errormsg varchar(500)
+
+
+	BEGIN TRY
+
+	DECLARE @CMD VARCHAR(MAX)
+
+	DECLARE @CNT BIGINT
+	DECLARE @MAXCNT BIGINT
+	DECLARE @COLVALUES NVARCHAR(MAX)
+	
+	DECLARE @VALUES NVARCHAR(MAX)
+
+	INSERT INTO @TMPINSERTVALUES 
+	SELECT LTRIM(VALUE) from dbo.FN_SPLITWITHID(@VALUETOINSERT,@ROWSEPARATATOR)
+	
+
+	--clear data if overwrite
+	IF COALESCE(@OVERWRITE,0) = 1
+	BEGIN
+		SET @CMD = 'DELETE FROM ' + @TABLENAME
+		EXEC (@CMD)
+	END
+
+	SET @CNT = 1
+	SET @MAXCNT = (SELECT COUNT(*) FROM @TMPINSERTVALUES)
+
+	WHILE @CNT <= @MAXCNT
+	BEGIN
+		IF (@COLUMNSEPARATOR = ',')
+			BEGIN
+				SET @COLVALUES = (SELECT LTRIM(ValueToInsert) FROM @TMPINSERTVALUES WHERE ROWID = @CNT)
+			END
+		ELSE
+			BEGIN
+				SET @COLVALUES = (SELECT '''' + REPLACE(LTRIM(ValueToInsert),@COLUMNSEPARATOR,''',''') + '''' FROM @TMPINSERTVALUES WHERE ROWID = @CNT)
+			END
+			
+		
+		--WITH CHECK DUPLICATES
+		IF COALESCE(@CHECKDUPLICATECOLUMNS,'') <> ''
+		BEGIN
+
+			DECLARE @FILTERQUERY VARCHAR(MAX)
+
+			--THIS WILL BE USE FOR CHECKING DUPLICATES
+			SET @VALUES = (SELECT LTRIM(ValueToInsert) FROM @TMPINSERTVALUES WHERE ROWID = @CNT)
+
+			SET @FILTERQUERY = ' WHERE ' + REPLACE((SELECT C.VALUE + ' = ''' + V.VALUE + '''' 
+				+ ' AND ' FROM dbo.FN_SPLITWITHID(@CHECKDUPLICATECOLUMNS,',')CD
+			INNER JOIN dbo.FN_SPLITWITHID(@COLUMNS,',')C
+				ON C.VALUE = CD.VALUE	
+			INNER JOIN dbo.FN_SPLITWITHID(@VALUES,@COLUMNSEPARATOR)V
+				ON C.ROWID = V.ROWID
+			 FOR XML PATH('')) + '_','AND _','')
+				
+			SET @CMD = 'IF NOT EXISTS (SELECT * FROM ' + @TABLENAME 
+				+ @FILTERQUERY + ')' + CHAR(13) +
+			CASE WHEN ISNULL(@OVERWRITE,0) = 2 
+			THEN ''
+			 ELSE 'INSERT INTO ' + @TABLENAME + ' ('+ @COLUMNS +') VALUES (' + @COLVALUES + ')' END
+		END
+		ELSE
+		BEGIN
+			SET @CMD = 'INSERT INTO ' + @TABLENAME + ' ('+ @COLUMNS +') VALUES (' + @COLVALUES + ')'
+		END
+		
+		SET @CMD = REPLACE(REPLACE(@CMD, CHAR(10), ''), CHAR(13), '') 
+
+		SET @errormsg = @CMD
+
+		EXEC (@CMD)
+		--SELECT @CMD
+		SET @CNT = @CNT + 1
+
+		
+	END
+
+	END TRY
+	BEGIN CATCH
+		--PRINT 
+		
+		SET @errormsg = 'Error executing ''''' + @errormsg + '''''' +  ERROR_MESSAGE();
+		THROW 60000, @errormsg, 1; 
+
+	END CATCH
+
+END
+
+
+
+GO
+
+

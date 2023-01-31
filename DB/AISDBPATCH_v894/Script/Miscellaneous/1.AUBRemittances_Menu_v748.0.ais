@@ -1,0 +1,45 @@
+SET NOCOUNT ON
+/*start deleting existing menu configs*/
+DELETE FROM admin.MenuSubMenu WHERE MenuSubMenuId = 152
+DELETE FROM admin.SecurityMapping WHERE MenuSubMenuId = 152
+/*end deleting existing menu configs*/
+
+/* start insert data to admin.MenuSubMenu */
+SET IDENTITY_INSERT [admin].[MenuSubMenu] ON
+INSERT [admin].[MenuSubMenu] ([MenuSubMenuId],[MenuMenuId],[SubMenuName],[SubMenuIcon],[SubMenuLink],[SortOrder],[Hidden],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES(152,87,'AUB Pag-ibig Remittances','','/FileGenerator/Form?TemplateCode=AUBMonthlyContribution&Extension=xls',19,0,NULL,NULL,NULL,NULL)
+SET IDENTITY_INSERT [admin].[MenuSubMenu] OFF
+/* end insert data to admin.MenuSubMenu */
+
+/* start insert data to admin.SecurityMapping */
+INSERT [admin].[SecurityMapping] ([MenuMenuId],[MenuSubMenuId],[SecurityFormId],[AccessTypeId],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES(87,152,222,'1',NULL,NULL,NULL,NULL)
+/* end insert data to admin.SecurityMapping */
+
+/* start insert data to security.Module_Forms */
+/* end insert data to security.Module_Forms */
+
+/*start insert data to security.Role_FormAccess*/
+INSERT INTO security.Role_FormAccess([RoleId],[ModuleId],[ModuleFormId],[AccessTypeId]) 
+				SELECT 
+				[RoleId] = RF.RoleId,
+				[ModuleId] = F.ModuleId,
+				[ModuleFormId] = F.ModuleFormId,
+				[AccessTypeId] = F.AccessTypeId
+				FROM security.Module_Forms F
+				OUTER APPLY (SELECT DISTINCT RoleId FROM security.Role_FormAccess WHERE ModuleId = 40) RF
+				WHERE F.ModuleFormId = 222
+				AND RF.RoleId NOT IN (SELECT DISTINCT RoleId FROM security.Role_FormAccess WHERE ModuleFormId = 222)
+/*end insert data to security.Role_FormAccess*/
+
+/*start insert data to security.UserSecurity_Detail*/
+INSERT INTO security.UserSecurity_Detail([UserSecurityId],[ModuleFormId],[AccessTypeId],[ModuleId])
+				SELECT
+				[UserSecurityId] = US.UserSecurityId
+				,[ModuleFormId] = F.ModuleFormId
+				,[AccessTypeId] = F.AccessTypeId
+				,[ModuleId] = F.ModuleId
+				FROM security.Module_Forms F
+				OUTER APPLY (SELECT DISTINCT UserSecurityId FROM security.UserSecurity_Detail WHERE ModuleId = 40) US
+				WHERE F.ModuleFormId = 222
+				AND US.UserSecurityId NOT IN (SELECT UserSecurityId FROM security.UserSecurity_Detail WHERE ModuleFormId = 222 AND UserSecurityId IS NOT NULL)
+/*end insert data to security.UserSecurity_Detail*/
+SET NOCOUNT OFF

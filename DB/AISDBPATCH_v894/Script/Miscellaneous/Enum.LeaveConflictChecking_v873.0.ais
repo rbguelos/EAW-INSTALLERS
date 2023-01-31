@@ -1,0 +1,10 @@
+EXEC spInsertTableData 
+@SCHEMA = 'maintenance'
+,@TABLENAME = 'EnumValues'
+,@COLUMNS = '[SourceName],[DisplayText],[Value],[OrderNumber],[Status]'
+,@VALUETOINSERT = 'LeaveConflictChecking|No warning|1|1|1
+LeaveConflictChecking|Show warning|2|2|1
+LeaveConflictChecking|Do not allow filing|3|3|1'
+,@COLUMNSEPARATOR = '|'
+,@ROWSEPARATATOR = '
+'

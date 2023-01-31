@@ -1,0 +1,38 @@
+IF  EXISTS (SELECT * FROM sys.views WHERE object_id = OBJECT_ID(N'[report].[vwParamMenu]'))
+DROP VIEW [report].[vwParamMenu]
+GO
+
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+/*===========================================*
+**	   Last Update Date: 04/16/2020
+**	   Last Update By: Jomari
+**	   Last DBVersion executed: v
+\*===========================================*/
+CREATE VIEW [report].[vwParamMenu]
+AS
+SELECT * FROM
+(SELECT
+[PortalId] = 1
+,[ModuleId] = HR.MenuModuleId
+,[MenuId] = HR.MenuMenuId
+,[Name] = HR.MenuName
+,HR.Hidden
+FROM admin.MenuMenu HR
+
+UNION ALL SELECT
+[PortalId] = 2
+,[ModuleId] = [ADMIN].MenuModuleId
+,[MenuId] = [ADMIN].MenuModuleId
+,[Name] = [ADMIN].MenuName
+,admin.Hidden
+FROM admin.MenuMenuAdmin [admin]
+)T
+
+WHERE T.Hidden <> 1
+GO
+
+

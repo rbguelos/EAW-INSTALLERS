@@ -1,0 +1,132 @@
+SET NOCOUNT ON
+/*start deleting existing report configs*/
+DELETE FROM report.Report WHERE ReportId IN (326)
+DELETE FROM report.ReportData WHERE ReportId IN (326)
+DELETE FROM report.ReportParameter WHERE ReportCode IN ('OvertimeListReport')
+DELETE FROM report.ReportSubReport WHERE ReportCode  IN ('OvertimeListReport')
+DELETE FROM report.ReportMenu WHERE ReportId IN (326)
+DELETE FROM security.Module_Forms WHERE ModuleFormId IN ('10545')
+/*end deleting existing report configs*/
+
+/*start insert data to report.Report*/
+SET IDENTITY_INSERT [report].[Report] ON
+INSERT [report].[Report] ([ReportId],[ReportCode],[ReportName],[ReportFile],[ReportExcelFile],[EmploymentStatus],[TableSPUsed],[SPUsed],[NoOrderBy],[QueryType],[InsertToReportTempTable],[Description],[ImageFile],[SortFields],[Event],[ExportFormat],[CreateId],[Createdate],[LastUpdateId],[LastUpdateDate],[UseExportToExcelAPI],[DetailColStartPos],[DetailRowStartPos],[HeaderRowStartPos],[IncludeColHeader],[InsertNewRowAtRowPos],[Template],[SourceName],[ShowGrandTotals],[RepeatColumnHeaderOnHeaderGroup],[RepeatColumnHeaderOnGroupLevel],[AutoSizeColumn],[MaxRowPerPage],[DisplayReportHeader])VALUES(326,'OvertimeListReport','Overtime List Report','\Reports\Schedule\OvertimeListReport.rpt',NULL,NULL,'SELECT 
+	Employee = E.LastFirstMIName
+	,E.EmployeeNo
+	,E.DepartmentName
+	,JobPosition = ISNULL(E.JobRank,'''')
+	,[Status] =  (SELECT TOP 1 S.Name FROM maintenance.Status S WHERE [S].[Value] = OT.StatusId)
+	,OTDate = OT.OvertimeDate
+	,OT.DateFiled
+	,OROTHrs = ISNULL(OT.OROTHrs,0)
+	,NSOTHrs = ISNULL(OT.NSOTHrs,0)
+	,[Time] = 
+	(
+		CASE WHEN ISNULL(OT.StartTime,''1/1/1900'') > ''1/1/1900'' THEN FORMAT(OT.StartTime,''hh:mm tt'') ELSE '''' END 
+		+ '' - '' +
+		CASE WHEN ISNULL(OT.EndTime,''1/1/1900'') > ''1/1/1900'' THEN FORMAT(OT.EndTime,''hh:mm tt'') ELSE '''' END 
+	)
+	,Reason = ISNULL(OT.Reason,'''')
+	,OT.ApprovedOROTHrs
+	,OT.ApprovedNSOTHrs
+	,PreShiftOT = (CASE WHEN ISNULL(OT.PreShiftOT,0) = 1 THEN ''Yes'' ELSE ''No'' END)
+	,E.CompanyId
+FROM schedule.Overtime OT
+CROSS APPLY
+(
+	SELECT TOP 1 
+		E.LastFirstMIName
+		,E.EmployeeNo
+		,E.DepartmentName
+		,E.CompanyId
+		,E.JobRank
+		,EmployeeId = E.ProfileId 
+	FROM dbo.fnProfileInfo(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0) E 
+	WHERE E.ProfileId = OT.ProfileId
+) E
+
+WHERE
+(
+	1=1 
+	AND
+	((CAST(ISNULL(@StartDate,''1/1/1900'') AS DATE) <= CAST(''1/1/1900'' AS DATE)) OR (CAST(OT.OvertimeDate AS DATE) >= @StartDate))
+	AND
+	((CAST(ISNULL(@EndDate,''1/1/1900'') AS DATE) <= CAST(''1/1/1900'' AS DATE)) OR (CAST(OT.OvertimeDate AS DATE) <= @EndDate))
+	AND
+	((ISNULL(@StatusId,'''') = '''') OR (CHARINDEX(''''''''+CAST(OT.StatusId AS VARCHAR)+'''''''',@StatusId) > 0))
+	
+	
+)',NULL,1,'QUERY',1,'','\Schedule\OvertimeListReport.png',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+SET IDENTITY_INSERT [report].[Report] OFF
+/*end insert data to report.Report*/
+
+/*start insert data to report.ReportData*/
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(326,'Employee','Employee','string','','',NULL,1,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(326,'Employee No.','EmployeeNo','string','','',NULL,2,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(326,'Department','DepartmentName','string','','',NULL,3,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(326,'Status','Status','string','','',NULL,5,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(326,'OT Date','OTDate','date','','',NULL,6,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(326,'Date Filed','DateFiled','date','','',NULL,7,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(326,'OT Hours','OROTHrs','decimal','','',NULL,8,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(326,'NS OT Hours','NSOTHrs','decimal','','',NULL,9,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(326,'Time','Time','string','','',NULL,10,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(326,'Reason','Reason','string','','',NULL,11,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(326,'OT Hours','ApprovedOROTHrs','decimal','','',NULL,12,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(326,'NS OT Hours','ApprovedNSOTHrs','decimal','','',NULL,13,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(326,'Preshift OT','PreShiftOT','string','','',NULL,14,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(326,'Job Position','JobPosition','string','','',NULL,4,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+/*end insert data to report.ReportData*/
+
+/*start insert data to report.ReportParameter*/
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat])VALUES('OvertimeListReport','@StartDate,@EndDate','Overtime Date','daterange','','',1,'','Param1','Stored','>=,<=','date',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat])VALUES('OvertimeListReport','CompanyId','Company','dropdownList','$table:maintenance.Company,CompanyId,Name','$table:maintenance.Branch WHERE CompanyId =  ,BranchId,Name|BranchId,',2,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat])VALUES('OvertimeListReport','BranchId','Branch','dropdownList','$table:maintenance.Branch,BranchId,Name','',3,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat])VALUES('OvertimeListReport','DepartmentId','Section/Department','dropdownList','$table:maintenance.Department,DepartmentId,DepartmentName','',4,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat])VALUES('OvertimeListReport','OfficeId','Office','dropdownList','$table:maintenance.Office,OfficeId,Name','',5,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat])VALUES('OvertimeListReport','DistrictId','District','dropdownList','$table:maintenance.District,DistrictId,Description','',6,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat])VALUES('OvertimeListReport','LineId','Line','dropdownList','$table:maintenance.Line,LineId,Description','',7,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat])VALUES('OvertimeListReport','UnitId','Unit','dropdownList','$table:maintenance.Unit,UnitId,Description','',8,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat])VALUES('OvertimeListReport','@StatusId','Status','checkboxList','$table:maintenance.Status WHERE Value = 1 OR Value = -2 OR Value = 2 OR Value = 9 OR Value = 13,Value,Name','',9,'','Param1','Stored','IN','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+/*end insert data to report.ReportParameter*/
+
+/*start insert data to report.ReportSubReport*/
+/*end insert data to report.ReportSubReport*/
+
+/*start insert data to report.ReportMenu*/
+INSERT [report].[ReportMenu] ([ReportId],[AdminMenuModuleId],[MenuModuleId],[ReportGroupId],[ModuleFormId],[FileGeneratorHdrId],[XMLReportId],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES(326,0,10,2,0,0,0,NULL,NULL,NULL,NULL)
+/*end insert data to report.ReportMenu*/
+
+/*start insert data to security.Module_Forms*/
+SET IDENTITY_INSERT [security].[Module_Forms] ON
+INSERT [security].[Module_Forms] ([ModuleFormId],[ModuleId],[Name],[Form],[AccessTypeId],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES(10545,36,'Overtime List Report','OvertimeListReport','1,5',NULL,NULL,NULL,NULL)
+SET IDENTITY_INSERT [security].[Module_Forms] OFF
+/*end insert data to security.Module_Forms*/
+
+/*start insert data to security.Role_FormAccess*/
+INSERT INTO security.Role_FormAccess([RoleId],[ModuleId],[ModuleFormId],[AccessTypeId]) 
+				SELECT 
+				[RoleId] = 1,
+				[ModuleId] = F.ModuleId,
+				[ModuleFormId] = F.ModuleFormId,
+				[AccessTypeId] = F.AccessTypeId
+				FROM security.Module_Forms F
+				
+				WHERE F.ModuleFormId IN ('10545')
+				
+/*end insert data to security.Role_FormAccess*/
+
+/*start insert data to security.UserSecurity_Detail*/
+INSERT INTO security.UserSecurity_Detail([UserSecurityId],[ModuleFormId],[AccessTypeId],[ModuleId])
+				SELECT
+				[UserSecurityId] = US.UserSecurityId
+				,[ModuleFormId] = F.ModuleFormId
+				,[AccessTypeId] = F.AccessTypeId
+				,[ModuleId] = F.ModuleId
+				FROM security.Module_Forms F
+				
+				CROSS APPLY (SELECT DISTINCT USD.UserSecurityId FROM security.UserSecurity_Detail USD JOIN security.UserSecurity US ON US.UserSecurityId = USD.UserSecurityId WHERE USD.ModuleId IN ('36') AND US.RoleId = 1	AND US.UserSecurityId IS NOT NULL) US
+				WHERE F.ModuleFormId IN ('10545')
+				AND US.UserSecurityId NOT IN (SELECT UserSecurityId FROM security.UserSecurity_Detail WHERE ModuleFormId IN ('10545') AND UserSecurityId IS NOT NULL)
+/*end insert data to security.UserSecurity_Detail*/
+
+SET NOCOUNT OFF

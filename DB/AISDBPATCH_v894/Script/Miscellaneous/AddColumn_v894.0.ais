@@ -1,0 +1,1 @@
+EXEC dbo.AddColumn @SCHEMA = 'maintenance', @TABLENAME = 'MBankAccount', @COLUMNNAME = 'CompanyIds', @DATATYPE = 'varchar(max)'

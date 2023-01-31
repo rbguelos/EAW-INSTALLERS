@@ -1,0 +1,12 @@
+SET IDENTITY_INSERT [workflows].[EmailBodyTemplate_] ON 
+INSERT [workflows].[EmailBodyTemplate_] ([EmailBodyTemplate_Id], [Stages_Id], [EmailDirection], [EmailType], [TransactionTypeId], [NotificationTypeId], [Name], [Subject], [Body], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (61, NULL, NULL, NULL, 30, 1, N'To Approver', N'ACTION REQUIRED: Request to Review IDP of {Requester FullName}', N'<span style="color: rgb(47, 47, 47); font-family: proxima-nova, " helvetica="" neue",="" helveticaneue,="" helvetica,="" arial,="" sans-serif;="" font-size:="" 15px;="" white-space:="" pre-wrap;"="">The individual development plan of&nbsp;&nbsp;<b style="color: rgb(57, 57, 57);">{Requester FullName}</b><span style="color: rgb(57, 57, 57);">&nbsp;</span>has been submitted for your feedback and approval.
+
+Your immediate action on this matter is appreciated.&nbsp;
+</span><div><span style="color: rgb(47, 47, 47); font-family: proxima-nova, " helvetica="" neue",="" helveticaneue,="" helvetica,="" arial,="" sans-serif;="" font-size:="" 15px;="" white-space:="" pre-wrap;"=""><br></span></div><div><span style="color: rgb(47, 47, 47); font-family: proxima-nova, " helvetica="" neue",="" helveticaneue,="" helvetica,="" arial,="" sans-serif;="" font-size:="" 15px;="" white-space:="" pre-wrap;"="">This is a system-generated message. Please do not reply.</span></div>', NULL, NULL, NULL, NULL)
+GO
+INSERT [workflows].[EmailBodyTemplate_] ([EmailBodyTemplate_Id], [Stages_Id], [EmailDirection], [EmailType], [TransactionTypeId], [NotificationTypeId], [Name], [Subject], [Body], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (62, NULL, NULL, NULL, 30, 1, N'To Submitter', N'FYI: Your application for IDP has been {ActionNamePastTense}', N'<span style="color: rgb(47, 47, 47); font-family: proxima-nova, &quot;Helvetica Neue&quot;, HelveticaNeue, Helvetica, Arial, sans-serif; font-size: 15px; white-space: pre-wrap;">This is to inform you that the Individual Development Plan that you have submitted has been {ActionNamePastTense}.
+
+This is a system-generated message. Please do not reply.</span><br>', NULL, NULL, NULL, NULL)
+GO
+SET IDENTITY_INSERT [workflows].[EmailBodyTemplate_] OFF
+GO

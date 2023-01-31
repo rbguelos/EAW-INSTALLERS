@@ -1,0 +1,15 @@
+IF EXISTS(SELECT TOP 1 1 FROM sys.Objects WHERE object_id = object_id('performanceappraisal.PEProcess'))
+DROP TABLE report.ConfigTemplate
+
+
+CREATE TABLE [performanceappraisal].[PEProcess](
+	[PEProcessId] [bigint] IDENTITY(1,1) NOT NULL,
+	[StepNo] [smallint] NULL,
+	[PEProcessTypeId] [smallint] NULL,
+	[IsActive] [bit] NULL,
+	[Template] [varchar](max) NULL,
+	[CreateId] [bigint] NULL,
+	[CreateDate] [datetime] NULL,
+	[LastUpdateId] [bigint] NULL,
+	[LastUpdateDate] [datetime] NULL)
+

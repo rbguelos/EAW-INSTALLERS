@@ -1,0 +1,17 @@
+SET NOCOUNT ON
+/*start deleting existing report configs*/
+DELETE FROM maintenance.TemplateBuilderField WHERE TBFieldId IN (756)
+/*end deleting existing report configs*/
+
+/*start insert data to admin.FileGeneratorDtl*/
+SET IDENTITY_INSERT [maintenance].[TemplateBuilderField] ON
+INSERT [maintenance].[TemplateBuilderField] ([TBFieldId],[FieldCode],[FieldName],[DisplayText],[ModuleCode],[FieldType],[SourceTable],[SourceTableLink],[SourceFieldLink],[UseAsParameter],[Hidden],[DataFormat],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES(756,'ProfileSalarySalaryRate','ProfileSalaryRate','Salary Rate For Employee 201','Onboarding,Employee 201','number','report.vwEmployeeSalaryFromProfile','','',0,0,NULL,NULL,NULL,NULL,NULL)
+SET IDENTITY_INSERT [maintenance].[TemplateBuilderField] OFF
+/*end insert data to admin.FileGeneratorDtl*/
+
+SET NOCOUNT OFF
+
+/*start deleting existing report configs*/
+SELECT * FROM maintenance.TemplateBuilderField WHERE TBFieldId IN (756)
+
+

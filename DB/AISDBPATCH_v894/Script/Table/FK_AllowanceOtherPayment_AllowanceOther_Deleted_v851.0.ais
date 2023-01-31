@@ -1,0 +1,5 @@
+ALTER TABLE [payroll].[AllowanceOtherPayment_Deleted]  WITH CHECK ADD  CONSTRAINT [FK_AllowanceOtherPayment_AllowanceOther_Deleted] FOREIGN KEY([AllowanceOtherId])
+REFERENCES [payroll].[AllowanceOther_Deleted] ([AllowanceOtherId])
+ON DELETE CASCADE
+
+ALTER TABLE [payroll].[AllowanceOtherPayment_Deleted] CHECK CONSTRAINT [FK_AllowanceOtherPayment_AllowanceOther_Deleted]

@@ -1,0 +1,11 @@
+EXEC [admin].[UpdateListColumns]
+	@ListName = 'Performance Objective List', @ListType = 'PAObjectiveColumnList',
+	@DefaultColumn = 'DatePrepared|EmployeeNo|EmployeeName|Department|Position|Status|PeriodType'
+
+EXEC [maintenance].[UpdateJQListColumns]
+	@ListType = 'PAObjectiveColumnList', @ColumnType = 'date', @Name = 'DatePrepared', @Label = 'Date Prepared',
+	@Width = '120', @Align ='', @Formatter = '', @FormatterOption = '', @Others = '', @Clients = ''
+
+EXEC [maintenance].[UpdateJQListColumns]
+	@ListType = 'PAObjectiveColumnList', @ColumnType = 'label', @Name = 'PeriodType', @Label = 'Period',
+	@Width = '150', @Align ='', @Formatter = '', @FormatterOption = '', @Others = '', @Clients = ''

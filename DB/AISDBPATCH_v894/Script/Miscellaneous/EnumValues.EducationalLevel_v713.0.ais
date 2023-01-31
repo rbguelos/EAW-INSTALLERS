@@ -1,0 +1,16 @@
+  
+DELETE FROM [maintenance].[EnumValues] 
+WHERE SourceName = 'EducationalLevel'
+		  
+--Elementary    
+INSERT INTO [maintenance].[EnumValues] ([SourceName]  , [DisplayText]  , [Value]  , [OrderNumber]  , [Status]  , [CreateId]  , [CreateDate]  , [LastUpdateId]  , [LastUpdateDate])      VALUES ('EducationalLevel', 'Elementary', '1', '1', '1', NULL, NULL, NULL, NULL)   
+--High School    
+INSERT INTO [maintenance].[EnumValues] ([SourceName]  , [DisplayText]  , [Value]  , [OrderNumber]  , [Status]  , [CreateId]  , [CreateDate]  , [LastUpdateId]  , [LastUpdateDate])      VALUES ('EducationalLevel', 'High School', '2', '2', '1', NULL, NULL, NULL, NULL)   
+--College    
+INSERT INTO [maintenance].[EnumValues] ([SourceName]  , [DisplayText]  , [Value]  , [OrderNumber]  , [Status]  , [CreateId]  , [CreateDate]  , [LastUpdateId]  , [LastUpdateDate])      VALUES ('EducationalLevel', 'College', '3', '3', '1', NULL, NULL, NULL, NULL)   
+--Post Graduate  
+INSERT INTO [maintenance].[EnumValues] ([SourceName]  , [DisplayText]  , [Value]  , [OrderNumber]  , [Status]  , [CreateId]  , [CreateDate]  , [LastUpdateId]  , [LastUpdateDate])      VALUES ('EducationalLevel', 'Post Graduate', '4', '4', '1', NULL, NULL, NULL, NULL)   
+--Vocational   
+INSERT INTO [maintenance].[EnumValues] ([SourceName]  , [DisplayText]  , [Value]  , [OrderNumber]  , [Status]  , [CreateId]  , [CreateDate]  , [LastUpdateId]  , [LastUpdateDate])      VALUES ('EducationalLevel', 'Vocational', '5', '5', '1', NULL, NULL, NULL, NULL)   
+--Tertiary   
+INSERT INTO [maintenance].[EnumValues] ([SourceName]  , [DisplayText]  , [Value]  , [OrderNumber]  , [Status]  , [CreateId]  , [CreateDate]  , [LastUpdateId]  , [LastUpdateDate])      VALUES ('EducationalLevel', 'Tertiary', '6', '6', '1', NULL, NULL, NULL, NULL)   

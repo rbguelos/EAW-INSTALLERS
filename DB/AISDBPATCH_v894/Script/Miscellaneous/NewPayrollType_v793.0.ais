@@ -1,0 +1,35 @@
+IF NOT EXISTS(SELECT * FROM maintenance.ConfigSetupDetail WHERE PropertyName = 'MinHoursWorked')
+BEGIN
+	INSERT INTO maintenance.ConfigSetupDetail(
+		ConfigSetupHeaderId, PropertyName, LabelName, PropertyValue, Type, Source, [Group], Subgroup, SortOrder, Alignment)
+	SELECT 
+	ConfigSetupHeaderId = 1, 
+	PropertyName = 'MinHoursWorked', 
+	LabelName = 'Minimum Hours for Automatic Lunch Break Deduction hrs', 
+	PropertyValue = '', 
+	Type = 'number', 
+	Source = '', 
+	[Group] = 1, 
+	Subgroup = 0, 
+	SortOrder = 23, 
+	Alignment = ''
+END
+
+IF NOT EXISTS(SELECT * FROM maintenance.ConfigSetupDetail WHERE PropertyName = 'LunchHour')
+BEGIN
+	INSERT INTO maintenance.ConfigSetupDetail(
+		ConfigSetupHeaderId, PropertyName, LabelName, PropertyValue, Type, Source, [Group], Subgroup, SortOrder, Alignment)
+	SELECT 
+	ConfigSetupHeaderId = 1, 
+	PropertyName = 'LunchHour', 
+	LabelName = 'Apply Lunch Hour', 
+	PropertyValue = '', 
+	Type = 'dropdownList', 
+	Source = ' :0,Start of Window:1,Middle of Window:2,End of Window:3', 
+	[Group] = 1, 
+	Subgroup = 0, 
+	SortOrder = 24, 
+	Alignment = ''
+END
+
+UPDATE maintenance.ConfigSetupHeader SET Panel1 = 'Time Entry;24;2' WHERE ConfigSetupHeaderId = 1

@@ -1,0 +1,17 @@
+EXEC [maintenance].[UpdateJQListColumns]
+	@ListType = 'ConditionedHoursColumnList', @ColumnType = 'label', @Name = 'PeriodType', @Label = 'Period Type',
+	@Width = '90', @Align = '', @Formatter = '', @FormatterOption = '', @Others = ''
+
+EXEC [maintenance].[UpdateJQListColumns]
+	@ListType = 'ConditionedHoursColumnList', @ColumnType = 'label', @Name = 'JobPositions', @Label = 'Job Positions',
+	@Width = '245', @Align = '', @Formatter = '', @FormatterOption = '',
+	@Others = 'formatter: ConditionedHours.formatJobPositions, cellattr: ConditionedHours.formatJobPositionsTooltip'
+
+EXEC [maintenance].[UpdateJQListColumns]
+	@ListType = 'ConditionedHoursColumnList', @ColumnType = 'label', @Name = 'Employees', @Label = 'Employees',
+	@Width = '245', @Align = '', @Formatter = '', @FormatterOption = '',
+	@Others = 'formatter: ConditionedHours.formatEmployees, cellattr: ConditionedHours.formatEmployeesTooltip'
+
+EXEC [maintenance].[UpdateJQListColumns]
+	@ListType = 'ConditionedHoursColumnList', @ColumnType = 'amount', @Name = 'CondHrs', @Label = 'Hours',
+	@Width = '70', @Align = '', @Formatter = '', @FormatterOption = '', @Others = ''

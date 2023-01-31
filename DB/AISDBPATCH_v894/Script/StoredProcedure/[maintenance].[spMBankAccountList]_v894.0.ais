@@ -1,0 +1,47 @@
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+ALTER PROCEDURE [maintenance].[spMBankAccountList] 
+
+AS
+BEGIN
+	SET NOCOUNT ON;
+
+		SELECT 
+		 MBankAccountId = MBankAccount.MBankAccountId
+		,AccountName = MBankAccount.AccountName
+		,BankId = MBankAccount.BankId
+		,BankCode = Bank.Code
+		,BranchManager = MBankAccount.BranchManager
+		,Address1 = MBankAccount.Address1
+		,Address2 = MBankAccount.Address2
+		,Address3 = MBankAccount.Address3
+		,DebitTransactionCode = MBankAccount.DebitTransactionCode
+		,CrediTransactionCode = MBankAccount.CrediTransactionCode
+		,BankBranchCode = MBankAccount.BankBranchCode
+		,BankBranchName = MBankAccount.BankBranchName
+		,BankCompanyCode = MBankAccount.BankCompanyCode
+		,AccountNumber = MBankAccount.AccountNumber
+		,AccountType = MBankAccount.AccountType
+		--,Company = Company.Name
+		,BankAccountName = MBankAccount.BankAccountName
+		,Company = CompanyName.[Name]
+	FROM maintenance.MBankAccount
+	LEFT JOIN maintenance.Bank 
+		ON MBankAccount.BankId = Bank.BankId
+	LEFT JOIN maintenance.Company 
+		ON MBankAccount.CompanyId = Company.CompanyId
+
+	OUTER APPLY
+	(
+		SELECT [Name] = STUFF((
+			SELECT 
+				','+ C.Name
+			FROM maintenance.Company C
+			WHERE CHARINDEX(',' + CAST(C.CompanyId AS VARCHAR(MAX)) + ',', ',' + CompanyIds + ',') > 0
+		FOR XML PATH(''), ROOT ('MyString'), TYPE)
+		.value('/MyString[1]', 'varchar(max)'), 1, 1, '')
+	)CompanyName
+END 

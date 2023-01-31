@@ -1,0 +1,68 @@
+IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[workflow].[spInsertNewWFTransaction]') AND type in (N'P', N'PC'))
+DROP PROCEDURE [workflow].[spInsertNewWFTransaction]
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+/*===========================================*\
+	   Last Update Date: 02/02/2018
+	   Last Update By: Alexis
+	   Last DBVersion executed: v667
+	   -Reinclude in the patch
+\*===========================================*/
+CREATE PROCEDURE [workflow].[spInsertNewWFTransaction]
+	@TransactionId BIGINT = 0,
+	@TransactionTypeId BIGINT = 0,
+	@SubmitterId BIGINT = 0,
+	@CreateDate DATETIME = '',
+	@CreateId BIGINT = 0
+AS
+BEGIN
+	IF NOT EXISTS (SELECT * FROM workflow.WFTransaction WHERE TransactionId = @TransactionId AND TrancationTypeId = @TransactionTypeId)
+		BEGIN
+			INSERT INTO [workflow].[WFTransaction] 
+			([TransactionId], [TrancationTypeId], [SubmitterId], [CreateDate], [CreateId]) 
+			VALUES (@TransactionId, @TransactionTypeId, @SubmitterId, @CreateDate, @CreateId) 
+			DECLARE @Id BIGINT = (SELECT TOP 1 CAST(SCOPE_IDENTITY() AS BIGINT)); 
+			SELECT  
+				ActionTriggeredId = CAST(0 AS BIGINT), 
+				CurrentStageId = CAST(0 AS BIGINT), 
+				TransactionId = WFT.TransactionId, 
+				TransactionType = TT.Name, 
+				TransactionTypeEQ = TT.TransactionTypeEQ, 
+				TransactionTypePrimaryEQ = TT.TransactionTypePrimaryEQ, 
+				TransactionTypeStatusEQ = TT.TransactionTypeStatusEQ, 
+				TransactionTypeId = WFT.TrancationTypeId, 
+				SubmitterId = WFT.SubmitterId, 
+				MemberId = CAST(0 AS BIGINT), 
+				WFTransactionId = WFT.WFTransactionId 
+			FROM workflow.WFTransaction WFT 
+			INNER JOIN workflow.TransactionType TT 
+			ON TT.TransactionTypeId = WFT.TrancationTypeId 
+			WHERE WFT.WFTransactionId = @Id
+		END
+    ELSE
+		BEGIN
+			SELECT  
+				ActionTriggeredId = CAST(0 AS BIGINT), 
+				CurrentStageId = CAST(0 AS BIGINT), 
+				TransactionId = WFT.TransactionId, 
+				TransactionType = TT.Name, 
+				TransactionTypeEQ = TT.TransactionTypeEQ, 
+				TransactionTypePrimaryEQ = TT.TransactionTypePrimaryEQ, 
+				TransactionTypeStatusEQ = TT.TransactionTypeStatusEQ, 
+				TransactionTypeId = WFT.TrancationTypeId, 
+				SubmitterId = WFT.SubmitterId, 
+				MemberId = CAST(0 AS BIGINT), 
+				WFTransactionId = WFT.WFTransactionId 
+			FROM workflow.WFTransaction WFT 
+			INNER JOIN workflow.TransactionType TT 
+			ON TT.TransactionTypeId = WFT.TrancationTypeId 
+			WHERE WFT.TransactionId = @TransactionId
+			AND WFT.TrancationTypeId = @TransactionTypeId
+		END
+END
+GO
+
+

@@ -1,0 +1,1 @@
+UPDATE admin.FileImportDtl SET IsRequired = 1 WHERE TableFieldName IN ('ProfileId','DateFiled','LeaveTypeId','InclusiveStartDate','InclusiveEndDate') AND FileImportHeaderId = 6; 

@@ -1,0 +1,84 @@
+UPDATE report.ReportSubReport SET CmdQuery = 
+'SELECT 
+    ETE.[OR]
+	,ETE.ApprovedORNS
+	,ETE.ApprovedRegularOT
+	,ETE.ApprovedNSOT
+	,ETE.ApprovePreshiftOT
+	,ETE.ApprovePreshiftNSOT
+	,ETE.CompanyNonWorkingDayOT
+	,ETE.CompanyNonWorkingNightShiftDayOT
+	,ETE.ApproveHolidayRestDay
+	,ETE.CompanyNonWorkingDay
+	,ETE.ApproveNS
+	,ETE.CompanyNonWorkingNightShiftDay
+	,ETE.WorkDate
+	,ETE.ApprovedRENS
+	,ETE.ApprovedHONS
+	,ETE.ApprovedSPNS
+	,ETE.ApprovedHRNS
+	,ETE.ApprovedSRNS
+	,ETE.Late
+	,ETE.Undertime
+	,ETE.Absent
+	,ETE.ProfileId
+	,ETE.NonWorkRegularHoliday
+	,ETE.NonWorkSpecialHoliday
+FROM payroll.PaySheetHeaderDetail PHD WITH (NOLOCK)
+INNER JOIN payroll.PaySheetHeader PH WITH (NOLOCK)  ON (PH.PaySheetHeaderId = PHD.PaySheetHeaderId)
+CROSS APPLY
+(
+	SELECT 
+		ETE.[OR]
+		,ETE.ApprovedORNS
+		,ETE.ApprovedRegularOT
+		,ETE.ApprovedNSOT
+		,ETE.ApprovePreshiftOT
+		,ETE.ApprovePreshiftNSOT
+		,ETE.CompanyNonWorkingDayOT
+		,ETE.CompanyNonWorkingNightShiftDayOT
+		,ETE.ApproveHolidayRestDay
+		,ETE.CompanyNonWorkingDay
+		,ETE.ApproveNS
+		,ETE.CompanyNonWorkingNightShiftDay
+		,ETE.WorkDate
+		,ETE.ApprovedRENS
+		,ETE.ApprovedHONS
+		,ETE.ApprovedSPNS
+		,ETE.ApprovedHRNS
+		,ETE.ApprovedSRNS
+		,ETE.Late
+		,ETE.Undertime
+		,ETE.Absent
+		,ETE.ProfileId
+		,ETE.NonWorkRegularHoliday
+		,ETE.NonWorkSpecialHoliday
+	FROM report.fnEmployeeTimeEtnry(0,0,PH.CutOffStartDate,PH.CutOffEndDate,PHD.ProfileId) ETE
+	WHERE ETE.ProfileId = PHD.ProfileId
+	AND (ETE.WorkDate >= PH.CutOffStartDate) AND (ETE.WorkDate <= PH.CutOffEndDate)
+)ETE
+
+WHERE (PH.PaySheetHeaderId = @PaySheetHeaderId)
+
+/*
+dbo.vwEmployeeTimeEntry ETE 
+INNER JOIN payroll.PaySheetHeaderDetail PHD WITH (NOLOCK)
+    ON PHD.ProfileId = ETE.ProfileId
+INNER JOIN payroll.PaySheetHeader PH WITH (NOLOCK)
+    ON (PH.PaySheetHeaderId = PHD.PaySheetHeaderId)  AND (ETE.WorkDate >= PH.CutOffStartDate) AND (ETE.WorkDate <= PH.CutOffEndDate)
+WHERE (PH.PaySheetHeaderId = @PaySheetHeaderId)
+*/'
+WHERE ReportCode IN 
+(
+'PayslipTimeSummary_WithLogo'
+,'PayslipTimeSummary'
+,'NoTearoutSignatureSection'
+,'PaycheckWebTemplate'
+,'PayslipNoTearoutWithSignatureRemarks'
+,'PayslipRegularOTSummary'
+,'PayslipSummaryWithTotalEarningsDeductions'
+,'PayslipTimeSummaryNoLeave'
+,'PayslipTimeSummaryWithDetailedLeaveBalance'
+,'PaySlipTimeSummarywithGrosstoDate'
+,'PaySlipTimeSummarywithGrosstoDate') 
+AND SubReportName IN ('TimeEntrySummaryDetail','TimeEntrySummary','HiddenTimeEntryDetail','TimeEntryDetail')

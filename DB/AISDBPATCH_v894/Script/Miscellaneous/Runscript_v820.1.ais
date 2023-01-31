@@ -1,0 +1,30 @@
+UPDATE CSD SET SortOrder = SortOrder + 2
+FROM maintenance.ConfigsetUpDetail CSD
+WHERE ConfigSetupHeaderId = 1
+AND [Group] = 1
+AND (SortOrder BETWEEN 17 AND 24)
+
+UPDATE maintenance.ConfigSetupDetail SET 
+LabelName = 'Disable Deduct Flexible Time Limit from Tardiness Rule if Tardiness >= [n] hrs',
+SortOrder = 17
+WHERE PropertyName = 'DisableDeductFlexibleTimeLimit'
+
+UPDATE maintenance.ConfigSetupDetail SET 
+SortOrder = 18
+WHERE PropertyName = 'DeductFlexiTardinessLimit'
+
+UPDATE maintenance.ConfigSetupDetail SET 
+LabelName = 'Round down overtime to [n] minute intervals' 
+WHERE PropertyName = 'RoundDownOvertimeToMinuteIntervals'
+
+UPDATE CSD SET SortOrder = SortOrder - 1
+FROM maintenance.ConfigsetUpDetail CSD
+WHERE ConfigSetupHeaderId = 1
+AND [Group] = 1
+AND (SortOrder BETWEEN 12 AND 21)
+
+UPDATE maintenance.ConfigSetupDetail SET 
+SortOrder = 21
+WHERE PropertyName = 'RequireFileAttachmentForManualTimeLogRequest'
+
+UPDATE  maintenance.ConfigSetupHeader SET Panel1 = 'Time Entry;30;2' WHERE ConfigSetupHeaderId = 1

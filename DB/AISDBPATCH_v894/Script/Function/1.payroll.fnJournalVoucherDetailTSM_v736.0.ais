@@ -1,0 +1,123 @@
+IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[payroll].[fnJournalVoucherDetailTSM]') AND type in (N'FN', N'IF', N'TF', N'FS', N'FT'))
+DROP FUNCTION [payroll].[fnJournalVoucherDetailTSM]
+GO
+
+ --=============================================
+ --Author:      AGC
+ --Create date: 07.25.2019
+ --Description: For JV File Generator File
+ --=============================================
+
+CREATE FUNCTION [payroll].[fnJournalVoucherDetailTSM]
+(
+	--DECLARE
+	@JVHeaderId BIGINT = 5
+	,@UserSecurityId BIGINT = 11404
+)
+RETURNS TABLE 
+AS
+RETURN
+(
+
+SELECT 
+	RowId = ROW_NUMBER() OVER (ORDER BY Cols.PostGrp, DTL.PaySheetColumnName, CostCenter.CostCenterCode)
+	,[Status] = ISNULL('','')
+	,Interco = ISNULL('','')
+	,VoucherNo = ISNULL('','')
+	,Seq = ROW_NUMBER() OVER (ORDER BY Cols.PostGrp, DTL.PaySheetColumnName, CostCenter.CostCenterCode)
+	,Account = ISNULL(COA.AccountCode,'')
+	,EDate = (CASE WHEN ISNULL(HDR.JVDate,'1/1/1900') > '1/1/1900' THEN FORMAT(HDR.JVDate,N'yyyyMMdd') ELSE '' END)
+	,EaningDeduction = (CASE WHEN ISNULL(HDR.JVDate,'1/1/1900') > '1/1/1900' THEN FORMAT(HDR.JVDate,N'MM/dd/yyyy') + ' ' ELSE '' END) + ISNULL(DTL.PaySheetColumnName,'')
+	,BaseAmount = ISNULL(DTL.Amount,0)
+	,CurCode = 	ISNULL('PHP','')
+	,ExcRate = 	ISNULL('','')
+	,CurrencyAmount = ISNULL(DTL.Amount,0)
+	,ShipCode = ISNULL('','')
+	,Voyage = ISNULL('','')
+	,EntryPeriod = ISNULL('','')
+	,ExpPeriod = ISNULL('','')
+	,[Port] = ISNULL('','')
+	,Department = ISNULL(E.Department,'')
+	,VatCode = ISNULL('','')
+	,VatRate = ISNULL('','')
+	,ExCodeOne = ISNULL('','')
+	,ExCodeTow = ISNULL('','')
+	,ExCodeThree = ISNULL('','')
+	,InvNumber = ISNULL('','')
+	,Ref = 	ISNULL('','')
+	,[CurDate] = ISNULL('','')
+	,InvDate = ISNULL('','')
+	,DueDate = ISNULL('','')
+	,PurDate = ISNULL('','')
+	,ExpDate =ISNULL('','')
+	,NoOf = ISNULL('','')
+	,ProjectCode = ISNULL('','')
+	,PurposeCode = ISNULL('','')
+	,ObjectCode = ISNULL('','')
+	,SLType = ISNULL('','')
+	,SLTypeTwo = ISNULL('','')
+	,SLCodeTwo = ISNULL('','')
+	,SLCode = ISNULL('','')
+	,TonBunkers = ISNULL('','')
+	,CIDCode = ISNULL('','')
+	,ContractNoteNumber = ISNULL('','')
+	,LTDCompany =ISNULL('','')
+	,OppositeCompany = ISNULL('','')
+	,Approved = ISNULL('','')
+	,PONumber = ISNULL('','')
+	,POYears = ISNULL('','')
+	,POVersion = ISNULL('','')
+	,Classification = ISNULL('','')
+	,Country = ISNULL('','')
+	,AssetCode =ISNULL('','')
+	,AssetClass = ISNULL('','')
+	,[Contract] = ISNULL('','')
+FROM payroll.JVDetail DTL
+INNER JOIN PAYROLL.JVHeader HDR ON HDR.JVHeaderId = DTL.JVHeaderid
+
+OUTER APPLY
+(
+	SELECT TOP 1 
+		AccountCode = COA.AcctCode
+		,AccountTitle =  COA.AcctTitle
+	FROM maintenance.COA COA WHERE COA.COAId = DTL.COAId
+)COA
+
+CROSS APPLY
+(
+	SELECT TOP 1
+		E.LastName
+		,E.FirstName
+		,E.MiddleName
+		,EI.FullName
+		,EI.EmployeeNo
+		,TaxStatus = (SELECT TOP 1 DisplayText FROM maintenance.EnumValues WHERE SourceName = 'TaxExemptionStatus' AND [Value] = E.TaxExemptionStatusId)
+		,EI.Department
+	FROM employee.Profile E 
+	JOIN employee.FN_GETEmployeeInformation() EI ON EI.ProfileId = E.ProfileId
+	WHERE E.ProfileId = DTL.ProfileId
+)E
+
+OUTER APPLY
+(
+	SELECT TOP 1 
+		CostCenterCode = CostCenter.Code
+		,CostCenterDesc = CostCenter.Description 
+		,CostCenterGroupCode = ISNULL(CostCenterGroup.Code,'')
+		,CostCenterGroupDescription = ISNULL(CostCenterGroup.Description,'')
+	FROM maintenance.CostCenter CostCenter 
+	OUTER APPLY(SELECT TOP 1 CostCenterGroup.Code,CostCenterGroup.Description FROM maintenance.CostCenterGroup CostCenterGroup WHERE CostCenterGroup.CostCenterGroupId = CostCenter.CostCenterGroupId)CostCenterGroup
+	WHERE CostCenter.CostCenterId = DTL.CostCenterId
+)CostCenter
+
+CROSS APPLY
+(
+	SELECT
+		PostGrp = (CASE WHEN ISNULL(DTL.PostGroup,0) = -1 THEN 2 ELSE 1 END)
+)Cols
+
+WHERE 1=1
+
+AND HDR.JVHeaderId = @JVHeaderId
+
+)

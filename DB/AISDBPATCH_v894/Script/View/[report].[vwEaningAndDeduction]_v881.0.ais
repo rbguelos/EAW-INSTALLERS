@@ -1,0 +1,14 @@
+IF  EXISTS (SELECT * FROM sys.views WHERE object_id = OBJECT_ID(N'[report].[vwEaningAndDeduction]'))
+DROP VIEW [report].[vwEaningAndDeduction]
+GO
+
+/*===========================================*
+**	   Author:      JPR
+**	   Update date: 05/28/2020
+**	   Description: Earnings And Deductions
+\*===========================================*/
+
+CREATE VIEW [report].[vwEaningAndDeduction]
+AS
+SELECT * FROM compben.EarningDeduction WHERE ISNULL(MappedToId,0) = 0 
+GO

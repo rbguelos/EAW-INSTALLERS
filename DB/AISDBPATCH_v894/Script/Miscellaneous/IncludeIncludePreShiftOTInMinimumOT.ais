@@ -1,0 +1,5 @@
+SET NOCOUNT ON
+DELETE FROM maintenance.ConfigSetupDetail WHERE PropertyName = 'IncludePreShiftOTInMinimumOT'
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupHeaderId],[PropertyName],[LabelName],[PropertyValue],[Type],[Source],[Group],[SubGroup],[SortOrder],[Alignment],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES(1,'IncludePreShiftOTInMinimumOT','Include Pre-shift OT in Minimum OT','','checkbox','','2','0',10,'',NULL,NULL,30,'May 28 2019  2:54:33:583PM')
+SET NOCOUNT OFF
+

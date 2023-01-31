@@ -1,0 +1,21 @@
+GO
+/****** Object:  Table [attendance].[SyncLog]    Script Date: 2/6/2020 10:50:43 AM ******/
+IF NOT EXISTS(SELECT TOP 1 1 FROM sys.Objects WHERE OBJECT_ID = OBJECT_ID('[attendance].[SyncLog]'))
+CREATE TABLE [attendance].[SyncLog](
+	[SyncLogId] [bigint] IDENTITY(1,1) NOT NULL,
+	[SyncDate] [datetime] NULL,
+	[CompanyIds] [varchar](max) NULL,
+	[PeriodStartDate] [datetime] NULL,
+	[PeriodEndDate] [datetime] NULL,
+	[SyncCount] [bigint] NULL,
+	[CompanyName] [varchar](max) NULL,
+	[CreateId] [bigint] NULL,
+	[CreateDate] [datetime] NULL,
+	[LastUpdateId] [bigint] NULL,
+	[LastUpdateDate] [datetime] NULL,
+ CONSTRAINT [PK_MobileSyncLog] PRIMARY KEY CLUSTERED 
+(
+	[SyncLogId] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+GO

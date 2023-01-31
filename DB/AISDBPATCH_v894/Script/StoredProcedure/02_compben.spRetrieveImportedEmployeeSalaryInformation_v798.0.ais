@@ -1,0 +1,91 @@
+IF NOT OBJECT_ID('[compben].[spRetrieveImportedEmployeeSalaryInformation]') IS NULL
+DROP PROCEDURE [compben].[spRetrieveImportedEmployeeSalaryInformation]
+GO
+
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+/*===========================================*\
+**	   Last Update Date: 11/29/2019
+**	   Last Update By: Ronald
+**	   Last DBVersion executed: v
+\*===========================================*/
+
+-- =============================================
+-- Author:		JPPP
+-- Create date: 10172016
+-- Description:	Retrieve Imported Employee Salary Information and latest Salary Information Effective Date 
+-- =============================================
+
+CREATE PROCEDURE [compben].[spRetrieveImportedEmployeeSalaryInformation]
+( 
+	@UserId bigint = 0
+)
+AS
+BEGIN
+
+	SELECT
+		ISNULL(ImportSalaryInformation.ImportSalaryInformationId,0) ImportSalaryInformationId,
+		ISNULL(ImportSalaryInformation.ProfileId,0) ProfileId,
+		ISNULL(ImportSalaryInformation.EffectiveDate,'1/1/1900') EffectiveDate,
+		ISNULL(ImportSalaryInformation.CurrencyId,0) CurrencyId,
+		ISNULL(ImportSalaryInformation.SalaryFactor,0) SalaryFactor,
+		ISNULL(ImportSalaryInformation.SalaryRate,0) SalaryRate,
+		ISNULL(ImportSalaryInformation.MinimumTakeHomePayType,0) MinimumTakeHomePayTypeId,
+		ISNULL(ImportSalaryInformation.MinimumTakeHomePayValue,0) MinimumTakeHomePayValue,
+		ISNULL(SalaryInformation.EffectiveDate, '1/1/1900') LatestEffectiveDate,
+		RTRIM(EmployeeProfile.LastName) + ', ' + RTRIM(EmployeeProfile.FirstName) + 
+				CASE WHEN ISNULL(EmployeeProfile.Appellation,'') <> '' THEN + ' ' + RTRIM(EmployeeProfile.Appellation) + ' ' ELSE '' END + 
+				CASE WHEN RTRIM(EmployeeProfile.MiddleName) <> '' THEN ' ' + LEFT(EmployeeProfile.MiddleName, 1) + '.' ELSE ''
+			END EmployeeName,
+		ISNULL(ImportSalaryInformation.SSSType,0) SSSType,
+		ISNULL(ImportSalaryInformation.SSSSalaryLimit,0) SSSSalaryLimit,
+		ISNULL(ImportSalaryInformation.PhilHealthType,0) PhilHealthType,
+		ISNULL(ImportSalaryInformation.PhilHealthSalaryLimit,0) PhilHealthSalaryLimit,
+		ISNULL(ImportSalaryInformation.PagIbigType,0) PagIbigType,
+		ISNULL(ImportSalaryInformation.PagIbigSalaryLimit,0) PagIbigSalaryLimit,
+		ISNULL(ImportSalaryInformation.PagIbigESType,0) PagIbigESType,
+		ISNULL(ImportSalaryInformation.PagIbigESSalaryLimit,0) PagIbigESSalaryLimit,
+		ISNULL(ImportSalaryInformation.WHTType,0) WHTType,
+		ISNULL(ImportSalaryInformation.WHTSalaryLimit,0) WHTSalaryLimit,
+		ISNULL(ExistingSalaryInformation.ExistingEffectiveDate,'1/1/1900') ExistingEffectiveDate
+		,isnull(ImportSalaryInformation.MinimumWageEarner,0)MinimumWageEarner
+	FROM compben.ImportSalaryInformation
+	LEFT JOIN employee.[Profile] EmployeeProfile ON  ImportSalaryInformation.ProfileId = EmployeeProfile.ProfileId
+	OUTER APPLY
+	(
+		SELECT MAX(SalaryInformation.EffectiveDate)  EffectiveDate
+		FROM employee.SalaryInformation WHERE SalaryInformation.ProfileId = ImportSalaryInformation.ProfileId
+	) SalaryInformation
+	OUTER APPLY
+	(
+		SELECT 
+			ISNULL(SalaryInformation.EffectiveDate,'1/1/1900') ExistingEffectiveDate 
+		FROM employee.SalaryInformation
+		WHERE
+			SalaryInformation.ProfileId = ImportSalaryInformation.ProfileId
+		AND SalaryInformation.EffectiveDate = ImportSalaryInformation.EffectiveDate
+	) ExistingSalaryInformation
+	WHERE
+		ImportSalaryInformation.CreateId = @UserId
+	AND ImportSalaryInformation.RetrievalStatusId = 1 /*DRAFT*/
+	ORDER BY
+		ImportSalaryInformation.ImportSalaryInformationId
+		
+
+	/*UPDATE RECORD WITH PROCESSED STATUS AFTER THE RETRIEVAL OF RECORD*/
+	UPDATE 
+		compben.ImportSalaryInformation
+	SET 
+		ImportSalaryInformation.RetrievalStatusId = 27 /*PROCESSED*/
+	WHERE 
+		ImportSalaryInformation.CreateId = @UserId
+	AND ImportSalaryInformation.RetrievalStatusId = 1
+
+END
+GO
+
+

@@ -1,0 +1,34 @@
+SET IDENTITY_INSERT security.Module_Forms  ON
+IF EXISTS(SELECT TOP 1 1 FROM maintenance.Module WHERE ModuleId = 25)
+BEGIN
+	INSERT INTO security.Module_Forms
+	(ModuleFormId, ModuleId, Name, Form, AccessTypeId, CreateId, CreateDate) VALUES
+	(10632, 25, 'Performance Objective', 'Performance Objective', '1,2,3,4', -999, GETDATE())
+END
+SET IDENTITY_INSERT security.Module_Forms  OFF
+
+DELETE FROM security.Module_Forms
+WHERE ModuleFormId = 285 AND ModuleId = 25
+AND [Name] = 'Performance Evaluation Schedule'
+
+UPDATE admin.MenuMenu SET SortOrder = 1 WHERE MenuModuleId = 7 AND MenuName = 'Competency Framework'
+
+UPDATE admin.MenuMenu SET SortOrder = 2 WHERE MenuModuleId = 7 AND MenuName = 'Evaluation Set Up'
+
+UPDATE admin.MenuMenu SET SortOrder = 3 WHERE MenuModuleId = 7 AND MenuName = 'Organization Goal'
+
+UPDATE admin.MenuMenu SET SortOrder = 4 WHERE MenuModuleId = 7 AND MenuName = 'Performance Objective'
+
+UPDATE admin.MenuMenu SET SortOrder = 5 WHERE MenuModuleId = 7 AND MenuName = 'Generate Evaluation Schedule'
+
+UPDATE admin.MenuMenu SET SortOrder = 6 WHERE MenuModuleId = 7 AND MenuName = 'Evaluation Schedule'
+
+UPDATE admin.MenuMenu SET SortOrder = 7 WHERE MenuModuleId = 7 AND MenuName = 'Performance Evaluation'
+
+UPDATE admin.MenuMenu SET SortOrder = 8 WHERE MenuModuleId = 7 AND MenuName = 'Individual Development Plan'
+
+UPDATE admin.MenuMenu SET SortOrder = 9 WHERE MenuModuleId = 7 AND MenuName = 'Evaluation Summary'
+
+UPDATE admin.MenuMenu SET SortOrder = 10 WHERE MenuModuleId = 7 AND MenuName = 'Normalize Evaluation Scores'
+
+UPDATE admin.MenuMenu SET SortOrder = 99 WHERE MenuModuleId = 7 AND MenuName = 'Reports'

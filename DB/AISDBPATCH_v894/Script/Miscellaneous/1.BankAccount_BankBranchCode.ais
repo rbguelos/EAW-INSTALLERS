@@ -1,0 +1,1 @@
+EXEC dbo.AddColumn @SCHEMA = 'employee', @TABLENAME = 'BankAccount', @COLUMNNAME = 'BankBranchCode', @DATATYPE = 'varchar(40)' ,@DEFAULTVALUE = ''

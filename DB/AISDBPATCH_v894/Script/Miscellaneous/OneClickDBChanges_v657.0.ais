@@ -1,0 +1,536 @@
+--===========================================
+--001:LeaveTypeSetup.AccrualJobClass
+--===========================================
+EXEC [dbo].[AddColumn] @TABLENAME = 'LeaveTypeSetup'
+				  ,@COLUMNNAME = 'AccrualJobClass'
+				  ,@DATATYPE = 'smallint'
+				  ,@SCHEMA = 'leave'
+				  ,@DEFAULTVALUE = 0
+
+
+--===========================================
+--002:LeaveTypeSetup.AccrualOrgUnit
+--===========================================
+EXEC [dbo].[AddColumn] @TABLENAME = 'LeaveTypeSetup'
+				  ,@COLUMNNAME = 'AccrualOrgUnit'
+				  ,@DATATYPE = 'smallint'
+				  ,@SCHEMA = 'leave'
+				  ,@DEFAULTVALUE = 0
+
+
+--===========================================
+--003:LeaveTypeEligibility.JobRankId
+--===========================================
+EXEC [dbo].[AddColumn] @TABLENAME = 'LeaveTypeEligibility'
+				  ,@COLUMNNAME = 'JobRankId'
+				  ,@DATATYPE = 'bigint'
+				  ,@SCHEMA = 'leave'
+				  ,@DEFAULTVALUE = 0
+
+
+--===========================================
+--004:LeaveTypeEligibility.JobGradeId
+--===========================================
+EXEC [dbo].[AddColumn] @TABLENAME = 'LeaveTypeEligibility'
+				  ,@COLUMNNAME = 'JobGradeId'
+				  ,@DATATYPE = 'bigint'
+				  ,@SCHEMA = 'leave'
+				  ,@DEFAULTVALUE = 0
+
+
+--===========================================
+--005:LeaveTypeEligibility.JobPositionId
+--===========================================
+EXEC [dbo].[AddColumn] @TABLENAME = 'LeaveTypeEligibility'
+				  ,@COLUMNNAME = 'JobPositionId'
+				  ,@DATATYPE = 'bigint'
+				  ,@SCHEMA = 'leave'
+				  ,@DEFAULTVALUE = 0
+
+
+--===========================================
+--006:LeaveTypeEligibility.AccrualOrgUnitIds
+--===========================================
+EXEC [dbo].[AddColumn] @TABLENAME = 'LeaveTypeEligibility'
+				  ,@COLUMNNAME = 'AccrualOrgUnitIds'
+				  ,@DATATYPE = 'varchar(50)'
+				  ,@SCHEMA = 'leave'
+				  ,@DEFAULTVALUE = ''
+
+			  
+				  
+			
+--===========================================
+--007:Run Script set default Value for AccrualOrgUnitIds **ONLY**	
+--===========================================
+GO
+UPDATE LEAVE.LeaveTypeEligibility
+SET AccrualOrgUnitIds = ''
+
+				  
+--===========================================
+--008:Run Script, Add AccrualOrgUnit
+--===========================================
+DELETE FROM [maintenance].[EnumValues]
+WHERE SourceName = 'AccrualOrgUnit'
+
+
+--Branch
+INSERT INTO [maintenance].[EnumValues] ([SourceName]
+, [DisplayText]
+, [Value]
+, [OrderNumber]
+, [Status]
+, [CreateId]
+, [CreateDate]
+, [LastUpdateId]
+, [LastUpdateDate])
+    VALUES ('AccrualOrgUnit', 'Branch', '1', '1', '1', NULL, NULL, NULL, NULL)
+GO
+
+
+--Department
+INSERT INTO [maintenance].[EnumValues] ([SourceName]
+, [DisplayText]
+, [Value]
+, [OrderNumber]
+, [Status]
+, [CreateId]
+, [CreateDate]
+, [LastUpdateId]
+, [LastUpdateDate])
+    VALUES ('AccrualOrgUnit', 'Department', '2', '2', '1', NULL, NULL, NULL, NULL)
+GO
+
+
+--Office
+INSERT INTO [maintenance].[EnumValues] ([SourceName]
+, [DisplayText]
+, [Value]
+, [OrderNumber]
+, [Status]
+, [CreateId]
+, [CreateDate]
+, [LastUpdateId]
+, [LastUpdateDate])
+    VALUES ('AccrualOrgUnit', 'Office', '3', '3', '1', NULL, NULL, NULL, NULL)
+GO
+
+
+--Unit
+INSERT INTO [maintenance].[EnumValues] ([SourceName]
+, [DisplayText]
+, [Value]
+, [OrderNumber]
+, [Status]
+, [CreateId]
+, [CreateDate]
+, [LastUpdateId]
+, [LastUpdateDate])
+    VALUES ('AccrualOrgUnit', 'Unit', '4', '4', '1', NULL, NULL, NULL, NULL)
+GO
+
+
+--Division
+INSERT INTO [maintenance].[EnumValues] ([SourceName]
+, [DisplayText]
+, [Value]
+, [OrderNumber]
+, [Status]
+, [CreateId]
+, [CreateDate]
+, [LastUpdateId]
+, [LastUpdateDate])
+    VALUES ('AccrualOrgUnit', 'Division', '5', '5', '1', NULL, NULL, NULL, NULL)
+GO
+
+
+--Group
+INSERT INTO [maintenance].[EnumValues] ([SourceName]
+, [DisplayText]
+, [Value]
+, [OrderNumber]
+, [Status]
+, [CreateId]
+, [CreateDate]
+, [LastUpdateId]
+, [LastUpdateDate])
+    VALUES ('AccrualOrgUnit', 'Group', '6', '6', '1', NULL, NULL, NULL, NULL)
+GO
+
+
+--District
+INSERT INTO [maintenance].[EnumValues] ([SourceName]
+, [DisplayText]
+, [Value]
+, [OrderNumber]
+, [Status]
+, [CreateId]
+, [CreateDate]
+, [LastUpdateId]
+, [LastUpdateDate])
+    VALUES ('AccrualOrgUnit', 'District', '7', '7', '1', NULL, NULL, NULL, NULL)
+GO
+
+
+--Line
+INSERT INTO [maintenance].[EnumValues] ([SourceName]
+, [DisplayText]
+, [Value]
+, [OrderNumber]
+, [Status]
+, [CreateId]
+, [CreateDate]
+, [LastUpdateId]
+, [LastUpdateDate])
+    VALUES ('AccrualOrgUnit', 'Line', '8', '8', '1', NULL, NULL, NULL, NULL)
+GO
+
+
+--Team
+INSERT INTO [maintenance].[EnumValues] ([SourceName]
+, [DisplayText]
+, [Value]
+, [OrderNumber]
+, [Status]
+, [CreateId]
+, [CreateDate]
+, [LastUpdateId]
+, [LastUpdateDate])
+    VALUES ('AccrualOrgUnit', 'Team', '9', '9', '1', NULL, NULL, NULL, NULL)
+GO
+
+
+--===========================================
+--009:[leave].[spRetrieveEmployeeEligibilityList]
+--===========================================
+GO
+ALTER PROC [leave].[spRetrieveEmployeeEligibilityList]
+(
+    @LeaveTypeSetupId BIGINT = 1,
+    @InDays DECIMAL = 8
+)
+AS
+ BEGIN
+
+SELECT
+    --LeaveTypeEligibilityId
+    LeaveTypeEligibility.LeaveTypeEligibilityId
+
+    --AccrualOrgUnitType
+   ,AccrualOrgUnitType = ISNULL(LeaveTypeSetup.AccrualOrgUnit, 0)
+
+    --AccrualOrgUnitIds
+   ,AccrualOrgUnitIds = ISNULL(LeaveTypeEligibility.AccrualOrgUnitIds, '')
+
+    --LeaveTypeSetupId
+   ,LeaveTypeEligibility.LeaveTypeSetupId
+
+    --txtMinTenure
+   ,txtMinTenure = LeaveTypeEligibility.MinTenure
+
+    --txtMaxTenure
+   ,txtMaxTenure = LeaveTypeEligibility.MaxTenure
+
+    --txtElegibilityCreditAccrual
+   ,txtElegibilityCreditAccrual =
+    (
+    CASE
+	   WHEN (@InDays > 0) THEN (LeaveTypeEligibility.CreditAccrual / @InDays)
+	   ELSE LeaveTypeEligibility.CreditAccrual
+    END
+    )
+
+    --txtMaxCreditAccrual
+   ,txtMaxCreditAccrual =
+    (
+    CASE
+	   WHEN (@InDays > 0) THEN (LeaveTypeEligibility.MaxCreditAccrual / @InDays)
+	   ELSE LeaveTypeEligibility.MaxCreditAccrual
+    END
+    )
+
+      --cmbJobRankId
+   ,cmbJobRankId = ISNULL(LeaveTypeEligibility.JobRankId, 0)
+
+    --JobRank
+   ,JobRank = ISNULL(JobRank.[Description], '')
+
+     --cmbJobGradeId
+   ,cmbJobGradeId = ISNULL(LeaveTypeEligibility.JobGradeId, 0)
+
+    --JobGrade
+   ,JobGrade = ISNULL(JobGrade.[Description], '')
+
+    --cmbJobLevelId
+   ,cmbJobLevelId = ISNULL(LeaveTypeEligibility.JobLevelId, 0)
+
+    --JobLevel
+   ,JobLevel = ISNULL(JobLevel.[Description], '')
+
+    --cmbJobPositionId
+   ,cmbJobPositionId = ISNULL(JobPosition.JobPositionId, 0)
+
+    --JobPosition
+   ,JobPosition = ISNULL(JobPosition.Name, '')
+FROM leave.LeaveTypeEligibility
+--LeaveTypeSetup
+LEFT JOIN leave.LeaveTypeSetup
+    ON LeaveTypeSetup.LeaveTypeSetupId = LeaveTypeEligibility.LeaveTypeSetupId
+
+--JobRank
+LEFT JOIN maintenance.JobRank
+    ON JobRank.JobRankId = LeaveTypeEligibility.JobRankId
+
+--JobGradeId
+LEFT JOIN maintenance.JobGrade
+    ON JobGrade.JobGradeId = LeaveTypeEligibility.JobGradeId
+
+--JobLevel
+LEFT JOIN maintenance.JobLevel
+    ON JobLevel.JobLevelId = LeaveTypeEligibility.JobLevelId
+
+--JobPosition
+LEFT JOIN maintenance.JobPosition
+    ON JobPosition.JobPositionId = LeaveTypeEligibility.JobPositionId
+
+WHERE LeaveTypeEligibility.LeaveTypeSetupId = @LeaveTypeSetupId
+ORDER BY txtMinTenure
+END
+
+GO
+
+GO
+--===========================================
+--010:[leave].[spRetrieveLeaveBenefitEmployeeInformationByProfileIds]
+--===========================================
+ALTER PROCEDURE [leave].[spRetrieveLeaveBenefitEmployeeInformationByProfileIds]
+(
+	@ProfileIds varchar(max) = ''
+)
+AS
+BEGIN
+
+SET NOCOUNT ON;
+
+SELECT
+	--EmployeeId
+	EmployeeId = COALESCE(EmployeeeProfile.ProfileId, 0)
+
+	--EmployeeTypeId
+	,EmployeeTypeId = CAST(COALESCE(EmploymentInformation.CJI_EmployeeType, 0) AS SMALLINT)
+
+	--LastName
+	,LastName = COALESCE(EmployeeeProfile.LastName, '')
+
+	--FirstName
+	,FirstName = COALESCE(EmployeeeProfile.FirstName, '')
+
+	--MiddleName
+	,MiddleName = COALESCE(EmployeeeProfile.MiddleName, '')
+
+	--Gender
+	,Gender =
+	(
+	    CAST(COALESCE(CASE
+		    WHEN EmployeeeProfile.Gender = 'Male' THEN 1
+		    WHEN EmployeeeProfile.Gender = 'Female' THEN 2
+	    END, 0) AS SMALLINT)
+
+	)
+	--HireDate
+	,HireDate = COALESCE(EmploymentInformation.RED_HireDate, '1/1/1900')
+
+	--HasLeaveBenefit
+	,HasLeaveBenefit = CAST(COALESCE(EmployeeLeaveBenefit.HasLeaveBenefit, 0) AS BIT)
+
+	--CompanyId
+	,CompanyId = COALESCE(EmploymentInformation.AOA_Company, 0)
+
+	--BranchId
+	,BranchId = COALESCE(EmploymentInformation.AOA_Branch, 0)
+
+	--DepartmentId
+	,DepartmentId = COALESCE(EmploymentInformation.AOA_Department, 0)
+
+	--DistrictId
+	,DistrictId = COALESCE(EmploymentInformation.AOA_District, 0)
+
+	--DivisionId
+	,DivisionId = COALESCE(EmploymentInformation.AOA_Division, 0)
+
+	--GroupId
+	,GroupId = COALESCE(EmploymentInformation.AOA_Groups, 0)
+
+	--LineId
+	,LineId = COALESCE(EmploymentInformation.AOA_Line, 0)
+
+	--OfficeId
+	,OfficeId = COALESCE(EmploymentInformation.AOA_Office, 0)
+
+	--TeamId
+	,TeamId = COALESCE(EmploymentInformation.AOA_Team, 0)
+
+	--UnitId
+	,UnitId = COALESCE(EmploymentInformation.AOA_Unit, 0)
+
+	--JobLevelId
+	,JobLevelId = COALESCE(EmploymentInformation.CJI_JobLevel, 0)
+
+	--JobPositionId
+	,JobPositionId = COALESCE(EmploymentInformation.CJI_Position, 0)
+
+	--JobGradeId
+	,JobGradeId = COALESCE(EmploymentInformation.CJI_JobGrade, 0)
+
+	--JobRankId
+	,JobRankId = COALESCE(EmploymentInformation.CJI_JobRank, 0)
+
+FROM employee.[Profile] EmployeeeProfile
+--EmploymentInformation
+LEFT JOIN employee.EmploymentInformation
+	ON EmployeeeProfile.ProfileId = EmploymentInformation.ProfileId
+--EmployeeLeaveBenefit
+OUTER APPLY (SELECT
+		HasLeaveBenefit =
+		(
+		CASE
+			WHEN COUNT(LeaveBenefit.LeaveBenefitId) > 0 THEN 1
+			ELSE 0
+		END
+		)
+	FROM leave.LeaveBenefit
+	WHERE LeaveBenefit.ProfileId = EmployeeeProfile.ProfileId) EmployeeLeaveBenefit
+WHERE EmployeeeProfile.ProfileId IN (SELECT
+		VALUE
+	FROM dbo.FN_SPLITWITHID(@ProfileIds, ','))
+END
+
+GO
+
+
+--===========================================
+--011:[leave].[spLeaveBenefitRetrieveEmployees]
+--===========================================
+ALTER PROCEDURE [leave].[spLeaveBenefitRetrieveEmployees]
+(
+    @BranchId bigint = 0,
+    @DepartmentId bigint = 0,
+    @PositionId bigint = 0,
+    @JobLevelId bigint = 0,
+    @EmployeeType bigint = 0,
+    @StartHiredDate datetime = '1/1/1900',
+    @EndHiredDate datetime = '1/1/1900'
+)
+AS
+BEGIN
+SET NOCOUNT ON;
+
+DECLARE @NULLDATE DATE = '01/01/1900'
+
+SELECT
+	--EmployeeId
+	EmployeeId = EmployeeInformation.ProfileId,
+	
+
+	--EmployeeName
+	EmployeeName =
+	(
+	    (COALESCE(EmployeeInformation.LastName, '')
+	    + ', ' +
+	    COALESCE(EmployeeInformation.FirstName, '')
+	    + ' ' +
+	    COALESCE(EmployeeInformation.MiddleName, ''))
+	)
+FROM employee.[Profile] EmployeeInformation
+--EmploymentInformation
+LEFT JOIN employee.EmploymentInformation
+	ON EmployeeInformation.ProfileId = EmploymentInformation.ProfileId
+WHERE 
+
+    (COALESCE(@BranchId, 0) = 0     OR EmploymentInformation.AOA_Branch = COALESCE(@BranchId, 0))
+AND (COALESCE(@DepartmentId, 0) = 0 OR EmploymentInformation.AOA_Department = COALESCE(@DepartmentId, 0))
+AND (COALESCE(@PositionId, 0) = 0   OR EmploymentInformation.CJI_Position = COALESCE(@PositionId, 0))
+AND (COALESCE(@JobLevelId, 0) = 0   OR EmploymentInformation.CJI_JobLevel = COALESCE(@JobLevelId, 0))
+AND (COALESCE(@EmployeeType, 0) = 0 OR EmploymentInformation.CJI_EmployeeType = COALESCE(@EmployeeType, 0))
+AND (COALESCE(@StartHiredDate, @NULLDATE) = @NULLDATE OR EmploymentInformation.RED_HireDate >= COALESCE(@StartHiredDate, @NULLDATE))
+AND (COALESCE(@EndHiredDate, @NULLDATE) = @NULLDATE OR EmploymentInformation.RED_HireDate <= COALESCE(@EndHiredDate, @NULLDATE))
+AND EmploymentInformation.CJI_EmploymentStatus = 1
+END
+GO
+
+
+--===========================================
+--012:Run Script, Set default Value of AccrualJobCLass , if accrual Source is enabled
+--===========================================
+GO
+UPDATE leave.LeaveTypeSetup
+set AccrualJobClass = 3 /*JOBLEVEL*/
+WHERE AccrualSource = 1
+
+
+
+--===========================================
+--013:Run Script, Add AccrualJobClass
+--============================================
+
+GO
+DELETE FROM [maintenance].[EnumValues]
+WHERE SourceName = 'AccrualJobClass'
+
+
+--Job Rank
+INSERT INTO [maintenance].[EnumValues] ([SourceName]
+, [DisplayText]
+, [Value]
+, [OrderNumber]
+, [Status]
+, [CreateId]
+, [CreateDate]
+, [LastUpdateId]
+, [LastUpdateDate])
+    VALUES ('AccrualJobClass', 'Job Rank', '1', '4', '1', NULL, NULL, NULL, NULL)
+GO
+
+
+--Job Grade
+INSERT INTO [maintenance].[EnumValues] ([SourceName]
+, [DisplayText]
+, [Value]
+, [OrderNumber]
+, [Status]
+, [CreateId]
+, [CreateDate]
+, [LastUpdateId]
+, [LastUpdateDate])
+    VALUES ('AccrualJobClass', 'Job Grade', '2', '4', '1', NULL, NULL, NULL, NULL)
+GO
+
+
+--Job Level
+INSERT INTO [maintenance].[EnumValues] ([SourceName]
+, [DisplayText]
+, [Value]
+, [OrderNumber]
+, [Status]
+, [CreateId]
+, [CreateDate]
+, [LastUpdateId]
+, [LastUpdateDate])
+    VALUES ('AccrualJobClass', 'Job Level', '3', '4', '1', NULL, NULL, NULL, NULL)
+GO
+
+
+--Job Position
+INSERT INTO [maintenance].[EnumValues] ([SourceName]
+, [DisplayText]
+, [Value]
+, [OrderNumber]
+, [Status]
+, [CreateId]
+, [CreateDate]
+, [LastUpdateId]
+, [LastUpdateDate])
+    VALUES ('AccrualJobClass', 'Job Position', '4', '4', '1', NULL, NULL, NULL, NULL)
+GO
+

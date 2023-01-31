@@ -1,0 +1,3 @@
+UPDATE leave.LeaveConversion
+	set LeaveConversionType = 1/*Cash Conversion*/
+WHERE ISNULL(TaxableHours, 0) > 0

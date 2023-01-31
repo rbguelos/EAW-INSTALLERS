@@ -1,0 +1,558 @@
+SET NOCOUNT ON
+/*start deleting existing report configs*/
+DELETE FROM report.Report WHERE ReportId IN (512,513,514,515,516,517,518)
+DELETE FROM report.ReportData WHERE ReportId IN (512,513,514,515,516,517,518)
+DELETE FROM report.ReportParameter WHERE ReportCode IN ('TAApplicationReceived','TAApplicationScreened','TAApplicationStageResult','TAApplicantsArchived','TAWithdrawnApplicants','TAApplicationsScheduledForTesting','TAHiresPeriodPerChannelProvider')
+DELETE FROM report.ReportSubReport WHERE ReportCode  IN ('TAApplicationReceived','TAApplicationScreened','TAApplicationStageResult','TAApplicantsArchived','TAWithdrawnApplicants','TAApplicationsScheduledForTesting','TAHiresPeriodPerChannelProvider')
+DELETE FROM report.ReportMenu WHERE ReportId IN (512,513,514,515,516,517,518)
+DELETE FROM security.Module_Forms WHERE ModuleFormId IN ('10641','10642','10643','10644','10645','10646','10647')
+/*end deleting existing report configs*/
+
+/*start insert data to report.Report*/
+SET IDENTITY_INSERT [report].[Report] ON
+INSERT [report].[Report] ([ReportId],[ReportCode],[ReportName],[ReportFile],[ReportExcelFile],[EmploymentStatus],[TableSPUsed],[SPUsed],[NoOrderBy],[QueryType],[InsertToReportTempTable],[Description],[ImageFile],[SortFields],[Event],[ExportFormat],[CreateId],[Createdate],[LastUpdateId],[LastUpdateDate],[UseExportToExcelAPI],[DetailColStartPos],[DetailRowStartPos],[HeaderRowStartPos],[IncludeColHeader],[InsertNewRowAtRowPos],[Template],[SourceName],[ShowGrandTotals],[RepeatColumnHeaderOnHeaderGroup],[RepeatColumnHeaderOnGroupLevel],[AutoSizeColumn],[MaxRowPerPage],[DisplayReportHeader])VALUES(512,'TAApplicationReceived','Number of Applications Received','\Reports\TalentAcquisition\TAApplicationReceived.rpt',NULL,3,'SELECT   
+	JobPosition = T.JobPositionName
+	,ApplicationDate = T.ApplicationDate
+	,ManPowerRequestNumber = T.ManPowerRequestNo
+	,Company = T.Company
+	,ApplicantNumber = T.ApplicationNo
+	,ApplicantName = T.ApplicantFullNameFirstLate
+	,MobileNumber = T.MobileNumber
+	,EmailAddress = T.EmailAddress
+	,CompanyId = T.CompanyId
+	,Sorting = COLS.Sorting
+FROM report.vwApplicantGeneralInformation T
+CROSS APPLY
+(
+	SELECT
+	Sorting = 
+	(
+		CASE @SortId
+		WHEN 1 THEN T.JobPositionName
+		WHEN 2 THEN T.Company
+		ELSE '''' 
+		END
+	)
+)COLS
+WHERE 1=1
+AND 
+(
+	(CAST(ISNULL(@StartDate,''1/1/1900'') AS DATE) = CAST(''1/1/1900'' AS DATE))
+	OR
+	(CAST(T.ApplicationDate AS DATE) >= CAST(@StartDate AS DATE))
+)
+
+AND 
+(
+	(CAST(ISNULL(@EndDate,''1/1/1900'') AS DATE) = CAST(''1/1/1900'' AS DATE))
+	OR
+	(CAST(T.ApplicationDate AS DATE) <= CAST(@EndDate AS DATE))
+)
+AND (ISNULL(@CompanyId,0) = 0 OR T.CompanyId = @CompanyId)
+AND ((ISNULL(@PositionId, '''') = '''' ) OR  (CHARINDEX('''''''' + CAST(T.JobPositionId AS VARCHAR) + '''''''', @PositionId) > 0))',NULL,1,'QUERY',1,'','\TalentAcquisition\TAApplicationReceived.png',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[Report] ([ReportId],[ReportCode],[ReportName],[ReportFile],[ReportExcelFile],[EmploymentStatus],[TableSPUsed],[SPUsed],[NoOrderBy],[QueryType],[InsertToReportTempTable],[Description],[ImageFile],[SortFields],[Event],[ExportFormat],[CreateId],[Createdate],[LastUpdateId],[LastUpdateDate],[UseExportToExcelAPI],[DetailColStartPos],[DetailRowStartPos],[HeaderRowStartPos],[IncludeColHeader],[InsertNewRowAtRowPos],[Template],[SourceName],[ShowGrandTotals],[RepeatColumnHeaderOnHeaderGroup],[RepeatColumnHeaderOnGroupLevel],[AutoSizeColumn],[MaxRowPerPage],[DisplayReportHeader])VALUES(513,'TAApplicationScreened','Number of Applications Screened','\Reports\TalentAcquisition\TAApplicationScreened.rpt',NULL,3,'SELECT     
+	ScheduledDate = CAST(COLS.ScheduleDate AS DATETIME)
+	,JobPosition = T.JobPositionName
+	,ManPowerRequestNumber = T.ManPowerRequestNo
+	/*,CurrentStage = T.Stage*/
+	,Activity = ISNULL(SCT.Description,'''')
+	,ApplicantNumber = T.ApplicationNo
+	,ApplicantName = T.ApplicantFullNameLastFirstMI
+	,ApplicationDate = T.ApplicationDate
+	,Company = T.Company
+	,CompanyId = T.CompanyId
+	,Sorting = ROW_NUMBER() OVER (ORDER BY COLS.SORT,T.ApplicantFullNameLastFirstMI)
+FROM report.vwApplicantGeneralInformation T
+LEFT JOIN recruitment.ApplicantScreeningSchedule ASS ON ASS.ApplicationGeneralInfoId = T.ApplicationGeneralInfoId
+LEFT JOIN recruitment.ScreeningType SCT ON SCT.ScreenTypeId = ASS.ScreenTypeId
+CROSS APPLY
+(
+	SELECT 
+	SORT = (CASE WHEN @SortId = 1 THEN CAST(T.ApplicationDate AS VARCHAR(50)) ELSE T.JobPositionName END)
+	,ScheduleDate = CAST(ASS.ActualDateTime AS DATE)
+)COLS
+WHERE 1=1
+AND 
+(
+	(CAST(ISNULL(@StartDate,''1/1/1900'') AS DATE) = CAST(''1/1/1900'' AS DATE))
+	OR
+	(CAST(COLS.ScheduleDate AS DATE) >= CAST(@StartDate AS DATE))
+)
+AND 
+(
+	(CAST(ISNULL(@EndDate,''1/1/1900'') AS DATE) = CAST(''1/1/1900'' AS DATE))
+	OR
+	(CAST(COLS.ScheduleDate AS DATE) <= CAST(@EndDate AS DATE))
+)
+AND (ISNULL(@CompanyId,0) = 0 OR T.CompanyId = @CompanyId)
+AND ((ISNULL(@PositionId, '''') = '''' ) OR  (CHARINDEX('''''''' + CAST(T.JobPositionId AS VARCHAR) + '''''''', @PositionId) > 0))
+AND ((ISNULL(@ScreeningType, '''') = '''' ) OR  (CHARINDEX('''''''' + CAST(ASS.ScreenTypeId AS VARCHAR) + '''''''', @ScreeningType) > 0))',NULL,1,'QUERY',1,'','\TalentAcquisition\TAApplicationScreened.png',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[Report] ([ReportId],[ReportCode],[ReportName],[ReportFile],[ReportExcelFile],[EmploymentStatus],[TableSPUsed],[SPUsed],[NoOrderBy],[QueryType],[InsertToReportTempTable],[Description],[ImageFile],[SortFields],[Event],[ExportFormat],[CreateId],[Createdate],[LastUpdateId],[LastUpdateDate],[UseExportToExcelAPI],[DetailColStartPos],[DetailRowStartPos],[HeaderRowStartPos],[IncludeColHeader],[InsertNewRowAtRowPos],[Template],[SourceName],[ShowGrandTotals],[RepeatColumnHeaderOnHeaderGroup],[RepeatColumnHeaderOnGroupLevel],[AutoSizeColumn],[MaxRowPerPage],[DisplayReportHeader])VALUES(514,'TAApplicationStageResult','Number of Applications that Passed / Failed at Any Stage','\Reports\TalentAcquisition\TAApplicationStageResult.rpt',NULL,3,'SELECT      
+	JobPosition = T.JobPositionName
+	,ManpowerRequestNumber = T.ManPowerRequestNo
+	,ApplicationDate = T.ApplicationDate
+	,ApplicantNumber = T.ApplicationNo
+	,ApplicantName = T.ApplicantFullNameLastFirstMI
+	,Activity = ISNULL(SCT.Description,'''')
+	,ScheduledDate = COLS.ScheduledDate
+	,Rating = COLS.Rating
+	,Result = COLS.Result
+	,CompanyId = T.CompanyId
+	,Sorting = ROW_NUMBER() OVER (ORDER BY COLS.SORT)
+FROM recruitment.ApplicantScreeningSchedule ASS
+INNER JOIN report.vwApplicantGeneralInformation T ON T.ApplicationGeneralInfoId = ASS.ApplicationGeneralInfoId
+LEFT JOIN recruitment.ScreeningType SCT ON SCT.ScreenTypeId = ASS.ScreenTypeId
+LEFT JOIN recruitment.ApplicantScreeningResult ASR ON ASR.ApplicantScreeningScheduleId = ASS.ApplicantScreeningScheduleId
+LEFT JOIN recruitment.InterviewQuestionnaire IQ ON IQ.InterviewQuestionnaireId = ASS.InterviewQuestionnaireId
+OUTER APPLY 
+(
+	SELECT
+		TotalPercentage = 
+		CAST(
+			CAST(SUM(ASRD.Rating) AS FLOAT) / CAST(COUNT(ASRD.ApplicantScreeningResultDetailId) * 5 AS FLOAT) * 100
+		AS DECIMAL(18,2))  
+	FROM recruitment.ApplicantScreeningResultDetail ASRD
+	WHERE ASRD.ApplicantScreeningResultId = ASR.ApplicantScreeningResultId
+) ASRD
+
+OUTER APPLY
+(
+	SELECT 
+		HighestPossibleScore = SUM(CAST(ESSD.OverallRating AS DECIMAL(10,2)))
+	FROM recruitment.ExamScreeningScheduleDetail ESSD
+	WHERE ESSD.ApplicantScreeningScheduleId = ASS.ApplicantScreeningScheduleId
+) HPS
+
+CROSS APPLY
+(
+	SELECT 
+	ScheduledDate = CAST(ASS.ActualDateTime AS DATE)
+	,Rating = 
+	(
+		CASE 
+			WHEN ISNULL(ASR.OverallRating,'''') = ''''
+			THEN ISNULL(CAST(HPS.HighestPossibleScore AS VARCHAR), '''')
+			ELSE ASR.OverallRating
+		END 
+	)
+	,Result = 
+	(
+		CASE
+			WHEN ASRD.TotalPercentage IS NULL THEN ''''
+			WHEN ASRD.TotalPercentage >= IQ.PassingPercentage THEN ''Passed''
+			ELSE ''Failed''
+		END
+	)
+	,SORT = (CASE WHEN @SortId = 1 THEN T.JobPositionName ELSE T.ApplicantFullNameLastFirstMI END)
+)COLS
+
+WHERE 1=1
+AND (ISNULL(COLS.Result,'''') <> '''')
+AND (ISNULL(@CompanyId,0) = 0 OR T.CompanyId = @CompanyId)
+AND ((ISNULL(@PositionId, '''') = '''' ) OR  (CHARINDEX('''''''' + CAST(T.JobPositionId AS VARCHAR) + '''''''', @PositionId) > 0))
+AND ((ISNULL(@ScreeningType, '''') = '''' ) OR  (CHARINDEX('''''''' + CAST(ASS.ScreenTypeId AS VARCHAR) + '''''''', @ScreeningType) > 0))',NULL,1,'QUERY',1,'','\TalentAcquisition\TAApplicationStageResult.png',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[Report] ([ReportId],[ReportCode],[ReportName],[ReportFile],[ReportExcelFile],[EmploymentStatus],[TableSPUsed],[SPUsed],[NoOrderBy],[QueryType],[InsertToReportTempTable],[Description],[ImageFile],[SortFields],[Event],[ExportFormat],[CreateId],[Createdate],[LastUpdateId],[LastUpdateDate],[UseExportToExcelAPI],[DetailColStartPos],[DetailRowStartPos],[HeaderRowStartPos],[IncludeColHeader],[InsertNewRowAtRowPos],[Template],[SourceName],[ShowGrandTotals],[RepeatColumnHeaderOnHeaderGroup],[RepeatColumnHeaderOnGroupLevel],[AutoSizeColumn],[MaxRowPerPage],[DisplayReportHeader])VALUES(515,'TAApplicantsArchived','Number of Applicants Archived','\Reports\TalentAcquisition\TAApplicantsArchived.rpt',NULL,3,'SELECT        
+	JobPosition = T.JobPositionName
+	,ManpowerRequestNumber = T.ManPowerRequestNo
+	,ApplicationDate = COLS.ApplicationDate
+	,ApplicantNumber = T.ApplicationNo
+	,ApplicantName =T.ApplicantFullNameLastFirstMI
+	,LastStage = T.Stage
+	,DateArchived = ISNULL(T2.TargetDate,''1/1/1900'')
+	,ContactNumber = T.PhoneNumber
+	,EmailAddress = T.EmailAddress
+	,Recommendation = ISNULL(T2.RejectionReason,'''')
+	,CompanyId = T.CompanyId
+	,T.StatusId
+	,t.ApplicationGeneralInfoId
+	,T.Stage
+	,SCREN.Status
+FROM report.vwApplicantGeneralInformation T
+INNER JOIN recruitment.ApplicationGeneralInformation T2 ON T2.ApplicationGeneralInfoId = T.ApplicationGeneralInfoId
+OUTER APPLY
+(
+	SELECT TOP 1 
+		SA.ScreeningActivityTypeId
+		,ASS.Status 
+	FROM recruitment.ApplicantScreeningActivity ASS
+	JOIN recruitment.ScreeningActivity SA ON SA.ScreeningActivityId = ASS.ScreeningActivityId
+	WHERE ASS.ApplicationGeneralInfoId = T.ApplicationGeneralInfoId
+	AND ASS.Status != ''Done''
+	ORDER BY SA.StepNo ASC
+)SCREN
+CROSS APPLY
+(
+	SELECT
+	ApplicationDate = CAST(T.ApplicationDate AS DATE)
+	
+)COLS
+WHERE 1=1
+AND ISNULL(T.StatusId,0) = 37 /*ARCHIVED*/
+AND 
+(
+	(CAST(ISNULL(@StartDate,''1/1/1900'') AS DATE) = CAST(''1/1/1900'' AS DATE))
+	OR
+	( COLS.ApplicationDate >= CAST(@StartDate AS DATE))
+)
+
+AND 
+(
+	(CAST(ISNULL(@EndDate,''1/1/1900'') AS DATE) = CAST(''1/1/1900'' AS DATE))
+	OR
+	(COLS.ApplicationDate  <= CAST(@EndDate AS DATE))
+)
+
+AND (ISNULL(@CompanyId,0) = 0 OR T.CompanyId = @CompanyId)
+AND ((ISNULL(@PositionId, '''') = '''' ) OR  (CHARINDEX('''''''' + CAST(T.JobPositionId AS VARCHAR) + '''''''', @PositionId) > 0))',NULL,1,'QUERY',1,'','\TalentAcquisition\TAApplicantsArchived.png',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[Report] ([ReportId],[ReportCode],[ReportName],[ReportFile],[ReportExcelFile],[EmploymentStatus],[TableSPUsed],[SPUsed],[NoOrderBy],[QueryType],[InsertToReportTempTable],[Description],[ImageFile],[SortFields],[Event],[ExportFormat],[CreateId],[Createdate],[LastUpdateId],[LastUpdateDate],[UseExportToExcelAPI],[DetailColStartPos],[DetailRowStartPos],[HeaderRowStartPos],[IncludeColHeader],[InsertNewRowAtRowPos],[Template],[SourceName],[ShowGrandTotals],[RepeatColumnHeaderOnHeaderGroup],[RepeatColumnHeaderOnGroupLevel],[AutoSizeColumn],[MaxRowPerPage],[DisplayReportHeader])VALUES(516,'TAWithdrawnApplicants','Number of Withdrawn Applicants','\Reports\TalentAcquisition\TAWithdrawnApplicants.rpt',NULL,3,'SELECT      
+	JobPosition = T.JobPositionName
+	,ManpowerRequestNumber = T.ManPowerRequestNo
+	,ApplicationDate = T.ApplicationDate
+	,ApplicantNumber = T.ApplicationNo
+	,ApplicantName = T.ApplicantFullNameLastFirstMI
+	,LastStage = T.Stage
+	,DateWithdrawn = ISNULL(T2.TargetDate,''1/1/1900'')
+	,ContactNumber = T.PhoneNumber
+	,EmailAddress = T.EmailAddress
+	,ReasonForRejecting = ISNULL(T2.RejectionReason,'''')
+	,CompanyId = T.CompanyId
+	,T2.StatusId
+FROM report.vwApplicantGeneralInformation T
+INNER JOIN recruitment.ApplicationGeneralInformation T2 ON T2.ApplicationGeneralInfoId = T.ApplicationGeneralInfoId
+CROSS APPLY
+(
+	SELECT
+	ApplicationDate = CAST(T.ApplicationDate AS DATE)
+	
+)COLS
+WHERE 1=1
+AND T2.StatusId = 40 /*REJECTED*/
+AND 
+(
+	(CAST(ISNULL(@StartDate,''1/1/1900'') AS DATE) = CAST(''1/1/1900'' AS DATE))
+	OR
+	( COLS.ApplicationDate >= CAST(@StartDate AS DATE))
+)
+
+AND 
+(
+	(CAST(ISNULL(@EndDate,''1/1/1900'') AS DATE) = CAST(''1/1/1900'' AS DATE))
+	OR
+	(COLS.ApplicationDate  <= CAST(@EndDate AS DATE))
+)
+AND (ISNULL(@CompanyId,0) = 0 OR T.CompanyId = @CompanyId)
+AND ((ISNULL(@PositionId, '''') = '''' ) OR  (CHARINDEX('''''''' + CAST(T.JobPositionId AS VARCHAR) + '''''''', @PositionId) > 0))',NULL,1,'QUERY',1,'','\TalentAcquisition\TAWithdrawnApplicants.png',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[Report] ([ReportId],[ReportCode],[ReportName],[ReportFile],[ReportExcelFile],[EmploymentStatus],[TableSPUsed],[SPUsed],[NoOrderBy],[QueryType],[InsertToReportTempTable],[Description],[ImageFile],[SortFields],[Event],[ExportFormat],[CreateId],[Createdate],[LastUpdateId],[LastUpdateDate],[UseExportToExcelAPI],[DetailColStartPos],[DetailRowStartPos],[HeaderRowStartPos],[IncludeColHeader],[InsertNewRowAtRowPos],[Template],[SourceName],[ShowGrandTotals],[RepeatColumnHeaderOnHeaderGroup],[RepeatColumnHeaderOnGroupLevel],[AutoSizeColumn],[MaxRowPerPage],[DisplayReportHeader])VALUES(517,'TAApplicationsScheduledForTesting','Number of Applications Scheduled for Testing','\Reports\TalentAcquisition\TAApplicationsScheduledForTesting.rpt',NULL,3,'SELECT      
+	JobPosition = T.JobPositionName
+	,ScheduledDate = (FORMAT(ASS.ActualDateTime,N''MM/dd/yyyy hh:mm tt''))
+	,ActivityName = ISNULL(SCT.Description,'''')
+	,ApplicantNumber = T.ApplicationNo
+	,ApplicantName = T.ApplicantFullNameLastFirstMI
+	,ContactNumber = T.PhoneNumber
+	,EmailAddress = T.EmailAddress
+	,ManpowerRequestNumber = T.ManPowerRequestNo
+	,ConductedBy = COALESCE(EMPLOYEE.ConductedBy,NONEMPLOYEE.ConductedBy,'''')
+	,CompanyId = T.CompanyId
+	,RowId = ROW_NUMBER() OVER (ORDER BY T.JobPositionName,ASS.ActualDateTime)
+FROM report.vwApplicantGeneralInformation T
+LEFT JOIN recruitment.ApplicantScreeningSchedule ASS ON ASS.ApplicationGeneralInfoId = T.ApplicationGeneralInfoId
+LEFT JOIN recruitment.ScreeningType SCT ON SCT.ScreenTypeId = ASS.ScreenTypeId
+CROSS APPLY
+(
+	SELECT 
+	ScheduleDate = CAST(ASS.ActualDateTime AS DATE)
+)COLS
+OUTER APPLY
+(
+	SELECT TOP 1 
+		ConductedBy = 
+		(
+			ISNULL(E.LastName + '', '' + 
+			ISNULL(E.FirstName,'''') + 
+			(CASE WHEN ISNULL(E.MiddleName,'''') <> '''' THEN '' '' + LEFT(E.MiddleName,1) + ''.'' ELSE '''' END),'''')
+		)
+	FROM employee.Profile E 
+	WHERE E.ProfileId = ASS.ConductedBy
+	AND ASS.ConductorUserType = ''Employee''
+)EMPLOYEE
+
+OUTER APPLY
+(
+	SELECT TOP 1 
+		ConductedBy = 
+		(
+			ISNULL(E.NELastName + '', '' + 
+			ISNULL(E.NEFirstName,'''') + 
+			(CASE WHEN ISNULL(E.NEMiddleName,'''') <> '''' THEN '' '' + LEFT(E.NEMiddleName,1) + ''.'' ELSE '''' END),'''')
+		)
+	FROM security.NonEmployeeUser E
+	WHERE E.NonEmployeeUserId = ASS.ConductedBy
+	AND ASS.ConductorUserType <> ''Employee''
+)NONEMPLOYEE
+
+WHERE 1=1
+AND ISNULL(SCT.ScreeningTypeId,0) = 1 /*EXAMS*/
+AND ISNULL(T.StatusId,0) NOT IN (37,40)
+AND 
+(
+	(CAST(ISNULL(@StartDate,''1/1/1900'') AS DATE) = CAST(''1/1/1900'' AS DATE))
+	OR
+	(CAST(COLS.ScheduleDate AS DATE) >= CAST(@StartDate AS DATE))
+)
+
+AND 
+(
+	(CAST(ISNULL(@EndDate,''1/1/1900'') AS DATE) = CAST(''1/1/1900'' AS DATE))
+	OR
+	(CAST(COLS.ScheduleDate AS DATE) <= CAST(@EndDate AS DATE))
+)
+AND (ISNULL(@CompanyId,0) = 0 OR T.CompanyId = @CompanyId)
+AND ((ISNULL(@PositionId, '''') = '''' ) OR  (CHARINDEX('''''''' + CAST(T.JobPositionId AS VARCHAR) + '''''''', @PositionId) > 0))',NULL,1,'QUERY',1,'','\TalentAcquisition\TAApplicationsScheduledForTesting.png',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[Report] ([ReportId],[ReportCode],[ReportName],[ReportFile],[ReportExcelFile],[EmploymentStatus],[TableSPUsed],[SPUsed],[NoOrderBy],[QueryType],[InsertToReportTempTable],[Description],[ImageFile],[SortFields],[Event],[ExportFormat],[CreateId],[Createdate],[LastUpdateId],[LastUpdateDate],[UseExportToExcelAPI],[DetailColStartPos],[DetailRowStartPos],[HeaderRowStartPos],[IncludeColHeader],[InsertNewRowAtRowPos],[Template],[SourceName],[ShowGrandTotals],[RepeatColumnHeaderOnHeaderGroup],[RepeatColumnHeaderOnGroupLevel],[AutoSizeColumn],[MaxRowPerPage],[DisplayReportHeader])VALUES(518,'TAHiresPeriodPerChannelProvider','Number of Hires per Period and per Channel Provider Name','\Reports\TalentAcquisition\TAHiresPeriodPerChannelProvider.rpt',NULL,3,'SELECT     
+	JobPosition = T.JobPositionName
+	,ManpowerRequestNumber = T.ManPowerRequestNo
+	,ManpowerRequestDate = MPR.RequestDate
+	,ApplicationDate = T.ApplicationDate
+	,HireDate = ISNULL(EI.HireDate,''1/1/1900'')
+	,EmployeeNumber = ISNULL(EI.EmployeeNo,'''')
+	,EmployeeName = T.ApplicantFullNameLastFirstMI
+	,JobPostChannel = CHANNEL.JobPostChannel
+	,Company = T.Company
+	,CompanyId = T.CompanyId
+	,CHANNEL.JobPostChannelDetailId
+FROM report.vwApplicantGeneralInformation T
+INNER JOIN recruitment.ManpowerRequest MPR ON MPR.ManpowerRequestId = T.ManpowerRequestId
+OUTER APPLY
+(
+	SELECT TOP 1 
+		JobPostChannel = 
+		(
+			CASE 
+				WHEN AGI.SourceId > 0	 THEN JOBPOST.ProviderName
+				WHEN AGI.SourceId = -998 THEN CONCAT(JOBPOST.ProviderName,'','',AGI.Provider) 
+				WHEN AGI.SourceId = -999 THEN AGI.Provider
+			ELSE '''' END
+		) 
+		,AGI.Provider
+		,AGI.SourceId
+		,JOBPOST.JobPostChannelDetailId
+	FROM recruitment.ApplicationGeneralInformation AGI
+	CROSS APPLY
+	(
+		SELECT
+		[Provider] = 
+		(
+			CASE 
+				WHEN AGI.SourceId > 0    THEN CAST(AGI.Provider AS BIGINT) 
+				WHEN AGI.SourceId = -998 THEN TRY_CAST((SELECT TOP 1 T.VALUE FROM dbo.SplitStrings_XML(AGI.Provider,'','') T) AS BIGINT)
+			ELSE 0 END
+		)
+	)COLS
+	OUTER APPLY
+	(
+		SELECT TOP 1 JobPostChannel.ProviderName,JobPostChannel.JobPostChannelDetailId FROM recruitment.JobPostChannelDetail JobPostChannel
+		WHERE JobPostChannel.JobPostChannelId = AGI.SourceId
+		AND JobPostChannel.JobPostChannelDetailId = COLS.Provider
+	)JOBPOST
+	WHERE AGI.ApplicationGeneralInfoId = T.ApplicationGeneralInfoId
+)CHANNEL
+OUTER APPLY
+(
+	SELECT TOP 1 
+		EmployeeNo = EI.CJI_EmployeeNo
+		,HireDate = EI.RED_HireDate 
+	FROM employee.Profile E
+	INNER JOIN employee.EmploymentInformation EI ON EI.ProfileId = E.ProfileId
+	WHERE
+	(
+		(E.LastName = T.LastName)
+		AND
+		(E.FirstName = T.FirstName)
+		AND 
+		(E.MiddleName = T.MiddleName)
+	)
+)EI
+
+WHERE 1=1
+AND 
+(
+	(CAST(ISNULL(@StartDate,''1/1/1900'') AS DATE) = CAST(''1/1/1900'' AS DATE))
+	OR
+	(CAST(EI.HireDate AS DATE) >= CAST(@StartDate AS DATE))
+)
+
+AND 
+(
+	(CAST(ISNULL(@EndDate,''1/1/1900'') AS DATE) = CAST(''1/1/1900'' AS DATE))
+	OR
+	(CAST(EI.HireDate AS DATE) <= CAST(@EndDate AS DATE))
+)
+AND (ISNULL(@CompanyId,0) = 0 OR T.CompanyId = @CompanyId)
+AND ((ISNULL(@PositionId, '''') = '''' ) OR  (CHARINDEX('''''''' + CAST(T.JobPositionId AS VARCHAR) + '''''''', @PositionId) > 0))
+AND ((ISNULL(@JobPostChannelId, '''') = '''' ) OR  (CHARINDEX('''''''' + CAST(CHANNEL.JobPostChannelDetailId AS VARCHAR) + '''''''', @JobPostChannelId) > 0))',NULL,1,'QUERY',1,'','\TalentAcquisition\TAHiresPeriodPerChannelProvider.png',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+SET IDENTITY_INSERT [report].[Report] OFF
+/*end insert data to report.Report*/
+
+/*start insert data to report.ReportData*/
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(512,'Job Position','JobPosition','string','','',NULL,1,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(512,'Application Date','ApplicationDate','date','','',NULL,2,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(512,'Manpower Request #','ManPowerRequestNumber','string','','',NULL,3,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(512,'Company','Company','string','','',NULL,4,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(512,'Applicant #','ApplicantNumber','string','','',NULL,5,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(512,'Applicant Name','ApplicantName','string','','',NULL,6,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(512,'Mobile Number','MobileNumber','string','','',NULL,7,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(512,'Email Address','EmailAddress','string','','',NULL,8,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(513,'Scheduled Date','ScheduledDate','date','','',NULL,1,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(513,'Job Position','JobPosition','string','','',NULL,2,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(513,'Manpower Request #','ManPowerRequestNumber','string','','',NULL,3,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(513,'Activity','Activity','string','','',NULL,4,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(513,'Applicant #','ApplicantNumber','string','','',NULL,5,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(513,'Applicant Name','ApplicantName','string','','',NULL,6,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(513,'Application Date','ApplicationDate','date','','',NULL,7,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(513,'Company','Company','string','','',NULL,8,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(514,'Job Position','JobPosition','string','','',NULL,1,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(514,'Manpower Request #','ManpowerRequestNumber','string','','',NULL,2,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(514,'Application Date','ApplicationDate','date','','',NULL,3,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(514,'Applicant #','ApplicantNumber','string','','',NULL,4,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(514,'Applicant Name','ApplicantName','string','','',NULL,5,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(514,'Activity','Activity','string','','',NULL,6,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(514,'Scheduled Date','ScheduledDate','date','','',NULL,7,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(514,'Rating','Rating','string','','',NULL,8,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(514,'Passed / Failed','Result','string','','',NULL,9,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(515,'Job Position','JobPosition','string','','',NULL,1,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(515,'Manpower Request #','ManpowerRequestNumber','string','','',NULL,2,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(515,'Application Date','ApplicationDate','date','','',NULL,3,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(515,'Applicant #','ApplicantNumber','string','','',NULL,4,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(515,'Applicant Name','ApplicantName','string','','',NULL,5,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(515,'Last Stage','LastStage','string','','',NULL,6,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(515,'Date Archived','DateArchived','date','','',NULL,7,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(515,'Contact Number','ContactNumber','string','','',NULL,8,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(515,'Email Address','EmailAddress','string','','',NULL,9,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(515,'Recommendation','Recommendation','string','','',NULL,10,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(516,'Job Position','JobPosition','string','','',NULL,1,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(516,'Manpower Request #','ManpowerRequestNumber','string','','',NULL,2,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(516,'Application Date','ApplicationDate','date','','',NULL,3,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(516,'Applicant #','ApplicantNumber','string','','',NULL,4,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(516,'Applicant Name','ApplicantName','string','','',NULL,5,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(516,'Last Stage','LastStage','string','','',NULL,6,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(516,'Date Withdrawn','DateWithdrawn','date','','',NULL,7,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(516,'Contact Number','ContactNumber','string','','',NULL,8,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(516,'Email Address','EmailAddress','string','','',NULL,9,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(516,'Reason for Rejecting Applicant','ReasonForRejecting','string','','',NULL,10,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(517,'Job Position','JobPosition','string','','',NULL,1,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(517,'Scheduled Date','ScheduledDate','date','','',NULL,2,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(517,'Activity Name','ActivityName','string','','',NULL,3,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(517,'Applicant #','ApplicantNumber','string','','',NULL,4,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(517,'Applicant Name','ApplicantName','string','','',NULL,5,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(517,'Contact Number','ContactNumber','string','','',NULL,6,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(517,'Email Address','EmailAddress','string','','',NULL,7,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(517,'Manpower Request #','ManpowerRequestNumber','string','','',NULL,8,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(517,'Conducted by','ConductedBy','string','','',NULL,9,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(518,'Job Position','JobPosition','string','','',NULL,1,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(518,'Manpower Request #','ManpowerRequestNumber','string','','',NULL,2,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(518,'Application Date','ApplicationDate','date','','',NULL,3,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(518,'Manpower Request Date','ManpowerRequestDate','date','','',NULL,3,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(518,'Application Date','ApplicationDate','date','','',NULL,4,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(518,'Hire Date','HireDate','date','','',NULL,5,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(518,'Employee Number','EmployeeNumber','string','','',NULL,6,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(518,'Employee Name','EmployeeName','string','','',NULL,7,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(518,'Job Post Channel','JobPostChannel','string','','',NULL,8,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(518,'Company','Company','string','','',NULL,9,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(512,'Sorting','Sorting','string','','',NULL,9,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(513,'Sorting','Sorting','decimal','','',NULL,9,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(514,'Sorting','Sorting','decimal','','',NULL,10,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+/*end insert data to report.ReportData*/
+
+/*start insert data to report.ReportParameter*/
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('TAApplicantsArchived','@StartDate,@EndDate','Application Date','daterange','','',1,'','Param1','Stored','>=,<=','date',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('TAApplicantsArchived','@CompanyId','Company','dropdownList','$table:maintenance.Company,CompanyId,Name','',2,'','Param1','Stored','=','number',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('TAApplicantsArchived','@PositionId','Job Position','checkboxList','$table:maintenance.JobPosition,JobPositionId,Name','',3,'','Param1','Stored','IN','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('TAApplicantsArchived','@StageIds','Stage','checkboxList',':0','',4,'','Param1','Stored','IN','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('TAApplicantsArchived','@SortId','Sort By','dropdownList','Job Position:1|Application Date:2','',5,'','Param1','Stored','=','number',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('TAApplicationReceived','@StartDate,@EndDate','Application Date','daterange','','',1,'','Param1','Stored','>=,<=','date',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('TAApplicationReceived','@CompanyId','Company','dropdownList','$table:maintenance.Company,CompanyId,Name','',2,'','Param1','Stored','=','number',NULL,NULL,NULL,'0',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('TAApplicationReceived','@PositionId','Job Position','checkboxList','$table:maintenance.JobPosition,JobPositionId,Name','',3,'','Param1','Stored','IN','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('TAApplicationReceived','@SortId','Sort By','dropdownList','Job Position:1|Company:2','',4,'','Param1','Stored','=','number',NULL,NULL,NULL,'0',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('TAApplicationScreened','@StartDate,@EndDate','Scheduled Date','daterange','','',1,'','Param1','Stored','>=,<=','date',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('TAApplicationScreened','@CompanyId','Company','dropdownList','$table:maintenance.Company,CompanyId,Name','',2,'','Param1','Stored','=','number',NULL,NULL,NULL,'0',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('TAApplicationScreened','@PositionId','Job Position','checkboxList','$table:maintenance.JobPosition,JobPositionId,Name','',3,'','Param1','Stored','IN','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('TAApplicationScreened','@ScreeningType','Screening Type','checkboxList','$table:recruitment.ScreeningType,ScreenTypeId,Description','',4,'','Param1','Stored','IN','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('TAApplicationScreened','@SortId','Sort By','dropdownList','Application Date:1|Job Position:2','',5,'','Param1','Stored','=','number',NULL,NULL,NULL,'0',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('TAApplicationsScheduledForTesting','@StartDate,@EndDate','Scheduled Date','daterange','','',1,'','Param1','Stored','>=,<=','date',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('TAApplicationsScheduledForTesting','@CompanyId','Company','dropdownList','$table:maintenance.Company,CompanyId,Name','',2,'','Param1','Stored','=','number',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('TAApplicationsScheduledForTesting','@PositionId','Job Position','checkboxList','$table:maintenance.JobPosition,JobPositionId,Name','',3,'','Param1','Stored','IN','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('TAApplicationsScheduledForTesting','@SortId','Sort By','dropdownList','Job Position:1','',4,'','Param1','Stored','=','number',1,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('TAApplicationStageResult','@StartDate,@EndDate','Application Date','daterange','','',1,'','Param1','Stored','>=,<=','date',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('TAApplicationStageResult','@CompanyId','Company','dropdownList','$table:maintenance.Company,CompanyId,Name','',2,'','Param1','Stored','=','number',NULL,NULL,NULL,'0',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('TAApplicationStageResult','@PositionId','Job Position','checkboxList','$table:maintenance.JobPosition,JobPositionId,Name','',3,'','Param1','Stored','IN','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('TAApplicationStageResult','@ScreeningType','Screening Type','checkboxList','$table:recruitment.ScreeningType,ScreenTypeId,Description','',4,'','Param1','Stored','IN','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('TAApplicationStageResult','@SortId','Sort By','dropdownList','Job Position:1|Applicant Name:2','',5,'','Param1','Stored','=','number',NULL,NULL,NULL,'0',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('TAHiresPeriodPerChannelProvider','@StartDate,@EndDate','Hire Date','daterange','','',1,'','Param1','Stored','>=,<=','date',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('TAHiresPeriodPerChannelProvider','@CompanyId','Company','dropdownList','$table:maintenance.Company,CompanyId,Name','',2,'','Param1','Stored','=','number',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('TAHiresPeriodPerChannelProvider','@PositionId','Job Position','checkboxList','$table:maintenance.JobPosition,JobPositionId,Name','',3,'','Param1','Stored','IN','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('TAHiresPeriodPerChannelProvider','@JobPostChannelId','Job Post Channel','checkboxList','$table:recruitment.JobPostChannelDetail,JobPostChannelDetailId,ProviderName','',3,'','Param1','Stored','IN','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('TAHiresPeriodPerChannelProvider','@SortId','Sort By','dropdownList','Job Position:1:Job Post Channel:2','',4,'','Param1','Stored','=','',1,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('TAWithdrawnApplicants','@StartDate,@EndDate','Application Date','daterange','','',1,'','Param1','Stored','>=,<=','date',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('TAWithdrawnApplicants','@CompanyId','Company','dropdownList','$table:maintenance.Company,CompanyId,Name','',2,'','Param1','Stored','=','number',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('TAWithdrawnApplicants','@PositionId','Job Position','checkboxList','$table:maintenance.JobPosition,JobPositionId,Name','',3,'','Param1','Stored','IN','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('TAWithdrawnApplicants','@StageIds','Stage','checkboxList',':0','',4,'','Param1','Stored','IN','',1,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+/*end insert data to report.ReportParameter*/
+
+/*start insert data to report.ReportSubReport*/
+/*end insert data to report.ReportSubReport*/
+
+/*start insert data to report.ReportMenu*/
+INSERT [report].[ReportMenu] ([ReportId],[AdminMenuModuleId],[MenuModuleId],[ReportGroupId],[ModuleFormId],[FileGeneratorHdrId],[XMLReportId],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES(512,0,2,32,0,0,0,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportMenu] ([ReportId],[AdminMenuModuleId],[MenuModuleId],[ReportGroupId],[ModuleFormId],[FileGeneratorHdrId],[XMLReportId],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES(513,0,2,32,0,0,0,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportMenu] ([ReportId],[AdminMenuModuleId],[MenuModuleId],[ReportGroupId],[ModuleFormId],[FileGeneratorHdrId],[XMLReportId],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES(514,0,2,32,0,0,0,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportMenu] ([ReportId],[AdminMenuModuleId],[MenuModuleId],[ReportGroupId],[ModuleFormId],[FileGeneratorHdrId],[XMLReportId],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES(515,0,2,32,0,0,0,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportMenu] ([ReportId],[AdminMenuModuleId],[MenuModuleId],[ReportGroupId],[ModuleFormId],[FileGeneratorHdrId],[XMLReportId],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES(516,0,2,32,0,0,0,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportMenu] ([ReportId],[AdminMenuModuleId],[MenuModuleId],[ReportGroupId],[ModuleFormId],[FileGeneratorHdrId],[XMLReportId],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES(517,0,2,32,0,0,0,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportMenu] ([ReportId],[AdminMenuModuleId],[MenuModuleId],[ReportGroupId],[ModuleFormId],[FileGeneratorHdrId],[XMLReportId],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES(518,0,2,32,0,0,0,NULL,NULL,NULL,NULL)
+/*end insert data to report.ReportMenu*/
+
+/*start insert data to security.Module_Forms*/
+SET IDENTITY_INSERT [security].[Module_Forms] ON
+INSERT [security].[Module_Forms] ([ModuleFormId],[ModuleId],[Name],[Form],[AccessTypeId],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES(10641,29,'Number of Applications Received','TAApplicationReceived','1,5',NULL,NULL,NULL,NULL)
+INSERT [security].[Module_Forms] ([ModuleFormId],[ModuleId],[Name],[Form],[AccessTypeId],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES(10642,29,'Number of Applications Screened','TAApplicationScreened','1,5',NULL,NULL,NULL,NULL)
+INSERT [security].[Module_Forms] ([ModuleFormId],[ModuleId],[Name],[Form],[AccessTypeId],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES(10643,29,'Number of Applications that Passed / Failed at Any Stage','TAApplicationStageResult','1,5',NULL,NULL,NULL,NULL)
+INSERT [security].[Module_Forms] ([ModuleFormId],[ModuleId],[Name],[Form],[AccessTypeId],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES(10644,29,'Number of Applicants Archived','TAApplicantsArchived','1,5',NULL,NULL,NULL,NULL)
+INSERT [security].[Module_Forms] ([ModuleFormId],[ModuleId],[Name],[Form],[AccessTypeId],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES(10645,29,'Number of Withdrawn Applicants','TAWithdrawnApplicants','1,5',NULL,NULL,NULL,NULL)
+INSERT [security].[Module_Forms] ([ModuleFormId],[ModuleId],[Name],[Form],[AccessTypeId],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES(10646,29,'Number of Applications Scheduled for Testing','TAApplicationsScheduledForTesting','1,5',NULL,NULL,NULL,NULL)
+INSERT [security].[Module_Forms] ([ModuleFormId],[ModuleId],[Name],[Form],[AccessTypeId],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES(10647,29,'Number of Hires per Period and per Channel Provider Name','TAHiresPeriodPerChannelProvider','1,5',NULL,NULL,NULL,NULL)
+SET IDENTITY_INSERT [security].[Module_Forms] OFF
+/*end insert data to security.Module_Forms*/
+
+/*start insert data to security.Role_FormAccess*/
+INSERT INTO security.Role_FormAccess([RoleId],[ModuleId],[ModuleFormId],[AccessTypeId]) 
+				SELECT 
+				[RoleId] = 1,
+				[ModuleId] = F.ModuleId,
+				[ModuleFormId] = F.ModuleFormId,
+				[AccessTypeId] = F.AccessTypeId
+				FROM security.Module_Forms F
+				
+				WHERE F.ModuleFormId IN ('10641','10642','10643','10644','10645','10646','10647')
+				
+/*end insert data to security.Role_FormAccess*/
+
+/*start insert data to security.UserSecurity_Detail*/
+INSERT INTO security.UserSecurity_Detail([UserSecurityId],[ModuleFormId],[AccessTypeId],[ModuleId])
+				SELECT
+				[UserSecurityId] = US.UserSecurityId
+				,[ModuleFormId] = F.ModuleFormId
+				,[AccessTypeId] = F.AccessTypeId
+				,[ModuleId] = F.ModuleId
+				FROM security.Module_Forms F
+				
+				CROSS APPLY (SELECT DISTINCT USD.UserSecurityId FROM security.UserSecurity_Detail USD JOIN security.UserSecurity US ON US.UserSecurityId = USD.UserSecurityId WHERE USD.ModuleId IN ('29','29','29','29','29','29','29') AND US.RoleId = 1	AND US.UserSecurityId IS NOT NULL) US
+				WHERE F.ModuleFormId IN ('10641','10642','10643','10644','10645','10646','10647')
+				AND US.UserSecurityId NOT IN (SELECT UserSecurityId FROM security.UserSecurity_Detail WHERE ModuleFormId IN ('10641','10642','10643','10644','10645','10646','10647') AND UserSecurityId IS NOT NULL)
+/*end insert data to security.UserSecurity_Detail*/
+
+IF(SELECT COUNT(CompanyId) FROM maintenance.Company WHERE CHARINDEX('IBIDEN',[Name]) > 0) > 0
+		BEGIN
+		UPDATE report.ReportParameter SET [Source] = '$table:maintenance.Unit,UnitId,Code' WHERE LabelName = 'Unit'
+		END
+		
+SET NOCOUNT OFF

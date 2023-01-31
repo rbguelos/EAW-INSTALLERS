@@ -1,0 +1,35 @@
+IF  EXISTS (SELECT * FROM sys.views WHERE object_id = OBJECT_ID(N'[report].[vwDocumentRequest]'))
+DROP VIEW [report].[vwDocumentRequest]
+GO
+
+--=============================================
+--Author:      AGC
+--Update date: 11062019
+--Description: Template Builder Document Request Source
+--=============================================
+
+CREATE VIEW [report].[vwDocumentRequest]
+AS
+
+SELECT
+	DR.ProfileId
+	,DateRequested = FORMAT(DR.DateRequested,N'MM/dd/yyyy')
+	,DateStart = FORMAT(DR.DateStart,N'MM/dd/yyyy')
+	,DateEnd = FORMAT(DR.DateEnd,N'MM/dd/yyyy')
+	,DateAvailable = (CASE WHEN ISNULL(DR.DateAvailable,'1/1/1900') > '1/1/1900' THEN FORMAT(DR.DateAvailable,N'MM/dd/yyyy') ELSE '' END)
+	,Remark = ISNULL(DR.Remark,'')
+	,DateClaimed = (CASE WHEN ISNULL(DR.DateClaimed,'1/1/1900') > '1/1/1900' THEN FORMAT(DR.DateClaimed,N'MM/dd/yyyy') ELSE '' END)
+	,RecievedBy = ISNULL(DR.RecievedBy,'')
+	,Details = ISNULL(DR.Details,'')
+	,Reason = ISNULL(DR.Reason,'')
+	,Signatory1 = ISNULL(DR.Signatory1,'')
+	,Designation1 = ISNULL(DR.Designation1,'')
+	,Signatory2 = ISNULL(DR.Signatory2,'')
+	,Designation2 = ISNULL(DR.Designation2,'')
+FROM employee.DocumentRequest DR
+
+
+GO
+
+
+

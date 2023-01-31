@@ -1,0 +1,9 @@
+EXEC [maintenance].[UpdateJQListColumns]
+	@ListType = 'OvertimeColumnList', @ColumnType = 'label', @Name = 'Reason', @Label = 'Reason',
+	@Width = '200', @Align = '', @Formatter = 'Overtime.formatOffsetReason', @FormatterOption = '',
+	@Others = '', @Clients = ''
+
+EXEC [maintenance].[UpdateJQListColumns]
+	@ListType = 'WorkScheduleRequestColumnList', @ColumnType = 'label', @Name = 'Reason', @Label = 'Reason',
+	@Width = '200', @Align = '', @Formatter = 'SpecialWorkScheduleOffsetFormatReason', @FormatterOption = '',
+	@Others = '', @Clients = ''

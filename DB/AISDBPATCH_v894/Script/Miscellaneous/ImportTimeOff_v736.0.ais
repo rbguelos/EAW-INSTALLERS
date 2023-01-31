@@ -1,0 +1,30 @@
+
+DELETE FROM fileimport.FileImportCfgDetail WHERE FileimportCfgHdrId IN (SELECT FileImportCfgHdrId FROM fileimport.FileImportCfgHdr WHERE [FileImportCode] = 'TimeOff');
+DELETE FROM fileimport.FileImportCfgHdr WHERE [FileImportCode] = 'TimeOff';
+
+DECLARE @FileImportCfgHdrId bigint = 0
+IF NOT EXISTS(SELECT * FROM fileimport.FileImportCfgHdr WHERE [FileImportCode] = 'TimeOff')
+BEGIN 
+/*HEADER DATA*/
+INSERT [fileimport].[FileImportCfgHdr] ([FileImportCode], [SourceTableName], [DestinationTable], [DestinationSchema], [TableType], [FillTable], [IdentityColumns], [Description], [FileType], [AllowDuplicate], [RowStart], [OrderNo], [QueryToExecute], [QueryType], [QueryParameters], [SystemCode], [ImportType], [BulkInsertCmd], [FixQryFilter], [Delimiter], [FileExtension], [SystemModuleId], [ImportOption], [HeaderRow], [ParentSource], [RequireChild], [ValidationFormula], [ValidationMessage], [TransactionIdColumnName], [InvalidTransactionMsg]) VALUES (N'TimeOff', N'TimeOff', N'OfficialBusiness', N'schedule', 0, NULL, N'', N'Time Off', 1, 1, 2, 1, NULL, 2, NULL, NULL, 1, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+
+SET @FileImportCfgHdrId = SCOPE_IDENTITY();
+
+/*INSERT DETAILS*/
+INSERT INTO fileimport.FileImportCfgDetail(FileImportCfgHdrId,SourceColumn,DestinationColumnField,DataType,SourceDataType,[MaxLength],ValidateDataType,AllowEmpty,CheckDuplicate,DefaultValue,IsFormula,FieldDescription,SourceColNum,SourceLinkTable,SourceLinkTableDesc,LinkTableFields,GetValueField) 
+SELECT @FileImportCfgHdrId, 'Employee Number', 'ProfileId', 'bigint', 'Varchar', '8', '1', '1', '1', '', '0', 'Employee No.', '1', 'employee.EmploymentInformation', '', 'CJI_EmployeeNo', 'ProfileId' UNION ALL
+SELECT @FileImportCfgHdrId, 'Date Filed', 'DateFiled', 'datetime', 'DateTime', '8', '1', '1', '0', '', '0', 'Date Filed', '2', '', '', '', '' UNION ALL
+SELECT @FileImportCfgHdrId, 'Time Off Date', 'OfficialBusinessDate', 'datetime', 'DateTime', '8', '1', '1', '1', '', '0', 'Time Off Date', '3', '', '', '', '' UNION ALL
+SELECT @FileImportCfgHdrId, '', 'ChargeCode', 'varchar', 'Varchar', '25', '1', '1', '0', '-', '0', 'Charge Code', '4', '', '', '', '' UNION ALL
+SELECT @FileImportCfgHdrId, 'Start Time', 'StartTime', 'time', 'DateTime', NULL, '1', '1', '0', 'CASE WHEN CAST(ISNULL([Start Time],'''') AS DATETIME) > ''1/1/1900'' THEN cast(cast([Time Off Date] as date) as datetime) + cast(cast([Start Time] as time) as datetime) ELSE '''' END', '1', 'Start Time', '5', '', '', '', '' UNION ALL
+SELECT @FileImportCfgHdrId, 'End Time', 'EndTime', 'time', 'DateTime', NULL, '1', '1', '0', 'CASE WHEN CAST(ISNULL([End Time],'''') AS DATETIME) > ''1/1/1900'' THEN cast(cast([Time Off Date] as date) as datetime) + cast(cast([End Time] as time) as datetime) ELSE '''' END', '1', 'End Time', '6', '', '', '', '' UNION ALL
+SELECT @FileImportCfgHdrId, 'No. of Hours', 'NoOfHours', 'decimal', 'Decimal', '9', '1', '1', '0', '', '0', 'No. of Hours', '7', '', '', '', '' UNION ALL
+SELECT @FileImportCfgHdrId, 'Reason Code', 'OBTypeId', 'bigint', 'Varchar', '8', '1', '1', '1', '', '0', 'Reason', '8', 'maintenance.fnRetrieveEnumValuesBySourceName(''TimeOffType'')', '', 'DisplayText', 'Value' UNION ALL
+SELECT @FileImportCfgHdrId, 'Details', 'Remarks', 'varchar', 'Varchar', '250', '1', '0', '0', '', '0', 'Details', '9', '', '', '', '' UNION ALL
+SELECT @FileImportCfgHdrId, '', 'IsOvertime', 'smallint', 'Varchar', '2', '1', '1', '0', '0', '0', 'Is Overtime', '10', '', '', '', '' UNION ALL
+SELECT @FileImportCfgHdrId, 'Apply Against', 'ApplyTo', 'smallint', 'Varchar', '1', '1', '1', '0', '', '0', 'Apply Against', '11', 'maintenance.fnRetrieveEnumValuesBySourceName(''TimeOffApplyAgainst'')', '', 'DisplayText', 'Value' UNION ALL
+--SELECT @FileImportCfgHdrId, 'Approver Remarks', 'ApproverRemarks', 'varchar', 'Varchar', '250', '1', '1', '0', '', '0', 'Approver Remarks', '13', '', '', '', '' UNION ALL
+SELECT @FileImportCfgHdrId, 'Status', 'StatusId', 'bigint', 'varchar', '8', '1', '1', '0', '', '0', 'Status', '12', '(SELECT [Value], [Name] FROM maintenance.Status WHERE [Name] IN (''Draft'',''Approved'')) Status', '', 'Name', 'Value' UNION ALL
+SELECT @FileImportCfgHdrId, '', 'TypeId', 'bigint', 'bigint', '8', '1', '1', '0', '2', '0', 'TypeId', '0', '', '', '', ''
+
+END

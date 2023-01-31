@@ -1,0 +1,215 @@
+GO
+/****** Object:  UserDefinedFunction [schedule].[fnEmployeeWorkSchedule]    Script Date: 1/14/2019 9:48:58 AM ******/
+IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[schedule].[fnEmployeeWorkSchedule]') AND type in (N'FN', N'IF', N'TF', N'FS', N'FT'))
+DROP FUNCTION [schedule].[fnEmployeeWorkSchedule]
+GO
+/****** Object:  UserDefinedFunction [schedule].[fnEmployeeWorkSchedule]    Script Date: 1/14/2019 9:48:58 AM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[schedule].[fnEmployeeWorkSchedule]') AND type in (N'FN', N'IF', N'TF', N'FS', N'FT'))
+BEGIN
+execute dbo.sp_executesql @statement = N'/*===========================================*\
+**	   Last Update Date: 11/19/2018
+**	   Last Update By: Michael
+**	   Last DBVersion executed: 
+\*===========================================*/
+
+-- =============================================
+-- Author:		Bryan Avellana
+-- Create date: June 18, 2018
+-- =============================================
+CREATE FUNCTION [schedule].[fnEmployeeWorkSchedule]
+(
+	-- Add the parameters for the function here
+	@StartDate DATETIME = NULL,
+    @EndDate DATETIME = NULL
+)
+RETURNS 
+@EmployeeWorkSchedule TABLE 
+(
+	-- Add the column definitions for the TABLE variable here
+	ProfileId BIGINT, EmployeeNo VARCHAR(50), EmployeeName VARCHAR(150), EmployeeLastName VARCHAR(40),
+	ScheduleType VARCHAR(10), WorkDate DATETIME, WeekDayName VARCHAR(5), WorkSchedule VARCHAR(35),
+	WorkHours DECIMAL(18,4), LunchSchedule VARCHAR(35), PSOTDuration VARCHAR(100), ASOTDuration VARCHAR(100),
+	OTTotalHours DECIMAL(18,4), TOReason VARCHAR(250), TOEffect VARCHAR(150), TOHours DECIMAL(18,4)
+)
+AS
+BEGIN
+
+	-- Fill the table variable with the rows for your result set
+	DECLARE @NullDate DATE = CAST(''1900-01-01'' AS DATE)
+
+	IF CAST(@StartDate AS DATE) <> @NullDate AND CAST(@EndDate AS DATE) <> @NullDate
+	BEGIN
+		/* Work Schedule */
+		DECLARE @EmployeeWS TABLE (
+			RowId INT IDENTITY(1,1), ProfileId BIGINT, ScheduleType VARCHAR(5), WorkDate DATETIME,
+			WorkSchedule VARCHAR(35), WorkHours DECIMAL(18,4), LunchSchedule VARCHAR(35), PSOTDuration VARCHAR(100),
+			PSOTHours DECIMAL(18,4), ASOTDuration VARCHAR(100), ASOTHours DECIMAL(18,4), TOReason VARCHAR(250),
+			TOEffect VARCHAR(150), TOHours DECIMAL(18,4), UNIQUE CLUSTERED (ProfileId, WorkDate, RowId)
+		)
+
+		/* Rest Day Schedule */
+		DECLARE @EmployeeRS TABLE (
+			RowId INT IDENTITY(1,1) ,ProfileId BIGINT, ScheduleType VARCHAR(5),
+			RestDayDate DATETIME, UNIQUE CLUSTERED (ProfileId, RestDayDate, RowId)
+		)
+		
+		/* Not Fixed Work Schedule */
+		INSERT INTO @EmployeeWS (ProfileId, ScheduleType, WorkDate, WorkSchedule, WorkHours, LunchSchedule)
+		
+		SELECT
+			WS.ProfileId,
+			''S'' AS ScheduleType,
+			WS.WorkDate,
+			--FORMAT(WS.StartTime, ''h:mm tt'') + '' - '' + FORMAT(WS.EndTime, ''h:mm tt'') AS WorkSchedule,
+			CONVERT(VARCHAR(15), CAST(WS.StartTime AS TIME), 100) + '' - '' + CONVERT(VARCHAR(15), CAST(WS.EndTime AS TIME), 100) AS WorkSchedule,
+			WS.WorkingHours,
+			CASE
+				WHEN WS.LunchBreakStartTime != WS.LunchBreakEndTime
+				THEN CONVERT(VARCHAR(15), CAST(WS.LunchBreakStartTime AS TIME), 100) + '' - '' + CONVERT(VARCHAR(15), CAST(WS.LunchBreakEndTime AS TIME), 100)
+				ELSE ''''
+			END LunchSchedule
+		FROM schedule.WorkSchedule WS
+		WHERE WS.FixedSchedule = 0
+		AND CAST(WS.WorkDate AS DATE) BETWEEN @StartDate AND @EndDate
+		
+		/* Fixed Work Schedule */
+		INSERT INTO @EmployeeWS (ProfileId, ScheduleType, WorkDate, WorkSchedule, WorkHours, LunchSchedule)
+
+		SELECT
+			WS.ProfileId,
+			''F'' AS ScheduleType,
+			S.DATEVALUE AS WorkDate,
+			--FORMAT(WS.StartTime, ''h:mm tt'') + '' - '' + FORMAT(WS.EndTime, ''h:mm tt'') AS WorkSchedule,
+			CONVERT(VARCHAR(15), CAST(WS.StartTime AS TIME), 100) + '' - '' + CONVERT(VARCHAR(15), CAST(WS.EndTime AS TIME), 100) AS WorkSchedule,
+			WS.WorkingHours,
+			CASE
+				WHEN WS.LunchBreakStartTime != WS.LunchBreakEndTime
+				THEN CONVERT(VARCHAR(15), CAST(WS.LunchBreakStartTime AS TIME), 100) + '' - '' + CONVERT(VARCHAR(15), CAST(WS.LunchBreakEndTime AS TIME), 100)
+				ELSE ''''
+			END LunchSchedule
+		FROM schedule.WorkSchedule WS
+		/* Date Series */
+		CROSS APPLY (
+			SELECT
+			 DW.ROWID,
+			 DW.[VALUE],
+			 DS.DATEVALUE
+			FROM dbo.SplitStrings_XML(WS.DaysOfWeek, '','') DW
+			INNER JOIN dbo.fnDateSeries(@StartDate, @EndDate) DS ON DS.DAYNUM = DW.[VALUE]
+		) S
+		WHERE WS.FixedSchedule = 1
+		AND S.DATEVALUE NOT IN (SELECT EWS.WorkDate FROM @EmployeeWS EWS WHERE EWS.ProfileId = WS.ProfileId AND EWS.ScheduleType = ''S'')
+
+		/* Not Fixed Rest Day */
+		INSERT INTO @EmployeeRS
+		
+		SELECT
+			RD.ProfileId,
+			''R'' AS ScheduleType,
+			RD.RestDayDate AS WorkDate
+		FROM schedule.RestDay RD
+		WHERE RD.IsFix = 0
+		AND CAST(RD.RestDayDate AS DATE) BETWEEN @StartDate AND @EndDate
+		
+		/* Fixed Rest Day */
+		INSERT INTO @EmployeeRS
+
+		SELECT
+			RD.ProfileId,
+			''R'' AS ScheduleType,
+			S.DATEVALUE AS WorkDate
+		FROM schedule.RestDay RD
+		-- Date Series --
+		CROSS APPLY (
+			SELECT
+			 DW.ROWID,
+			 DW.[VALUE],
+			 DS.DATEVALUE
+			FROM dbo.SplitStrings_XML(RD.[Days], '','') DW
+			INNER JOIN dbo.fnDateSeries(@StartDate, @EndDate) DS ON DS.DAYNUM = DW.[VALUE]
+		) S
+		WHERE RD.IsFix = 1
+		AND S.DATEVALUE NOT IN (SELECT ERS.RestDayDate FROM @EmployeeRS ERS WHERE ERS.ProfileId = RD.ProfileId AND ERS.ScheduleType = ''R'')
+
+		INSERT INTO @EmployeeWorkSchedule
+
+		SELECT
+			EMP.ProfileId,
+			EI.CJI_EmployeeNo AS EmployeeNo,
+			EMP.LastName + '', '' + EMP.FirstName + ISNULL('' '' + EMP.MiddleName, '''') AS EmployeeName,
+			EMP.LastName AS EmployeeLastName,
+			ISNULL(EWS.ScheduleType + ISNULL(''/'' + ERS.ScheduleType, ''''), ERS.ScheduleType) AS ScheduleType,
+			ISNULL(EWS.WorkDate, ERS.RestDayDate) AS WorkDate,
+			LEFT(DATENAME(DW, ISNULL(EWS.WorkDate, ERS.RestDayDate)), 3) AS WeekDayName,
+			ISNULL(EWS.WorkSchedule, '''') AS WorkSchedule,
+			ISNULL(EWS.WorkHours, 0) AS WorkHours,
+			ISNULL(EWS.LunchSchedule, '''') AS LunchSchedule,
+			ISNULL(EWS.PSOTDuration, '''') AS PSOTDuration,
+			ISNULL(EWS.ASOTDuration, '''') AS ASOTDuration,
+			ISNULL(EWS.PSOTHours, 0) + ISNULL(EWS.ASOTHours, 0) AS OTTotalHours,
+			ISNULL(EWS.TOReason, '''') AS TOReason,
+			ISNULL(EWS.TOEffect, '''') AS TOEffect,
+			ISNULL(EWS.TOHours, 0) AS TOHours
+		FROM @EmployeeWS EWS
+		/* Rest Day */
+		FULL OUTER JOIN @EmployeeRS ERS ON ERS.ProfileId = EWS.ProfileId AND ERS.RestDayDate = EWS.WorkDate
+
+		/* Pre-Shift Overtime */
+		OUTER APPLY (
+			SELECT TOP 1
+				CASE
+					WHEN T.StartTime != T.EndTime
+					--THEN FORMAT(T.StartTime, ''h:mm tt'') + '' - '' + FORMAT(T.EndTime, ''h:mm tt'')
+					THEN CONVERT(VARCHAR(15), CAST(T.StartTime AS TIME), 100) + '' - '' + CONVERT(VARCHAR(15), CAST(T.EndTime AS TIME), 100)
+					ELSE ''No time indicated''
+				END + '' ('' + LTRIM(STR(T.ApprovedOROTHrs, 18, 2)) + '' Hrs)'' AS TimeDuration,
+				T.ApprovedOROTHrs AS TotalHours
+			FROM schedule.Overtime T
+			WHERE T.ProfileId = EWS.ProfileId
+			AND CAST(T.OvertimeDate AS DATE) = CAST(EWS.WorkDate AS DATE)
+			AND T.StatusId = 2 AND T.PreShiftOT = 1
+		) PSOT
+		/* After Shift Overtime */
+		OUTER APPLY (
+			SELECT TOP 1
+				CASE
+					WHEN T.StartTime != T.EndTime
+					--THEN FORMAT(T.StartTime, ''h:mm tt'') + '' - '' + FORMAT(T.EndTime, ''h:mm tt'')
+					THEN CONVERT(VARCHAR(15), CAST(T.StartTime AS TIME), 100) + '' - '' + CONVERT(VARCHAR(15), CAST(T.EndTime AS TIME), 100)
+					ELSE ''No time indicated''
+				END + '' ('' + LTRIM(STR(T.ApprovedOROTHrs, 18, 2)) + '' Hrs)'' AS TimeDuration,
+				T.ApprovedOROTHrs AS TotalHours
+			FROM schedule.Overtime T
+			WHERE T.ProfileId = EWS.ProfileId
+			AND CAST(T.OvertimeDate AS DATE) = CAST(EWS.WorkDate AS DATE)
+			AND T.StatusId = 2 AND T.PreShiftOT = 0
+		) ASOT
+		/* Time Off */
+		OUTER APPLY (
+			SELECT TOP 1
+				T.Remarks,
+				TY.DisplayText,
+				T.NoOfHours
+			FROM schedule.OfficialBusiness T
+			-- Type Id --
+			LEFT JOIN maintenance.EnumValues TY ON CAST(TY.Value AS TINYINT) = T.ApplyTo AND TY.SourceName = ''TimeOffApplyAgainst''
+			WHERE T.TypeId = 2 /* Time Off */
+			AND T.ProfileId = EWS.ProfileId
+			AND CAST(T.OfficialBusinessDate AS DATE) = CAST(EWS.WorkDate AS DATE)
+			AND T.StatusId = 2
+		) [TO]	
+
+		/* Employee Profile */
+		JOIN employee.[Profile] EMP ON EMP.ProfileId = ISNULL(EWS.ProfileId, ERS.ProfileId)
+		/* Employment Information */
+		JOIN employee.EmploymentInformation EI ON EI.ProfileId = EMP.ProfileId AND EI.CJI_EmploymentStatus = 1
+	END
+
+	RETURN
+END' 
+END
+GO

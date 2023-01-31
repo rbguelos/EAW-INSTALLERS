@@ -1,0 +1,386 @@
+/*file import config LeaveRecords - THOME*/
+
+DECLARE @INSERTLEAVEHEADERFROMDETAIL VARCHAR(MAX),
+@LASTSCRIPTTOEXEC VARCHAR(200)
+
+SET @INSERTLEAVEHEADERFROMDETAIL = N'SET NOCOUNT ON;
+DECLARE @LOGDETAIL AS TABLE (
+	ImportLogDtlId BIGINT PRIMARY KEY
+);
+BEGIN TRY
+	SELECT
+		s.[RowId]
+	   ,s.[DataValidationRemarks_]
+	   ,s.[RowNum_]
+	   ,DetailNo = ROW_NUMBER() OVER (PARTITION BY [Leave Date], [Leave Code], [Employee - Code (Sort By)] ORDER BY [Leave Date], [Leave Code], [Employee - Code (Sort By)])
+	   ,s.[Start Date]
+	   ,s.[End Date]
+	   ,s.[Leave Type]
+	   ,s.[Total Days]
+	   ,s.[Consecutive]
+	   ,s.[Approval Target]
+	   ,[PartialDayApplyTo] = (CASE [Leave Type]
+			WHEN ''1st Half'' THEN 1
+			WHEN ''Full Day'' THEN 0
+			WHEN ''2nd Half'' THEN 2
+			ELSE 0
+		END)
+	   ,[PartialDayLeave] = (CASE
+			WHEN [Leave Type] IN (''1st Half'', ''2nd Half'') THEN 1
+			ELSE 0
+		END)
+	   ,[ProfileId] = t656.[ProfileId]
+	   ,s.[Employee - Code (Sort By)]
+	   ,[Reason] = (CASE
+			WHEN [Consecutive] <> '''' THEN ''Consecutive: '' + [Consecutive]
+			ELSE ''''
+		END + CHAR(10) +
+		CASE
+			WHEN [Approval Status] <> '''' THEN ''Approval Status: '' + [Approval Status]
+			ELSE ''''
+		END + CHAR(10) +
+		CASE
+			WHEN [Approval Target] <> '''' THEN ''Approval Target: '' + [Approval Target]
+			ELSE ''''
+		END + CHAR(10) +
+		CASE
+			WHEN [Medical Cert No.] <> '''' THEN ''Medical Cert No.: '' + [Medical Cert No.]
+			ELSE ''''
+		END + CHAR(10) +
+		CASE
+			WHEN [Remarks] <> '''' THEN ''Remarks: '' + [Remarks]
+			ELSE ''''
+		END + CHAR(10) +
+		CASE
+			WHEN [Approval Remarks] <> '''' THEN ''Approval Remarks: '' + [Approval Remarks]
+			ELSE ''''
+		END)
+	   ,[StatusId] = t664.[Value]
+	   ,s.[Approval Status]
+	   ,[TotalNoOfHours] = [Total Hours]
+	   ,s.[Total Hours]
+	   ,[InclusiveEndDate] = [Leave Date]
+	   ,[InclusiveStartDate] = [Leave Date]
+	   ,[LeaveTypeId] = t657.[LeaveTypeSetupId]
+	   ,s.[Leave Code]
+	   ,[NoOfDays] = [Days]
+	   ,s.[Days]
+	   ,[NoOfHours] = ([Days] * 8)
+	   ,s.[Clinic]
+	   ,s.[Medical Cert No.]
+	   ,s.[Remarks]
+	   ,s.[Approval Remarks]
+	   ,[CompanyId] = (SELECT TOP 1
+				AOA_Company
+			FROM employee.EmploymentInformation
+			WHERE CJI_EmployeeNo = [Employee - Code (Sort By)])
+	   ,[DateFiled] = [Leave Date]
+	   ,s.[Leave Date] INTO #tmpTVP
+	FROM @tmpTVP s
+	OUTER APPLY (SELECT TOP 1
+			[ProfileId]
+		FROM [employee].[EmploymentInformation]
+		WHERE 1 = 1
+		AND REPLACE(CJI_EmployeeNo, '' '', '''') = REPLACE(s.[Employee - Code (Sort By)], '' '', '''')) AS T656
+	OUTER APPLY (SELECT TOP 1
+			[Value]
+		FROM (SELECT
+				[Value] = 2
+			   ,[Name] = ''Approved''
+			UNION ALL
+			SELECT
+				[Value] = -3
+			   ,[Name] = ''Pending Approval'') AS [Status]
+		WHERE 1 = 1
+		AND REPLACE(Name, '' '', '''') = REPLACE(s.[Approval Status], '' '', '''')) AS T664
+	OUTER APPLY (SELECT TOP 1
+			[LeaveTypeSetupId]
+		FROM [leave].[LeaveTypeSetup]
+		WHERE 1 = 1
+		AND REPLACE(Code, '' '', '''') = REPLACE(s.[Leave Code], '' '', '''')
+		AND CompanyId = (SELECT TOP 1
+				CompanyId
+			FROM employee.EmploymentInformation
+			WHERE ProfileId = T656.ProfileId)) AS T657
+	DECLARE @ValidationLog VARCHAR(MAX) = '''';
+	UPDATE #tmpTVP
+	SET [DataValidationRemarks_] = T.[DataValidationRemarks_]
+	FROM (
+	SELECT
+			[RowId]
+		   ,[DataValidationRemarks_] = '''' +
+			CASE
+				WHEN NOT d.[LeaveRequestHeaderId] IS NULL THEN CONCAT(''Row '', s.[RowNum_], '' - Source data already exist on LeaveRecords.'', CHAR(10))
+				ELSE ''''
+			END +
+			CASE
+				WHEN s.DetailNo > 1 THEN CONCAT(''Row '', s.[RowNum_], '' - "LeaveRecords" was duplicated from the source data.'', CHAR(10))
+				ELSE ''''
+			END +
+			CASE
+				WHEN CHARINDEX('' is not a valid '', s.[DataValidationRemarks_]) > 0 AND
+					CHARINDEX(''Leave Date'', s.[DataValidationRemarks_]) > 0 THEN ''''
+				ELSE CASE
+						WHEN ISNULL(s.[Leave Date], '''') = '''' THEN CONCAT(''Row '', s.[RowNum_], '' - "Leave Date" cannot be blank.'', CHAR(10))
+						ELSE ''''
+					END
+			END +
+			CASE
+				WHEN CHARINDEX('' is not a valid '', s.[DataValidationRemarks_]) > 0 AND
+					CHARINDEX(''Leave Code'', s.[DataValidationRemarks_]) > 0 THEN ''''
+				ELSE CASE
+						WHEN ISNULL(s.[Leave Code], '''') = '''' THEN CONCAT(''Row '', s.[RowNum_], '' - "Leave Code" cannot be blank.'', CHAR(10))
+						ELSE ''''
+					END
+			END +
+			CASE
+				WHEN CHARINDEX('' is not a valid '', s.[DataValidationRemarks_]) > 0 AND
+					CHARINDEX(''Days'', s.[DataValidationRemarks_]) > 0 THEN ''''
+				ELSE CASE
+						WHEN ISNULL(s.[Days], ''0'') = ''0'' THEN CONCAT(''Row '', s.[RowNum_], '' - "Days" cannot be blank.'', CHAR(10))
+						ELSE ''''
+					END
+			END +
+			CASE
+				WHEN CHARINDEX('' is not a valid '', s.[DataValidationRemarks_]) > 0 AND
+					CHARINDEX(''Employee - Code (Sort By)'', s.[DataValidationRemarks_]) > 0 THEN ''''
+				ELSE CASE
+						WHEN ISNULL(s.[Employee - Code (Sort By)], '''') = '''' THEN CONCAT(''Row '', s.[RowNum_], '' - "Employee - Code (Sort By)" cannot be blank.'', CHAR(10))
+						ELSE ''''
+					END
+			END +
+			CASE
+				WHEN s.[LeaveTypeId] IS NULL AND
+					ISNULL(s.[Leave Code], '''') <> '''' THEN CONCAT(''Row '', s.[RowNum_], '' - The Leave Code: "'', s.[Leave Code], ''" is not valid or do not exist on source data '', ''.'', CHAR(10))
+				ELSE ''''
+			END +
+			CASE
+				WHEN s.[ProfileId] IS NULL AND
+					ISNULL(s.[Employee - Code (Sort By)], '''') <> '''' THEN CONCAT(''Row '', s.[RowNum_], '' - The Employee - Code (Sort By): "'', s.[Employee - Code (Sort By)], ''" is not valid or do not exist on source data '', ''.'', CHAR(10))
+				ELSE ''''
+			END +
+			CASE
+				WHEN s.[StatusId] IS NULL AND
+					ISNULL(s.[Approval Status], ''Approved'') <> ''Approved'' THEN CONCAT(''Row '', s.[RowNum_], '' - The Approval Status: "'', s.[Approval Status], ''" is not valid or do not exist on source data '', ''.'', CHAR(10))
+				ELSE ''''
+			END +
+			CASE
+				WHEN ISNULL(s.[DataValidationRemarks_], '''') <> '''' THEN s.[DataValidationRemarks_]
+				ELSE ''''
+			END +
+			CASE
+				WHEN [Approval Status] <> ''Approved'' THEN CONCAT(''Row '', s.[RowNum_], '' - Data is not valid. '', '''', CHAR(10))
+				ELSE ''''
+			END
+		FROM #tmpTVP s
+		LEFT JOIN [leave].[LeaveRequestHeader] d
+			ON 1 = 1
+			AND d.[ProfileId] = s.[ProfileId]
+			AND d.[LeaveTypeId] = s.[LeaveTypeId]
+			AND d.InclusiveStartDate = s.[InclusiveStartDate]
+			AND d.InclusiveEndDate = s.InclusiveEndDate
+			AND d.[StatusId] NOT IN (''-2''/*CANCELLED*/, ''-1''/*DELETED*/)/*ADDED 5.28.2019*/
+			) T WHERE T.[RowId] = #tmpTVP.[RowId];
+	SELECT
+		@ValidationLog = (SELECT
+				[DataValidationRemarks_]
+			FROM #tmpTVP
+			ORDER BY RowId
+			FOR XML PATH (''''), ROOT (''MyString''), TYPE)
+		.value(''/MyString[1]'', ''varchar(max)'');    /* AUDIT TRAIL */
+	DECLARE @LOGID BIGINT
+	INSERT INTO [fileimport].[FileImportLog] ([Filename], [SourceSheet], [DestinationTable], [ImportCount], [SourceDataCnt], [ImportedKeyIds], [ImportFileId], [ProcessedById], [ProcessedDate])
+		VALUES (@SourceFileName, @SourceSheet, ''[leave].[LeaveRequest]'', 0, @SourceDataCnt, NULL, 0, 0, GETDATE());
+	SET @LOGID = SCOPE_IDENTITY();
+	DECLARE @INSERTED TABLE (
+		[LeaveRequestId] BIGINT PRIMARY KEY
+	   ,[ProfileId] BIGINT
+	   ,[CompanyId] BIGINT
+	   ,[LeaveTypeId] BIGINT
+	   ,[InclusiveStartDate] DATETIME
+	   ,[InclusiveEndDate] DATETIME
+	   ,[NoOfHours] DECIMAL(18, 4)
+	   ,[PartialDayLeave] SMALLINT
+	   ,[PartialDayApplyTo] SMALLINT
+	   ,[Reason] VARCHAR(MAX)
+	   ,[StatusId] BIGINT
+	   ,[DateFiled] DATETIME
+	   ,[TotalNoOfHours] DECIMAL(18, 4)
+	   ,[NoOfDays] SMALLINT
+	   ,[LeaveRequestHeaderId] BIGINT
+	);    /*insert header*/
+	INSERT INTO [leave].[LeaveRequestHeader] ([ProfileId], [LeaveTypeId], [DateFiled], [InclusiveStartDate], [InclusiveEndDate], [PartialDayLeave], [PartialDayApplyTo], [TotalNoOfHours], [NoOfDays], [RemainingHours], [Reason], [TotalApproveHours], [StatusId], [SourceId], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate])
+		SELECT
+			s.[ProfileId]
+		   ,s.[LeaveTypeId]
+		   ,MIN(s.[Leave Date])
+		   ,s.[Start Date]
+		   ,s.[End Date]
+		   ,MIN(s.[PartialDayLeave])
+		   ,MIN(s.[PartialDayApplyTo])
+		   ,MAX(s.[TotalNoOfHours])
+		   ,SUM(s.[NoOfDays])
+		   ,[RemainingHours] = 0
+		   ,MAX(s.[Reason])
+		   ,SUM(s.[TotalNoOfHours])
+		   ,[StatusId] = 2
+		   ,[SourceId] = 3/*imported*/
+		   ,[CreateId] = @USERID
+		   ,[CreateDate] = GETDATE()
+		   ,[LastUpdateId] = 0
+		   ,[LastUpdateDate] = ''1/1/1900''
+		FROM #tmpTVP s
+		LEFT JOIN leave.LeaveRequest lr
+			ON lr.ProfileId = s.[ProfileId]
+				AND lr.LeaveTypeId = s.[LeaveTypeId]
+				AND lr.DateFiled = s.[Leave Date]
+		WHERE lr.LeaveRequestId IS NULL
+		AND s.DetailNo = 1
+		AND ISNULL(s.[Leave Date], '''') <> ''''
+		AND ISNULL(s.[Leave Code], '''') <> ''''
+		AND NOT s.[LeaveTypeId] IS NULL
+		AND ISNULL(s.[Days], ''0'') <> ''0''
+		AND ISNULL(s.[Employee - Code (Sort By)], '''') <> ''''
+		AND NOT s.[ProfileId] IS NULL
+		AND ISNULL(s.[DataValidationRemarks_], '''') = ''''
+		AND s.[StatusId] = 2
+		GROUP BY s.[ProfileId]
+				,s.[LeaveTypeId]
+				,s.[Start Date]
+				,s.[End Date];
+	CREATE TABLE #TABLEKEYS (
+		[PRIMARYKEYFLD] [VARCHAR](50)
+	   ,[DateFiled] [datetime] NULL
+	   ,[LeaveTypeId] [bigint] NULL
+	   ,[ProfileId] [bigint] NULL
+	);
+	INSERT INTO [leave].[LeaveRequest] ([CompanyId], [DateFiled], [InclusiveEndDate], [InclusiveStartDate], [LeaveRequestHeaderId], [LeaveTypeId], [NoOfDays], [NoOfHours], [PartialDayApplyTo], [PartialDayLeave], [ProfileId], [Reason], [StatusId], [TotalNoOfHours], [RemainingHours], [Planned], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate])
+	OUTPUT INSERTED.[LeaveRequestId], INSERTED.[DateFiled], INSERTED.[LeaveTypeId], INSERTED.[ProfileId] INTO #TABLEKEYS
+		SELECT
+			[CompanyId] = s.[CompanyId]
+		   ,[DateFiled] = s.[DateFiled]
+		   ,[InclusiveEndDate] = s.[InclusiveEndDate]
+		   ,[InclusiveStartDate] = s.[InclusiveStartDate]
+		   ,[LeaveRequestHeaderId] = lrh.LeaveRequestHeaderId
+		   ,[LeaveTypeId] = s.[LeaveTypeId]
+		   ,[NoOfDays] = s.[NoOfDays]
+		   ,[NoOfHours] = s.[NoOfHours]
+		   ,[PartialDayApplyTo] = s.[PartialDayApplyTo]
+		   ,[PartialDayLeave] = s.[PartialDayLeave]
+		   ,[ProfileId] = s.[ProfileId]
+		   ,[Reason] = s.[Reason]
+		   ,[StatusId] = s.[StatusId]
+		   ,[TotalNoOfHours] = s.[NoOfHours]
+		   ,0
+		   ,0
+		   ,@USERID
+		   ,GETDATE()
+		   ,0
+		   ,''1/1/1900''
+		FROM #tmpTVP s
+		JOIN leave.LeaveRequestHeader lrh
+			ON s.[ProfileId] = lrh.ProfileId
+				AND s.[Start Date] = lrh.InclusiveStartDate
+				AND s.[End Date] = lrh.InclusiveEndDate
+				AND s.[LeaveTypeId] = lrh.LeaveTypeId
+				AND lrh.[StatusId] = 2
+		LEFT JOIN [leave].[LeaveRequest] d
+			ON 1 = 1
+				AND d.[ProfileId] = s.[ProfileId]
+				AND d.[LeaveTypeId] = s.[LeaveTypeId]
+				AND d.[InclusiveStartDate] = s.[InclusiveStartDate]
+				AND d.[InclusiveEndDate] = s.[InclusiveEndDate]
+				AND d.[StatusId] NOT IN (''-2''/*CANCELLED*/, ''-1''/*DELETED*/)/*ADDED 5.28.2019*/
+		WHERE DetailNo = 1
+		AND ISNULL(s.[Leave Date], '''') <> ''''
+		AND ISNULL(s.[Leave Code], '''') <> ''''
+		AND NOT s.[LeaveTypeId] IS NULL
+		AND ISNULL(s.[Days], ''0'') <> ''0''
+		AND ISNULL(s.[Employee - Code (Sort By)], '''') <> ''''
+		AND NOT s.[ProfileId] IS NULL
+		AND ISNULL(s.[DataValidationRemarks_], '''') = ''''
+		AND ([Approval Status] = ''Approved'')
+		AND d.[LeaveRequestId] IS NULL;;
+	UPDATE leave.LeaveRequestHeader
+	SET TotalNoOfHours = T.TotalNoOfHours
+	   ,TotalApproveHours = T.TotalApproveHours
+	FROM (SELECT
+			lr.LeaveRequestHeaderId
+		   ,TotalNoOfHours = SUM(lr.TotalNoOfHours)
+		   ,TotalApproveHours = SUM(lr.NoOfHours)
+		FROM leave.LeaveRequest lr
+		JOIN #TABLEKEYS tk
+			ON tk.PRIMARYKEYFLD = CAST(lr.LeaveRequestId AS VARCHAR)
+		GROUP BY lr.LeaveRequestHeaderId) T
+	WHERE T.LeaveRequestHeaderId = LeaveRequestHeader.LeaveRequestHeaderId;     /*to be use in workflow*/
+	
+	INSERT INTO fileimport.ImportLogDtl (FileimportLogId, LogStatus, ImportKeyValue)
+		SELECT
+			@LOGID
+		   ,NULL
+		   ,[PRIMARYKEYFLD]
+		FROM #TABLEKEYS; ;
+	DECLARE @INSERTEDROWS INT;
+	SET @INSERTEDROWS = @@rowcount;
+	INSERT INTO @LOGDETAIL
+		SELECT
+			fileimport.ImportLogDtl.ImportLogDtlId
+		FROM fileimport.ImportLogDtl
+		WHERE FileimportLogId = @LOGID;/* get key values of the inserted records*/
+	UPDATE fileimport.FileImportLog
+	SET ImportCount = @INSERTEDROWS
+	WHERE FileimportLogId = @LOGID;  /*output result*/
+	SELECT
+		ImportedRecord = @INSERTEDROWS
+	   ,[Log] = @ValidationLog;
+	IF NOT OBJECT_ID(''tempdb..#tmpTVP'') IS NULL
+		DROP TABLE tempdb..#tmpTVP;
+	IF NOT OBJECT_ID(''tempdb..#TABLEKEYS'') IS NULL
+		DROP TABLE tempdb..#TABLEKEYS;
+END TRY
+BEGIN CATCH
+	SELECT
+		ImportedRecord = 0
+	   ,[Log] = ERROR_MESSAGE()
+END CATCH; ';
+
+SET @LASTSCRIPTTOEXEC = 'EXEC workflow.spInsertNewImportedRequestsToWorkflowTable 1;';
+
+
+DECLARE @FileImportCfgHdrId bigint
+
+IF NOT EXISTS(SELECT [FileImportCfgHdrId] FROM [fileimport].[FileImportCfgHdr] WHERE [FileImportCode] = 'LeaveRecords')
+BEGIN
+	INSERT [fileimport].[FileImportCfgHdr] ([FileImportCode], [SourceTableName], [DestinationTable], [DestinationSchema], [TableType], [FillTable], [IdentityColumns], [Description], [FileType], [AllowDuplicate], [RowStart], [OrderNo], [QueryToExecute], [QueryType], [QueryParameters], [SystemCode], [ImportType], [BulkInsertCmd], [FixQryFilter], [Delimiter], [FileExtension], [SystemModuleId], [ImportOption], [HeaderRow], [ParentSource], [RequireChild], [ValidationFormula], [ValidationMessage], [TransactionIdColumnName], [InvalidTransactionMsg]) VALUES (N'LeaveRecords', N'LeaveRecords', N'LeaveRequest', N'leave', 0, NULL, N'', N'LeaveRecords', 1, 1, 2, 0, @LASTSCRIPTTOEXEC, 6/*executes after process*/, NULL, NULL, 1, @INSERTLEAVEHEADERFROMDETAIL, NULL, NULL, NULL, NULL, 3, 1, NULL, 0, N'[Approval Status] <> ''Approved''', NULL, NULL, NULL)
+	SET @FileImportCfgHdrId = SCOPE_IDENTITY();
+
+	INSERT [fileimport].[FileImportCfgDetail] ([FileImportCfgHdrId], [SourceColumn], [DestinationColumnField], [DataType], [SourceDataType], [MaxLength], [ValidateDataType], [AllowEmpty], [CheckDuplicate], [DefaultValue], [IsFormula], [FieldDescription], [SourceColNum], [SourceLinkTable], [SourceLinkTableDesc], [LinkTableFields], [GetValueField], [Position], [FixLength], [DataFormat], [NoDuplicatePivotEntry], [IsPivot], [GetFieldAfterSourceCol], [PivotTable], [PivotLinkField], [PivotGetField], [PivotFieldType], [PivotDestinationField], [DestinationTable], [LinkToDestination], [ImportOption], [SourceType], [IgnoreEmpty]) VALUES (@FileImportCfgHdrId, N'', N'LeaveRequestHeaderId', N'bigint', N'bigint', 0, 1, 1, 0, N'(SELECT TOP 1 LeaveRequestHeaderId FROM leave.LeaveRequestHeader lrh JOIN #tmpTVP s on s.[ProfileId] = lrh.ProfileId and s.[Start Date] = lrh.InclusiveStartDate and s.[End Date] = lrh.InclusiveEndDate and s.[LeaveTypeId] = lrh.LeaveTypeId and s.[StatusId] = 2)', 1, N'LeaveRequestHeaderId', 2, N'', NULL, N'', N'', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+
+	INSERT [fileimport].[FileImportCfgDetail] ([FileImportCfgHdrId], [SourceColumn], [DestinationColumnField], [DataType], [SourceDataType], [MaxLength], [ValidateDataType], [AllowEmpty], [CheckDuplicate], [DefaultValue], [IsFormula], [FieldDescription], [SourceColNum], [SourceLinkTable], [SourceLinkTableDesc], [LinkTableFields], [GetValueField], [Position], [FixLength], [DataFormat], [NoDuplicatePivotEntry], [IsPivot], [GetFieldAfterSourceCol], [PivotTable], [PivotLinkField], [PivotGetField], [PivotFieldType], [PivotDestinationField], [DestinationTable], [LinkToDestination], [ImportOption], [SourceType], [IgnoreEmpty]) VALUES (@FileImportCfgHdrId, N'Employee - Code (Sort By)', N'ProfileId', N'bigint', N'varchar', 0, 1, 0, 1, NULL, NULL, N'ProfileId', 2, N'[employee].[EmploymentInformation]', NULL, N'CJI_EmployeeNo', N'ProfileId', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	INSERT [fileimport].[FileImportCfgDetail] ([FileImportCfgHdrId], [SourceColumn], [DestinationColumnField], [DataType], [SourceDataType], [MaxLength], [ValidateDataType], [AllowEmpty], [CheckDuplicate], [DefaultValue], [IsFormula], [FieldDescription], [SourceColNum], [SourceLinkTable], [SourceLinkTableDesc], [LinkTableFields], [GetValueField], [Position], [FixLength], [DataFormat], [NoDuplicatePivotEntry], [IsPivot], [GetFieldAfterSourceCol], [PivotTable], [PivotLinkField], [PivotGetField], [PivotFieldType], [PivotDestinationField], [DestinationTable], [LinkToDestination], [ImportOption], [SourceType], [IgnoreEmpty]) VALUES (@FileImportCfgHdrId, N'Leave Code', N'LeaveTypeId', N'bigint', N'varchar', 0, 1, 0, 1, NULL, NULL, N'LeaveTypeId', 2, N'[leave].[LeaveTypeSetup]', NULL, N'Code', N'LeaveTypeSetupId', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	INSERT [fileimport].[FileImportCfgDetail] ([FileImportCfgHdrId], [SourceColumn], [DestinationColumnField], [DataType], [SourceDataType], [MaxLength], [ValidateDataType], [AllowEmpty], [CheckDuplicate], [DefaultValue], [IsFormula], [FieldDescription], [SourceColNum], [SourceLinkTable], [SourceLinkTableDesc], [LinkTableFields], [GetValueField], [Position], [FixLength], [DataFormat], [NoDuplicatePivotEntry], [IsPivot], [GetFieldAfterSourceCol], [PivotTable], [PivotLinkField], [PivotGetField], [PivotFieldType], [PivotDestinationField], [DestinationTable], [LinkToDestination], [ImportOption], [SourceType], [IgnoreEmpty]) VALUES (@FileImportCfgHdrId, N'', N'InclusiveStartDate', N'datetime', N'date', 0, 1, 1, 0, N'[Leave Date]', 1, N'InclusiveStartDate', 4, N'', NULL, N'', N'', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	INSERT [fileimport].[FileImportCfgDetail] ([FileImportCfgHdrId], [SourceColumn], [DestinationColumnField], [DataType], [SourceDataType], [MaxLength], [ValidateDataType], [AllowEmpty], [CheckDuplicate], [DefaultValue], [IsFormula], [FieldDescription], [SourceColNum], [SourceLinkTable], [SourceLinkTableDesc], [LinkTableFields], [GetValueField], [Position], [FixLength], [DataFormat], [NoDuplicatePivotEntry], [IsPivot], [GetFieldAfterSourceCol], [PivotTable], [PivotLinkField], [PivotGetField], [PivotFieldType], [PivotDestinationField], [DestinationTable], [LinkToDestination], [ImportOption], [SourceType], [IgnoreEmpty]) VALUES (@FileImportCfgHdrId, N'', N'InclusiveEndDate', N'datetime', N'date', 0, 1, 1, 0, N'[Leave Date]', 1, N'InclusiveEndDate', 5, N'', NULL, N'', N'', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	INSERT [fileimport].[FileImportCfgDetail] ([FileImportCfgHdrId], [SourceColumn], [DestinationColumnField], [DataType], [SourceDataType], [MaxLength], [ValidateDataType], [AllowEmpty], [CheckDuplicate], [DefaultValue], [IsFormula], [FieldDescription], [SourceColNum], [SourceLinkTable], [SourceLinkTableDesc], [LinkTableFields], [GetValueField], [Position], [FixLength], [DataFormat], [NoDuplicatePivotEntry], [IsPivot], [GetFieldAfterSourceCol], [PivotTable], [PivotLinkField], [PivotGetField], [PivotFieldType], [PivotDestinationField], [DestinationTable], [LinkToDestination], [ImportOption], [SourceType], [IgnoreEmpty]) VALUES (@FileImportCfgHdrId, N'', N'NoOfHours', N'decimal', N'decimal', 0, 1, 1, 0, N'([Days] * 8)', 1, N'NoOfHours', 13, N'', NULL, N'', N'', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	INSERT [fileimport].[FileImportCfgDetail] ([FileImportCfgHdrId], [SourceColumn], [DestinationColumnField], [DataType], [SourceDataType], [MaxLength], [ValidateDataType], [AllowEmpty], [CheckDuplicate], [DefaultValue], [IsFormula], [FieldDescription], [SourceColNum], [SourceLinkTable], [SourceLinkTableDesc], [LinkTableFields], [GetValueField], [Position], [FixLength], [DataFormat], [NoDuplicatePivotEntry], [IsPivot], [GetFieldAfterSourceCol], [PivotTable], [PivotLinkField], [PivotGetField], [PivotFieldType], [PivotDestinationField], [DestinationTable], [LinkToDestination], [ImportOption], [SourceType], [IgnoreEmpty]) VALUES (@FileImportCfgHdrId, N'', N'PartialDayLeave', N'smallint', N'varchar', 0, 1, 1, 0, N'(CASE WHEN [Leave Type] IN (''1st Half'',''2nd Half'') THEN 1 ELSE 0 END)', 1, N'PartialDayLeave', 9, N'', NULL, N'', N'', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	INSERT [fileimport].[FileImportCfgDetail] ([FileImportCfgHdrId], [SourceColumn], [DestinationColumnField], [DataType], [SourceDataType], [MaxLength], [ValidateDataType], [AllowEmpty], [CheckDuplicate], [DefaultValue], [IsFormula], [FieldDescription], [SourceColNum], [SourceLinkTable], [SourceLinkTableDesc], [LinkTableFields], [GetValueField], [Position], [FixLength], [DataFormat], [NoDuplicatePivotEntry], [IsPivot], [GetFieldAfterSourceCol], [PivotTable], [PivotLinkField], [PivotGetField], [PivotFieldType], [PivotDestinationField], [DestinationTable], [LinkToDestination], [ImportOption], [SourceType], [IgnoreEmpty]) VALUES (@FileImportCfgHdrId, N'', N'PartialDayApplyTo', N'smallint', N'varchar', 0, 1, 1, 0, N'(CASE [Leave Type] WHEN ''1st Half'' THEN 1 WHEN ''Full Day'' THEN 0 WHEN ''2nd Half'' THEN 2 ELSE 0 END)', 1, N'PartialDayApplyTo', 9, N'', NULL, N'', N'', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	INSERT [fileimport].[FileImportCfgDetail] ([FileImportCfgHdrId], [SourceColumn], [DestinationColumnField], [DataType], [SourceDataType], [MaxLength], [ValidateDataType], [AllowEmpty], [CheckDuplicate], [DefaultValue], [IsFormula], [FieldDescription], [SourceColNum], [SourceLinkTable], [SourceLinkTableDesc], [LinkTableFields], [GetValueField], [Position], [FixLength], [DataFormat], [NoDuplicatePivotEntry], [IsPivot], [GetFieldAfterSourceCol], [PivotTable], [PivotLinkField], [PivotGetField], [PivotFieldType], [PivotDestinationField], [DestinationTable], [LinkToDestination], [ImportOption], [SourceType], [IgnoreEmpty]) VALUES (@FileImportCfgHdrId, N'', N'Reason', N'varchar', N'varchar', -1, 1, 1, 0, N'(CASE WHEN [Consecutive] <> '''' THEN ''Consecutive: '' + [Consecutive] ELSE '''' END + CHAR(10) + CASE WHEN [Approval Status] <> '''' THEN ''Approval Status: '' + [Approval Status] ELSE '''' END + CHAR(10) + CASE WHEN [Approval Target] <> '''' THEN ''Approval Target: '' + [Approval Target] ELSE '''' END + CHAR(10) + CASE WHEN [Medical Cert No.] <> '''' THEN ''Medical Cert No.: '' + [Medical Cert No.] ELSE '''' END + CHAR(10) + CASE WHEN [Remarks] <> '''' THEN ''Remarks: '' + [Remarks] ELSE '''' END + CHAR(10) + CASE WHEN [Approval Remarks] <> '''' THEN ''Approval Remarks: '' + [Approval Remarks] ELSE '''' END)', 1, N'Reason', 20, N'', NULL, N'', N'', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	INSERT [fileimport].[FileImportCfgDetail] ([FileImportCfgHdrId], [SourceColumn], [DestinationColumnField], [DataType], [SourceDataType], [MaxLength], [ValidateDataType], [AllowEmpty], [CheckDuplicate], [DefaultValue], [IsFormula], [FieldDescription], [SourceColNum], [SourceLinkTable], [SourceLinkTableDesc], [LinkTableFields], [GetValueField], [Position], [FixLength], [DataFormat], [NoDuplicatePivotEntry], [IsPivot], [GetFieldAfterSourceCol], [PivotTable], [PivotLinkField], [PivotGetField], [PivotFieldType], [PivotDestinationField], [DestinationTable], [LinkToDestination], [ImportOption], [SourceType], [IgnoreEmpty]) VALUES (@FileImportCfgHdrId, N'Approval Status', N'StatusId', N'bigint', N'varchar', 0, 1, 1, 0, N'Approved', NULL, N'StatusId', 2, N'(SELECT [Value] = 2,[Name] = ''Approved'' UNION ALL SELECT [Value] = -3,[Name] = ''Pending Approval'') as [Status]', NULL, N'Name', N'Value', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	INSERT [fileimport].[FileImportCfgDetail] ([FileImportCfgHdrId], [SourceColumn], [DestinationColumnField], [DataType], [SourceDataType], [MaxLength], [ValidateDataType], [AllowEmpty], [CheckDuplicate], [DefaultValue], [IsFormula], [FieldDescription], [SourceColNum], [SourceLinkTable], [SourceLinkTableDesc], [LinkTableFields], [GetValueField], [Position], [FixLength], [DataFormat], [NoDuplicatePivotEntry], [IsPivot], [GetFieldAfterSourceCol], [PivotTable], [PivotLinkField], [PivotGetField], [PivotFieldType], [PivotDestinationField], [DestinationTable], [LinkToDestination], [ImportOption], [SourceType], [IgnoreEmpty]) VALUES (@FileImportCfgHdrId, N'Leave Date', N'DateFiled', N'datetime', N'date', 0, 1, 0, 1, NULL, NULL, N'DateFiled', 2, N'', NULL, N'', N'', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	INSERT [fileimport].[FileImportCfgDetail] ([FileImportCfgHdrId], [SourceColumn], [DestinationColumnField], [DataType], [SourceDataType], [MaxLength], [ValidateDataType], [AllowEmpty], [CheckDuplicate], [DefaultValue], [IsFormula], [FieldDescription], [SourceColNum], [SourceLinkTable], [SourceLinkTableDesc], [LinkTableFields], [GetValueField], [Position], [FixLength], [DataFormat], [NoDuplicatePivotEntry], [IsPivot], [GetFieldAfterSourceCol], [PivotTable], [PivotLinkField], [PivotGetField], [PivotFieldType], [PivotDestinationField], [DestinationTable], [LinkToDestination], [ImportOption], [SourceType], [IgnoreEmpty]) VALUES (@FileImportCfgHdrId, N'Total Hours', N'TotalNoOfHours', N'decimal', N'decimal', 0, 1, 1, 0, NULL, NULL, N'TotalNoOfHours', 14, N'', NULL, N'', N'', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	INSERT [fileimport].[FileImportCfgDetail] ([FileImportCfgHdrId], [SourceColumn], [DestinationColumnField], [DataType], [SourceDataType], [MaxLength], [ValidateDataType], [AllowEmpty], [CheckDuplicate], [DefaultValue], [IsFormula], [FieldDescription], [SourceColNum], [SourceLinkTable], [SourceLinkTableDesc], [LinkTableFields], [GetValueField], [Position], [FixLength], [DataFormat], [NoDuplicatePivotEntry], [IsPivot], [GetFieldAfterSourceCol], [PivotTable], [PivotLinkField], [PivotGetField], [PivotFieldType], [PivotDestinationField], [DestinationTable], [LinkToDestination], [ImportOption], [SourceType], [IgnoreEmpty]) VALUES (@FileImportCfgHdrId, N'Days', N'NoOfDays', N'smallint', N'decimal', 0, 1, 0, 0, NULL, NULL, N'NoOfDays', 11, N'', NULL, N'', N'', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	INSERT [fileimport].[FileImportCfgDetail] ([FileImportCfgHdrId], [SourceColumn], [DestinationColumnField], [DataType], [SourceDataType], [MaxLength], [ValidateDataType], [AllowEmpty], [CheckDuplicate], [DefaultValue], [IsFormula], [FieldDescription], [SourceColNum], [SourceLinkTable], [SourceLinkTableDesc], [LinkTableFields], [GetValueField], [Position], [FixLength], [DataFormat], [NoDuplicatePivotEntry], [IsPivot], [GetFieldAfterSourceCol], [PivotTable], [PivotLinkField], [PivotGetField], [PivotFieldType], [PivotDestinationField], [DestinationTable], [LinkToDestination], [ImportOption], [SourceType], [IgnoreEmpty]) VALUES (@FileImportCfgHdrId, N'', N'CompanyId', N'bigint', N'varchar', 0, 1, 1, 0, N'(SELECT TOP 1 AOA_Company FROM employee.EmploymentInformation WHERE CJI_EmployeeNo = [Employee - Code (Sort By)])', 1, N'CompanyId', 2, N'', NULL, N'', N'', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	INSERT [fileimport].[FileImportCfgDetail] ([FileImportCfgHdrId], [SourceColumn], [DestinationColumnField], [DataType], [SourceDataType], [MaxLength], [ValidateDataType], [AllowEmpty], [CheckDuplicate], [DefaultValue], [IsFormula], [FieldDescription], [SourceColNum], [SourceLinkTable], [SourceLinkTableDesc], [LinkTableFields], [GetValueField], [Position], [FixLength], [DataFormat], [NoDuplicatePivotEntry], [IsPivot], [GetFieldAfterSourceCol], [PivotTable], [PivotLinkField], [PivotGetField], [PivotFieldType], [PivotDestinationField], [DestinationTable], [LinkToDestination], [ImportOption], [SourceType], [IgnoreEmpty]) VALUES (@FileImportCfgHdrId, N'Start Date', NULL, N'date', N'date', NULL, 1, 1, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	INSERT [fileimport].[FileImportCfgDetail] ([FileImportCfgHdrId], [SourceColumn], [DestinationColumnField], [DataType], [SourceDataType], [MaxLength], [ValidateDataType], [AllowEmpty], [CheckDuplicate], [DefaultValue], [IsFormula], [FieldDescription], [SourceColNum], [SourceLinkTable], [SourceLinkTableDesc], [LinkTableFields], [GetValueField], [Position], [FixLength], [DataFormat], [NoDuplicatePivotEntry], [IsPivot], [GetFieldAfterSourceCol], [PivotTable], [PivotLinkField], [PivotGetField], [PivotFieldType], [PivotDestinationField], [DestinationTable], [LinkToDestination], [ImportOption], [SourceType], [IgnoreEmpty]) VALUES (@FileImportCfgHdrId, N'End Date', NULL, N'date', N'date', NULL, 1, 1, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	INSERT [fileimport].[FileImportCfgDetail] ([FileImportCfgHdrId], [SourceColumn], [DestinationColumnField], [DataType], [SourceDataType], [MaxLength], [ValidateDataType], [AllowEmpty], [CheckDuplicate], [DefaultValue], [IsFormula], [FieldDescription], [SourceColNum], [SourceLinkTable], [SourceLinkTableDesc], [LinkTableFields], [GetValueField], [Position], [FixLength], [DataFormat], [NoDuplicatePivotEntry], [IsPivot], [GetFieldAfterSourceCol], [PivotTable], [PivotLinkField], [PivotGetField], [PivotFieldType], [PivotDestinationField], [DestinationTable], [LinkToDestination], [ImportOption], [SourceType], [IgnoreEmpty]) VALUES (@FileImportCfgHdrId, N'Leave Type', NULL, N'varchar', N'varchar', NULL, 1, 1, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	INSERT [fileimport].[FileImportCfgDetail] ([FileImportCfgHdrId], [SourceColumn], [DestinationColumnField], [DataType], [SourceDataType], [MaxLength], [ValidateDataType], [AllowEmpty], [CheckDuplicate], [DefaultValue], [IsFormula], [FieldDescription], [SourceColNum], [SourceLinkTable], [SourceLinkTableDesc], [LinkTableFields], [GetValueField], [Position], [FixLength], [DataFormat], [NoDuplicatePivotEntry], [IsPivot], [GetFieldAfterSourceCol], [PivotTable], [PivotLinkField], [PivotGetField], [PivotFieldType], [PivotDestinationField], [DestinationTable], [LinkToDestination], [ImportOption], [SourceType], [IgnoreEmpty]) VALUES (@FileImportCfgHdrId, N'Total Days', NULL, N'decimal', N'decimal', NULL, 1, 1, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	INSERT [fileimport].[FileImportCfgDetail] ([FileImportCfgHdrId], [SourceColumn], [DestinationColumnField], [DataType], [SourceDataType], [MaxLength], [ValidateDataType], [AllowEmpty], [CheckDuplicate], [DefaultValue], [IsFormula], [FieldDescription], [SourceColNum], [SourceLinkTable], [SourceLinkTableDesc], [LinkTableFields], [GetValueField], [Position], [FixLength], [DataFormat], [NoDuplicatePivotEntry], [IsPivot], [GetFieldAfterSourceCol], [PivotTable], [PivotLinkField], [PivotGetField], [PivotFieldType], [PivotDestinationField], [DestinationTable], [LinkToDestination], [ImportOption], [SourceType], [IgnoreEmpty]) VALUES (@FileImportCfgHdrId, N'Consecutive', NULL, N'varchar', N'varchar', NULL, 1, 1, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	INSERT [fileimport].[FileImportCfgDetail] ([FileImportCfgHdrId], [SourceColumn], [DestinationColumnField], [DataType], [SourceDataType], [MaxLength], [ValidateDataType], [AllowEmpty], [CheckDuplicate], [DefaultValue], [IsFormula], [FieldDescription], [SourceColNum], [SourceLinkTable], [SourceLinkTableDesc], [LinkTableFields], [GetValueField], [Position], [FixLength], [DataFormat], [NoDuplicatePivotEntry], [IsPivot], [GetFieldAfterSourceCol], [PivotTable], [PivotLinkField], [PivotGetField], [PivotFieldType], [PivotDestinationField], [DestinationTable], [LinkToDestination], [ImportOption], [SourceType], [IgnoreEmpty]) VALUES (@FileImportCfgHdrId, N'Approval Target', NULL, N'varchar', N'varchar', NULL, 1, 1, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	INSERT [fileimport].[FileImportCfgDetail] ([FileImportCfgHdrId], [SourceColumn], [DestinationColumnField], [DataType], [SourceDataType], [MaxLength], [ValidateDataType], [AllowEmpty], [CheckDuplicate], [DefaultValue], [IsFormula], [FieldDescription], [SourceColNum], [SourceLinkTable], [SourceLinkTableDesc], [LinkTableFields], [GetValueField], [Position], [FixLength], [DataFormat], [NoDuplicatePivotEntry], [IsPivot], [GetFieldAfterSourceCol], [PivotTable], [PivotLinkField], [PivotGetField], [PivotFieldType], [PivotDestinationField], [DestinationTable], [LinkToDestination], [ImportOption], [SourceType], [IgnoreEmpty]) VALUES (@FileImportCfgHdrId, N'Clinic', NULL, N'varchar', N'varchar', NULL, 1, 1, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	INSERT [fileimport].[FileImportCfgDetail] ([FileImportCfgHdrId], [SourceColumn], [DestinationColumnField], [DataType], [SourceDataType], [MaxLength], [ValidateDataType], [AllowEmpty], [CheckDuplicate], [DefaultValue], [IsFormula], [FieldDescription], [SourceColNum], [SourceLinkTable], [SourceLinkTableDesc], [LinkTableFields], [GetValueField], [Position], [FixLength], [DataFormat], [NoDuplicatePivotEntry], [IsPivot], [GetFieldAfterSourceCol], [PivotTable], [PivotLinkField], [PivotGetField], [PivotFieldType], [PivotDestinationField], [DestinationTable], [LinkToDestination], [ImportOption], [SourceType], [IgnoreEmpty]) VALUES (@FileImportCfgHdrId, N'Medical Cert No.', NULL, N'varchar', N'varchar', NULL, 1, 1, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	INSERT [fileimport].[FileImportCfgDetail] ([FileImportCfgHdrId], [SourceColumn], [DestinationColumnField], [DataType], [SourceDataType], [MaxLength], [ValidateDataType], [AllowEmpty], [CheckDuplicate], [DefaultValue], [IsFormula], [FieldDescription], [SourceColNum], [SourceLinkTable], [SourceLinkTableDesc], [LinkTableFields], [GetValueField], [Position], [FixLength], [DataFormat], [NoDuplicatePivotEntry], [IsPivot], [GetFieldAfterSourceCol], [PivotTable], [PivotLinkField], [PivotGetField], [PivotFieldType], [PivotDestinationField], [DestinationTable], [LinkToDestination], [ImportOption], [SourceType], [IgnoreEmpty]) VALUES (@FileImportCfgHdrId, N'Remarks', NULL, N'varchar', N'varchar', NULL, 1, 1, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	INSERT [fileimport].[FileImportCfgDetail] ([FileImportCfgHdrId], [SourceColumn], [DestinationColumnField], [DataType], [SourceDataType], [MaxLength], [ValidateDataType], [AllowEmpty], [CheckDuplicate], [DefaultValue], [IsFormula], [FieldDescription], [SourceColNum], [SourceLinkTable], [SourceLinkTableDesc], [LinkTableFields], [GetValueField], [Position], [FixLength], [DataFormat], [NoDuplicatePivotEntry], [IsPivot], [GetFieldAfterSourceCol], [PivotTable], [PivotLinkField], [PivotGetField], [PivotFieldType], [PivotDestinationField], [DestinationTable], [LinkToDestination], [ImportOption], [SourceType], [IgnoreEmpty]) VALUES (@FileImportCfgHdrId, N'Approval Remarks', NULL, N'varchar', N'varchar', NULL, 1, 1, 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+END
+ELSE
+BEGIN
+	UPDATE fileimport.FileImportCfgHdr SET BulkInsertCmd = @INSERTLEAVEHEADERFROMDETAIL, QueryToExecute = @LASTSCRIPTTOEXEC, QueryType = 6/*executes after insert process*/ WHERE FileImportCode = 'LeaveRecords';
+END

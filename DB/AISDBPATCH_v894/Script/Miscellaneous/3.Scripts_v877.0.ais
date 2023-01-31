@@ -1,0 +1,28 @@
+ UPDATE  admin.ListColumns SET DefaultColumns = 'ScreenTypeDescription|ActualDateTime|Location|Status|ConductedByName|QuestionnaireFormCode|ScreeningResult',
+MasterColumns = 'ScreenTypeDescription|ActualDateTime|Location|Status|ConductedByName|QuestionnaireFormCode|ScreeningResult'  WHERE ListType = 'ApplicationProgressScreeningScheduleListColumn'
+
+INSERT INTO maintenance.JQListColumns (ListType, ColumnType, Name, Label, Width, Align, Formatter, FormatterOption, Others)
+VALUES
+('ApplicationProgressScreeningScheduleListColumn','label','Location','Location','200','','','','sortable: false')
+
+UPDATE maintenance.JQListColumns SET Label = 'Scheduled Date' 
+WHERE JQListColumnsId = 877 AND ListType = 'ApplicationProgressScreeningScheduleListColumn'
+
+UPDATE admin.ListColumns SET DefaultColumns = 'Company|JobPosition|ApplicantFullName|ContactDetails|Status|Tracking',
+MasterColumns = 'Company|JobPosition|ApplicantFullName|ContactDetails|Status|Tracking'
+WHERE ListType = 'ApplicantProfileListColumn'
+
+
+INSERT INTO maintenance.JQListColumns (ListType, ColumnType, Name, Label, Width, Align, Formatter, FormatterOption, Others)
+VALUES
+('ApplicantProfileListColumn','label','MobileNumber','Contact Details','180','','','','formatter: jsFunction.FormatApplicantContanctDetails, cellattr: jsFunction.FormatApplicantAppliedToolTip')
+
+UPDATE admin.ListColumns SET DefaultColumns = 'JobPositionName|ApplicationDate|ApplicantFullName|ContactDetails|EducationalAttainment|AGIStatus', 
+MasterColumns = 'JobPositionName|ApplicationDate|ApplicantFullName|ContactDetails|EducationalAttainment|AGIStatus' WHERE ListType = 'ApplicationProgressListColumn'
+
+INSERT INTO maintenance.JQListColumns (ListType, ColumnType, Name, Label, Width, Align, Formatter, FormatterOption, Others)
+VALUES
+('ApplicationProgressListColumn','label','MobileNumber','Contact Details','180','','','','formatter: jsFunction.FormatApplicantContanctDetails, cellattr: jsFunction.FormatApplicantAppliedToolTip')
+
+UPDATE admin.ListColumns SET DefaultColumns = 'JobPositionName|ApplicationDate|ApplicantFullName|MobileNumber|EducationalAttainment|AGIStatus', 
+MasterColumns = 'JobPositionName|ApplicationDate|ApplicantFullName|MobileNumber|EducationalAttainment|AGIStatus' WHERE ListType = 'ApplicationProgressListColumn' 

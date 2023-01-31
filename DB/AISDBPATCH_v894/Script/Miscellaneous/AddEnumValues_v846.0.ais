@@ -1,0 +1,11 @@
+IF NOT EXISTS(SELECT * FROM maintenance.EnumValues WHERE SourceName = 'HolidaySetupType' AND DisplayText = 'Double Holiday')
+BEGIN
+	INSERT INTO maintenance.EnumValues (SourceName, DisplayText, Value, OrderNumber, Status)
+	VALUES ('HolidaySetupType', 'Double Holiday', 4, 4, 1)
+END
+
+IF NOT EXISTS(SELECT * FROM maintenance.EnumValues WHERE SourceName = 'HolidayType' AND DisplayText = 'Double Holiday')
+BEGIN
+	INSERT INTO maintenance.EnumValues (SourceName, DisplayText, Value, OrderNumber, Status)
+	VALUES ('HolidayType', 'Double Holiday', 4, 4, 1)
+END

@@ -1,0 +1,23 @@
+SELECT * FROM admin.MenuSubMenu WHERE MenuSubMenuId = 146 and SubMenuName = 'BDO Cash Card'
+UPDATE admin.MenuSubMenu SET SubMenuName = 'BDO (With Header)' WHERE MenuSubMenuId = 146 and SubMenuName = 'BDO Cash Card'
+UPDATE payroll.BankFileHdr SET TemplateCode = 'BDOCashCard2', Extension = 'txt' WHERE TemplateCode = 'BDOCashCard_Excel'
+
+SET NOCOUNT ON
+/*start deleting existing menu configs*/
+DELETE FROM admin.MenuSubMenu WHERE MenuSubMenuId = 150
+DELETE FROM admin.SecurityMapping WHERE MenuSubMenuId = 150
+/*end deleting existing menu configs*/
+
+/* start insert data to admin.MenuSubMenu */
+SET IDENTITY_INSERT [admin].[MenuSubMenu] ON
+INSERT [admin].[MenuSubMenu] ([MenuSubMenuId],[MenuMenuId],[SubMenuName],[SubMenuIcon],[SubMenuLink],[SortOrder],[Hidden],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES(150,87,'BDO (Cash Card)','','/BankFile/List?TemplateCode=BDOCashCard2&Extension=txt',4,0,NULL,NULL,NULL,NULL)
+SET IDENTITY_INSERT [admin].[MenuSubMenu] OFF
+/* end insert data to admin.MenuSubMenu */
+
+/* start insert data to admin.SecurityMapping */
+INSERT [admin].[SecurityMapping] ([MenuMenuId],[MenuSubMenuId],[SecurityFormId],[AccessTypeId],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES(87,150,222,'1',NULL,NULL,NULL,NULL)
+/* end insert data to admin.SecurityMapping */
+
+/* start insert data to security.Module_Forms */
+/* end insert data to security.Module_Forms */
+SET NOCOUNT OFF

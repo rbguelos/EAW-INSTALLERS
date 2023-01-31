@@ -1,0 +1,42 @@
+
+IF  EXISTS (SELECT * FROM sys.foreign_keys WHERE object_id = OBJECT_ID(N'[leave].[FK_LeaveTypeReason_LeaveTypeSetup]') AND parent_object_id = OBJECT_ID(N'[leave].[LeaveTypeReason]'))
+ALTER TABLE [leave].[LeaveTypeReason] DROP CONSTRAINT [FK_LeaveTypeReason_LeaveTypeSetup]
+GO
+/****** Object:  Table [leave].[LeaveTypeReason]    Script Date: 3/11/2019 1:38:42 PM ******/
+IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[leave].[LeaveTypeReason]') AND type in (N'U'))
+DROP TABLE [leave].[LeaveTypeReason]
+GO
+/****** Object:  Table [leave].[LeaveTypeReason]    Script Date: 3/11/2019 1:38:42 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+SET ANSI_PADDING ON
+GO
+IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[leave].[LeaveTypeReason]') AND type in (N'U'))
+BEGIN
+CREATE TABLE [leave].[LeaveTypeReason](
+	[LeaveTypeReasonId] [bigint] IDENTITY(1,1) NOT NULL,
+	[LeaveTypeSetupId] [bigint] NULL,
+	[Reason] [varchar](max) NULL,
+	[CreateId] [bigint] NULL,
+	[CreateDate] [datetime] NULL,
+	[LastUpdateId] [bigint] NULL,
+	[LastUpdateDate] [datetime] NULL,
+ CONSTRAINT [PK_LeaveTypeReason] PRIMARY KEY CLUSTERED 
+(
+	[LeaveTypeReasonId] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+END
+GO
+SET ANSI_PADDING OFF
+GO
+IF NOT EXISTS (SELECT * FROM sys.foreign_keys WHERE object_id = OBJECT_ID(N'[leave].[FK_LeaveTypeReason_LeaveTypeSetup]') AND parent_object_id = OBJECT_ID(N'[leave].[LeaveTypeReason]'))
+ALTER TABLE [leave].[LeaveTypeReason]  WITH CHECK ADD  CONSTRAINT [FK_LeaveTypeReason_LeaveTypeSetup] FOREIGN KEY([LeaveTypeSetupId])
+REFERENCES [leave].[LeaveTypeSetup] ([LeaveTypeSetupId])
+ON DELETE CASCADE
+GO
+IF  EXISTS (SELECT * FROM sys.foreign_keys WHERE object_id = OBJECT_ID(N'[leave].[FK_LeaveTypeReason_LeaveTypeSetup]') AND parent_object_id = OBJECT_ID(N'[leave].[LeaveTypeReason]'))
+ALTER TABLE [leave].[LeaveTypeReason] CHECK CONSTRAINT [FK_LeaveTypeReason_LeaveTypeSetup]
+GO

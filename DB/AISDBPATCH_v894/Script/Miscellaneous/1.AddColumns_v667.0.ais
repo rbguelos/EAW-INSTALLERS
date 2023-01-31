@@ -1,0 +1,4 @@
+EXEC dbo.AddColumn @SCHEMA = 'payroll', @TABLENAME = 'BankFileHdr', @COLUMNNAME = 'BatchNo', @DATATYPE = 'int'
+EXEC dbo.AddColumn @SCHEMA = 'payroll', @TABLENAME = 'BankFileHdr', @COLUMNNAME = 'PayrollDate', @DATATYPE = 'datetime'
+EXEC dbo.AddColumn @SCHEMA = 'payroll', @TABLENAME = 'BankFileHdr', @COLUMNNAME = 'Purpose', @DATATYPE = 'varchar(500)'
+EXEC dbo.AddColumn @SCHEMA = 'maintenance', @TABLENAME = 'MBankAccount', @COLUMNNAME = 'FilePrefix', @DATATYPE = 'varchar(50)'

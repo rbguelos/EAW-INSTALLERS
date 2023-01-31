@@ -1,0 +1,105 @@
+/*Overtime Request*/
+INSERT INTO maintenance.ConfigSetupDetail 
+([ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type],[Source], [Group], [SubGroup], [SortOrder], [Alignment]) 
+VALUES (1,'OvertimeDays','Overtime','','number','',7,0,1,'')
+
+INSERT INTO maintenance.ConfigSetupDetail 
+([ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type],[Source], [Group], [SubGroup], [SortOrder], [Alignment]) 
+VALUES (1,'OvertimeLead','','','dropdownList',' :0,Before:1,After:2',7,0,2,'')
+
+INSERT INTO maintenance.ConfigSetupDetail 
+([ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type],[Source], [Group], [SubGroup], [SortOrder], [Alignment]) 
+VALUES (1,'OvertimePortal','','','number',' :0,HR Portal:1,Employee Portal:2,Both:3',7,0,3,'')
+
+/******************************************************************************************************/
+
+/*Undertime Request*/
+INSERT INTO maintenance.ConfigSetupDetail 
+([ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type],[Source], [Group], [SubGroup], [SortOrder], [Alignment]) 
+VALUES (1,'UndertimeDays','Undertime','','number','',7,0,4,'')
+
+INSERT INTO maintenance.ConfigSetupDetail 
+([ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type],[Source], [Group], [SubGroup], [SortOrder], [Alignment]) 
+VALUES (1,'UndertimeLead','','','dropdownList',' :0,Before:1,After:2',7,0,5,'')
+
+INSERT INTO maintenance.ConfigSetupDetail 
+([ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type],[Source], [Group], [SubGroup], [SortOrder], [Alignment]) 
+VALUES (1,'UndertimePortal','','','number',' :0,HR Portal:1,Employee Portal:2,Both:3',7,0,6,'')
+
+/******************************************************************************************************/
+
+/*Undertime Request*/
+INSERT INTO maintenance.ConfigSetupDetail 
+([ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type],[Source], [Group], [SubGroup], [SortOrder], [Alignment]) 
+VALUES (1,'ChangeWorkScheduleDays','Change Work Schedule','','number','',7,0,7,'')
+
+INSERT INTO maintenance.ConfigSetupDetail 
+([ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type],[Source], [Group], [SubGroup], [SortOrder], [Alignment]) 
+VALUES (1,'ChangeWorkScheduleLead','','','dropdownList',' :0,Before:1,After:2',7,0,8,'')
+
+INSERT INTO maintenance.ConfigSetupDetail 
+([ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type],[Source], [Group], [SubGroup], [SortOrder], [Alignment]) 
+VALUES (1,'ChangeWorkSchedulePortal','','','number',' :0,HR Portal:1,Employee Portal:2,Both:3',7,0,9,'')
+
+/******************************************************************************************************/
+
+/*Change Restday*/
+INSERT INTO maintenance.ConfigSetupDetail 
+([ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type],[Source], [Group], [SubGroup], [SortOrder], [Alignment]) 
+VALUES (1,'ChangeRestdayScheduleDays','Change Restday','','number','',7,0,10,'')
+
+INSERT INTO maintenance.ConfigSetupDetail 
+([ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type],[Source], [Group], [SubGroup], [SortOrder], [Alignment]) 
+VALUES (1,'ChangeRestdayScheduleLead','','','dropdownList',' :0,Before:1,After:2',7,0,11,'')
+
+INSERT INTO maintenance.ConfigSetupDetail 
+([ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type],[Source], [Group], [SubGroup], [SortOrder], [Alignment]) 
+VALUES (1,'ChangeRestdaySchedulePortal','','','number',' :0,HR Portal:1,Employee Portal:2,Both:3',7,0,12,'')
+
+/******************************************************************************************************/
+
+/*Change Restday*/
+INSERT INTO maintenance.ConfigSetupDetail 
+([ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type],[Source], [Group], [SubGroup], [SortOrder], [Alignment]) 
+VALUES (1,'SpecialWorkScheduleDays','Special Work Schedule','','number','',7,0,13,'')
+
+INSERT INTO maintenance.ConfigSetupDetail 
+([ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type],[Source], [Group], [SubGroup], [SortOrder], [Alignment]) 
+VALUES (1,'SpecialWorkScheduleLead','','','dropdownList',' :0,Before:1,After:2',7,0,14,'')
+
+INSERT INTO maintenance.ConfigSetupDetail 
+([ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type],[Source], [Group], [SubGroup], [SortOrder], [Alignment]) 
+VALUES (1,'SpecialWorkSchedulePortal','','','number',' :0,HR Portal:1,Employee Portal:2,Both:3',7,0,15,'')
+
+/******************************************************************************************************/
+
+/*Change Restday*/
+INSERT INTO maintenance.ConfigSetupDetail 
+([ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type],[Source], [Group], [SubGroup], [SortOrder], [Alignment]) 
+VALUES (1,'OfficialBusinessDays','Official Business','','number','',7,0,16,'')
+
+INSERT INTO maintenance.ConfigSetupDetail 
+([ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type],[Source], [Group], [SubGroup], [SortOrder], [Alignment]) 
+VALUES (1,'OfficialBusinessLead','','','dropdownList',' :0,Before:1,After:2',7,0,17,'')
+
+INSERT INTO maintenance.ConfigSetupDetail 
+([ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type],[Source], [Group], [SubGroup], [SortOrder], [Alignment]) 
+VALUES (1,'OfficialBusinessPortal','','','number',' :0,HR Portal:1,Employee Portal:2,Both:3',7,0,18,'')
+
+/******************************************************************************************************/
+
+/*Change Restday*/
+INSERT INTO maintenance.ConfigSetupDetail 
+([ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type],[Source], [Group], [SubGroup], [SortOrder], [Alignment]) 
+VALUES (1,'TimeOffDays','Time-Off','','number','',7,0,19,'')
+
+INSERT INTO maintenance.ConfigSetupDetail 
+([ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type],[Source], [Group], [SubGroup], [SortOrder], [Alignment]) 
+VALUES (1,'TimeOffLead','','','dropdownList',' :0,Before:1,After:2',7,0,20,'')
+
+INSERT INTO maintenance.ConfigSetupDetail 
+([ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type],[Source], [Group], [SubGroup], [SortOrder], [Alignment]) 
+VALUES (1,'TimeOffPortal','','','number',' :0,HR Portal:1,Employee Portal:2,Both:3',7,0,21,'')
+
+/*UPDATE Config Header*/
+UPDATE maintenance.ConfigSetupHeader SET Panel7 = 'Schedule Request Cut-off;24;2' WHERE ConfigSetupHeaderId = 1

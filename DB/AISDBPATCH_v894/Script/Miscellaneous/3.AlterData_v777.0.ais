@@ -1,0 +1,41 @@
+EXEC [admin].[UpdateListColumns]
+	@ListName = 'Organization Goal List',
+	@ListType = 'OrganizationGoalColumnList',
+	@DefaultColumn = 'Company|ParentDepartment|Department|txtParentGoal|txtOrgGoal|txtDescription|dtpYear'
+
+EXEC [maintenance].[UpdateJQListColumns]
+	@ListType = 'OrganizationGoalColumnList', @ColumnType = 'label', @Name = 'Company',
+	@Label = 'Company', @Width = '', @Align = '', @Formatter = '', @FormatterOption = '',
+	@Others = 'search: false', @Clients = ''
+
+EXEC [maintenance].[UpdateJQListColumns]
+	@ListType = 'OrganizationGoalColumnList', @ColumnType = 'label', @Name = 'ParentDepartment',
+	@Label = 'ParentDepartment', @Width = '', @Align = '', @Formatter = '', @FormatterOption = '',
+	@Others = 'search: false', @Clients = ''
+
+EXEC [maintenance].[UpdateJQListColumns]
+	@ListType = 'OrganizationGoalColumnList', @ColumnType = 'label', @Name = 'Department',
+	@Label = 'Department', @Width = '150', @Align = '', @Formatter = '', @FormatterOption = '',
+	@Others = 'sortable: false', @Clients = ''
+
+EXEC [maintenance].[UpdateJQListColumns]
+	@ListType = 'OrganizationGoalColumnList', @ColumnType = 'label', @Name = 'txtParentGoal',
+	@Label = 'Parent Goal', @Width = '250', @Align = '', @Formatter = '', @FormatterOption = '',
+	@Others = 'search: false, formatter: OrganizationGoal.formatParentGoal', @Clients = ''
+
+EXEC [maintenance].[UpdateJQListColumns]
+	@ListType = 'OrganizationGoalColumnList', @ColumnType = 'label', @Name = 'txtOrgGoal',
+	@Label = 'Goal', @Width = '250', @Align = '', @Formatter = '', @FormatterOption = '',
+	@Others = 'sortable: false, formatter: OrganizationGoal.formatOrgGoal', @Clients = ''
+
+EXEC [maintenance].[UpdateJQListColumns]
+	@ListType = 'OrganizationGoalColumnList', @ColumnType = 'label', @Name = 'txtDescription',
+	@Label = 'Description', @Width = '300', @Align = '', @Formatter = '', @FormatterOption = '',
+	@Others = 'sortable: false', @Clients = ''
+
+EXEC [maintenance].[UpdateJQListColumns]
+	@ListType = 'OrganizationGoalColumnList', @ColumnType = 'label', @Name = 'dtpYear',
+	@Label = 'Year', @Width = '50', @Align = '', @Formatter = '', @FormatterOption = '',
+	@Others = 'search: false, sortable: false', @Clients = ''
+
+UPDATE performanceappraisal.OrganizationGoal SET ParentGoalId = 0 WHERE ParentGoalId IS NULL

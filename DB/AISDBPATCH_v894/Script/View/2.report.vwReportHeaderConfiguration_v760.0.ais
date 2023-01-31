@@ -1,0 +1,60 @@
+/*===========================================*\
+**	   Last Update Date: 08/30/2019
+**	   Last Update By: Abdiel
+**	   Last DBVersion executed: v
+\*===========================================*/
+
+ALTER VIEW [report].[vwReportHeaderConfiguration]
+AS
+
+SELECT
+    ReportHeaderConfigurationId = ISNULL(rhc.ReportHeaderConfigurationId, '')
+    ,Alignment = 
+    (
+	   CASE WHEN ISNULL(rhc.Alignment,0) = 0 THEN 1 ELSE rhc.Alignment END
+    )
+    ,Line1 = ISNULL(rhc.Line1, '')
+    ,Line2 = ISNULL(rhc.Line2, '')
+    ,Line3 = ISNULL(rhc.Line3, '')
+    ,Line4 = ISNULL(rhc.Line4, '')
+    ,LeftFooter = ISNULL(rhc.LeftFooter, '')
+    ,LeftFooterSpecification = ISNULL(rhc.LeftFooterSpecification, '')
+    ,CenterFooter = ISNULL(rhc.CenterFooter, '')
+    ,CenterFooterSpecification = ISNULL(rhc.CenterFooterSpecification, '')
+    --,RightFooter = (CASE WHEN ISNULL(rhc.RightFooter,0) = 0 THEN 3 ELSE rhc.RightFooter END)
+    ,RightFooter = (CASE WHEN ISNULL(rhc.RightFooter,0) <> 3 AND ISNULL(rhc.LeftFooter,0) <> 3 AND ISNULL(rhc.CenterFooter,0) <> 3 THEN 3 ELSE rhc.RightFooter END)
+    ,RightFooterSpecification = ISNULL(rhc.RightFooterSpecification, '')
+    ,LogoPath = ISNULL(rhc.LogoPath, '')
+    ,CompanyId = ISNULL(c.CompanyId, '')
+    ,BranchId = ISNULL(rhc.BranchId, '')
+	,UseCenteredLogo = 
+	(
+		SELECT TOP 1 
+			ConfigValue = (CASE WHEN ISNULL(ConfigValue,'') = '1' THEN 1 ELSE 0 END) 
+		FROM report.ReportConfiguration WHERE ConfigName = 'CenteredLogo'
+	)
+FROM maintenance.Company c
+OUTER APPLY 
+(
+    SELECT TOP 1
+	   ReportHeaderConfigurationId,
+	   Alignment,
+	   Line1,
+	   Line2,
+	   Line3,
+	   Line4,
+	   LeftFooter,
+	   LeftFooterSpecification,
+	   CenterFooter,
+	   CenterFooterSpecification,
+	   RightFooter,
+	   RightFooterSpecification,
+	   LogoPath,
+	   CompanyId,
+	   BranchId
+    FROM admin.ReportHeaderConfiguration
+    WHERE CompanyId = c.CompanyId
+) rhc
+GO
+
+

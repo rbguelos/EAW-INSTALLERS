@@ -1,0 +1,32 @@
+/*===========================================
+***	   Last Update Date: 03.11.2019
+**	   Last Update By: AGC
+**	   Last DBVersion executed: v676
+\*===========================================*/
+
+--======================================
+--Create Date:	 08/30/2017
+--Created By:	 RME
+--======================================
+
+ALTER VIEW [payroll].[vwCOMPBEN]
+AS
+
+SELECT
+    EarningDeductionId = ISNULL(ED.EarningDeductionId,0)
+    ,TypeId = ISNULL(ED.TypeId,0)
+    ,Code = ISNULL(PC.[Name], ED.Code)
+    ,MappedToId = ISNULL(ED.MappedToId,0)
+    ,TaxCategoryId = ISNULL(ED.TaxCategoryId,0)
+    ,BIRFormIds = ISNULL(ED.BIRFormIds,'')
+    ,Description = ISNULL(ED.Description,'')
+    ,IncludeIn13thMonthPay = ISNULL(ED.IncludeIn13thMonthPay,0)
+	,IncludeInGrossPay = ISNULL(ED.IncludeInGrossPay,0)
+	,IncludeInNetPay = ISNULL(ED.IncludeInNetPay,0)
+	,IncludeInLeavePayConversion = ISNULL(ED.IncludeInLeavePayConversion,0)
+	,DonotAddToGrossPay = ISNULL(ED.DonotAddToGrossPay,0)
+FROM compben.EarningDeduction ED
+LEFT JOIN maintenance.PaySheetColumns PC ON PC.PaySheetColumnsId = ED.MappedToId
+GO
+
+

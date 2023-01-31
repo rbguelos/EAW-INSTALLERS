@@ -1,0 +1,1 @@
+UPDATE payroll.LoanRequest SET Amortization = CAST(ROUND(Amortization, 2) AS DECIMAL(18, 2))

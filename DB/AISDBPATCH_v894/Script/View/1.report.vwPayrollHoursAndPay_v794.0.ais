@@ -1,0 +1,151 @@
+ --=============================================
+ --Author:		Abdiel Corda
+ --Create date: 07.10.2019
+ --Description:	For Payroll Register Report
+ --=============================================
+
+ALTER VIEW [report].[vwPayrollHoursAndPay]
+AS
+
+SELECT 
+	RowId = 0
+	,PDPAY.EarningDeductionId
+	,PHD.PaySheetHeaderDetailId
+	,PHD.ProfileId
+	,[Hours] = ISNULL(PDHRS.Hours,0)
+	,Amount = ISNULL(PDPAY.Amount,0)
+	,LookUpCode = PDPAY.LookUpCode
+	,PHD.PaySheetHeaderId
+	,PH.IssuedDate
+	,HoursCode = ISNULL(PDHRS.Code,'')
+	,PayCode = ISNULL(PDPAY.Code,'')
+	,HoursName = ISNULL(PDHRS.Description,'')
+	,PayName = ISNULL(PDPAY.Description,'')
+	,PHD.HourlyRate
+	,PH.StatusId
+	,SortOrder = ISNULL(Cols.SortOrder,0)
+FROM payroll.PaySheetHeaderDetail PHD WITH (NOLOCK)
+INNER JOIN payroll.PaySheetHeader PH WITH (NOLOCK) ON PH.PaySheetHeaderId = PHD.PaySheetHeaderId
+/*AMOUNTS*/
+CROSS APPLY
+(
+	SELECT 
+		Code = Cols.Code
+		,CMB.Description
+		,Amount = SUM(ISNULL(Cols.Amount,0))
+		,CMB.EarningDeductionId
+		,PD.PaySheetHeaderDetailId
+		,LookUpCode = T.LookUpCode
+	FROM payroll.vwCOMPBEN CMB
+	INNER JOIN payroll.PaySheetDetail PD WITH (NOLOCK) ON PD.Type = CMB.Code
+	CROSS APPLY
+	(
+		SELECT
+			Code = 
+			(
+				CASE 
+					WHEN ISNULL(CMB.Code,'') = 'LateHrs' THEN 'LatePay' 
+					WHEN ISNULL(CMB.Code,'') = 'AbsentHrs' THEN 'AbsentPay' 
+					WHEN ISNULL(CMB.Code,'') = 'UndertimeHrs' THEN 'UndertimePay' 
+				ELSE CMB.Code END
+			)
+			,Amount = 
+			(
+				CASE 
+					WHEN ISNULL(CMB.Code,'') = 'LateHrs' THEN (PD.Value * PHD.HourlyRate)
+					WHEN ISNULL(CMB.Code,'') = 'AbsentHrs' THEN (PD.Value * PHD.HourlyRate)
+					WHEN ISNULL(CMB.Code,'') = 'UndertimeHrs' THEN (PD.Value * PHD.HourlyRate)
+				ELSE PD.Value END
+			)
+	)Cols
+	CROSS APPLY	
+	( 
+		SELECT 
+			LookUpCode = REPLACE(LEFT(Cols.Code, len(Cols.Code)-3),' ','')
+	)T
+	WHERE 1=1
+	AND ISNULL(CMB.MappedToId,0) <> 0
+	AND PHD.PaySheetHeaderDetailId = PD.PaySheetHeaderDetailId
+	AND RIGHT(Cols.Code,3) = 'Pay'
+
+	GROUP BY Cols.Code,CMB.EarningDeductionId,PD.PaySheetHeaderDetailId,T.LookUpCode,CMB.Description
+)PDPAY
+
+/*HOURS*/
+OUTER APPLY
+(
+	SELECT 
+		CMB.Code
+		,CMB.Description
+		,[Hours] = SUM(ISNULL(PD.Value,0))
+		,CMB.EarningDeductionId
+		,PD.PaySheetHeaderDetailId
+		,LookUpCode = T.LookUpCode
+	FROM payroll.vwCOMPBEN CMB
+	INNER JOIN payroll.PaySheetDetail PD WITH (NOLOCK) ON PD.Type = CMB.Code
+	CROSS APPLY(SELECT LookUpCode = REPLACE(LEFT(CMB.Code, len(CMB.Code)-3),' ',''))T
+	WHERE 1=1
+	AND ISNULL(CMB.MappedToId,0) <> 0
+	AND PHD.PaySheetHeaderDetailId = PD.PaySheetHeaderDetailId
+	AND RIGHT(CMB.Code,3) = 'Hrs'
+
+	/*LINKING TO PAY AMOUNTS*/
+	AND T.LookUpCode = PDPAY.LookUpCode
+
+	GROUP BY CMB.Code,CMB.EarningDeductionId,PD.PaySheetHeaderDetailId,T.LookUpCode,CMB.Description
+)PDHRS
+
+CROSS APPLY
+(
+	SELECT 
+	SortOrder = 
+	(
+		CASE PDPAY.LookUpCode 
+			WHEN 'Late' THEN 'AA'
+			WHEN 'Undertime' THEN 'AB'
+			WHEN 'Absent' THEN 'AC'
+
+			WHEN 'Basic' THEN 'AD'
+			WHEN 'BasicOT' THEN 'AE'
+			WHEN 'BasicNS' THEN 'AF'
+			WHEN 'BasicNSOT' THEN 'AG'
+
+			WHEN 'Restday' THEN 'AH'
+			WHEN 'RestdayOT' THEN 'AI'
+			WHEN 'RestdayNS' THEN 'AJ'
+			WHEN 'RestdayNSOT' THEN 'AK'
+
+			WHEN 'Holiday' THEN 'AL'
+			WHEN 'HolidayOT' THEN 'AM'
+			WHEN 'HolidayNS' THEN 'AN'
+			WHEN 'HolidayNSOT' THEN 'AO'
+
+			WHEN 'Special' THEN 'AP'
+			WHEN 'SpecialOT' THEN 'AQ'
+			WHEN 'SpecialNS' THEN 'AR'
+			WHEN 'SpecialNSOT' THEN 'AS'
+
+			WHEN 'HR' THEN 'AT'
+			WHEN 'HROT' THEN 'AU'
+			WHEN 'HRNS' THEN 'AV'
+			WHEN 'HRNSOT' THEN 'AW'
+
+			WHEN 'SR' THEN 'AX'
+			WHEN 'SROT' THEN 'AY'
+			WHEN 'SRNS' THEN 'AZ'
+			WHEN 'SRNSOT' THEN 'BA'
+
+			WHEN 'CompanyNonWorkingDayHrsPay' THEN 'BB'
+			WHEN 'CompanyNonWorkingDayNightShiftHrsPay' THEN 'BC'
+			WHEN 'CompanyNonWorkingDayOvertimeHrsPay' THEN 'BD'
+			WHEN 'CompanyNonWorkingDayNightShiftOvertimeHrsPay' THEN 'BE'
+
+			WHEN 'Leave' THEN 'BF'
+			ELSE 'BG'
+		END
+	)
+)Cols
+
+GO
+
+

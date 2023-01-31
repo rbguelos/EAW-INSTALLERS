@@ -1,0 +1,1 @@
+INSERT INTO maintenance.EnumValues (SourceName, DisplayText, Value, OrderNumber, Status) VALUES ('Measure', 'Percentage', 4, 4, 1)

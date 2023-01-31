@@ -1,0 +1,185 @@
+GO
+DELETE FROM [maintenance].[AuditTrailReplaceField]
+GO
+SET IDENTITY_INSERT [maintenance].[AuditTrailReplaceField] ON 
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (1, N'ProfileId,EmployeeId,RequestedBy,EmployeeIds,SwapWithProfileId,ProfileIds', N'Employee', N'dbo.vwProfileInfo', N'LastFirstMIName', N'ProfileId', N'', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (2, N'CompanyId,CompanyIds', N'Company', N'maintenance.Company', N'Code', N'CompanyId', N'', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (3, N'BranchId,Branches', N'Branch', N'maintenance.Branch', N'Code', N'BranchId', N'', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (4, N'DepartmentId,DepartmentIds', N'Department', N'maintenance.Department', N'Code', N'DepartmentId', N'', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (5, N'OfficeTypeId,OfficeTypeIds', N'Office Type', N'maintenance.OfficeType', N'Code', N'OfficeTypeId', N'', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (6, N'OfficeId,OfficeIds', N'Office', N'maintenance.Office', N'Code', N'OfficeId', N'', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (7, N'DivisionId,DivisionIds', N'Division', N'maintenance.Division', N'Code', N'DivisionId', N'', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (8, N'GroupsId,GroupId', N'Group', N'maintenance.Groups', N'Code', N'GroupsId', N'', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (9, N'TeamId', N'Team', N'maintenance.Team', N'Code', N'TeamId', N'', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (10, N'UnitId', N'Unit', N'maintenance.Unit', N'Code', N'UnitId', N'', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (11, N'DistrictId', N'District', N'maintenance.District', N'Code', N'DistrictId', N'', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (12, N'CostCenterId', N'Cost Center', N'maintenance.CostCenter', N'Description', N'CostCenterId', N'', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (13, N'CostCenterGroupId', N'Cost Center Group', N'maintenance.CostCenterGroup', N'Description', N'CostCenterGroupId', N'', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (14, N'MHClassId', N'Manhour Classification', N'maintenance.MHClass', N'MHClassCode', N'MHClassId', N'', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (15, N'NationalityId', N'Nationality', N'maintenance.Nationality', N'Name', N'NationalityId', N'', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (16, N'ReligionId', N'Religion', N'maintenance.Religion', N'Name', N'ReligionId', N'', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (17, N'CurrencyId', N'Currency', N'maintenance.Currency', N'Code', N'CurrencyId', N'', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (18, N'DocumentTypeId', N'Document Type', N'maintenance.DocumentType', N'DocumentName', N'DocumentTypeId', N'', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (19, N'EmployeeTypeId,EmploymentTypeId,EmployeeTypeIds', N'Employment Type', N'maintenance.EmploymentType', N'Code', N'EmploymentTypeId', N'', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (20, N'EmploymentTypeGroupId,EmploymentTypeGroupIds', N'Employment Type Group', N'maintenance.EmploymentTypeGroup', N'Code', N'EmploymentTypeGroupId', N'', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (21, N'JobRankId,JobRankIds', N'Job Rank', N'maintenance.JobRank', N'Code', N'JobRankId', N'', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (22, N'JobGradeId,JobGradeIds', N'Job Grade', N'maintenance.JobGrade', N'Code', N'JobGradeId', N'', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (23, N'JobLevelId,JobLevelIds', N'Job Level', N'maintenance.JobLevel', N'Code', N'JobLevelId', N'', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (24, N'PositionId,JobPositionId,RecommendedJobPositionId', N'Job Position', N'maintenance.JobPosition', N'Name', N'JobPositionId', N'', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (25, N'ViolationTypeId', N'Violation Type', N'employeerelation.ViolationType', N'Code', N'ViolationTypeId', N'', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (26, N'StatusId,ApplicantStatusId,AttendanceStatusId,CivilStatusId,ExpiryStatusId,InitialStatusId,InvestigationStatusId,JobOpeningStatusId,ManpowerRequestStatusId,NightShiftOTStatusId,NightShiftStatusId,PaymentStatusId,PayrollStatusId,PreOTStatusId,RegularOTStatusId,RegularStatusId,RetrievalStatusId,TaxExemptionStatusId,TrainingStatusId,TransactionStatusId,UTStatusId', N'Status', N'maintenance.Status', N'Name', N'Value', N'VALUE', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (27, N'LineId,LineIds', N'Line', N'maintenance.Line', N'Code', N'LineId', N'', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (28, N'ProjectId,ProjectProfileId', N'Project', N'projecttracking.ProjectProfile', N'ProjectCode', N'ProjectProfileId', N'', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (29, N'ManpowerClassificationId', N'Manpower Classification', N'maintenance.ManpowerClassification', N'Code', N'ManpowerClassificationId', N'', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (30, N'Expiration,ExpirationId', N'Expiration', N'maintenance.EnumValues WHERE SourceName = ''Expiration''', N'DisplayText', N'Value', N'VALUE', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (31, N'PostingType,PostingTypeId', N'Posting Type', N'maintenance.EnumValues WHERE SourceName = ''PostingType''', N'DisplayText', N'Value', N'VALUE', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (32, N'ChargeCode,ChargeCodeId', N'Charge Code', N'maintenance.EnumValues WHERE SourceName = ''ChargeCode''', N'DisplayText', N'Value', N'VALUE', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (33, N'UndertimeHoursAdjustment,UndertimeHoursAdjustmentId', N'Undertime Hours Adjustment', N'maintenance.EnumValues WHERE SourceName = ''UndertimeHoursAdjustment''', N'DisplayText', N'Value', N'VALUE', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (34, N'TaxableIncome,TaxableIncomeId', N'Taxable Income', N'maintenance.EnumValues WHERE SourceName = ''TaxableIncome''', N'DisplayText', N'Value', N'VALUE', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (35, N'HairColor,HairColorId', N'Hair Color', N'maintenance.EnumValues WHERE SourceName = ''HairColor''', N'DisplayText', N'Value', N'VALUE', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (36, N'Birthday,BirthdayId', N'Birthday', N'maintenance.EnumValues WHERE SourceName = ''Birthday''', N'DisplayText', N'Value', N'VALUE', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (37, N'ApplicationType,ApplicationTypeId', N'Application Type', N'maintenance.EnumValues WHERE SourceName = ''ApplicationType''', N'DisplayText', N'Value', N'VALUE', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (38, N'NotificationType,NotificationTypeId', N'Notification Type', N'maintenance.EnumValues WHERE SourceName = ''NotificationType''', N'DisplayText', N'Value', N'VALUE', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (39, N'Relationship,RelationshipId', N'Relationship', N'maintenance.EnumValues WHERE SourceName = ''Relationship''', N'DisplayText', N'Value', N'VALUE', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (40, N'PayrollPeriod,PayrollPeriodId', N'Payroll Period', N'maintenance.EnumValues WHERE SourceName = ''PayrollPeriod''', N'DisplayText', N'Value', N'VALUE', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (41, N'NonTaxableIncome,NonTaxableIncomeId', N'Non Taxable Income', N'maintenance.EnumValues WHERE SourceName = ''NonTaxableIncome''', N'DisplayText', N'Value', N'VALUE', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (42, N'EmailDirection,EmailDirectionId', N'Email Direction', N'maintenance.EnumValues WHERE SourceName = ''EmailDirection''', N'DisplayText', N'Value', N'VALUE', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (43, N'AccrualFrequency,AccrualFrequencyId', N'Accrual Frequency', N'maintenance.EnumValues WHERE SourceName = ''AccrualFrequency''', N'DisplayText', N'Value', N'VALUE', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (44, N'MinimumTakeHomePayType,MinimumTakeHomePayTypeId', N'Minimum TakeHome PayType', N'maintenance.EnumValues WHERE SourceName = ''MinimumTakeHomePayType''', N'DisplayText', N'Value', N'VALUE', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (45, N'PartimeOrFulltime,PartimeOrFulltimeId', N'Partime Or Fulltime', N'maintenance.EnumValues WHERE SourceName = ''PartimeOrFulltime''', N'DisplayText', N'Value', N'VALUE', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (46, N'LateHoursAdjustment,LateHoursAdjustmentId', N'Late Hours Adjustment', N'maintenance.EnumValues WHERE SourceName = ''LateHoursAdjustment''', N'DisplayText', N'Value', N'VALUE', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (47, N'ConversionRate,ConversionRateId', N'Conversion Rate', N'maintenance.EnumValues WHERE SourceName = ''ConversionRate''', N'DisplayText', N'Value', N'VALUE', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (48, N'NotifyBy,NotifyById', N'Notify By', N'maintenance.EnumValues WHERE SourceName = ''NotifyBy''', N'DisplayText', N'Value', N'VALUE', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (49, N'EyeColor,EyeColorId', N'Eye Color', N'maintenance.EnumValues WHERE SourceName = ''EyeColor''', N'DisplayText', N'Value', N'VALUE', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (50, N'MovementType,MovementTypeId', N'Movement Type', N'maintenance.EnumValues WHERE SourceName = ''MovementType''', N'DisplayText', N'Value', N'VALUE', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (51, N'DueTo,DueToId', N'Due To', N'maintenance.EnumValues WHERE SourceName = ''DueTo''', N'DisplayText', N'Value', N'VALUE', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (52, N'CompanyType,CompanyTypeId', N'Company Type', N'maintenance.EnumValues WHERE SourceName = ''CompanyType''', N'DisplayText', N'Value', N'VALUE', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (53, N'CivilStatus,CivilStatusId', N'Civil Status', N'maintenance.EnumValues WHERE SourceName = ''CivilStatus''', N'DisplayText', N'Value', N'VALUE', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (54, N'CJI_DueTo,CJI_DueToId', N'Due To', N'maintenance.EnumValues WHERE SourceName = ''CJI_DueTo''', N'DisplayText', N'Value', N'VALUE', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (55, N'ViolationPeriod,ViolationPeriodId', N'Violation Period', N'maintenance.EnumValues WHERE SourceName = ''ViolationPeriod''', N'DisplayText', N'Value', N'VALUE', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (56, N'BloodType,BloodTypeId', N'Blood Type', N'maintenance.EnumValues WHERE SourceName = ''BloodType''', N'DisplayText', N'Value', N'VALUE', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (57, N'PostGrp,PostGrpId', N'Post Group', N'maintenance.EnumValues WHERE SourceName = ''PostGrp''', N'DisplayText', N'Value', N'VALUE', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (58, N'UserType,UserTypeId', N'User Type', N'maintenance.EnumValues WHERE SourceName = ''UserType''', N'DisplayText', N'Value', N'VALUE', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (59, N'SalaryFactor,SalaryFactorId', N'Salary Factor', N'maintenance.EnumValues WHERE SourceName = ''SalaryFactor''', N'DisplayText', N'Value', N'VALUE', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (60, N'Gender,GenderId', N'Gender', N'maintenance.EnumValues WHERE SourceName = ''Gender''', N'DisplayText', N'Value', N'VALUE', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (61, N'TaxExemptionStatus,TaxExemptionStatusId', N'Tax Exemption Status', N'maintenance.EnumValues WHERE SourceName = ''TaxExemptionStatus''', N'DisplayText', N'Value', N'VALUE', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (62, N'Portal,PortalId', N'Portal', N'maintenance.EnumValues WHERE SourceName = ''Portal''', N'DisplayText', N'Value', N'VALUE', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (63, N'CashIssuanceType,CashIssuanceTypeId', N'Cash Issuance Type', N'maintenance.EnumValues WHERE SourceName = ''CashIssuanceType''', N'DisplayText', N'Value', N'VALUE', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (64, N'YearsOfExperience,YearsOfExperienceId', N'Years Of Experience', N'maintenance.EnumValues WHERE SourceName = ''YearsOfExperience''', N'DisplayText', N'Value', N'VALUE', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (65, N'EmploymentStatus,EmploymentStatusId', N'Employment Status', N'maintenance.EnumValues WHERE SourceName = ''EmploymentStatus''', N'DisplayText', N'Value', N'VALUE', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (66, N'TargetScore,TargetScoreId', N'Target Score', N'maintenance.EnumValues WHERE SourceName = ''TargetScore''', N'DisplayText', N'Value', N'VALUE', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (67, N'EducationalLevel,EducationalLevelId', N'Educational Level', N'maintenance.EnumValues WHERE SourceName = ''EducationalLevel''', N'DisplayText', N'Value', N'VALUE', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (68, N'DaysOfWeek,DaysOfWeekId', N'Days Of Week', N'maintenance.EnumValues WHERE SourceName = ''DaysOfWeek''', N'DisplayText', N'Value', N'VALUE', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (69, N'EducationalAttainment,EducationalAttainmentId', N'Educational Attainment', N'maintenance.EnumValues WHERE SourceName = ''EducationalAttainment''', N'DisplayText', N'Value', N'VALUE', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (70, N'Measure,MeasureId', N'Measure', N'maintenance.EnumValues WHERE SourceName = ''Measure''', N'DisplayText', N'Value', N'VALUE', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (71, N'ApplicableTax,ApplicableTaxId', N'Applicable Tax', N'maintenance.EnumValues WHERE SourceName = ''ApplicableTax''', N'DisplayText', N'Value', N'VALUE', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (72, N'ScopeId', N'Scope Name', N'workflow.Scope', N'ScopeName', N'ScopeId', N'', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (73, N'AccessTypeId', N'Access Type', N'security.AccessType', N'AccessType', N'AccessTypeId', N'', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (74, N'CustomFieldId', N'Custom Field Type', N'Employee.CustomField', N'CustomFieldType', N'CustomFieldId', N'', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (75, N'ParentItemTypeId', N'Parent Item Type', N'accountability.ItemType', N'Code', N'ParentItemTypeId', N'', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (76, N'MonthId', N'Month', N'maintenance.EnumValues WHERE SourceName = ''Month''', N'DisplayText', N'Value', N'VALUE', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (77, N'AmountBasisId', N'Amount Basis', N'maintenance.EnumValues WHERE SourceName = ''EarningsDeductionAmountBasis''', N'DisplayText', N'Value', N'VALUE', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (78, N'BIRFormId,BIRFormIds', N'BIR Form Field', N'maintenance.BIRForms', N'BIRFieldName', N'BIRFormId', N'', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (79, N'Affects', N'Affects', N'maintenance.EnumValues WHERE SourceName = ''EarningsDeductionAffects''', N'DisplayText', N'Value', N'VALUE', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (80, N'EarningDeductionId,EarningDeductionIds', N'Code', N'compben.EarningDeduction', N'Code', N'EarningDeductionId', N'', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (81, N'BasisId', N'Loan Limit Basis', N'maintenance.EnumValues WHERE SourceName = ''LoanTypeDetailBasis''', N'DisplayText', N'Value', N'VALUE', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (82, N'RateTypeId', N'Rate Type', N'maintenance.EnumValues WHERE SourceName = ''RateTableRateType''', N'DisplayText', N'Value', N'VALUE', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (83, N'TaxCategoryId', N'Tax Category', N'maintenance.EnumValues WHERE SourceName = ''EarningsDeductionTaxCategory''', N'DisplayText', N'Value', N'VALUE', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (84, N'ApplyTo', N'Apply Against', N'maintenance.EnumValues WHERE SourceName = ''OfficialBusinessApplyAgainst''', N'DisplayText', N'Value', N'VALUE', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (85, N'LeaveTypeId,LeaveTypeSetupId', N'Leave Type Code', N'leave.LeaveTypeSetup', N'Code', N'LeaveTypeSetupId', N'', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (86, N'IconId', N'Icon', N'maintenance.Icon', N'Name', N'IconId', N'', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (87, N'JobPositionId,JobPositionIds', N'Job Position', N'maintenance.JobPosition', N'Code', N'JobPositionId', N'', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (88, N'PayrollFrequencyId', N'Payroll Frequency', N'maintenance.EnumValues WHERE SourceName = ''PayrollFrequency''', N'DisplayText', N'Value', N'VALUE', NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[AuditTrailReplaceField] ([AuditTrailReplaceFieldId], [FieldNames], [DisplayFieldName], [ReplaceTable], [ReplaceField], [TableValueField], [ParamFieldUsed], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (89, N'BreakdownType', N'Breakdown Type', N'maintenance.EnumValues WHERE SourceName = ''BreakdownType''', N'DisplayText', N'Value', N'VALUE', NULL, NULL, NULL, NULL)
+GO
+SET IDENTITY_INSERT [maintenance].[AuditTrailReplaceField] OFF
+GO

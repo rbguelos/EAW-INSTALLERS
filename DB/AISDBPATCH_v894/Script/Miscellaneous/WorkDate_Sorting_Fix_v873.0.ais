@@ -1,0 +1,1 @@
+UPDATE report.ReportData SET ReportDataType = 'decimal' WHERE ReportId IN(125,53) AND ReportColumn = 'RowId'

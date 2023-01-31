@@ -1,0 +1,68 @@
+IF NOT OBJECT_ID('[admin].[spRetrieveImportLogs]') IS NULL
+DROP PROCEDURE [admin].[spRetrieveImportLogs]
+GO
+
+/****** Object:  StoredProcedure [admin].[spRetrieveImportLogs]    Script Date: 10/29/2019 3:03:16 PM ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+CREATE PROCEDURE [admin].[spRetrieveImportLogs]
+(
+--DECLARE
+	@FileConfigurationCode varchar(max) = ''
+)
+AS
+BEGIN
+	-- SET NOCOUNT ON added to prevent extra result sets from
+	-- interfering with SELECT statements.
+	SET NOCOUNT ON;
+
+    -- Insert statements for procedure here
+	SELECT 
+	ImportLog.ImportLogId,
+	ImportLog.FileName,
+	ImportLog.ProcessStart,
+	ImportLog.ProcessEnd,
+	ImportLog.Size,
+	UserSecurity.Username,
+	--FORMAT(ImportLog.CreateDate,'MM/dd/yyyy hh:mm:ss.ff tt') CreateDate
+	ImportLog.CreateDate
+	FROM
+	(
+	SELECT 
+	ImportLog.ImportLogId,
+	ImportLog.FileName,
+	ImportLog.ProcessStart,
+	ImportLog.ProcessEnd,
+	ImportLog.Size,
+	ImportLog.CreateDate,
+	ImportLog.CreateId,
+	FileConfigurationCode
+	FROM
+	admin.ImportLog
+	UNION ALL
+	SELECT
+	[ImportLogId]  = FileimportLogId
+	,[FileName]	   = [Filename]
+	,[ProcessStart] = ProcessedDate
+	,[ProcessEnd]   = ''
+	,[Size]		   = ''
+	,[CreateDate]   = ProcessedDate
+	,[CreateId] = ProcessedById
+	,[FileConfigurationCode] = FileImportCode
+	FROM fileimport.FileImportLog
+	)ImportLog
+	LEFT JOIN security.UserSecurity ON ImportLog.CreateId = UserSecurity.UserSecurityId
+	WHERE 
+		ImportLog.FileConfigurationCode LIKE  '%' + @FileConfigurationCode + '%'
+	
+END
+
+
+GO
+
+

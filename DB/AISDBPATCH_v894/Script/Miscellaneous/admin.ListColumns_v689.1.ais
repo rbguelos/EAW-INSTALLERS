@@ -1,0 +1,5 @@
+--DeductionColumnsList
+UPDATE admin.ListColumns
+SET DefaultColumns = 'DeductionDate|Status|DeductionType|EmployeeNo|EmployeeName|Branch|DeductionNumber|ChargeSlipNumber|FirstPaymentDate|NoOfPayments|Amount|Amortization|AmountPaid|Balance'
+   ,MasterColumns = 'DeductionDate|Status|DeductionType|EmployeeNo|EmployeeName|Branch|DeductionNumber|ChargeSlipNumber|FirstPaymentDate|NoOfPayments|Amount|Amortization|AmountPaid|Balance'
+WHERE ListType = 'DeductionColumnsList'

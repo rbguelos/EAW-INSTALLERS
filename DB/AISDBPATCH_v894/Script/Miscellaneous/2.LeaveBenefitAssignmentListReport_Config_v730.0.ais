@@ -1,0 +1,162 @@
+SET NOCOUNT ON
+/*start deleting existing report configs*/
+DELETE FROM report.Report WHERE ReportId IN (426)
+DELETE FROM report.ReportData WHERE ReportId IN (426)
+DELETE FROM report.ReportParameter WHERE ReportCode IN ('LeaveBenefitAssignmentListReport')
+DELETE FROM report.ReportSubReport WHERE ReportCode  IN ('LeaveBenefitAssignmentListReport')
+DELETE FROM report.ReportMenu WHERE ReportId IN (426)
+DELETE FROM security.Module_Forms WHERE ModuleFormId IN ('10609')
+/*end deleting existing report configs*/
+
+/*start insert data to report.Report*/
+SET IDENTITY_INSERT [report].[Report] ON
+INSERT [report].[Report] ([ReportId],[ReportCode],[ReportName],[ReportFile],[ReportExcelFile],[EmploymentStatus],[TableSPUsed],[SPUsed],[NoOrderBy],[QueryType],[InsertToReportTempTable],[Description],[ImageFile],[SortFields],[Event],[ExportFormat],[CreateId],[Createdate],[LastUpdateId],[LastUpdateDate],[UseExportToExcelAPI],[DetailColStartPos],[DetailRowStartPos],[HeaderRowStartPos],[IncludeColHeader],[InsertNewRowAtRowPos],[Template],[SourceName],[ShowGrandTotals],[RepeatColumnHeaderOnHeaderGroup],[RepeatColumnHeaderOnGroupLevel],[AutoSizeColumn],[MaxRowPerPage],[DisplayReportHeader])VALUES(426,'LeaveBenefitAssignmentListReport','Leave Benefits Assignment List Report','\Reports\LeaveReports\LeaveBenefitAssignmentListReport.rpt',NULL,NULL,' SELECT 
+	EmployeeNumber = ISNULL(E.EmployeeNo,'''') 
+	,EmployeeName = ISNULL(E.EmployeeName,'''')
+	,Department = ISNULL(E.DepartmentName,'''')
+	,EmployeeType = ISNULL(E.EmployeeTypeCode,'''')
+	,LeaveType = ISNULL(LTS.Description,0)
+	,AccrualFrequency = 
+	(
+		SELECT TOP 1 
+			EV.DisplayText 
+		FROM maintenance.EnumValues EV WHERE EV.SourceName = ''AccrualFrequency''
+		AND EV.Value = LB.AccrualFrequency
+	)
+	,LeaveCreditAccrual = ISNULL(LTS.LeaveCreditAccrual,0)
+	,MaxCreditLimit = ISNULL(LB.MaxCreditLimit,0)
+	,Balance = ISNULL(LBD.BalanceHours,0)
+	,E.CompanyId
+FROM leave.LeaveBenefit LB
+INNER JOIN leave.LeaveTypeSetup LTS ON LTS.LeaveTypeSetupId = LB.LeaveTypeSetupId
+INNER JOIN (SELECT ProfileId FROM Employee.Profile ) P ON P.ProfileId = LB.ProfileId
+OUTER APPLY
+(
+	SELECT TOP 1 
+		BalanceHours = LBD.CurrentBalance 
+	FROM report.fnLeaveLedger(P.ProfileId,''1/1/1900'',GETDATE()) LBD
+	WHERE 1=1
+	AND LBD.LeaveTypeSetUpId = LTS.LeaveTypeSetupId 
+	AND LBD.ProfileId = LB.ProfileId
+	ORDER BY LBD.TransactionDate
+	/*
+	SELECT 
+		BalanceHours = SUM(LBD.AvailableHours)
+	FROM leave.fnLeaveBalanceDetail(GETDATE(), LTS.CheckLeaveBalancePostDateAgainstLeaveRequestDate, 1) LBD
+	INNER JOIN leave.LeaveBalanceHeader LBH ON LBH.LeaveBalanceHeaderId = LBD.LeaveBalanceHeaderId
+	WHERE LBH.ProfileId = LB.ProfileId AND LBH.LeaveTypeSetupId = LB.LeaveTypeSetupId
+	*/
+)LBD
+CROSS APPLY
+(
+	SELECT TOP 1 
+		E.EmployeeNo
+		,EmployeeName = E.LastFirstMIName
+		,E.DepartmentName
+		,E.EmployeeTypeCode
+		,E.CompanyId 
+		,E.BranchId
+		,E.DepartmentId
+		,E.JobLevelId
+		,E.EmployeeTypeId
+		,E.PositionId
+		,E.DivisionId
+		,E.UnitId
+		,E.Officeid
+	FROM dbo.fnProfileInfo(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0) E
+	WHERE E.ProfileId = P.ProfileId
+)E
+
+WHERE
+(
+	1=1
+	AND
+	(ISNULL(@CompanyId,0) = 0 OR E.CompanyId = @CompanyId)
+	AND
+	(ISNULL(@BranchId,0) = 0 OR E.BranchId = @BranchId)
+	AND
+	(ISNULL(@DepartmentId,0) = 0 OR E.DepartmentId = @DepartmentId)
+	AND
+	(ISNULL(@JobRankId,0) = 0 OR E.JobLevelId = @JobRankId)
+	AND
+	(ISNULL(@EmployeeTypeId,0) = 0 OR E.EmployeeTypeId = @EmployeeTypeId)
+	AND
+	(ISNULL(@PositionId,0) = 0 OR E.PositionId = @PositionId)
+	AND
+	((COALESCE(@LeaveTypeId, '''') = '''' ) OR  (CHARINDEX('''''''' + CAST(LTS.LeaveTypeSetupId AS VARCHAR) + '''''''', @LeaveTypeId) > 0))
+	AND
+	(ISNULL(@OfficeId,0) = 0 OR E.Officeid = @OfficeId)
+	AND
+	(ISNULL(@DivisionId,0) = 0 OR E.DivisionId = @DivisionId)
+	AND
+	(ISNULL(@UnitId,0) = 0 OR E.UnitId = @UnitId)
+)',NULL,1,'QUERY',1,'This report will generate the list of benefits assignment',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+SET IDENTITY_INSERT [report].[Report] OFF
+/*end insert data to report.Report*/
+
+/*start insert data to report.ReportData*/
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(426,'Employee No.','EmployeeNumber','string','','',NULL,1,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(426,'Employee','EmployeeName','string','','',NULL,2,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(426,'Department','Department','string','','',NULL,3,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(426,'Employee Type','EmployeeType','string','','',NULL,4,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(426,'Leave Type','LeaveType','string','','',NULL,5,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(426,'Accrual Frequency','AccrualFrequency','string','','',NULL,6,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(426,'Leave Credits Accrual','LeaveCreditAccrual','string','','',NULL,7,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(426,'Max Credit Limit','MaxCreditLimit','decimal','','',NULL,8,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(426,'Balance','Balance','decimal','','',NULL,9,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+/*end insert data to report.ReportData*/
+
+/*start insert data to report.ReportParameter*/
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat])VALUES('LeaveBenefitAssignmentListReport','@CompanyId','Company','dropdownList','$table:maintenance.Company,CompanyId,Name','$table:maintenance.Branch WHERE CompanyId =  ,BranchId,Name|@BranchId',1,'','Param1','Stored','=','bigint',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat])VALUES('LeaveBenefitAssignmentListReport','@BranchId','Branch','dropdownList','$table:maintenance.Branch,BranchId,Name','',2,'','Param1','Stored','=','bigint',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat])VALUES('LeaveBenefitAssignmentListReport','@DepartmentId','Department','dropdownList','$table:maintenance.Department,DepartmentId,DepartmentName','',3,'','Param1','Stored','=','bigint',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat])VALUES('LeaveBenefitAssignmentListReport','@JobRankId','Job Level','dropdownList','$table:maintenance.JobRank,JobRankId,Description','',4,'','Param1','Stored','=','bigint',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat])VALUES('LeaveBenefitAssignmentListReport','@EmployeeTypeId','Employee Type','dropdownList','$table:maintenance.EmploymentType,EmploymentTypeId,Code','',5,'','Param1','Stored','=','bigint',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat])VALUES('LeaveBenefitAssignmentListReport','@PositionId','Position','dropdownList','$table:maintenance.JobPosition,JobPositionId,Name','',6,'','Param1','Stored','=','bigint',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat])VALUES('LeaveBenefitAssignmentListReport','@LeaveTypeId','Leave Type','checkboxList','$table:leave.LeaveTypeSetup,LeaveTypeSetupId,Description','',7,'','Param1','Stored','IN','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat])VALUES('LeaveBenefitAssignmentListReport','@OfficeId','Office','dropdownList','$table:maintenance.Office,OfficeId,Name','',8,'','Param1','Stored','=','bigint',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat])VALUES('LeaveBenefitAssignmentListReport','@DivisionId','Division','dropdownList','$table:maintenance.Division,DivisionId,Description','',9,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat])VALUES('LeaveBenefitAssignmentListReport','@UnitId','Unit','dropdownList','$table:maintenance.Unit,UnitId,Description','',10,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+/*end insert data to report.ReportParameter*/
+
+/*start insert data to report.ReportSubReport*/
+/*end insert data to report.ReportSubReport*/
+
+/*start insert data to report.ReportMenu*/
+INSERT [report].[ReportMenu] ([ReportId],[AdminMenuModuleId],[MenuModuleId],[ReportGroupId],[ModuleFormId],[FileGeneratorHdrId],[XMLReportId],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES(426,0,11,5,0,0,0,NULL,NULL,NULL,NULL)
+/*end insert data to report.ReportMenu*/
+
+/*start insert data to security.Module_Forms*/
+SET IDENTITY_INSERT [security].[Module_Forms] ON
+INSERT [security].[Module_Forms] ([ModuleFormId],[ModuleId],[Name],[Form],[AccessTypeId],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES(10609,37,'Leave Benefits Assignment List Report','LeaveBenefitAssignmentListReport','1,5',NULL,NULL,NULL,NULL)
+SET IDENTITY_INSERT [security].[Module_Forms] OFF
+/*end insert data to security.Module_Forms*/
+
+/*start insert data to security.Role_FormAccess*/
+INSERT INTO security.Role_FormAccess([RoleId],[ModuleId],[ModuleFormId],[AccessTypeId]) 
+				SELECT 
+				[RoleId] = 1,
+				[ModuleId] = F.ModuleId,
+				[ModuleFormId] = F.ModuleFormId,
+				[AccessTypeId] = F.AccessTypeId
+				FROM security.Module_Forms F
+				
+				WHERE F.ModuleFormId IN ('10609')
+				
+/*end insert data to security.Role_FormAccess*/
+
+/*start insert data to security.UserSecurity_Detail*/
+INSERT INTO security.UserSecurity_Detail([UserSecurityId],[ModuleFormId],[AccessTypeId],[ModuleId])
+				SELECT
+				[UserSecurityId] = US.UserSecurityId
+				,[ModuleFormId] = F.ModuleFormId
+				,[AccessTypeId] = F.AccessTypeId
+				,[ModuleId] = F.ModuleId
+				FROM security.Module_Forms F
+				
+				CROSS APPLY (SELECT DISTINCT USD.UserSecurityId FROM security.UserSecurity_Detail USD JOIN security.UserSecurity US ON US.UserSecurityId = USD.UserSecurityId WHERE USD.ModuleId IN ('37') AND US.RoleId = 1	AND US.UserSecurityId IS NOT NULL) US
+				WHERE F.ModuleFormId IN ('10609')
+				AND US.UserSecurityId NOT IN (SELECT UserSecurityId FROM security.UserSecurity_Detail WHERE ModuleFormId IN ('10609') AND UserSecurityId IS NOT NULL)
+/*end insert data to security.UserSecurity_Detail*/
+
+SET NOCOUNT OFF

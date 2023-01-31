@@ -1,0 +1,40 @@
+UPDATE maintenance.ConfigSetupDetail SET PropertyName = 'RoundDownOvertimeToMinuteIntervals' 
+WHERE PropertyName = 'OTRoundDownMinutes'
+
+IF NOT EXISTS(SELECT * FROM maintenance.ConfigSetupDetail WHERE PropertyName = 'OTRoundDownMinutes')
+BEGIN
+	INSERT INTO maintenance.ConfigSetupDetail(
+		ConfigSetupHeaderId, PropertyName, LabelName, PropertyValue, Type, Source, [Group], Subgroup, SortOrder, Alignment)
+	SELECT 
+	ConfigSetupHeaderId = 1, 
+	PropertyName = 'OTRoundDownMinutes', 
+	LabelName = '', 
+	PropertyValue = '', 
+	Type = 'number', 
+	Source = '', 
+	[Group] = 2, 
+	Subgroup = 0, 
+	SortOrder = 14, 
+	Alignment = ''
+END
+
+
+UPDATE maintenance.ConfigSetupDetail SET PropertyName = 'ApplyOvertimeRoundingTo1st8hoursOnHolidaysAndRestdays', SortOrder = 15
+WHERE PropertyName = 'ApplyOTRoundDownToHolidayHours'
+
+IF NOT EXISTS(SELECT * FROM maintenance.ConfigSetupDetail WHERE PropertyName = 'ApplyOTRoundDownToHolidayHours')
+BEGIN
+	INSERT INTO maintenance.ConfigSetupDetail(
+		ConfigSetupHeaderId, PropertyName, LabelName, PropertyValue, Type, Source, [Group], Subgroup, SortOrder, Alignment)
+	SELECT 
+	ConfigSetupHeaderId = 1, 
+	PropertyName = 'ApplyOTRoundDownToHolidayHours', 
+	LabelName = '', 
+	PropertyValue = '', 
+	Type = 'number', 
+	Source = '', 
+	[Group] = 2, 
+	Subgroup = 0, 
+	SortOrder = 16, 
+	Alignment = ''
+END

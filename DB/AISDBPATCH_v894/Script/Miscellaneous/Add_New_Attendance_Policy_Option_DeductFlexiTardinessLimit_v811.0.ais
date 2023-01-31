@@ -1,0 +1,19 @@
+UPDATE maintenance.ConfigSetupDetail SET PropertyName = 'DisableDeductFlexibleTimeLimit' 
+WHERE PropertyName = 'DeductFlexiTardinessLimit'
+
+IF NOT EXISTS(SELECT * FROM maintenance.ConfigSetupDetail WHERE PropertyName = 'DeductFlexiTardinessLimit')
+BEGIN
+	INSERT INTO maintenance.ConfigSetupDetail(
+		ConfigSetupHeaderId, PropertyName, LabelName, PropertyValue, Type, Source, [Group], Subgroup, SortOrder, Alignment)
+	SELECT 
+	ConfigSetupHeaderId = 1, 
+	PropertyName = 'DeductFlexiTardinessLimit', 
+	LabelName = '', 
+	PropertyValue = '', 
+	Type = 'number', 
+	Source = '', 
+	[Group] = 1, 
+	Subgroup = 0, 
+	SortOrder = 26, 
+	Alignment = ''
+END

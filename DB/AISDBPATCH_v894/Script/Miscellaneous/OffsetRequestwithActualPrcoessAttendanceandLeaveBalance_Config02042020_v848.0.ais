@@ -1,0 +1,338 @@
+SET NOCOUNT ON
+/*start deleting existing report configs*/
+DELETE FROM report.Report WHERE ReportId IN (499)
+DELETE FROM report.ReportData WHERE ReportId IN (499)
+DELETE FROM report.ReportParameter WHERE ReportCode IN ('OffsetRequestwithActualPrcoessAttendanceandLeaveBalance')
+DELETE FROM report.ReportSubReport WHERE ReportCode  IN ('OffsetRequestwithActualPrcoessAttendanceandLeaveBalance')
+/*end deleting existing report configs*/
+
+/*start insert data to report.Report*/
+SET IDENTITY_INSERT [report].[Report] ON
+INSERT [report].[Report] ([ReportId],[ReportCode],[ReportName],[ReportFile],[ReportExcelFile],[EmploymentStatus],[TableSPUsed],[SPUsed],[NoOrderBy],[QueryType],[InsertToReportTempTable],[Description],[ImageFile],[SortFields],[Event],[ExportFormat],[CreateId],[Createdate],[LastUpdateId],[LastUpdateDate],[UseExportToExcelAPI],[DetailColStartPos],[DetailRowStartPos],[HeaderRowStartPos],[IncludeColHeader],[InsertNewRowAtRowPos],[Template],[SourceName],[ShowGrandTotals],[RepeatColumnHeaderOnHeaderGroup],[RepeatColumnHeaderOnGroupLevel],[AutoSizeColumn],[MaxRowPerPage],[DisplayReportHeader])VALUES(499,'OffsetRequestwithActualPrcoessAttendanceandLeaveBalance','Offset Request with Actual Processed in Attendance and Leave Balance','\Reports\DetailedAttendance\OffsetRequestwithActualPrcoessAttendanceandLeaveBalance.rpt',NULL,NULL,'SELECT
+	 *
+FROM 
+(SELECT DISTINCT
+	Department = ISNULL(E.DepartmentName,'''')
+   ,EmployeeNo = ISNULL(E.EmployeeNo,'''')
+   ,EmployeeName = ISNULL(E.LastFirstMIName,'''')
+   ,DateRequest  = R.DateFiled
+   ,RequestType  = ''Special Work Schedule''
+   ,NoofOffsetHoursRequest = ISNULL (R.WorkingHours,0)
+   ,Offset = ISNULL(R.WorkingHours,0)
+   ,AtendanceReferenceNo = ISNULL (ApprovedAttendance.ReferenceNumber,'''')
+   ,WorkSchedule = CONCAT (FORMAT(ETE.StartTime,''MM/dd/yyyy hh:mm:ss tt''),'' - '',FORMAT(ETE.EndTime,''MM/dd/yyyy hh:mm:ss tt''))
+   ,TimeLogs = (CASE WHEN FORMAT(ETE.ActualTimeIn,''MM/dd/yyyy hh:mm:ss tt'') = ''01/01/1900 12:00:00 AM'' AND FORMAT(ETE.ActualTimeIn,''MM/dd/yyyy hh:mm:ss tt'') = ''01/01/1900 12:00:00 AM''   OR ISNULL(ETE.WorkDate,'''') = '''' THEN '''' ELSE  CONCAT ((CASE WHEN FORMAT(ETE.ActualTimeIn,''MM/dd/yyyy hh:mm:ss tt'') = ''01/01/1900 12:00:00 AM'' THEN '''' ELSE FORMAT(ETE.ActualTimeIn,''MM/dd/yyyy hh:mm:ss tt'') END ),'' - '',  (CASE WHEN FORMAT(ETE.ActualTimeOut,''MM/dd/yyyy hh:mm:ss tt'') = ''01/01/1900 12:00:00 AM'' THEN '''' ELSE FORMAT(ETE.ActualTimeOut,''MM/dd/yyyy hh:mm:ss tt'') END)) END) 
+   ,LeaveTypeCode = ISNULL(AttendancePolicy.Code,'''')
+   ,EarnedHours = ISNULL(ApprovedAttendance.EarnedHours,0)  
+   ,E.ProfileId
+   ,E.CompanyId
+   ,R.StatusId
+FROM schedule.WorkScheduleRequest R
+OUTER APPLY
+(
+	SELECT
+		  ETE.WorkDate
+		  ,ETE.StartTime
+		  ,ETE.EndTime
+		 ,ETE.ActualTimeIn
+		 ,ETE.ActualTimeOut
+		 ,ETE.TimeEntryHeaderDetailId
+	FROM dbo.vwEmployeeTimeEntry ETE
+	WHERE R.WorkDate  = ETE.WorkDate
+	AND CHARINDEX(CONCAT('','', R.ProfileId, '',''), CONCAT('','', ETE.ProfileId, '','')) > 0
+
+)ETE 
+CROSS APPLY 
+(
+	SELECT 
+		  LastFirstMIName
+		 ,EmployeeNo
+		 ,DepartmentName
+		 ,E.CompanyId
+		 ,E.DepartmentId
+		 ,E.ProfileId
+	FROM dbo.fnProfileInfo(@CompanyId, @BranchId, 0, @OfficeId, 0, 0, 0, @ProjectProfileId, 0, @DistrictId, 0, 0, 0, @UnitId, 0, @DivisionId, @GroupId, @TeamId, @LineId, 1, ETE.TimeEntryHeaderDetailId) E
+	WHERE E.ProfileId = R.ProfileId
+)E
+OUTER APPLY
+(
+	SELECT		
+		LV.Code 
+	   ,CAD.Value
+	  
+	FROM maintenance.ConfigAssignmentHeader CAE 
+	LEFT JOIN maintenance.ConfigAssignmentDetail CAD ON CAD.ConfigAssignmentHeaderId = CAE.ConfigAssignmentHeaderId ---AND CAD.ConfigSetDetailId IN (3,4,171)
+	LEFT JOIN maintenance.ConfigSetupDetail CSD ON CSD.ConfigSetupDetailId = CAD.ConfigSetDetailId
+	LEFT  JOIN leave.LeaveTypeSetup LV ON CHARINDEX(CONCAT('','', LV.LeaveTypeSetupId, '',''), CONCAT('','', CAD.Value, '','')) > 0
+	WHERE CSD.PropertyName = ''OffsetingLeaveType''
+	AND CHARINDEX(CONCAT('','', R.ProfileId, '',''), CONCAT('','', CAE.ProfileId, '','')) > 0 
+
+EXCEPT
+
+	SELECT		
+		LV.Code 
+	   ,CAD.Value
+	  
+	FROM maintenance.ConfigAssignmentHeader CAE 
+	LEFT JOIN maintenance.ConfigAssignmentDetail CAD ON CAD.ConfigAssignmentHeaderId = CAE.ConfigAssignmentHeaderId ---AND CAD.ConfigSetDetailId IN (3,4,171)
+	LEFT JOIN maintenance.ConfigSetupDetail CSD ON CSD.ConfigSetupDetailId = CAD.ConfigSetDetailId
+	LEFT  JOIN leave.LeaveTypeSetup LV ON CHARINDEX(CONCAT('','', LV.LeaveTypeSetupId, '',''), CONCAT('','', CAD.Value, '','')) > 0
+	WHERE CSD.PropertyName  = ''EnableOffsetting'' AND CAD.Value  = ''false''
+	AND CHARINDEX(CONCAT('','', R.ProfileId, '',''), CONCAT('','', CAE.ProfileId, '','')) > 0 
+)AttendancePolicy
+OUTER APPLY 
+(
+	SELECT
+		 H.ReferenceNumber
+		 ,PostedHrs.EarnedHours
+	FROM attendance.TimeEntryHeader H
+	INNER JOIN attendance.TimeEntryHeaderDetail D ON H.TimeEntryHeaderId = D.TimeEntryHeaderId
+
+CROSS APPLY
+(
+	SELECT 
+		 LBH.LeaveTypeSetupId
+		,COLS.EarnedHours
+		,COLS.PostedDate
+	FROM leave.LeaveBalanceHeader LBH
+CROSS APPLY
+( 
+	SELECT 
+		EarnedHours = (LBD.EarnedHours)
+	   ,LBD.PostedDate
+	FROM leave.LeaveBalanceDetail LBD  
+	WHERE LBD.LeaveBalanceHeaderId = LBH.LeaveBalanceHeaderId
+    AND
+    (
+	   (LBD.ExpiryDate >= GETDATE() AND LBD.UseExpiration = 1) OR LBD.UseExpiration = 0
+    )
+    AND
+    (LBD.StatusId = 10)
+	AND LBH.LeaveBalanceHeaderId = LBD.LeaveBalanceHeaderId
+	AND CHARINDEX(CONCAT('','', R.ProfileId, '',''), CONCAT('','', LBH.ProfileId, '','')) > 0
+
+)COLS
+	WHERE  
+	CHARINDEX(CONCAT('','', LBH.LeaveTypeSetupId, '',''), CONCAT('','', AttendancePolicy.Value, '','')) > 0
+	AND COLS.PostedDate = R.WorkDate
+
+
+)PostedHrs
+
+
+
+	WHERE R.WorkDate  = D.WorkDate 
+	AND CHARINDEX(CONCAT('','', R.ProfileId, '',''), CONCAT('','', D.ProfileId, '','')) > 0
+) ApprovedAttendance 
+WHERE R.ForOffsetting = 1
+AND R.StatusId = 2 
+AND 
+(
+(ISNULL(@StartWorkDate,''1/1/1900'') = ''1/1/1900'') OR
+	(  ETE.WorkDate >= @StartWorkDate)
+)
+	AND 
+	(
+		(ISNULL(@EndWorkDate,''1/1/1900'') = ''1/1/1900'') OR
+		(  ETE.WorkDate  <= @EndWorkDate)
+	)
+ AND
+    ((@DepartmentIds = '''') OR (CHARINDEX('''''''' + CAST(E.DepartmentId as VARCHAR) + '''''''',@DepartmentIds) > 0))
+AND ((@EmployeeId = '''') OR (CHARINDEX('''''''' + CAST(E.ProfileId as VARCHAR) + '''''''',@EmployeeId) > 0)) 
+
+
+
+UNION ALL
+
+
+
+
+
+SELECT DISTINCT
+	Department = ISNULL(E.DepartmentName,'''')
+   ,EmployeeNo = ISNULL(E.EmployeeNo,'''')
+   ,EmployeeName = ISNULL(E.LastFirstMIName,'''')
+   ,DateRequest  = OT.DateFiled
+   ,RequestType  = ''OT''
+   ,NoofOffsetHoursRequest = ISNULL (OT.OROTHrs,0)
+   ,Offset = ISNULL(OT.ApprovedOROTHrs,0)
+   ,AtendanceReferenceNo = ISNULL (AprrovedAttendance.ReferenceNumber,'''')
+   ,WorkSchedule = CASE WHEN ISNULL(ETE.WorkDate,'''') = '''' THEN ''''ELSE CONCAT(FORMAT(ETE.StartTime,''MM/dd/yyyy hh:mm:ss tt''),'' - '',FORMAT(ETE.EndTime,''MM/dd/yyyy hh:mm:ss tt'')) END
+   ,TimeLogs = (CASE WHEN (FORMAT(ETE.ActualTimeIn,''MM/dd/yyyy hh:mm:ss tt'') = ''01/01/1900 12:00:00 AM'' AND FORMAT(ETE.ActualTimeIn,''MM/dd/yyyy hh:mm:ss tt'') = ''01/01/1900 12:00:00 AM'')  OR ISNULL(ETE.WorkDate,'''') = '''' THEN '''' ELSE  CONCAT ((CASE WHEN FORMAT(ETE.ActualTimeIn,''MM/dd/yyyy hh:mm:ss tt'') = ''01/01/1900 12:00:00 AM'' THEN '''' ELSE FORMAT(ETE.ActualTimeIn,''MM/dd/yyyy hh:mm:ss tt'') END ),'' - '',  (CASE WHEN FORMAT(ETE.ActualTimeOut,''MM/dd/yyyy hh:mm:ss tt'') = ''01/01/1900 12:00:00 AM'' THEN '''' ELSE FORMAT(ETE.ActualTimeOut,''MM/dd/yyyy hh:mm:ss tt'') END)) END)    ,LeaveTypeCode = ISNULL(AttendancePolicy.Code,'''')
+   ,EarnedHours =  ISNULL(AprrovedAttendance.EarnedHours,0)
+   ,E.ProfileId
+   ,E.CompanyId
+   ,OT.StatusId
+FROM schedule.Overtime OT
+OUTER APPLY
+(
+	SELECT DISTINCT
+		ETE.ActualTimeIn
+	   ,ETE.ActualTimeOut
+	   ,ETE.WorkDate
+	   ,ETE.StartTime
+	   ,ETE.EndTime
+	   ,ETE.TimeEntryHeaderDetailId
+	FROM Dbo.vwEmployeeTimeEntry ETE
+	WHERE OT.OvertimeDate  = ETE.WorkDate
+	AND CHARINDEX(CONCAT('','', OT.ProfileId, '',''), CONCAT('','', ETE.ProfileId, '','')) > 0
+
+)ETE 
+CROSS APPLY
+(
+	SELECT
+		  LastFirstMIName
+		 ,EmployeeNo
+		 ,DepartmentName
+		 ,E.CompanyId
+		 ,E.DepartmentId
+		 ,E.ProfileId
+	FROM dbo.fnProfileInfo(@CompanyId, @BranchId, 0, @OfficeId, 0, 0, 0, @ProjectProfileId, 0, @DistrictId, 0, 0, 0, @UnitId, 0, @DivisionId, @GroupId, @TeamId, @LineId, 0, 0) E
+
+	WHERE E.ProfileId = OT.ProfileId
+)E
+OUTER APPLY
+(
+/*	SELECT			
+		LV.Code 
+	   ,CAD.Value
+	FROM maintenance.ConfigAssignmentHeader CAE 
+	JOIN maintenance.ConfigAssignmentDetail CAD ON CAD.ConfigAssignmentHeaderId = CAE.ConfigAssignmentHeaderId ---AND CAD.ConfigSetDetailId IN (3,4,171)
+	LEFT JOIN maintenance.ConfigSetupDetail CSD ON CSD.ConfigSetupDetailId = CAD.ConfigSetDetailId
+	INNER JOIN leave.LeaveTypeSetup LV ON CHARINDEX(CONCAT('','', LV.LeaveTypeSetupId, '',''), CONCAT('','', CAD.Value, '','')) > 0
+	WHERE (CSD.PropertyName = ''EnableOffsetting'' AND CAD.Value = ''true'') OR (CSD.PropertyName = ''OffsetingLeaveType'' ) 
+	AND CHARINDEX(CONCAT('','', O.ProfileId, '',''), CONCAT('','', CAE.ProfileId, '','')) > 0 */
+	SELECT		
+		LV.Code 
+	   ,CAD.Value
+	  
+	FROM maintenance.ConfigAssignmentHeader CAE 
+	LEFT JOIN maintenance.ConfigAssignmentDetail CAD ON CAD.ConfigAssignmentHeaderId = CAE.ConfigAssignmentHeaderId ---AND CAD.ConfigSetDetailId IN (3,4,171)
+	LEFT JOIN maintenance.ConfigSetupDetail CSD ON CSD.ConfigSetupDetailId = CAD.ConfigSetDetailId
+	LEFT  JOIN leave.LeaveTypeSetup LV ON CHARINDEX(CONCAT('','', LV.LeaveTypeSetupId, '',''), CONCAT('','', CAD.Value, '','')) > 0
+	WHERE CSD.PropertyName = ''OffsetingLeaveType''
+	AND CHARINDEX(CONCAT('','', OT.ProfileId, '',''), CONCAT('','', CAE.ProfileId, '','')) > 0 
+
+EXCEPT
+
+	SELECT		
+		LV.Code 
+	   ,CAD.Value
+	  
+	FROM maintenance.ConfigAssignmentHeader CAE 
+	LEFT JOIN maintenance.ConfigAssignmentDetail CAD ON CAD.ConfigAssignmentHeaderId = CAE.ConfigAssignmentHeaderId ---AND CAD.ConfigSetDetailId IN (3,4,171)
+	LEFT JOIN maintenance.ConfigSetupDetail CSD ON CSD.ConfigSetupDetailId = CAD.ConfigSetDetailId
+	LEFT  JOIN leave.LeaveTypeSetup LV ON CHARINDEX(CONCAT('','', LV.LeaveTypeSetupId, '',''), CONCAT('','', CAD.Value, '','')) > 0
+	WHERE CSD.PropertyName  = ''EnableOffsetting'' AND CAD.Value  = ''false''
+	AND CHARINDEX(CONCAT('','', OT.ProfileId, '',''), CONCAT('','', CAE.ProfileId, '','')) > 0 
+)AttendancePolicy
+OUTER APPLY 
+(
+	SELECT
+		 H.ReferenceNumber
+		,PostedHrs.EarnedHours
+	FROM attendance.TimeEntryHeader H
+	INNER JOIN attendance.TimeEntryHeaderDetail D ON H.TimeEntryHeaderId = D.TimeEntryHeaderId
+CROSS APPLY
+(
+SELECT 
+	   LBH.LeaveTypeSetupId
+	  ,COLS.EarnedHours
+	  ,COLS.PostedDate
+FROM leave.LeaveBalanceHeader LBH
+CROSS APPLY
+( 
+	SELECT 
+		EarnedHours = (LBD.EarnedHours)
+	   ,LBD.PostedDate
+	FROM
+	leave.LeaveBalanceDetail LBD  
+    WHERE LBD.LeaveBalanceHeaderId = LBH.LeaveBalanceHeaderId
+    AND
+    (
+	   (LBD.ExpiryDate >= GETDATE() AND LBD.UseExpiration = 1) OR LBD.UseExpiration = 0
+    )
+    AND
+    (LBD.StatusId = 10)
+	AND LBH.LeaveBalanceHeaderId = LBD.LeaveBalanceHeaderId
+	
+	
+	
+
+)COLS
+	WHERE 
+	CHARINDEX(CONCAT('','', LBH.LeaveTypeSetupId, '',''), CONCAT('','', AttendancePolicy.Value, '','')) > 0
+	AND COLS.PostedDate = OT.OvertimeDate
+     AND CHARINDEX(CONCAT('','', OT.ProfileId, '',''), CONCAT('','', LBH.ProfileId, '','')) > 0
+ )PostedHrs
+
+
+	WHERE OT.OvertimeDate  = D.WorkDate 
+	AND CHARINDEX(CONCAT('','', OT.ProfileId, '',''), CONCAT('','', D.ProfileId, '','')) > 0
+) AprrovedAttendance
+WHERE OT.ForOffsetting = 1
+AND OT.StatusId = 2 
+AND 
+(
+(ISNULL(@StartWorkDate,''1/1/1900'') = ''1/1/1900'') OR
+	(  ETE.WorkDate >= @StartWorkDate)
+)
+	AND 
+	(
+		(ISNULL(@EndWorkDate,''1/1/1900'') = ''1/1/1900'') OR
+		(  ETE.WorkDate  <= @EndWorkDate)
+	)
+	
+ AND
+    ((@DepartmentIds = '''') OR (CHARINDEX('''''''' + CAST(E.DepartmentId as VARCHAR) + '''''''',@DepartmentIds) > 0))
+ AND ((@EmployeeId = '''') OR (CHARINDEX('''''''' + CAST(E.ProfileId as VARCHAR) + '''''''',@EmployeeId) > 0)) 
+
+
+
+)T',NULL,1,'QUERY',1,NULL,NULL,NULL,NULL,'4',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+SET IDENTITY_INSERT [report].[Report] OFF
+/*end insert data to report.Report*/
+
+/*start insert data to report.ReportData*/
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(499,'Department','Department','string','','',NULL,1,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(499,'Employee No','EmployeeNo','string','','',NULL,2,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(499,'Employee Name','EmployeeName','string','','',NULL,3,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(499,'Date Request','DateRequest','date','','',NULL,4,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(499,'Request Type','RequestType','string','','',NULL,5,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(499,'No of Offset Hours Request','NoofOffsetHoursRequest','decimal','','',NULL,6,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(499,'Offset','Offset','decimal','','',NULL,7,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(499,'Atendance Reference No','AtendanceReferenceNo','string','','',NULL,8,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(499,'Work Schedule','WorkSchedule','string','','',NULL,9,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(499,'Time Logs','TimeLogs','string','','',NULL,10,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(499,'Leave Type Code','LeaveTypeCode','string','','',NULL,11,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(499,'Earned Hours','EarnedHours','decimal','','',NULL,12,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+/*end insert data to report.ReportData*/
+
+/*start insert data to report.ReportParameter*/
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('OffsetRequestwithActualPrcoessAttendanceandLeaveBalance','@StartWorkDate,@EndWorkDate','For the Period','daterange','','',1,'','Param1','Stored','>=,<=','date',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('OffsetRequestwithActualPrcoessAttendanceandLeaveBalance','@CompanyId','Company','dropdownList','$table:maintenance.Company,CompanyId,Name','$table:maintenance.Branch WHERE CompanyId =  ,BranchId,Name|@BranchId,',2,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('OffsetRequestwithActualPrcoessAttendanceandLeaveBalance','@BranchId','Branch','dropdownList','$table:maintenance.Branch,BranchId,Name','',3,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('OffsetRequestwithActualPrcoessAttendanceandLeaveBalance','@DepartmentIds','Department','checkboxList','$table:maintenance.Department,DepartmentId,DepartmentName','',4,'','Param1','Stored','IN','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('OffsetRequestwithActualPrcoessAttendanceandLeaveBalance','@OfficeId','Office','dropdownList','$table:maintenance.Office,OfficeId,Name','',5,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('OffsetRequestwithActualPrcoessAttendanceandLeaveBalance','@JobRankId','Job Rank','dropdownList','$table:maintenance.JobRank,JobRankId,Description','',6,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('OffsetRequestwithActualPrcoessAttendanceandLeaveBalance','@DivisionId','Division','dropdownList','$table:maintenance.Division,DivisionId,Description','',7,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('OffsetRequestwithActualPrcoessAttendanceandLeaveBalance','@GroupId','Group','dropdownList','$table:maintenance.Groups,GroupsId,Description','',8,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('OffsetRequestwithActualPrcoessAttendanceandLeaveBalance','@TeamId','Team','dropdownList','$table:maintenance.Team,TeamId,Description','',9,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('OffsetRequestwithActualPrcoessAttendanceandLeaveBalance','@LineId','Line','dropdownList','$table:maintenance.Line,LineId,Description','',10,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('OffsetRequestwithActualPrcoessAttendanceandLeaveBalance','@UnitId','Unit','dropdownList','$table:maintenance.Unit,UnitId,Description','',11,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('OffsetRequestwithActualPrcoessAttendanceandLeaveBalance','@DistrictId','District','dropdownList','$table:maintenance.District,DistrictId,Description','',12,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('OffsetRequestwithActualPrcoessAttendanceandLeaveBalance','@ProjectProfileId','Project','dropdownList','$table:projecttracking.ProjectProfile,ProjectProfileId,ProjectName','',13,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('OffsetRequestwithActualPrcoessAttendanceandLeaveBalance','@EmployeeId','Employee','checkboxList','$table:dbo.fnProfileInfo,ProfileId,[LastFirstMIName]','',14,'','Param1','Stored','IN','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('OffsetRequestwithActualPrcoessAttendanceandLeaveBalance','@IncludeInactiveEmployees','Include Inactive Employees','checkbox','','',16,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('OffsetRequestwithActualPrcoessAttendanceandLeaveBalance','@OrgBasedOnProfileTable','Base on organization unit','checkbox','','',19,'','Param1','Stored','=','',NULL,NULL,'checked',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+/*end insert data to report.ReportParameter*/
+
+/*start insert data to report.ReportSubReport*/
+/*end insert data to report.ReportSubReport*/
+
+IF(SELECT COUNT(CompanyId) FROM maintenance.Company WHERE CHARINDEX('IBIDEN',[Name]) > 0) > 0
+		BEGIN
+		UPDATE report.ReportParameter SET [Source] = '$table:maintenance.Unit,UnitId,Code' WHERE LabelName = 'Unit'
+		END
+		
+SET NOCOUNT OFF

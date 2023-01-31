@@ -1,0 +1,173 @@
+
+/****** Object:  View [fileimport].[vwFileImportCfgHdr]    Script Date: 3/20/2018 6:18:33 PM ******/
+IF NOT OBJECT_ID('[fileimport].[vwFileImportCfgHdr]') IS NULL
+DROP VIEW [fileimport].[vwFileImportCfgHdr]
+GO
+
+/****** Object:  View [fileimport].[vwFileImportCfgHdr]    Script Date: 3/20/2018 6:18:33 PM ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+/*===========================================*\
+**	Last Update Date: 02/20/2019
+**	Last Update By: Alexis
+**	Last DBVersion executed: v671
+\*===========================================*/
+CREATE VIEW [fileimport].[vwFileImportCfgHdr]
+AS
+
+SELECT [FileImportCfgHdrId] = CASE WHEN T.SourceConfig = 1 THEN T.FileImportCfgHdrId ELSE (ROW_NUMBER() OVER(ORDER BY T.SourceConfig, T.FileImportCfgHdrId)) + lstid.LASTID END
+      ,[FileImportCode]
+      ,[SourceTableName] = ISNULL(T.SourceTableName,T.FileImportCode)
+      ,[DestinationTable] = dt.DestinationTable
+      ,[DestinationSchema] = dt.DestinationSchema
+      ,[TableType]
+      ,[FillTable]
+      ,[IdentityColumns]
+      ,[Description]
+      ,[FileType]
+      ,[AllowDuplicate]
+      ,[RowStart]
+      ,[OrderNo]
+      ,[QueryToExecute]
+      ,[QueryType]
+      ,[QueryParameters]
+      ,[SystemCode]
+      ,[ImportType]
+      ,[BulkInsertCmd]
+      ,[FixQryFilter]
+      ,[Delimiter] = CASE WHEN ISNULL(T.Delimiter,'') = 'tab' THEN '\t' ELSE t.Delimiter END
+      ,[FileExtension]
+	  ,[SystemModuleId]
+	  ,[ImportOption]
+	  ,[HeaderIsFirstRow] = CAST(CASE WHEN T.RowStart > 1 THEN 1 ELSE 0 END AS BIT)
+	  ,[HeaderRow]
+	  ,[TransactionIdColumnName]
+	  ,[InvalidTransactionMsg]
+	  ,[SourceConfig]
+	  ,[ValidationFormula]
+	  ,[ValidationMessage]
+FROM
+(
+SELECT [FileImportCfgHdrId]
+      ,[FileImportCode]
+      ,[SourceTableName]
+      ,[DestinationTable]
+      ,[DestinationSchema]
+      ,[TableType]
+      ,[FillTable]
+      ,[IdentityColumns]
+      ,[Description]
+      ,[FileType]
+      ,[AllowDuplicate]
+      ,[RowStart]
+      ,[OrderNo]
+      ,[QueryToExecute]
+      ,[QueryType]
+      ,[QueryParameters]
+      ,[SystemCode]
+      ,[ImportType]
+      ,[BulkInsertCmd]
+      ,[FixQryFilter]
+      ,[Delimiter]
+      ,[FileExtension]
+      ,[SystemModuleId]
+      ,[ImportOption] = ISNULL([ImportOption],3/*append*/)
+	  ,[TransactionIdColumnName]
+	  ,[InvalidTransactionMsg]
+	  ,[SourceConfig] = 1/* AIS Uploader */
+	  ,[HeaderRow] = isnull([HeaderRow],1)/* column header row position */
+	  ,[ValidationFormula]
+	  ,[ValidationMessage]
+  FROM [fileimport].[FileImportCfgHdr]
+  UNION ALL
+  SELECT [ID] = fi.FileImportHeaderId
+      ,[FileImportCode] = fi.FileConfigurationCode
+      ,[SourceTableName] = CASE WHEN fi.SheetName = 'AllowanceOtherEarning' THEN 'AllowanceOtherEarning|DepPay|13th Month|TermGrat' ELSE fi.SheetName END
+      ,[DestinationTable] = substring(st.Destination,charindex('.',fi.TableDetailName)+1,250)
+      ,[DestinationSchema] = CASE WHEN fi.SheetName = 'AllowanceOtherEarning' THEN 'payroll' ELSE substring(st.Destination,0,charindex('.',st.Destination)) END
+      ,[TableType] = 0
+      ,[FillTable] = NULL
+      ,[IdentityColumns] = ''
+      ,[Description] = fi.FileConfigurationDescription
+      ,[FileType] = fi.FileType
+      ,[AllowDuplicate] = 0
+      ,[RowStart] = CASE WHEN fi.FileType = 1/*excel*/ THEN 2 ELSE 1 END
+      ,[OrderNo] = CASE WHEN fi.SheetName = 'AllowanceOtherEarning' THEN 9 ELSE 1 END
+      ,[QueryToExecute] = NULL
+      ,[QueryType] = 0
+      ,[QueryParameters] = ''
+      ,[SystemCode] = NULL
+      ,[ImportType] = 1 /* BULK INSERT */
+      ,[BulkInsertCmd] = ''
+      ,[FixQryFilter] = ''
+      ,[Delimiter] = fi.Separator
+      ,[FileExtension] = NULL
+	  ,[SystemModuleId] = fi.SystemModuleId
+	  ,[ImportOption] = 3
+	  ,[TransactionIdColumnName] = NULL
+	  ,[InvalidTransactionMsg] = NULL
+	  ,[SourceConfig] = 2 /* Import tool of e@work */
+	  ,[HeaderRow] = CASE WHEN fi.FileType = 1/*excel*/ THEN 1 ELSE 0 END
+	  ,[ValidationFormula] = ''
+	  ,[ValidationMessage] = ''
+  FROM admin.FileImportHeader fi
+		CROSS APPLY(SELECT DestinationTable = replace((CASE WHEN fi.TableDetailName = '' THEN fi.TableHeaderName ELSE fi.TableDetailName END),'.Import','.'))d
+		CROSS APPLY(SELECT [SourceTableName] = CASE WHEN fi.SheetName = 'AllowanceOtherEarning' THEN 'AllowanceOtherEarning|DepPay|13th Month|TermGrat' ELSE fi.SheetName END,
+		Destination = CASE d.DestinationTable
+		WHEN 'compben.SalaryInformation'		  THEN 'employee.SalaryInformation'
+		WHEN 'leave.LeaveBalance'				  THEN 'leave.LeaveBalanceHeader'
+		WHEN 'recruitment.ApplicationGeneralInfo' THEN 'recruitment.ApplicationGeneralInformation'
+		WHEN 'schedule.RestDaySchedule'			  THEN 'schedule.RestDay'
+		WHEN 'schedule.BasicRestDaySchedule'	  THEN 'schedule.RestDay'
+		WHEN 'employee.EmployeeProfile'			  THEN 'employee.Profile'
+		ELSE CASE WHEN fi.SystemModuleId = 13/*timeentrylog*/ THEN 'attendance.TimeEntryLog' ELSE D.DestinationTable END END
+		)st
+	--CROSS APPLY(SELECT [SourceTableName] = CASE WHEN fi.SheetName = 'AllowanceOtherEarning' THEN 'AllowanceOtherEarning|DepPay|13th Month|TermGrat' ELSE fi.SheetName END
+	--	,Destination = replace((CASE WHEN fi.TableDetailName = '' THEN fi.TableHeaderName ELSE fi.TableDetailName END),'.Import','.')
+	--)st
+  WHERE NOT fi.FileConfigurationCode IN (SELECT fileimport.FileImportCfgHdr.FileImportCode FROM fileimport.FileImportCfgHdr)
+		AND NOT fi.FileConfigurationCode IN ('FileImportSetup','JobPositionDetail','ApplicantProfile','ApplicantProfileGeneralInformation','ApplicantProfileEducationalBackground','EmployeeProfileMainInformation')
+	UNION ALL
+SELECT 
+	  ID = tl.TimeEntryLogFileImportHeaderId
+      ,[FileImportCode] = tl.FileConfigurationCode
+      ,[SourceTableName] = tl.SheetName
+      ,[DestinationTable] = 'TimeEntryLog'
+      ,[DestinationSchema] = 'attendance'
+      ,[TableType] = 0
+      ,[FillTable] = NULL
+      ,[IdentityColumns] = ''
+      ,[Description] = tl.FileConfigurationDescription
+      ,[FileType] = tl.FileType
+      ,[AllowDuplicate] = 0
+      ,[RowStart] = CASE WHEN tl.ContainsHeader = 1 THEN 2 ELSE 1 END
+      ,[OrderNo] = 1
+      ,[QueryToExecute] = NULL
+      ,[QueryType] = 0
+      ,[QueryParameters] = ''
+      ,[SystemCode] = NULL
+      ,[ImportType] = 1 /* BULK INSERT */
+      ,[BulkInsertCmd] = ''
+      ,[FixQryFilter] = ''
+      ,[Delimiter]
+      ,[FileExtension]
+	  ,[SystemModuleId] = 13
+	  ,[ImportOption] = 3
+	  ,[TransactionIdColumnName] = NULL
+	  ,[InvalidTransactionMsg] = NULL
+	  ,[SourceConfig] = 3 /* import time entry logs configuration */
+	  ,[HeaderRow] = case when tl.ContainsHeader = 1 THEN 1 ELSE 0 END
+	  ,[ValidationFormula] = ''
+	  ,[ValidationMessage] = ''
+  FROM attendance.TimeEntryLogFileImportHeader tl
+)T
+OUTER APPLY(SELECT LASTID = MAX(FileImportCfgHdrId) FROM fileimport.FileImportCfgHdr)lstid
+OUTER APPLY(select DestinationTable = o.[name],DestinationSchema = SCHEMA_NAME(o.schema_id) from sys.objects o where o.object_id = object_id(concat(t.DestinationSchema,'.',t.DestinationTable)))dt
+WHERE T.SourceConfig IN (1,2,3) and (T.FileType = 1 or t.SourceConfig = 3)/*spreadsheet only*/ /*OR T.FileImportCode IN ('AllowanceAndOtherEarning') /* temporary do not include default config of paul's import code*/*/
+
+GO
+
+

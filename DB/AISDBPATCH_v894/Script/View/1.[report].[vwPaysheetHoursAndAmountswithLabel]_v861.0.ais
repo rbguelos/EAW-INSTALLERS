@@ -1,0 +1,330 @@
+IF  EXISTS (SELECT * FROM sys.views WHERE object_id = OBJECT_ID(N'[report].[vwPaysheetHoursAndAmountswithLabel]'))
+DROP VIEW [report].[vwPaysheetHoursAndAmountswithLabel]
+GO
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+  
+--=============================================
+--Author:      JPR
+--Update date: 05/04/2020
+--Description: Added Double Holiday Hrs and Double Holiday Pay
+--=============================================
+
+CREATE VIEW [report].[vwPaysheetHoursAndAmountswithLabel] 
+AS
+SELECT DISTINCT
+       LabelNamePay2.PaySheetHeaderId
+	  ,PD.PaySheetHeaderDetailId
+	  ,PD.ProfileId
+	  ,LabelNamePay2.PayrollTypeName	
+	  ,Hrs = ISNULL(HRS.Value,0)
+	  ,HrsType = ISNULL(HRS.Type,'')
+	  ,HrsLabel = ISNULL(LabelNameHrs.Label,'')
+	  ,AmountType = ISNULL(PAY.Type,'')
+	  ,Amount = ISNULL(PAY.Value,0)
+	  ,AmountLabel = ISNULL(LabelNamePay.Label,'')
+	  ,AmountLabel2 = LabelNamePay2.Label
+FROM payroll.PaySheetDetail PD
+
+
+OUTER APPLY 
+(
+	SELECT TOP 1 * 
+	FROM payroll.PaySheetDetail HRS 
+	WHERE HRS.PaySheetHeaderDetailId = PD.PaySheetHeaderDetailId  AND HRS.ProfileId = PD.ProfileId  AND LEFT((HRS.Type), LEN(HRS.Type) - 3) = LEFT(PD.Type, LEN(PD.Type) - 3) 
+	AND Type IN
+(
+ 'SRNSOTHRs' 
+, 'HRNSOTHrs' 
+, 'SpecialNSOTHrs'
+, 'HolidayNSOTHrs' 
+, 'RestdayNSOTHrs' 
+, 'BasicNSOTHrs' 
+, 'SROTHRs'
+,'HROTHrs'
+, 'SpecialOTHrs' 
+, 'HolidayOTHrs' 
+, 'RestdayOTHrs' 
+, 'BasicOTHrs' 
+, 'SRNSHRs' 
+,'HRNSHrs'
+, 'SpecialNSHrs' 
+, 'HolidayNSHrs' 
+, 'RestdayNSHrs' 
+, 'BasicNSHrs' 
+, 'SRHRs' 
+, 'HRHrs' 
+, 'SpecialHrs' 
+, 'HolidayHrs' 
+, 'RestdayHrs'
+, 'BasicNS2Hrs' 
+, 'BasicNSOT2Hrs'
+, 'RestdayNS2Hrs' 
+, 'RestdayNSOT2Hrs' 
+, 'HolidayNS2Hrs' 
+, 'HolidayNSOT2Hrs'
+, 'SpecialNS2Hrs' 
+, 'SpecialNSOT2Hrs' 
+,'HRNS2Hrs'
+, 'HRNSOT2Hrs'
+, 'SRNS2Hrs'
+,'SRNSOT2Hrs'
+,'DoubleHolidayHrs'
+,'DoubleHolidayOTHrs'
+,'DoubleHolidayNSHrs'
+,'DoubleHolidayNSOTHrs'
+,'DoubleHolidayRestdayHrs'
+,'DoubleHolidayRestdayOTHrs'
+,'DoubleHolidayRestdayNSHrs'
+,'DoubleHolidayRestdayNSOTHrs'
+,'DoubleHolidayNS2Hrs'
+,'DoubleHolidayNSOT2Hrs'
+,'DoubleHolidayRestdayNS2Hrs'
+,'DoubleHolidayRestdayNSOT2Hrs'
+)
+	) HRS
+OUTER APPLY
+(
+
+	SELECT TOP 1 * FROM
+payroll.PaySheetDetail PAY
+WHERE PAY.PaySheetHeaderDetailId = PD.PaySheetHeaderDetailId  AND PAY.ProfileId = PD.ProfileId  AND LEFT((PAY.Type), LEN(PAY.Type) - 3) = LEFT(PD.Type, LEN(PD.Type) - 3)
+AND PAY.Type IN(
+'SRNSOTPay' 
+,'HRNSOTPay'
+,'SpecialNSOTPay'
+, 'HolidayNSOTPay'
+, 'RestdayNSOTPay'
+,'BasicNSOTPAY'
+,'SROTPAY'
+,'HROTPAY'
+, 'SpecialOTPay'
+, 'HolidayOTPAY'
+,'RestdayOTPAY'
+,'BasicOTPAY'
+, 'SRNSPAY'
+,'HRNSPAY'
+, 'SpecialNSPAY'
+,'HolidayNSPAY'
+,'RestdayNSPAY'
+,'BasicNSPAY'
+,'SRPAY'
+, 'HRPAY'
+,'SpecialPAY'
+,'HolidayPAY'
+, 'RestdayPAY'
+,'BasicNS2PAY'
+,'BasicNSOT2PAY'
+,'RestdayNS2PAY'
+,'RestdayNSOT2PAY'
+, 'HolidayNS2PAY'
+,'HolidayNSOT2PAY'
+, 'SpecialNS2PAY'
+,'SpecialNSOT2PAY'
+,'HRNS2PAY'
+,'HRNSOT2PAY'
+,'SRNS2PAY'
+,'SRNSOT2PAY'
+,'DoubleHolidayPay'
+,'DoubleHolidayOTPay'
+,'DoubleHolidayNSPay' 
+,'DoubleHolidayNSOTPay'
+,'DoubleHolidayRestdayPay'
+,'DoubleHolidayRestdayOTPay'
+,'DoubleHolidayRestdayNSPay'
+,'DoubleHolidayRestdayNSOTPay'
+,'PrevNTDoubleHolidayPay'
+,'PrevNTDoubleHolidayRestdayPay'
+,'DoubleHolidayNS2Pay'
+,'DoubleHolidayNSOT2Pay'
+,'DoubleHolidayRestdayNS2Pay'
+,'DoubleHolidayRestdayNSOT2Pay'
+)
+ 
+)PAY
+
+OUTER APPLY(
+
+SELECT 
+	PayrollType.Label
+   ,PayrollType.Name
+   ,PayrollType.PayrollTypeName 
+   ,PHD.PaySheetHeaderId
+FROM payroll.PaySheetHeaderDetail PHD
+INNER JOIN payroll.PaySheetHeader PTH ON PTH.PaySheetHeaderId = PHD.PaySheetHeaderId
+OUTER APPLY
+(
+SELECT 
+	PTD.PayrollTypeDetailId
+   ,PT.PayrollTypeId
+   ,PT.PayrollTypeName,PTD.Name,PTD.Label FROM payroll.PayrollType PT
+INNER JOIN payroll.PayrollTypeDetail PTD ON PT.PayrollTypeId = PTD.PayrollTypeId
+WHERE PT.PayrollTypeId = PTH.PayrollTypeId
+)PayrollType
+WHERE PHD.PaySheetHeaderDetailId = PD.PaySheetHeaderDetailId AND Hrs.Type = PayrollType.Name
+
+
+)LabelNameHrs
+
+OUTER   APPLY(
+
+SELECT 
+	PayrollType.Label
+   ,PayrollType.Name
+   ,PayrollType.PayrollTypeName
+   ,PHD.PaySheetHeaderId
+FROM payroll.PaySheetHeaderDetail PHD
+INNER JOIN payroll.PaySheetHeader PTH ON PTH.PaySheetHeaderId = PHD.PaySheetHeaderId
+OUTER APPLY 
+(
+SELECT 
+	PTD.PayrollTypeDetailId
+   ,PT.PayrollTypeId
+   ,PT.PayrollTypeName
+   ,PTD.Name
+   ,PTD.Label
+FROM payroll.PayrollType PT
+INNER JOIN payroll.PayrollTypeDetail PTD ON PT.PayrollTypeId = PTD.PayrollTypeId
+WHERE PT.PayrollTypeId = PTH.PayrollTypeId
+)PayrollType
+WHERE PHD.PaySheetHeaderDetailId = PD.PaySheetHeaderDetailId AND PAY.Type = PayrollType.Name
+
+)LabelNamePay
+
+
+OUTER   APPLY(
+
+SELECT TOP 2
+	PayrollType.Label
+   ,PayrollType.Name
+   ,PayrollType.PayrollTypeName
+   ,PHD.PaySheetHeaderId
+--   ,rownum =  row_number() over(order BY PayrollType.Name ASC)
+,rownum = RIGHT(PayrollType.Name, 3)
+FROM payroll.PaySheetHeaderDetail PHD
+INNER JOIN payroll.PaySheetHeader PTH ON PTH.PaySheetHeaderId = PHD.PaySheetHeaderId
+CROSS APPLY 
+(
+SELECT 
+	PTD.PayrollTypeDetailId
+   ,PT.PayrollTypeId
+   ,PT.PayrollTypeName
+   ,PTD.Name
+   ,PTD.Label
+FROM payroll.PayrollType PT
+INNER JOIN payroll.PayrollTypeDetail PTD ON PT.PayrollTypeId = PTD.PayrollTypeId
+WHERE PT.PayrollTypeId = PTH.PayrollTypeId 
+)PayrollType
+
+ WHERE
+ PHD.PaySheetHeaderDetailId = PD.PaySheetHeaderDetailId 
+  AND LEFT((PD.Type), LEN(PD.Type) - 3) = LEFT(PayrollType.Name, LEN(PayrollType.Name) - 3)
+)LabelNamePay2
+
+
+
+
+WHERE PD.Type  IN(
+
+ 'SRNSOTHRs' 
+, 'HRNSOTHrs' 
+, 'SpecialNSOTHrs'
+, 'HolidayNSOTHrs' 
+, 'RestdayNSOTHrs' 
+, 'BasicNSOTHrs' 
+, 'SROTHRs'
+,'HROTHrs'
+, 'SpecialOTHrs' 
+, 'HolidayOTHrs' 
+, 'RestdayOTHrs' 
+, 'BasicOTHrs' 
+, 'SRNSHRs' 
+,'HRNSHrs'
+, 'SpecialNSHrs' 
+, 'HolidayNSHrs' 
+, 'RestdayNSHrs' 
+, 'BasicNSHrs' 
+, 'SRHRs' 
+, 'HRHrs' 
+, 'SpecialHrs' 
+, 'HolidayHrs' 
+, 'RestdayHrs'
+, 'BasicNS2Hrs' 
+, 'BasicNSOT2Hrs'
+, 'RestdayNS2Hrs' 
+, 'RestdayNSOT2Hrs' 
+, 'HolidayNS2Hrs' 
+, 'HolidayNSOT2Hrs'
+, 'SpecialNS2Hrs' 
+, 'SpecialNSOT2Hrs' 
+,'HRNS2Hrs'
+, 'HRNSOT2Hrs'
+, 'SRNS2Hrs'
+,'SRNSOT2Hrs'
+,'DoubleHolidayHrs'
+,'DoubleHolidayOTHrs'
+,'DoubleHolidayNSHrs'
+,'DoubleHolidayNSOTHrs'
+,'DoubleHolidayRestdayHrs'
+,'DoubleHolidayRestdayOTHrs'
+,'DoubleHolidayRestdayNSHrs'
+,'DoubleHolidayRestdayNSOTHrs'
+,'DoubleHolidayNS2Hrs'
+,'DoubleHolidayNSOT2Hrs'
+,'DoubleHolidayRestdayNS2Hrs'
+,'DoubleHolidayRestdayNSOT2Hrs'
+,'SRNSOTPay' 
+,'HRNSOTPay'
+,'SpecialNSOTPay'
+, 'HolidayNSOTPay'
+, 'RestdayNSOTPay'
+,'BasicNSOTPAY'
+,'SROTPAY'
+,'HROTPAY'
+, 'SpecialOTPay'
+, 'HolidayOTPAY'
+,'RestdayOTPAY'
+,'BasicOTPAY'
+, 'SRNSPAY'
+,'HRNSPAY'
+, 'SpecialNSPAY'
+,'HolidayNSPAY'
+,'RestdayNSPAY'
+,'BasicNSPAY'
+,'SRPAY'
+, 'HRPAY'
+,'SpecialPAY'
+,'HolidayPAY'
+, 'RestdayPAY'
+,'BasicNS2PAY'
+,'BasicNSOT2PAY'
+,'RestdayNS2PAY'
+,'RestdayNSOT2PAY'
+, 'HolidayNS2PAY'
+,'HolidayNSOT2PAY'
+, 'SpecialNS2PAY'
+,'SpecialNSOT2PAY'
+,'HRNS2PAY'
+,'HRNSOT2PAY'
+,'SRNS2PAY'
+,'SRNSOT2PAY'
+,'DoubleHolidayPay'
+,'DoubleHolidayOTPay'
+,'DoubleHolidayNSPay' 
+,'DoubleHolidayNSOTPay'
+,'DoubleHolidayRestdayPay'
+,'DoubleHolidayRestdayOTPay'
+,'DoubleHolidayRestdayNSPay'
+,'DoubleHolidayRestdayNSOTPay'
+,'PrevNTDoubleHolidayPay'
+,'PrevNTDoubleHolidayRestdayPay'
+,'DoubleHolidayNS2Pay'
+,'DoubleHolidayNSOT2Pay'
+,'DoubleHolidayRestdayNS2Pay'
+,'DoubleHolidayRestdayNSOT2Pay'
+
+)
+AND RIGHT(LabelNamePay2.Name, 3) = 'PAY'
+GO

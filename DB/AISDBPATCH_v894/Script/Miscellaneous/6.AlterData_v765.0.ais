@@ -1,0 +1,29 @@
+/* Lunch Schedule */
+UPDATE schedule.ChangeWorkSchedule SET
+LunchDuration = 0, LunchBreakStartTime = '1900-01-01',
+LunchBreakEndTime = '1900-01-01'
+WHERE LunchDuration IS NULL
+AND LunchBreakStartTime IS NULL
+AND LunchBreakEndTime IS NULL
+
+/* Work Schedule */
+UPDATE schedule.ChangeWorkSchedule SET ChangeWorkSchedule.WorkingHours = T.CalculatedWorkingHours
+FROM (
+	SELECT
+		C.ChangeWorkScheduleId,
+		C.WorkDate,
+		C.ShiftId,
+		C.RequestedStartTime,
+		C.RequestedEndTime,
+		ISNULL(
+			CASE
+				WHEN C.ShiftId = -1
+				THEN DATEDIFF(HOUR, C.RequestedStartTime, C.RequestedEndTime)
+				ELSE S.WorkingHours
+			END
+		, 0) CalculatedWorkingHours
+	FROM schedule.ChangeWorkSchedule C
+	LEFT JOIN schedule.Shift S ON S.ShiftId = C.ShiftId
+	WHERE C.WorkingHours IS NULL
+) T
+WHERE T.ChangeWorkScheduleId = ChangeWorkSchedule.ChangeWorkScheduleId

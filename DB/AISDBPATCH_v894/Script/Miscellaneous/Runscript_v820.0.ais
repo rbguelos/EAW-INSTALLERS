@@ -1,0 +1,18 @@
+IF NOT EXISTS(SELECT * FROM maintenance.ConfigSetupDetail WHERE PropertyName = 'SalaryIncreaseWithinThePeriod')
+BEGIN
+	INSERT INTO maintenance.ConfigSetupDetail(
+		ConfigSetupHeaderId, PropertyName, LabelName, PropertyValue, Type, Source, [Group], Subgroup, SortOrder, Alignment)
+	SELECT 
+	ConfigSetupHeaderId = 4, 
+	PropertyName = 'SalaryIncreaseWithinThePeriod', 
+	LabelName = 'Salary Increase within the Period', 
+	PropertyValue = '', 
+	Type = 'dropdownList', 
+	Source = ' :0,Compute as Daily Rate:1,Compute using Old Rate + Difference in Hourly Rate:2', 
+	[Group] = 2, 
+	Subgroup = 0, 
+	SortOrder = 27, 
+	Alignment = ''
+END
+
+UPDATE maintenance.ConfigSetupHeader SET Panel2 = 'Payroll Processing Options;27;2' WHERE ConfigSetupHeaderId = 4

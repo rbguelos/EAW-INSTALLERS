@@ -1,0 +1,5 @@
+/*UPDATE AS PER MA'AM JOANNA*/
+UPDATE maintenance.BIRFormFieldGrp SET FormFieldId = '21,89,31,40,49,70' WHERE GroupName = 'T - Overtime Pay'
+UPDATE maintenance.BIRFormFieldGrp SET FormFieldId = '1,69,86' WHERE GroupName = 'NT - Basic Salary (MWE)'
+
+SELECT * FROM maintenance.BIRFormFieldGrp

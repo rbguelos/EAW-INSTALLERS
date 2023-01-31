@@ -1,0 +1,2 @@
+UPDATE performanceappraisal.PerformanceAppraisalConfiguration
+SET WeightComputation = 0 WHERE WeightComputation IS NULL

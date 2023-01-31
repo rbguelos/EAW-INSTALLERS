@@ -1,0 +1,121 @@
+/*===========================================*\    
+** Last Update Date: 05/20/2018    
+** Last Update By: Kris    
+** Last DBVersion executed: v696
+\*===========================================*/    
+ALTER PROCEDURE [leave].[spLeaveConversionList] 
+(
+    @LeaveConversionType BIGINT = 0
+)
+AS
+BEGIN
+-- SET NOCOUNT ON added to prevent extra result sets from
+-- interfering with SELECT statements.
+SET NOCOUNT ON;
+
+    DECLARE @CompanyConfigType VARCHAR(100) = 'LVEConfiguration'
+
+SELECT
+    --LeaveConversionId
+    LeaveConversionId
+
+    --DateProcessed
+   ,DateProcessed = LeaveConversion.ProcessDate
+
+    --ProfileId
+   ,LeaveConversion.ProfileId
+
+    --EmployeeName
+   ,EmployeeName = EMP.FullName
+
+    --EmployeeNo
+   ,EmployeeNo = EMP.EmployeeNo
+
+    --LeaveType
+   ,LeaveType = LeaveTypeSetup.Code + ' - ' + LeaveTypeSetup.Description
+
+    --LeaveBalance
+   ,LeaveBalance = LeaveConversion.Balance
+
+    --LeaveHrsToConvert
+   ,LeaveHrsToConvert = LeaveConversion.BalanceToConvert
+
+    --NonTaxableHours
+   ,LeaveConversion.NonTaxableHours
+
+    --NonTaxableAmount
+   ,NonTaxableAmount = LeaveConversion.NonTaxableAmount
+
+    --TaxableHours
+   ,LeaveConversion.TaxableHours
+
+    --TaxableAmount
+   ,TaxableAmount = LeaveConversion.TaxableAmount
+
+    --StatusId
+   ,LeaveConversion.StatusId
+
+    --[Status]
+   ,[Status].Name [Status]
+
+    --DisplayInDays
+   ,DisplayInDays = CAST(COALESCE(LVEConfig.DisplayInDays, 0) AS BIT)
+
+    --NoOfHoursPerDay
+   ,NoOfHoursPerDay = CAST(COALESCE(LVEConfig.NoOfDays, 0) AS DECIMAL(18, 4))
+
+    --TransferToLeaveTypeSetup
+   ,TransferToLeaveTypeSetup = TransferToLeaveTypeSetup.Code + ' - ' + TransferToLeaveTypeSetup.Description
+
+    --TransferToLeaveCurrentBalance
+   ,TransferToLeaveCurrentBalance = ISNULL(LeaveConversion.TransferToLeaveCurrentBalance, 0)
+
+    --TransferToLeaveNewBalance
+   ,TransferToLeaveNewBalance = ISNULL(LeaveConversion.TransferToLeaveNewBalance, 0)
+FROM leave.LeaveConversion
+--EmployeeInformation
+JOIN employee.FN_GETEmployeeInformation() EMP
+    ON EMP.ProfileId = LeaveConversion.ProfileId
+--LeaveTypeSetup
+JOIN leave.LeaveTypeSetup
+    ON LeaveTypeSetup.LeaveTypeSetupId = LeaveConversion.LeaveTypeSetupId
+
+--LeaveTypeSetup
+LEFT JOIN leave.LeaveTypeSetup TransferToLeaveTypeSetup
+    ON TransferToLeaveTypeSetup.LeaveTypeSetupId = LeaveConversion.TransferToLeaveTypeSetupId
+
+--[Status]
+JOIN maintenance.[Status]
+    ON [Status].Value = LeaveConversion.StatusId
+--[NoOfDays]
+LEFT JOIN (SELECT
+	   LVEConfigurationId = CompanyConfig.CompanyConfigId
+	  ,Company = COALESCE(Company.Name, '')
+	  ,CompanyConfig.CompanyId
+	  ,DisplayInDays.Value DisplayInDays
+	  ,CAST(COALESCE(NoOfDays.Value, 0) AS DECIMAL(18, 4)) NoOfDays
+
+    FROM maintenance.CompanyConfig
+    -- Company
+    INNER JOIN maintenance.Company
+	   ON Company.CompanyId = CompanyConfig.CompanyId
+
+    -- Get the value of selected type
+    OUTER APPLY (SELECT
+		  REPLACE(value, '1:', '') Value
+	   FROM dbo.FN_SPLITWITHID(CompanyConfig.Value, '|') T
+
+	   WHERE T.ROWID = 1) DisplayInDays
+
+    -- Get the value of selected type
+    OUTER APPLY (SELECT
+		  REPLACE(value, '2:', '') Value
+	   FROM dbo.FN_SPLITWITHID(CompanyConfig.Value, '|') T
+
+	   WHERE T.ROWID = 2) NoOfDays
+    WHERE CompanyConfig.Type = @CompanyConfigType) LVEConfig
+    ON LVEConfig.CompanyId = EMP.CompanyId
+
+WHERE leave.LeaveConversion.LeaveConversionType = @LeaveConversionType
+
+END

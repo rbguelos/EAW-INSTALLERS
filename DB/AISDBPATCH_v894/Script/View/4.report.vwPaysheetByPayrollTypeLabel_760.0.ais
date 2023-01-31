@@ -1,0 +1,57 @@
+IF  EXISTS (SELECT * FROM sys.views WHERE object_id = OBJECT_ID(N'[report].[vwPaysheetByPayrollTypeLabel]'))
+DROP VIEW [report].[vwPaysheetByPayrollTypeLabel]
+GO
+
+-- =============================================
+-- Author:		Abdiel Corda
+-- Create date: 08.06.2019
+-- Description:	Display the payroll type label on payslip 
+-- =============================================
+
+CREATE VIEW [report].[vwPaysheetByPayrollTypeLabel]
+AS
+
+SELECT 
+	PHD.PaySheetHeaderId
+	,PHD.PaySheetHeaderDetailId
+	,PH.StatusId
+	,PH.IssuedDate
+	,PayCode = ISNULL(PD.PayCode,'')
+	,PayValue = ISNULL(PD.PayValue,0)
+	,TypeId = ISNULL(PD.TypeId,0)
+	,PaysheetType = ISNULL(PD.PaysheetType,'')
+	,SortOrder = ISNULL(PD.SortOrder,'')
+FROM payroll.PaySheetHeaderDetail PHD WITH (NOLOCK)
+INNER JOIN (SELECT PH.PayrollTypeId,PH.PaySheetHeaderId,PH.IssuedDate,PH.StatusId FROM payroll.PaySheetHeader PH WITH (NOLOCK))PH ON PH.PaySheetHeaderId = PHD.PaySheetHeaderId
+OUTER APPLY
+(
+	SELECT 
+		PayCode = ISNULL(Col.PayCode,'')
+		,PayValue = SUM(ISNULL(PD.Value ,0))
+		,TypeId =  Col.TypeId
+		,Col.PaysheetType
+		,Col.SortOrder
+	FROM payroll.vwCOMPBEN CMB
+	LEFT JOIN payroll.PaySheetDetail PD WITH (NOLOCK) ON PD.Type = CMB.Code 
+	LEFT JOIN payroll.PayrollTypeDetail PDT WITH (NOLOCK) ON PDT.PaySheetColumnsId = CMB.EarningDeductionId AND PDT.PayrollTypeId = PH.PayrollTypeId
+	CROSS APPLY
+	(
+		SELECT 
+			PayCode = ISNULL(PDT.Label,CMB.Description)
+			,TypeId = CMB.TypeId
+			,PaysheetType = (CASE WHEN CMB.Code IN ('SSS','PhilHealth','PagIbig') THEN 'GD' ELSE 'P' END)
+			,SortOrder = 
+			(
+				CASE 
+					WHEN CMB.Code IN ('SSS') THEN 'GDA' 
+					WHEN CMB.Code IN ('PhilHealth') THEN 'GDB' 
+					WHEN CMB.Code IN ('PagIbig') THEN 'GDC' 
+					WHEN CMB.Code IN ('WHT') THEN 'GDD' 
+				ELSE 'P' END
+			)
+	)Col
+	WHERE 1=1
+	AND PD.PaySheetHeaderDetailId = PHD.PaySheetHeaderDetailId
+	AND ISNULL(CMB.MappedToId,0) <> 0
+	GROUP BY Col.PayCode,Col.TypeId,Col.PaysheetType,Col.SortOrder
+)PD

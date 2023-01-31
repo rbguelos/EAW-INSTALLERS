@@ -1,0 +1,13 @@
+EXEC [maintenance].[UpdateJQListColumns]
+	@ListType = 'ProjectAssignmentColumnList', @ColumnType = 'label', @Name = 'ProjectCode',
+	@Label = 'Project Assigned', @Width = '200', @Align = '', @Formatter = '', @FormatterOption = '',
+	@Others = 'formatter: ProjectAssignment.formatProjectCode, cellattr: ProjectAssignment.formatProjectCodeTooltip'
+
+EXEC [maintenance].[UpdateJQListColumns]
+	@ListType = 'ProjectAssignmentColumnList', @ColumnType = 'label', @Name = 'JobCodes',
+	@Label = 'Job Code', @Width = '200', @Align = '', @Formatter = '', @FormatterOption = '',
+	@Others = 'formatter: ProjectAssignment.formatJobCode, cellattr: ProjectAssignment.formatJobCodeTooltip'
+
+EXEC [maintenance].[UpdateJQListColumns]
+	@ListType = 'ProjectAssignmentColumnList', @ColumnType = 'label', @Name = 'InclusiveDate', @Label = 'Inclusive Date',
+	@Width = '150', @Align = '', @Formatter = '', @FormatterOption = '', @Others = ''

@@ -1,0 +1,25 @@
+IF NOT EXISTS(SELECT TOP 1 1 FROM maintenance.ConfigSetupDetail WHERE PropertyName = 'DeductUndertimeRequest')
+BEGIN
+	INSERT INTO [maintenance].[ConfigSetupDetail]
+			   ([ConfigSetupHeaderId]
+			   ,[PropertyName]
+			   ,[LabelName]
+			   ,[PropertyValue]
+			   ,[Type]
+			   ,[Source]
+			   ,[Group]
+			   ,[SubGroup]
+			   ,[SortOrder]
+			   ,[Alignment])
+		 VALUES
+			   (1
+			   ,'DeductUndertimeRequest'
+			   ,'Deduct Undertime Request'
+			   ,''
+			   ,'checkbox'
+			   ,''
+			   ,2
+			   ,0
+			   ,13
+			   ,'')
+END

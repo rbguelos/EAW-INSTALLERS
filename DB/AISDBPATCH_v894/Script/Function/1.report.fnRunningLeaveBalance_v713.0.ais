@@ -1,0 +1,157 @@
+IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[report].[fnRunningLeaveBalance]') AND type in (N'FN', N'IF', N'TF', N'FS', N'FT'))
+DROP FUNCTION [report].[fnRunningLeaveBalance]
+GO
+
+/*===========================================*\
+**	   Last Update Date: 6/27/2019
+**	   Last Update By: Abdiel
+**	   Last DBVersion executed: v713
+\*===========================================*/
+-- =============================================
+-- Author:		Abdiel Corda
+-- Create date: 01/18/2019
+-- Description:	Running balance for payslip
+-- =============================================
+
+CREATE FUNCTION [report].[fnRunningLeaveBalance] 
+(
+--DECLARE
+@ProfileId BIGINT = 0
+)
+RETURNS
+--DECLARE
+@RESULT TABLE
+(
+	DETAILID INT IDENTITY(1,1),
+	LeaveTypeSetUpId BIGINT,
+	ProfileId BIGINT,
+	TransactionDate DATETIME,
+	EarnedHours DECIMAL(18,4),
+	PreviousBalance DECIMAL(18,4),
+	UsedHours DECIMAL(18,4),
+	CurrentBalance DECIMAL(18,4),
+	ExpiryDate DATETIME,
+	UseExpiration SMALLINT
+	UNIQUE CLUSTERED (LeaveTypeSetUpId,ProfileId, TransactionDate, DETAILID)
+)
+
+--AS 
+BEGIN
+
+DECLARE
+@TABLE TABLE
+(
+	ROWID INT IDENTITY(1,1),
+	LeaveTypeSetUpId BIGINT,
+	ProfileId BIGINT,
+	StartingBalance DECIMAL(18,4),
+	EarnedHours DECIMAL(18,4),
+	TransactionDate DATETIME,
+	UsedHours DECIMAL(18,4),
+	ExpiryDate DATETIME,
+	UseExpiration SMALLINT
+	UNIQUE CLUSTERED (LeaveTypeSetUpId,ProfileId, TransactionDate, ROWID)
+)
+
+INSERT INTO @TABLE
+SELECT 
+	LeaveTypeSetupId
+	,ProfileId
+	,StartingBalance = 
+	(
+		SELECT TOP 1 
+			DTL.EarnedHours 
+		FROM leave.LeaveBalanceDetail DTL 
+		JOIN leave.LeaveBalanceHeader LBH ON LBH.LeaveBalanceHeaderId = DTL.LeaveBalanceHeaderId 
+		WHERE LBH.ProfileId = T.ProfileId
+		AND LBH.LeaveTypeSetupId = T.LeaveTypeSetupId
+		AND DTL.StatusId IN (10)
+		AND DTL.EarnedHours <> 0
+		AND (CAST(DTL.[PostedDate] AS DATE) = CAST(T.PostedDate AS DATE))
+		ORDER BY DTL.PostedDate
+	)
+	,EarnedHours = SUM(ISNULL(EarnedHours,0))
+	,PostedDate
+	,Used = SUM(ISNULL(Used,0))
+	,ExpiryDate
+	,UseExpiration
+FROM 
+(
+
+	SELECT 
+		LBH.LeaveTypeSetupId
+		,LBH.ProfileId
+		,LBD.EarnedHours
+		,LBD.PostedDate
+		,Used = 0
+		,LBD.ExpiryDate
+		,LBD.UseExpiration
+	FROM leave.LeaveBalanceHeader LBH
+	LEFT JOIN leave.LeaveBalanceDetail LBD ON LBD.LeaveBalanceHeaderId = LBH.LeaveBalanceHeaderId
+	WHERE LBD.StatusId IN (10) /*POSTED*/
+
+	UNION ALL
+
+	SELECT 
+		LBH.LeaveTypeSetupId
+		,LBH.ProfileId
+		,LBD.EarnedHours
+		,LBD.PostedDate
+		,Used = 0
+		,LBD.ExpiryDate
+		,UseExpiration = 0
+	FROM leave.LeaveBalanceHeader LBH
+	LEFT JOIN leave.LeaveBalanceDetail LBD ON LBD.LeaveBalanceHeaderId = LBH.LeaveBalanceHeaderId
+	WHERE LBD.StatusId IN (14) /*ADJUSTMENT*/
+
+	UNION ALL
+
+	SELECT 
+		LeaveTypeSetupId = LR.LeaveTypeId
+		,LR.ProfileId
+		,EarnedHours = 0
+		,PostedDate = LR.InclusiveStartDate
+		,Used = LR.NoOfHours
+		,ExpiryDate = '1/1/1900'
+		,UseExpiration = 0
+	FROM leave.LeaveRequest LR
+	WHERE LR.StatusId IN (21,2) /*PAID AND APPROVED*/
+)T
+
+WHERE ((ISNULL(@ProfileId,0) = 0) OR (T.ProfileId = @ProfileId))
+
+GROUP BY LeaveTypeSetupId,ProfileId,PostedDate,ExpiryDate,T.UseExpiration
+
+INSERT INTO @RESULT
+SELECT 
+	T1.LeaveTypeSetUpId
+	,T1.ProfileId
+	,T1.TransactionDate
+	,T1.EarnedHours
+	,PreviousBalance = COALESCE(T2.CurrentBalance,T1.StartingBalance,0) + T1.UsedHours
+	,T1.UsedHours
+	,T2.CurrentBalance
+	,T1.ExpiryDate
+	,T1.UseExpiration
+FROM @TABLE T1
+CROSS APPLY
+(
+	SELECT 
+		CurrentBalance = SUM(T2.EarnedHours - T2.UsedHours) 
+	FROM @TABLE T2 
+	WHERE 1=1
+	AND (T2.ProfileId = T1.ProfileId)
+	AND (T2.LeaveTypeSetUpId = T1.LeaveTypeSetUpId)
+	AND (T2.ROWID <= T1.ROWID)
+)T2
+
+/*ORDER BY T1.TransactionDate DESC*/
+
+
+/*SELECT * FROM @RESULT;*/
+
+RETURN
+
+END
+
+;

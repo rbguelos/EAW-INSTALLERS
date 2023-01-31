@@ -1,0 +1,2 @@
+UPDATE fileimport.FileImportCfgDetail SET LinkTableFields = N'Code' where FileImportCfgHdrId = (select top 1 FileImportCfgHdrId from fileimport.FileImportCfgHdr where FileImportCode = 'PreviousPayroll')
+and DestinationColumnField = 'TypeCode';

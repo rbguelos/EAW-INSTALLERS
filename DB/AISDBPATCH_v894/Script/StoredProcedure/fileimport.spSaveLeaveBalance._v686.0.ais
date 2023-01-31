@@ -1,0 +1,78 @@
+IF NOT OBJECT_ID('[fileimport].[spSaveLeaveBalance]') IS NULL
+	DROP PROCEDURE [fileimport].[spSaveLeaveBalance]
+GO
+
+
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+/*===========================================*\
+**	Last Update Date: 03/28/2019
+**	Last Update By: Ronald
+**	Last DBVersion executed: v686
+\*===========================================*/
+-- =============================================
+-- Author:		RME
+-- Create date: 3/22/2019
+-- Description:	bulk saving of imported leave balance
+-- =============================================
+CREATE PROCEDURE [fileimport].[spSaveLeaveBalance]
+	-- Add the parameters for the stored procedure here
+	@userId bigint = 0,
+	@sourceData AS [fileimport].[tvpImportedLeaveBalance] readonly
+AS
+BEGIN
+	-- SET NOCOUNT ON added to prevent extra result sets from
+	-- interfering with SELECT statements.
+	SET NOCOUNT ON;
+
+    -- Insert statements for procedure here
+/*DECLARE @sourceData AS [fileimport].[tvpImportedLeaveBalance]*/
+	DECLARE @INSERTEDLEAVELEDGER TABLE ([LeaveBalanceHeaderId] bigint,LeaveBalanceDetailId bigint);
+	/*insert or update header*/
+	MERGE leave.LeaveBalanceHeader as d USING (
+	SELECT ProfileId,LeaveTypeId, Balance = sum(LeaveCredits) FROM @sourceData GROUP BY ProfileId,LeaveTypeId) as s on s.ProfileId = d.ProfileId and s.LeaveTypeId = d.LeaveTypeSetupId
+	WHEN MATCHED THEN UPDATE SET Balance = d.Balance + s.Balance, StartingBalance = CASE WHEN ISNULL(d.StartingBalance ,0) = 0 THEN s.Balance ELSE d.StartingBalance END, LastUpdateId = @userid, LastUpdateDate = getdate()
+	WHEN NOT MATCHED THEN INSERT (ProfileId,LeaveTypeSetupId,StartingBalance,Balance,CreateId,CreateDate) VALUES(s.ProfileId, s.LeaveTypeId, s.Balance, s.Balance, @userid, getdate());
+
+	/*insert detail and ledger*/
+	MERGE leave.LeaveBalanceDetail as d USING(
+	SELECT 
+	[LeaveBalanceHeaderId]
+	,s.[IssuedDate]
+	,[PostedDate] = s.DatePosted
+	,[EarnedHours] = s.LeaveCredits
+	,[UsedHours] = 0
+	,[AvailableHours] = s.LeaveCredits
+	,[ExpiryDate] = s.ExpirationDate
+	,[PreviousExpiryDate] = cast('' as date)
+	,[StatusId] = s.StatusId
+	,[Remarks] = s.Remarks
+	,[Source] = 'EXCEL'
+	,[UseExpiration] = CASE WHEN s.ExpirationDate > cast('' as date) THEN 1 ELSE 0 END
+	,[AdjustmentId] = 0
+	,[CreateId] = @userid
+	,[CreateDate] = GETDATE()
+	,[LastUpdateId] = @userid
+	,[LastUpdateDate] = GETDATE()
+	,h.ProfileId
+	,h.LeaveTypeSetupId
+	,h.Balance
+	,PreviousBalance = (h.Balance - ab.AddedBalance) /*original balance before inserting detail*/
+	,s.[RunningBalance]
+	/*,[MovementType],[PostedId]*/
+	 FROM @sourceData s
+	 JOIN leave.LeaveBalanceHeader h on h.LeaveTypeSetupId = s.LeaveTypeId AND h.ProfileId = s.ProfileId
+	 cross APPLY(select AddedBalance = sum(t.LeaveCredits) from @sourceData t where t.ProfileId = h.ProfileId AND t.LeaveTypeId = h.LeaveTypeSetupId) as ab
+	 ) AS s ON 1 = 0/*this will insert all*/
+	 WHEN NOT MATCHED THEN INSERT
+	 ([LeaveBalanceHeaderId],[IssuedDate],[PostedDate],[EarnedHours],[UsedHours],[AvailableHours],[ExpiryDate],[PreviousExpiryDate],[StatusId],[Remarks],[Source],[UseExpiration],[AdjustmentId],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate]/*,[MovementType],[PostedId]*/)
+	VALUES(s.[LeaveBalanceHeaderId],s.[IssuedDate],s.[PostedDate],s.[EarnedHours],s.[UsedHours],s.[AvailableHours],s.[ExpiryDate],s.[PreviousExpiryDate],s.[StatusId],s.[Remarks],s.[Source],s.[UseExpiration],s.[AdjustmentId],s.[CreateId],s.[CreateDate],s.[LastUpdateId],s.[LastUpdateDate]/*,[MovementType],[PostedId]*/)
+	/*INSERT LEAVE LEDGER*/
+	 OUTPUT s.ProfileId,s.LeaveTypeSetupId,INSERTED.PostedDate,(s.PreviousBalance + s.[RunningBalance]) - INSERTED.EarnedHours,INSERTED.EarnedHours,2,s.PreviousBalance + s.[RunningBalance],INSERTED.LeaveBalanceDetailId,INSERTED.CreateId,INSERTED.CreateDate 
+	 INTO leave.LeaveBalanceLedger([EmployeeId],[LeaveTypeId],[LedgerDate],[PreviousBalance],[Credits],[MovementType],[NewBalance],[TrasactionId],[CreateId],[CreateDate])
+	 ;
+
+END
+GO

@@ -1,0 +1,4 @@
+EXEC AddColumn @SCHEMA = 'schedule', @TABLENAME = 'ImportWorkSchedule',@COLUMNNAME = 'LunchDuration', @DATATYPE = 'decimal(18,4)', @DEFAULTVALUE = '0';
+EXEC AddColumn @SCHEMA = 'schedule', @TABLENAME = 'ImportWorkSchedule',@COLUMNNAME = 'Break1Duration', @DATATYPE = 'decimal(18,4)', @DEFAULTVALUE = '0';
+EXEC AddColumn @SCHEMA = 'schedule', @TABLENAME = 'ImportWorkSchedule',@COLUMNNAME = 'Break2Duration', @DATATYPE = 'decimal(18,4)', @DEFAULTVALUE = '0';
+EXEC AddColumn @SCHEMA = 'schedule', @TABLENAME = 'ImportWorkSchedule',@COLUMNNAME = 'Break3Duration', @DATATYPE = 'decimal(18,4)', @DEFAULTVALUE = '0'; 

@@ -1,0 +1,45 @@
+/****** Object:  StoredProcedure [payroll].[spEmployeePaysheetList]    Script Date: 7/29/2020 10:23:40 AM ******/
+IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[payroll].[spEmployeePaysheetList]') AND type in (N'P', N'PC'))
+DROP PROCEDURE [payroll].[spEmployeePaysheetList]
+GO
+/****** Object:  StoredProcedure [payroll].[spEmployeePaysheetList]    Script Date: 7/29/2020 10:23:40 AM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+/*===========================================*\
+**	Last Update Date: 06/13/2019
+**	Last Update By: Michael
+**	Last DBVersion executed: v706 
+\*===========================================*/
+CREATE PROCEDURE [payroll].[spEmployeePaysheetList]  
+(
+	@ProfileId BIGINT = 0
+)
+AS
+BEGIN
+	SET NOCOUNT ON;
+
+	DECLARE @Approved BIGINT = (SELECT top 1 value FROM maintenance.Status WHERE Name = 'Approved')
+
+--=========================================================
+	SELECT 
+		 PaySheetHeader.PaySheetHeaderId
+		,PaySheetHeaderDetail.PaySheetHeaderDetailId
+		,ProfileId = PaySheetHeaderDetail.ProfileId
+		,MonthYr = COALESCE(CONVERT(CHAR(4), PaySheetHeader.MonthYear, 100) + CONVERT(CHAR(4), PaySheetHeader.MonthYear, 120), '')
+		,IssueDate = PaySheetHeader.IssuedDate
+		,CutOff = COALESCE(CONVERT(VARCHAR(10), PaySheetHeader.CutOffStartDate, 101) + ' - ' + CONVERT(VARCHAR(10),  PaySheetHeader.CutOffEndDate, 101), '')  
+		,PayrollTypeId = PayrollType.PayrollTypeId
+		,PayrollType = PayrollType.PayrollTypeName
+	FROM payroll.PaySheetHeaderDetail
+		JOIN payroll.PaySheetHeader ON PaySheetHeaderDetail.PaySheetHeaderId = PaySheetHeader.PaySheetHeaderId
+		JOIN payroll.PayrollType ON PaySheetHeader.PayrollTypeId = PayrollType.PayrollTypeId
+	WHERE
+		PaySheetHeaderDetail.ProfileId = COALESCE(@ProfileId, 0) 
+	AND PaySheetHeader.StatusId = @Approved
+	AND ISNULL(IsPosted, 0) = 1
+	ORDER BY
+		MonthYear DESC,PaySheetHeader.IssuedDate DESC
+END
+GO

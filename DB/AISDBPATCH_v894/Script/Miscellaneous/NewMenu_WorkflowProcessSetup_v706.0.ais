@@ -1,0 +1,8 @@
+SET NOCOUNT ON
+DELETE FROM admin.MenuMenuAdmin WHERE MenuMenuId = 35
+SET IDENTITY_INSERT [admin].[MenuMenuAdmin] ON
+GO
+INSERT [admin].[MenuMenuAdmin] ([MenuMenuId],[MenuModuleId],[MenuName],[MenuIcon],[MenuLink],[SortOrder],[Hidden],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES(35,2,'Workflow Process Management','menu-icon fa fa-caret-right','/WorkflowProcessSetup/List',9,0,NULL,NULL,NULL,NULL)
+SET IDENTITY_INSERT [admin].[MenuMenuAdmin] OFF
+GO
+SET NOCOUNT OFF

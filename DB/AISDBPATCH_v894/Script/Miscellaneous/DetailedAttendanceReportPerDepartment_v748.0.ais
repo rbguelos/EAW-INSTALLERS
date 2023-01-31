@@ -1,0 +1,172 @@
+UPDATE report.Report SET TableSPUsed = 'SELECT     
+	EmployeeName = E.LastFirstMIName
+	,EmployeeNo = E.EmployeeNo
+	,ShiftCode = ISNULL(ETE.ShiftCode,'''')
+	,WorkDate = ETE.WorkDate
+	,[ActualTimeIn] = 
+	(
+		CASE WHEN CAST(ISNULL(ETE.ActualTimeIn, ''1/1900'') AS DATETIME) > CAST(''1/1/1900'' AS DATETIME) THEN 
+		(
+			CASE WHEN CONVERT(VARCHAR, ETE.WorkDate, 101) <> CONVERT(VARCHAR, ETE.ActualTimeIn, 101) 
+				THEN FORMAT(ETE.ActualTimeIn, N''MM/dd/yyyy hh:mm tt'')
+				ELSE FORMAT(ETE.ActualTimeIn, N''hh:mm tt'')
+			END
+		)
+		ELSE '''' END
+	)
+	,[ActualTimeOut] = 
+	(
+		CASE WHEN CAST(ISNULL(ETE.ActualTimeOut, ''1/1900'') AS DATETIME) > CAST(''1/1/1900'' AS DATETIME) THEN 
+		(
+			CASE WHEN CONVERT(VARCHAR, ETE.WorkDate, 101) <> CONVERT(VARCHAR, ETE.ActualTimeOut, 101) 
+				THEN FORMAT(ETE.ActualTimeOut, N''MM/dd/yyyy hh:mm tt'')
+				ELSE FORMAT(ETE.ActualTimeOut, N''hh:mm tt'')
+			END
+		)
+		ELSE '''' END
+	)
+	,TotalWorkingHours = ETE.ActualWorkingHours
+	,RegularHours = ETE.ApprovedOR
+	,NSHours = ETE.ApprovedORNS
+	,OTHours = 	(ETE.ApprovedRegularOT + ETE.ApprovePreshiftOT) 
+	,NSOTHours = (ETE.ApprovedNSOT + ETE.ApprovePreshiftNSOT)
+	,RestDayHours = ETE.ApprovedRE
+	,RestDayNSHours = ETE.ApprovedRENS
+	,HolidayHours = ETE.ApproveHolidayRestDay
+	,HolidayNSHours = ETE.ApproveHolidayRestDayNS
+	,TotalHoursApproved = 
+	(
+		ETE.ApprovedOR + ETE.ApprovedORNS +
+		(ETE.ApprovedRegularOT + ETE.ApprovePreshiftOT) + (ETE.ApprovedNSOT + ETE.ApprovePreshiftNSOT) + 
+		ETE.ApprovedRE + ETE.ApprovedRENS +
+		ETE.ApproveHolidayRestDay + ETE.ApproveHolidayRestDayNS
+	)
+	,CompanyName = E.CompanyName
+	,CutOff = CONCAT(CONVERT(VARCHAR,@StartWorkDate,101),'' - '',CONVERT(VARCHAR,@EndWorkDate,101))
+	,DepartmentName = (CASE WHEN ISNULL(E.DepartmentName,'''') = '''' THEN ''-'' ELSE E.DepartmentName END)
+	,EmployeeId = EP.ProfileId
+	,E.CompanyId
+FROM dbo.vwEmployeeTimeEntry ETE 
+INNER JOIN (SELECT ProfileId FROM employee.Profile) EP ON EP.ProfileId = ETE.ProfileId
+CROSS APPLY
+(
+	SELECT TOP 1 
+		E.LastFirstMIName
+		,E.EmployeeNo
+		,E.CompanyId
+		,E.DepartmentId
+		,E.CompanyName
+		,E.DepartmentName
+	FROM dbo.fnProfileInfo(@CompanyId,@BranchId,0,@OfficeId,0,0,@JobRankId,@ProjectProfileId,0,@DistrictId,0,0,0,@UnitId,0,@DivisionId,@GroupId,@TeamId,@LineId,1,ETE.TimeEntryHeaderDetailId) E
+	WHERE E.ProfileId = EP.ProfileId
+)E
+
+WHERE 1=1
+AND (ETE.WorkDate BETWEEN @StartWorkDate AND @EndWorkDate)
+AND ((ISNULL(@DepartmentIds,'''') = '''') OR (CHARINDEX('''''''' + CAST(E.DepartmentId AS VARCHAR) + '''''''',@DepartmentIds) > 0))
+'
+WHERE ReportCode = 'DetailedAttendanceReportPerDepartment';
+
+
+
+
+UPDATE report.Report SET TableSPUsed ='SELECT       
+	EmployeeName = E.LastFirstMIName
+	,EmployeeNo = E.EmployeeNo 
+	,AddedOn = (CASE WHEN ISNULL(TEL.CreateDate,''1/1/1900'') > ''1/1/1900'' THEN FORMAT(TEL.CreateDate,N''MM/dd/yyyy hh:mm tt'') ELSE '''' END)
+	,TimeEntry = FORMAT(TEL.TimeEntry,N''MM/dd/yyyy hh:mm tt'')
+	,TimeEntryType = TEL.Type
+	,Reason = TEL.Remark
+	,AddedBy = 
+	(
+		CASE ISNULL(UserSecurity.UserType,0) 
+			WHEN 1 THEN ISNULL(UserSecurity.Username,'''')
+			WHEN 2 THEN ISNULL(UserSecurity.NonEmployeeUserName,'''')
+		ELSE '''' END
+		/*
+		(
+			CASE ISNULL(UserSecurity.UserType,0) 
+				WHEN 1 THEN ISNULL(UserSecurity.UserFullName,'''')
+				WHEN 2 THEN ISNULL(UserSecurity.NEFullName,'''')
+			ELSE '''' END
+		)
+		*/
+	)
+	,[Status] = ISNULL((SELECT TOP 1 S.Name FROM maintenance.Status S WHERE S.Value = TEL.StatusId),'''')
+	,ApproverAndDateApproved = CONCAT(ISNULL(Approver.ApproverUsername,''''),(CASE WHEN ISNULL(Approver.CreateDate,'''') > ''1/1/1900'' THEN '' ('' + FORMAT(Approver.CreateDate,N''MM/dd/yyyy hh:mm tt'') + '')'' ELSE '''' END))
+	,E.DepartmentName
+	,E.CompanyName
+	,TEL.StatusId
+	,E.CompanyId
+	,EmployeeId = E.ProfileId
+FROM attendance.TimeEntryLog TEL
+INNER JOIN (SELECT ProfileId FROM employee.Profile)EP ON EP.ProfileId = TEL.ProfileId
+INNER JOIN dbo.fnProfileInfo(@CompanyId,@BranchId,0,@OfficeId,0,0,@JobRankId,@ProjectProfileId,0,@DistrictId,0,0,0,@UnitId,0,@DivisionId,@GroupId,@TeamId,@LineId,0,0) E ON E.ProfileId = EP.ProfileId
+/*GET USER*/
+OUTER APPLY
+(
+	SELECT TOP 1 
+		UserSecurity.UserType 
+		,NonEmployee.NEFullName
+		,EmployeeProfile.UserFullName
+		,UserSecurity.Username
+		,NonEmployeeUserName = NonEmployee.Username
+	FROM security.UserSecurity UserSecurity
+	OUTER APPLY
+	(
+		SELECT TOP 1 
+				NonEmployee.NELastName
+				,NonEmployee.NEFirstName
+				,NonEmployee.NEMiddleName
+				,NonEmployee.NEDesignation
+				,NEFullName = CONCAT
+				(
+					ISNULL(NonEmployee.NELastName,''''), 
+					'', '', 
+					ISNULL(NonEmployee.NEFirstName,''''), 
+					'' '',
+					ISNULL(NonEmployee.NEMiddleName,'''')
+				)
+				,UserSecurity.Username
+		FROM security.NonEmployeeUser NonEmployee 
+		WHERE NonEmployee.UserSecurityId = UserSecurity.UserSecurityId
+	)NonEmployee
+
+	OUTER APPLY
+	(
+		SELECT TOP 1 
+			UserFullName = CONCAT(P.LastName, '', '', P.FirstName, '' '', ISNULL(P.MiddleName,'''')) 
+		FROM employee.Profile P WHERE P.UserAccountId = UserSecurity.UserSecurityId
+	)EmployeeProfile
+
+	WHERE UserSecurity.UserSecurityId = TEL.CreateId
+)UserSecurity
+/*APPROVER*/
+OUTER APPLY
+(
+	SELECT 	TOP 1
+		FullNameMiddleInitialOnly = CONCAT(P.LastName, '', '',P.FirstName, CAST(P.MiddleName AS CHAR(1)))
+		,WFTH.ApproverId 
+		,ApproverUsername = UserSecurity2.Username
+		,WFTH.CreateDate
+	FROM workflow.WFTransactionHistory WFTH
+	JOIN employee.Profile P ON P.ProfileId = WFTH.ApproverId
+	JOIN security.UserSecurity UserSecurity2 ON UserSecurity2.UserSecurityId = P.UserAccountId
+	WHERE WFTH.TransactionTypeId = 8
+	AND WFTH.ActionTriggeredId = 1
+	AND WFTH.TransactionId = TEL.TimeEntryLogId
+	ORDER BY WFTH.WFTransactionHistoryId DESC
+)Approver
+CROSS APPLY
+(
+	SELECT
+		StatusId = (CASE WHEN ISNULL(TEL.StatusId,0) = 0 THEN -3 ELSE TEL.StatusId END)
+)COLS
+
+WHERE 1=1 AND [Source] = ''Manual log'' /*Manual Logs*/
+AND ((ISNULL(@StartWorkDate,''1/1/1900'') = ''1/1/1900'') OR (CAST(TEL.TimeEntry AS DATE) >= CAST(@StartWorkDate AS DATE)))
+AND ((ISNULL(@EndWorkDate,''1/1/1900'') = ''1/1/1900'') OR (CAST(TEL.TimeEntry AS DATE) <= CAST(@EndWorkDate AS DATE)))
+AND ((ISNULL(@DepartmentIds,'''') = '''') OR (CHARINDEX('''''''' + CAST(E.DepartmentId AS VARCHAR) + '''''''',@DepartmentIds) > 0))
+AND ((ISNULL(@StatusIds,'''') = '''') OR (CHARINDEX('''''''' + CAST(COLS.StatusId AS VARCHAR) + '''''''',@StatusIds) > 0))
+'
+WHERE ReportCode = 'ManualLogPerDepartment'

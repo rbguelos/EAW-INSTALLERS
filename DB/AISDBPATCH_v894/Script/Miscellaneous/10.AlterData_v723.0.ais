@@ -1,0 +1,5 @@
+INSERT INTO security.FieldLookUp (FormName, [Table], TableFieldName, FormFieldName, HideTag, RequiredTag)
+VALUES ('Special Work Schedule Request', 'WorkScheduleRequest', 'SpecialNSRates', 'chkSpecialNSRates', 1, 0)
+
+INSERT INTO security.FieldLookUp (FormName, [Table], TableFieldName, FormFieldName, HideTag, RequiredTag)
+VALUES ('Change Work Schedule Request', 'ChangeWorkSchedule', 'SpecialNSRates', 'chkSpecialNSRates', 1, 0)

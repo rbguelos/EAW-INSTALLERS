@@ -1,0 +1,8 @@
+SET NOCOUNT ON;
+
+UPDATE maintenance.BIRForms SET Taxable = 2 WHERE BIRFormId = 97
+
+/*UPDATE MAPPING*/
+UPDATE compben.EarningDeduction SET BIRFormIds = '6,26,35,44,66,88,95' WHERE BIRFormIds = '6,26,35,44,66,88'
+UPDATE compben.EarningDeduction SET BIRFormIds = '7,27,36,45,67,88,96' WHERE BIRFormIds = '7,27,36,45,67,88'
+UPDATE compben.EarningDeduction SET BIRFormIds = '9,29,38,47,69,88,98' WHERE BIRFormIds = '9,29,38,47,69,88'

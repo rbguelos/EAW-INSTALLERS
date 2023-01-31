@@ -1,0 +1,132 @@
+UPDATE  report.Report SET TableSPUsed = 'SELECT            
+	E.LastFirstMIName
+	,E.ProfileId
+	,AbsenceTardiness = SUM(COLS.AbsenceTardiness)
+	,BasicPay = SUM(ISNULL(PD.BasicPay, 0))
+	,OTHOLRENS = SUM(COLS.OTHOLRENS)
+	,LeavePay = SUM(ISNULL(PD.LeavePay, 0))
+	,COLA = SUM(ISNULL(PD.COLA, 0))
+	,Allowance = SUM(ISNULL(PD.Allowance, 0))
+	,OtherNonTaxable = SUM(ISNULL(PD.NonTaxableOther,0))
+	,OtherTaxable = SUM(ISNULL(PD.TaxableOther,0))
+	,Others = SUM(ISNULL(PD.NonTaxableOther, 0))
+	,GrossPay= SUM(ISNULL(PD.GrossPay, 0))
+	,SSS = SUM(ISNULL(PD.SSS, 0))
+	,PhilHealth = SUM(ISNULL(PD.PhilHealth, 0))
+	,PAGIBIG = SUM(ISNULL(PD.PAGIBIG, 0))
+	,WTAX = SUM(ISNULL(PD.WHT, 0))
+	,LoanPayments = SUM(ISNULL(PD.Loan, 0))
+	,Deductions = SUM(ISNULL(PD.Deduction, 0))
+	/*,NetPay = SUM(ISNULL(PD.NetPay, 0)) */
+	/*APPLIED 07.15.2020 #14397*/
+	,NetPay = SUM(ROUND(ISNULL(PD.NetPay, 0),PTCV.DecimalPlace,CONFIG.RoundingCondition))
+	,E.CompanyId
+	,OtherDeduction = SUM(ISNULL(PD.OtherDeduction,0))
+	/*Monthly Rate devide by 2*/
+	,SemiMonthlyRate = (MAX(ISNULL(PD.MonthlyRate,0)) / 2)
+	,Monthlyrate = MAX(PD.MonthlyRate)
+	,EarningTaggedAsOthers = SUM(ISNULL(PD.EarningTaggedAsOthers,0))
+	,E.CompanyName
+FROM vwPaysheetDetail PD
+INNER JOIN (SELECT EP.ProfileId FROM employee.Profile EP)EP ON EP.ProfileId = PD.ProfileId
+CROSS APPLY 
+(
+    SELECT TOP 1
+       e.LastFirstMIName
+       ,e.CompanyId
+       ,e.ProfileId
+	   ,e.CompanyName
+   FROM dbo.fnProfileInfo(@CompanyId, @BranchId, 0, 0, 0, 0, @JobRankId, 0, @CostCenterId, 0, 0, 0, 0, @UnitId, 0, @DivisionId, @GroupId, 0, 0, 2, PD.PaySheetHeaderDetailId) e
+   WHERE e.ProfileId = EP.ProfileId
+) E
+CROSS APPLY
+(
+	SELECT 
+		LateAmount = ROUND((PD.LateHrs * PD.HourlyRate),3) 
+		,UndertimeAmount = ROUND((PD.UndertimeHrs * PD.HourlyRate),3) 
+		,AbsentAmount = ROUND((PD.AbsentHrs * PD.HourlyRate),3) 
+)PD2
+
+CROSS APPLY
+(
+	SELECT
+	AbsenceTardiness = (ISNULL(PD2.LateAmount,0) + ISNULL(PD2.UndertimeAmount,0) + ISNULL(PD2.AbsentAmount,0))
+	,OTHOLRENS = ISNULL(PD.TotalOTPay, 0) + ISNULL(PD.TotalHolidayPay, 0) + ISNULL(PD.REPay, 0) + ISNULL(PD.NightDiffPay, 0)
+	,MonthYearText = CONCAT((LEFT(DATENAME(MONTH,PD.MonthYear),3)),'' '',YEAR(PD.MonthYear))
+)COLS
+
+OUTER APPLY
+(
+	SELECT 
+		DecimalPlace = (CASE WHEN ISNULL(T2.DecimalPlace,0) <> 0 THEN T2.DecimalPlace ELSE T.DecimalPlace END) 
+	FROM
+	(
+		SELECT DecimalPlace = 2
+	)T
+	OUTER APPLY
+	(
+		SELECT TOP 1 
+			DecimalPlace = CAST((CASE WHEN ISNULL(PTCV.Value,'''') <> '''' THEN PTCV.Value ELSE ''2'' END) AS INT)
+		FROM payroll.PayrollTypeConfigValue PTCV WITH (NOLOCK)
+		WHERE PTCV.PayrollTypeId = PD.PayrollTypeId AND PTCV.ConfigSetDetailId = 216
+		AND ISNUMERIC(PTCV.Value) = 1
+	)T2
+)PTCV
+
+OUTER APPLY
+(
+	SELECT 
+		RoundingCondition = (CASE WHEN ISNULL(TCONFIG.ConfigValue,0) <> 0 THEN TCONFIG.ConfigValue ELSE T.RoundingCondition END) 
+	FROM (SELECT RoundingCondition = 0) T
+	OUTER APPLY
+	(
+		SELECT TOP 1
+			ConfigValue = CAST(ISNULL(TCONFIG.ConfigValue,''0'') AS INT)
+		FROM report.ReportConfiguration TCONFIG WHERE TCONFIG.ConfigName = ''RoundingCondition''
+	)TCONFIG
+)CONFIG
+
+
+WHERE 
+(
+	(PD.StatusId = 2 AND ISNULL(@StatusId,'''') = '''') OR ((CHARINDEX('''''''' + CAST(PD.StatusId AS VARCHAR) + '''''''', @StatusId) > 0))
+)
+AND (ISNULL(@PaygroupId,0) = 0 OR PD.PayGroupId = @PaygroupId)
+AND 
+(
+	CAST(ISNULL(@StartIssueDate, ''1/1/1900'') AS DATETIME) <= CAST(''1/1/1900'' AS DATETIME) OR
+	CAST(ISNULL(PD.IssuedDate, ''1/1/1900'') AS DATETIME) >= CAST(ISNULL(@StartIssueDate, ''1/1/1900'') AS DATETIME)
+)
+AND 
+(
+	CAST(ISNULL(@EndIssueDate, ''1/1/1900'') AS DATETIME) <= CAST(''1/1/1900'' AS DATETIME)OR
+	CAST(ISNULL(PD.IssuedDate, ''1/1/1900'') AS DATETIME) <= CAST(ISNULL(@EndIssueDate, ''1/1/1900'') AS DATETIME)
+)
+AND 
+(
+	/*
+	CAST(ISNULL(@MonthYear, ''1/1/1900'') AS DATETIME) <= CAST(''1/1/1900'' AS DATETIME) OR
+	CAST(ISNULL(PD.MonthYear, ''1/1/1900'') AS DATETIME) = CAST(ISNULL(@MonthYear, ''1/1/1900'') AS DATETIME)
+	*/
+	(ISNULL(@MonthYear,'''') = '''') 
+	OR
+	(COLS.MonthYearText = @MonthYear)
+)
+AND 
+(
+	ISNULL(@PayrollTypeIds, '''') = '''' OR
+	(CHARINDEX(''''''''+CAST(PayrollTypeId AS VARCHAR)+'''''''',@PayrollTypeIds) > 0)
+)
+AND
+(
+	CAST(ISNULL(@PaysheetHeaderId,0) AS BIGINT) = 0 OR
+	(PD.PaySheetHeaderId = CAST(@PaysheetHeaderId AS BIGINT))
+)
+
+GROUP BY    
+		E.LastFirstMIName
+		,E.CompanyId
+		,E.CompanyName
+		,E.ProfileId
+'
+WHERE ReportCode = 'SummarizedPaysheetDetail'

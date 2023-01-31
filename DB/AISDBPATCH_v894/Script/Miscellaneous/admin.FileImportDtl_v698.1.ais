@@ -1,0 +1,10 @@
+/*
+SET following fields to required
+-date of deduction
+-first payment date
+-no of payments
+-amortization
+-deduction amount
+*/
+UPDATE admin.FileImportDtl SET IsRequired = 1 WHERE FileImportHeaderId = (SELECT TOP 1 FileImportHeaderId FROM admin.FileImportHeader WHERE FileConfigurationCode = 'DeductionImportCode')
+AND TableFieldName IN ('DeductionDate','FirstPaymentDate','NoOfPayments','Amortization','Amount');

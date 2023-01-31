@@ -1,0 +1,7 @@
+EXEC [admin].[UpdateListColumns]
+	@ListName = 'Leave Balance List', @ListType = 'LeaveBalanceColumnList',
+	@DefaultColumn = 'EmployeeNo|EmployeeName|CompanyCode|LeaveTypeCode|LeaveTypeDescription|BalanceDisplay'
+
+EXEC [maintenance].[UpdateJQListColumns]
+	@ListType = 'LeaveBalanceColumnList', @ColumnType = 'label', @Name = 'CompanyCode', @Label = 'Company',
+	@Width = '180', @Align = '', @Formatter = '', @FormatterOption = '', @Others = ''

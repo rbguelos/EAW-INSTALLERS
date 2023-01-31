@@ -1,0 +1,10 @@
+DELETE FROM report.ReportMenu 
+WHERE 1=1
+AND ISNULL(FileGeneratorHdrId,0) = 0
+AND ReportId NOT IN
+(
+SELECT 
+TMP2.ReportId
+FROM report.TMPReportMenu TMP
+JOIN report.TMPUpdatedReportMenu TMP2 ON TMP2.ReportCode = TMP.ReportCode
+)

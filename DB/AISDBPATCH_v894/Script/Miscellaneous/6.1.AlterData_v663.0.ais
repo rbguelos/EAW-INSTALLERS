@@ -1,0 +1,3 @@
+EXEC [admin].[UpdateListColumns]
+	@ListName = 'Rest Day List', @ListType = 'RestDayColumnList',
+	@DefaultColumn = 'Date|EmployeeNo|EmployeeName|Department|Position|FixedSchedule|Days|Type'

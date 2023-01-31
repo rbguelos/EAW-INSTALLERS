@@ -1,0 +1,80 @@
+
+BEGIN /* ADD COLUMNS */
+	EXEC AddColumn @TABLENAME = 'FileImportCfgHdr', @SCHEMA = 'fileimport', @COLUMNNAME = 'FileImportCode', @DATATYPE = 'varchar(100)';
+	EXEC AddColumn @TABLENAME = 'FileImportCfgHdr', @SCHEMA = 'fileimport', @COLUMNNAME = 'FixQryFilter', @DATATYPE = 'varchar(1000)';
+	EXEC AddColumn @TABLENAME = 'FileImportCfgHdr', @SCHEMA = 'fileimport', @COLUMNNAME = 'Delimiter', @DATATYPE = 'varchar(20)';
+	EXEC AddColumn @TABLENAME = 'FileImportCfgHdr', @SCHEMA = 'fileimport', @COLUMNNAME = 'FileExtension', @DATATYPE = 'varchar(10)';
+	EXEC AddColumn @TABLENAME = 'FileImportCfgHdr', @SCHEMA = 'fileimport', @COLUMNNAME = 'SystemModuleId', @DATATYPE = 'bigint'
+	EXEC AddColumn @TABLENAME = 'FileImportCfgHdr', @SCHEMA = 'fileimport', @COLUMNNAME = 'ImportOption', @DATATYPE = 'smallint'
+	EXEC AddColumn @TABLENAME = 'FileImportCfgHdr', @SCHEMA = 'fileimport', @COLUMNNAME = 'HeaderRow', @DATATYPE = 'int'/*05.22.2018*/
+	EXEC AddColumn @TABLENAME = 'FileImportCfgHdr', @SCHEMA = 'fileimport', @COLUMNNAME = 'ParentSource', @DATATYPE = 'varchar(100)'/*9.13.2018 - used to set parent sheet*/
+	EXEC AddColumn @TABLENAME = 'FileImportCfgHdr', @SCHEMA = 'fileimport', @COLUMNNAME = 'ParentChildKey', @DATATYPE = 'varchar(max)'/*9.13.2018 parent and child related columns - field*/
+	EXEC AddColumn @TABLENAME = 'FileImportCfgHdr', @SCHEMA = 'fileimport', @COLUMNNAME = 'RequireChild', @DATATYPE = 'bit'/*9.13.2018 if true and has child source,enforce parent child related data */
+
+
+	/*added 08.15.2018 - will be use to set optional tsql formula to set validation and assign validation message for each validation*/
+	EXEC AddColumn @TABLENAME = 'FileImportCfgHdr', @SCHEMA = 'fileimport', @COLUMNNAME = 'ValidationFormula', @DATATYPE = 'varchar(max)'/*validation based on formula (TSQL script). char separated values(|)*/
+	EXEC AddColumn @TABLENAME = 'FileImportCfgHdr', @SCHEMA = 'fileimport', @COLUMNNAME = 'ValidationMessage', @DATATYPE = 'varchar(max)'/*destination column. char separated values(|)*/
+
+	/*RME.04.13.2018*/
+	EXEC AddColumn @TABLENAME = 'FileImportCfgHdr', @SCHEMA = 'fileimport', @COLUMNNAME = 'TransactionIdColumnName', @DATATYPE = 'varchar(50)'
+	EXEC AddColumn @TABLENAME = 'FileImportCfgHdr', @SCHEMA = 'fileimport', @COLUMNNAME = 'InvalidTransactionMsg', @DATATYPE = 'varchar(500)' /* message result if source data is not applicable for the current transaction */
+
+	EXEC AddColumn @TABLENAME = 'FileImportCfgDetail', @SCHEMA = 'fileimport', @COLUMNNAME = 'DataFormat', @DATATYPE = 'varchar(50)'
+	EXEC AddColumn @TABLENAME = 'FileImportCfgDetail', @SCHEMA = 'fileimport', @COLUMNNAME = 'Position', @DATATYPE = 'int'
+	EXEC AddColumn @TABLENAME = 'FileImportCfgDetail', @SCHEMA = 'fileimport', @COLUMNNAME = 'FixLength', @DATATYPE = 'int'
+	EXEC AddColumn @TABLENAME = 'FileImportCfgDetail', @SCHEMA = 'fileimport', @COLUMNNAME = 'SourceLinkTableDesc', @DATATYPE = 'varchar(255)'
+	
+	/* will be use to get data from pivot columns */
+	EXEC AddColumn @TABLENAME = 'FileImportCfgDetail', @SCHEMA = 'fileimport', @COLUMNNAME = 'NoDuplicatePivotEntry', @DATATYPE = 'bit'
+	EXEC AddColumn @TABLENAME = 'FileImportCfgDetail', @SCHEMA = 'fileimport', @COLUMNNAME = 'IsPivot', @DATATYPE = 'bit'
+	EXEC AddColumn @TABLENAME = 'FileImportCfgDetail', @SCHEMA = 'fileimport', @COLUMNNAME = 'GetFieldAfterSourceCol', @DATATYPE = 'varchar(255)'
+	EXEC AddColumn @TABLENAME = 'FileImportCfgDetail', @SCHEMA = 'fileimport', @COLUMNNAME = 'PivotTable', @DATATYPE = 'varchar(255)'
+	EXEC AddColumn @TABLENAME = 'FileImportCfgDetail', @SCHEMA = 'fileimport', @COLUMNNAME = 'PivotLinkField', @DATATYPE = 'varchar(255)'/* link field from the source pivot table */
+	EXEC AddColumn @TABLENAME = 'FileImportCfgDetail', @SCHEMA = 'fileimport', @COLUMNNAME = 'PivotGetField', @DATATYPE = 'varchar(255)'/* the value to be retrieve and to be save in the destination column */
+	EXEC AddColumn @TABLENAME = 'FileImportCfgDetail', @SCHEMA = 'fileimport', @COLUMNNAME = 'PivotFieldType', @DATATYPE = 'varchar(20)'
+	EXEC AddColumn @TABLENAME = 'FileImportCfgDetail', @SCHEMA = 'fileimport', @COLUMNNAME = 'PivotDestinationField', @DATATYPE = 'varchar(255)'/*destination column*/
+	
+	EXEC AddColumn @TABLENAME = 'FileImportLog', @SCHEMA = 'fileimport', @COLUMNNAME = 'SourceDataCnt', @DATATYPE = 'int'
+	
+	/*added 10.24.2018*/
+	/*this were added to handle multiple table destination and to use values provided from the parameter (fileimport.Parameter)*/
+	;EXEC AddColumn @TABLENAME = 'FileImportCfgDetail', @SCHEMA = 'fileimport', @COLUMNNAME = 'DestinationTable', @DATATYPE = 'varchar(150)'/*save to specified table*/
+	;EXEC AddColumn @TABLENAME = 'FileImportCfgDetail', @SCHEMA = 'fileimport', @COLUMNNAME = 'LinkToDestination', @DATATYPE = 'varchar(5000)'/*link query to destination. note: must exist from source parent table*/
+	;EXEC AddColumn @TABLENAME = 'FileImportCfgDetail', @SCHEMA = 'fileimport', @COLUMNNAME = 'ImportOption', @DATATYPE = 'smallint'/*see fileimport.FileImportCfgHdr.ImportOption*/
+	;EXEC AddColumn @TABLENAME = 'FileImportCfgDetail', @SCHEMA = 'fileimport', @COLUMNNAME = 'SourceType', @DATATYPE = 'tinyint'/*0 - use source, 1 - use get value of parameter (see fileimport.Parameter table)*/
+	;EXEC AddColumn @TABLENAME = 'FileImportCfgDetail', @SCHEMA = 'fileimport', @COLUMNNAME = 'IgnoreEmpty', @DATATYPE = 'bit'/*0 - skip blank or zero values if numeric */
+	;EXEC AddColumn @TABLENAME = 'FileImportChildTableCfg', @SCHEMA = 'fileimport', @COLUMNNAME = 'LinkToParent', @DATATYPE = 'varchar(5000)'/*link query to parent. note: must exist from source parent table*/
+
+
+	/*enhancement for UK*/
+	;EXEC AddColumn @TABLENAME = 'SalaryInformation', @COLUMNNAME = 'Remarks', @DATATYPE = 'varchar(250)', @SCHEMA = 'employee', @DEFAULTVALUE = ''
+	;EXEC AddColumn @TABLENAME = 'PaySheetHeaderDetail', @COLUMNNAME = 'Remarks', @DATATYPE = 'varchar(250)', @SCHEMA = 'payroll', @DEFAULTVALUE = ''
+
+
+	;EXEC AddColumn @TABLENAME = 'EmploymentInformation', @COLUMNNAME = 'ChargeCodeId', @DATATYPE = 'bigint', @SCHEMA = 'employee', @DEFAULTVALUE = '0'
+	;EXEC AddColumn @TABLENAME = 'EmployeeAssignment', @COLUMNNAME = 'ChargeCodeId', @DATATYPE = 'bigint', @SCHEMA = 'employee', @DEFAULTVALUE = '0'
+
+	/*if source data do not exists insert it to the source table*/
+	;EXEC AddColumn @TABLENAME = 'FileImportCfgDetail', @SCHEMA = 'fileimport', @COLUMNNAME = 'InsertSourceIfNotExist', @DATATYPE = 'bit'
+
+	EXEC AddColumn @TABLENAME = 'FileImportCfgHdr', @SCHEMA = 'fileimport', @COLUMNNAME = 'Status', @DATATYPE = 'int', @DEFAULTVALUE = '2'/*12.17.2018 - default to active*/
+
+
+	/*source data is not from source file but from inserted/updated header or related table fields - added 03.14.2019*/
+	;EXEC AddColumn @TABLENAME = 'FileImportCfgDetail', @SCHEMA = 'fileimport', @COLUMNNAME = 'SourceTable', @DATATYPE = 'varchar(150)'
+	;EXEC AddColumn @TABLENAME = 'FileImportCfgDetail', @SCHEMA = 'fileimport', @COLUMNNAME = 'SourceField', @DATATYPE = 'varchar(1000)'/*can be sql statement*/
+
+	;EXEC AddColumn @TABLENAME = 'FileImportCfgDetail', @SCHEMA = 'fileimport', @COLUMNNAME = 'IsDistinct', @DATATYPE = 'bit'/*eliminate duplicate on each rows*/
+
+	/*added new type if importing*/
+	;EXEC [AlterColumn] 'fileimport', 'FileImportCfgHdr', 'ImportType', 'ImportType', 'smallint'
+
+	/*added column to save template code - 06.06.2019*/
+	;EXEC AddColumn @TABLENAME = 'FileImportLog', @SCHEMA = 'fileimport', @COLUMNNAME = 'FileImportCode', @DATATYPE = 'varchar(150)'
+
+	/*added 06.24.2019 - retrieve cell value from excel*/
+	;EXEC AddColumn @TABLENAME = 'FileImportCfgDetail', @SCHEMA = 'fileimport', @COLUMNNAME = 'RowPos', @DATATYPE = 'int'/*use to retrieve the cell row pos*/
+	;EXEC AddColumn @TABLENAME = 'FileImportCfgDetail', @SCHEMA = 'fileimport', @COLUMNNAME = 'ColPos', @DATATYPE = 'int'/*use to retrieve the cell col pos*/
+
+END

@@ -1,0 +1,82 @@
+UPDATE report.Report SET TableSPUsed =
+'SELECT      
+	CompanyName = ISNULL(c.CompanyName, '''')
+	,EmployerNo = ISNULL(c.CompanySSS, '''')
+	,BillingMonth = DATENAME(MONTH, ISNULL(lpd.MonthYear, ''''))
+	,EmpSSS = E.SSS
+	,EmployeeName = E.LastFirstMIName
+	,LoanCode = ISNULL(lts.LenderCode, '''') 
+	,lr.VoucherDate AS LoanDate
+	,LoanAmount = ISNULL(lr.LoanAmount, 0) 
+	,PenaltyAmount = ISNULL(lr.PenaltyAmount, 0) 	
+	,ExtraSpace = ''''
+	,lr.Remarks
+	,lpd.LoanRemittancePaymentDetailId
+	,lpd.CompanyId
+	,lrd.ProfileId
+	/*UPDATED BY AGC. 07.15.2020 - ISSUE ON IFIVE GET THE PAYMENT ON THE REMITTANCE FORM (REPORTED BY JESSICA #14395)*/
+	/*,TotalAmount = SUM(ISNULL(lr.Amortization,0))*/
+	,TotalAmount = SUM(ISNULL(lrd.AmountPaid,0))
+FROM payroll.LoanRemittancePaymentDetail lpd
+INNER JOIN payroll.LoanRemittanceDetail lrd ON lrd.LoanRemittancePaymentDetailId = lpd.LoanRemittancePaymentDetailId
+INNER JOIN payroll.LoanRequestPayment lrp ON lrd.LoanRequestPaymentId = lrp.LoanRequestPaymentId
+INNER JOIN payroll.LoanRequest lr ON lrp.LoanRequestId = lr.LoanRequestId
+INNER JOIN maintenance.LoanTypeSetup lts ON lts.LoanTypeSetupId = lr.LoanTypeSetupId
+OUTER APPLY 
+(
+    SELECT TOP 1
+	   rd.ProfileId
+    FROM payroll.LoanRemittanceDetail rd
+    WHERE rd.LoanRemittancePaymentDetailId = lrd.LoanRemittancePaymentDetailId
+) AS rd
+OUTER APPLY 
+(
+    SELECT TOP 1
+	   CompanyName = c.Name 
+	   ,CompanySSS = a.SSS 
+	   ,CompanyAddress = a.Address 
+    FROM maintenance.Company c
+    JOIN maintenance.Address a ON a.AddressId = c.AddressId    
+    WHERE c.CompanyId = lpd.CompanyId
+) c
+OUTER APPLY 
+(
+    SELECT TOP 1
+	   BranchAddress = aa.Address 
+	   ,BranchName = b.Name 
+	   ,BranchSSS = aa.SSS 
+    FROM maintenance.Branch b
+    JOIN maintenance.Address aa ON aa.AddressId = b.AddressId
+    WHERE b.BranchId = lpd.BranchId
+) BA
+CROSS APPLY 
+(
+    SELECT TOP 1
+	   EMP.SSS
+	   ,EMP.LastName
+	   ,EMP.FirstName
+	   ,EMP.MiddleName
+	   ,EMP.LastFirstMIName
+    FROM DBO.fnProfileInfo(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0) EMP
+    WHERE EMP.ProfileId = lrd.ProfileId
+) E
+
+WHERE lpd.LoanRemittancePaymentDetailId = @LoanRemittancePaymentDetailId
+
+GROUP BY	
+	   c.CompanyName
+	   ,c.CompanySSS
+	   ,lpd.MonthYear
+	   ,E.SSS
+	   ,E.LastFirstMIName
+	   ,lts.LenderCode
+	   ,lr.VoucherDate		
+	   ,lr.Remarks
+	   ,lpd.LoanRemittancePaymentDetailId
+	   ,lpd.CompanyId
+	   ,lrd.ProfileId
+	   ,lr.TotalAmountDue
+	   ,lr.LoanAmount
+	   ,lr.PenaltyAmount'
+
+WHERE ReportCode = 'SSSLMSTransmitalDetailedEmployee'

@@ -1,0 +1,31 @@
+IF  EXISTS (SELECT * FROM sys.views WHERE object_id = OBJECT_ID(N'[report].[vwDeductionsAndGovtDeductions]'))
+DROP VIEW [report].[vwDeductionsAndGovtDeductions]
+GO
+
+ --=============================================
+ --Author:		Abdiel Corda
+ --Create date: 11.04.2019
+ --Description:	For Modified PAGIBIG 2 Report
+ --=============================================
+
+ 
+CREATE VIEW [report].[vwDeductionsAndGovtDeductions]
+AS
+
+SELECT 
+	EAD.EarningDeductionId
+	,EAD.Code  
+	,EAD.Description
+FROM compben.EarningDeduction EAD 
+WHERE ISNULL(EAD.MappedToId,0) = 0 
+AND ISNULL(EAD.TypeId,0) = 2
+
+UNION ALL
+
+SELECT 
+	EAD.EarningDeductionId
+	,EAD.Code  
+	,EAD.Description
+FROM compben.EarningDeduction EAD 
+WHERE ISNULL(EAD.MappedToId,0) <> 0 
+AND ISNULL(EAD.Code,'') IN ('SSS','PhilHealth','Pagibig','WHT')

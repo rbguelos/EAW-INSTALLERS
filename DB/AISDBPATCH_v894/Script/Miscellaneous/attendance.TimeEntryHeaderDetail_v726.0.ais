@@ -1,0 +1,1 @@
+UPDATE attendance.TimeEntryHeaderDetail SET NightShiftStatusId2 = 0 WHERE NightShiftStatusId2 IS NULL

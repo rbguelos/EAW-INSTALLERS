@@ -1,0 +1,367 @@
+/*NET PAY BREAKDOWN FILE IMPORT CONFIGURATION*/
+
+DECLARE @BULKINSERTNETPAYPAYMENTBREAKDOWN VARCHAR(MAX) = 'SET NOCOUNT ON;
+DECLARE @LOGDETAIL AS TABLE(ImportLogDtlId bigint primary key);
+BEGIN TRY
+SELECT
+	s.[RowId]
+   ,s.[DataValidationRemarks_]
+   ,s.[RowNum_]
+   ,DetailNo = ROW_NUMBER() OVER (PARTITION BY [Effective Date], [Employee No.], [Account No.] ORDER BY [Effective Date], [Employee No.], [Account No.])
+   ,[AcctNo] = [Account No.]
+   ,s.[Account No.]
+   ,[Address] = [Address ]
+   ,[Branch] = [Branch ]
+   ,[BreakdownType] = t755.[Value]
+   ,s.[Breakdown Type]
+   ,[EffectiveDate] = [Effective Date]
+   ,s.[Effective Date]
+   ,[SenderAddress] = s.[Sender Address]
+   ,[EmailAddress] = [Email Address]
+   ,s.[Email Address]
+   ,[FirstName] = [First Name]
+   ,s.[First Name]
+   ,[LastName] = [Last Name]
+   ,s.[Last Name]
+   ,[MiddleName] = [Middle Name]
+   ,s.[Middle Name]
+   ,[MobileNo] = [Mobile No.]
+   ,s.[Mobile No.]
+   ,[OneTimePayment] = t747.[Value]
+   ,s.[One Time Payment]
+   ,[OtherPaymentMethod] =
+	CASE
+		WHEN PaymentMethodId IS NULL THEN s.[Payment Method]
+		ELSE ''''
+	END
+   ,[PaymentAmount] = [Payment Amount]
+   ,s.[Payment Amount]
+   ,[PaymentMethodId] = t750.[PaymentMethodId]
+   ,s.[Payment Method]
+   ,[ProfileId] = t744.[ProfileId]
+   ,s.[Employee No.]
+   ,[StatusId] = 1 INTO #tmpTVP
+FROM @tmpTVP s
+OUTER APPLY (SELECT TOP 1
+		[Value]
+	FROM maintenance.EnumValues
+	WHERE 1 = 1
+	AND SourceName = ''NetPayBreakDownType''
+	AND REPLACE(DisplayText, '' '', '''') = REPLACE(s.[Breakdown Type], '' '', '''')) AS T755
+OUTER APPLY (SELECT TOP 1
+		[Value]
+	FROM maintenance.EnumValues
+	WHERE 1 = 1
+	AND SourceName = ''YesNo''
+	AND REPLACE(DisplayText, '' '', '''') = REPLACE(s.[One Time Payment], '' '', '''')) AS T747
+OUTER APPLY (SELECT TOP 1
+		[PaymentMethodId]
+	FROM maintenance.PaymentMethod
+	WHERE 1 = 1
+	AND REPLACE(Name, '' '', '''') = REPLACE(s.[Payment Method], '' '', '''')) AS T750
+OUTER APPLY (SELECT TOP 1
+		[ProfileId]
+	FROM employee.EmploymentInformation
+	WHERE 1 = 1
+	AND REPLACE(CJI_EmployeeNo, '' '', '''') = REPLACE(s.[Employee No.], '' '', '''')) AS T744
+
+DECLARE @ValidationLog VARCHAR(MAX) = '''';
+;
+UPDATE #tmpTVP
+SET [DataValidationRemarks_] = T.[DataValidationRemarks_]
+FROM (SELECT
+		[RowId]
+	   ,[DataValidationRemarks_] = ''''
+		+
+		CASE
+			WHEN NOT d.[EffectiveDate] IS NULL THEN CONCAT(''Row '', s.[RowNum_], '' - Source data already exist on Net Pay Breakdown.'', CHAR(10))
+			ELSE ''''
+		END
+		+
+		CASE
+			WHEN s.DetailNo > 1 THEN CONCAT(''Row '', s.[RowNum_], '' - "Net Pay Breakdown" was duplicated from the source data.'', CHAR(10))
+			ELSE ''''
+		END +
+		CASE
+			WHEN NOT d.[ProfileId] IS NULL THEN CONCAT(''Row '', s.[RowNum_], '' - Source data already exist on Net Pay Breakdown.'', CHAR(10))
+			ELSE ''''
+		END
+		+
+		CASE
+			WHEN s.DetailNo > 1 THEN CONCAT(''Row '', s.[RowNum_], '' - "Net Pay Breakdown" was duplicated from the source data.'', CHAR(10))
+			ELSE ''''
+		END
+		+
+		CASE
+			WHEN s.[OtherPaymentMethod] IS NULL THEN CONCAT(''Row '', s.[RowNum_], '' - No "OtherPaymentMethod" found from the source table.'', CHAR(10))
+			ELSE ''''
+		END
+		+
+		CASE
+			WHEN CHARINDEX('' is not a valid '', s.[DataValidationRemarks_]) > 0 AND
+				CHARINDEX(''Account No.'', s.[DataValidationRemarks_]) > 0 THEN ''''
+			ELSE CASE
+					WHEN ISNULL(s.[Account No.], '''') = '''' THEN CONCAT(''Row '', s.[RowNum_], '' - "Account No." cannot be blank.'', CHAR(10))
+					ELSE ''''
+				END
+		END
+		+
+		CASE
+			WHEN CHARINDEX('' is not a valid '', s.[DataValidationRemarks_]) > 0 AND
+				CHARINDEX(''Branch '', s.[DataValidationRemarks_]) > 0 THEN ''''
+			ELSE CASE
+					WHEN ISNULL(s.[Branch ], '''') = '''' THEN CONCAT(''Row '', s.[RowNum_], '' - "Branch " cannot be blank.'', CHAR(10))
+					ELSE ''''
+				END
+		END
+		+
+		CASE
+			WHEN CHARINDEX('' is not a valid '', s.[DataValidationRemarks_]) > 0 AND
+				CHARINDEX(''Breakdown Type'', s.[DataValidationRemarks_]) > 0 THEN ''''
+			ELSE CASE
+					WHEN ISNULL(s.[Breakdown Type], '''') = '''' THEN CONCAT(''Row '', s.[RowNum_], '' - "Breakdown Type" cannot be blank.'', CHAR(10))
+					ELSE ''''
+				END
+		END
+		+
+		CASE
+			WHEN CHARINDEX('' is not a valid '', s.[DataValidationRemarks_]) > 0 AND
+				CHARINDEX(''Effective Date'', s.[DataValidationRemarks_]) > 0 THEN ''''
+			ELSE CASE
+					WHEN ISNULL(s.[Effective Date], '''') = '''' THEN CONCAT(''Row '', s.[RowNum_], '' - "Effective Date" cannot be blank.'', CHAR(10))
+					ELSE ''''
+				END
+		END
+		+
+		CASE
+			WHEN CHARINDEX('' is not a valid '', s.[DataValidationRemarks_]) > 0 AND
+				CHARINDEX(''First Name'', s.[DataValidationRemarks_]) > 0 THEN ''''
+			ELSE CASE
+					WHEN ISNULL(s.[First Name], '''') = '''' THEN CONCAT(''Row '', s.[RowNum_], '' - "First Name" cannot be blank.'', CHAR(10))
+					ELSE ''''
+				END
+		END
+		+
+		CASE
+			WHEN CHARINDEX('' is not a valid '', s.[DataValidationRemarks_]) > 0 AND
+				CHARINDEX(''Last Name'', s.[DataValidationRemarks_]) > 0 THEN ''''
+			ELSE CASE
+					WHEN ISNULL(s.[Last Name], '''') = '''' THEN CONCAT(''Row '', s.[RowNum_], '' - "Last Name" cannot be blank.'', CHAR(10))
+					ELSE ''''
+				END
+		END
+		+
+		CASE
+			WHEN CHARINDEX('' is not a valid '', s.[DataValidationRemarks_]) > 0 AND
+				CHARINDEX(''One Time Payment'', s.[DataValidationRemarks_]) > 0 THEN ''''
+			ELSE CASE
+					WHEN ISNULL(s.[One Time Payment], '''') = '''' THEN CONCAT(''Row '', s.[RowNum_], '' - "One Time Payment" cannot be blank.'', CHAR(10))
+					ELSE ''''
+				END
+		END
+		+
+		CASE
+			WHEN CHARINDEX('' is not a valid '', s.[DataValidationRemarks_]) > 0 AND
+				CHARINDEX(''Payment Amount'', s.[DataValidationRemarks_]) > 0 THEN ''''
+			ELSE CASE
+					WHEN ISNULL(s.[Payment Amount], ''0'') = ''0'' THEN CONCAT(''Row '', s.[RowNum_], '' - "Payment Amount" cannot be blank.'', CHAR(10))
+					ELSE ''''
+				END
+		END
+		+
+		CASE
+			WHEN CHARINDEX('' is not a valid '', s.[DataValidationRemarks_]) > 0 AND
+				CHARINDEX(''Payment Method'', s.[DataValidationRemarks_]) > 0 THEN ''''
+			ELSE CASE
+					WHEN ISNULL(s.[Payment Method], '''') = '''' THEN CONCAT(''Row '', s.[RowNum_], '' - "Payment Method" cannot be blank.'', CHAR(10))
+					ELSE ''''
+				END
+		END
+		+
+		CASE
+			WHEN CHARINDEX('' is not a valid '', s.[DataValidationRemarks_]) > 0 AND
+				CHARINDEX(''Employee No.'', s.[DataValidationRemarks_]) > 0 THEN ''''
+			ELSE CASE
+					WHEN ISNULL(s.[Employee No.], '''') = '''' THEN CONCAT(''Row '', s.[RowNum_], '' - "Employee No." cannot be blank.'', CHAR(10))
+					ELSE ''''
+				END
+		END
+		+
+		CASE
+			WHEN CHARINDEX(''is not a valid'', s.[DataValidationRemarks_]) > 0 AND
+				CHARINDEX(''Breakdown Type'', s.[DataValidationRemarks_]) > 0 THEN ''''
+			ELSE CASE
+					WHEN s.[BreakdownType] IS NULL AND
+						ISNULL(s.[Breakdown Type], '''') <> '''' THEN CONCAT(''Row '', s.[RowNum_], '' - : "'', s.[Breakdown Type], ''" is not a valid '', ''Breakdown Type.'', CHAR(10))
+					ELSE ''''
+				END
+		END
+		+
+		CASE
+			WHEN CHARINDEX(''is not a valid'', s.[DataValidationRemarks_]) > 0 AND
+				CHARINDEX(''One Time Payment'', s.[DataValidationRemarks_]) > 0 THEN ''''
+			ELSE CASE
+					WHEN s.[OneTimePayment] IS NULL AND
+						ISNULL(s.[One Time Payment], '''') <> '''' THEN CONCAT(''Row '', s.[RowNum_], '' - : "'', s.[One Time Payment], ''" is not a valid '', ''One Time Payment.'', CHAR(10))
+					ELSE ''''
+				END
+		END
+		+
+		CASE
+			WHEN CHARINDEX(''is not a valid'', s.[DataValidationRemarks_]) > 0 AND
+				CHARINDEX(''Employee No.'', s.[DataValidationRemarks_]) > 0 THEN ''''
+			ELSE CASE
+					WHEN s.[ProfileId] IS NULL AND
+						ISNULL(s.[Employee No.], '''') <> '''' THEN CONCAT(''Row '', s.[RowNum_], '' - : "'', s.[Employee No.], ''" is not a valid '', ''Employee No..'', CHAR(10))
+					ELSE ''''
+				END
+		END +
+		CASE
+			WHEN ISNULL(s.[DataValidationRemarks_], '''') <> '''' THEN s.[DataValidationRemarks_]
+			ELSE ''''
+		END
+	FROM #tmpTVP s
+	LEFT JOIN [payroll].[NetPayBrkdownHdr] d
+		ON 1 = 1
+		AND d.[EffectiveDate] = s.[EffectiveDate]
+		AND d.[ProfileId] = s.[ProfileId]
+		AND d.[StatusId] NOT IN (-1/*deleted*/, -2/*cancelled*/, 9/*Disapproved*/)) T
+WHERE T.[RowId] = #tmpTVP.[RowId];
+
+SELECT
+	@ValidationLog = (SELECT
+			[DataValidationRemarks_]
+		FROM #tmpTVP
+		ORDER BY RowId
+		FOR XML PATH (''''), ROOT (''MyString''), TYPE)
+	.value(''/MyString[1]'', ''varchar(max)'');
+
+/* AUDIT TRAIL */
+DECLARE @LOGID BIGINT
+;
+DECLARE @INSERTEDROWS INT
+;
+INSERT INTO [fileimport].[FileImportLog] ([Filename], [SourceSheet], [DestinationTable], [ImportCount], [SourceDataCnt], [ImportedKeyIds], [ImportFileId], [ProcessedById], [ProcessedDate])
+	VALUES (@SourceFileName, @SourceSheet, ''[payroll].[NetPayBrkdownHdr]'', 0, @SourceDataCnt, NULL, 0, @UserId, GETDATE());
+SET @LOGID = SCOPE_IDENTITY();
+
+;
+CREATE TABLE #TABLEKEYS([PRIMARYKEYFLD] [VARCHAR](50),[EffectiveDate] [datetime] NULL,[ProfileId] [bigint] NULL);
+INSERT INTO [payroll].[NetPayBrkdownHdr] ([EffectiveDate], [OneTimePayment], [ProfileId], [StatusId], [SenderAddress], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate], [BankFileHdrId])
+OUTPUT INSERTED.[NetPayBrkdownHdrId], INSERTED.[EffectiveDate], INSERTED.[ProfileId] INTO #TABLEKEYS
+	SELECT
+		[EffectiveDate] = ISNULL(s.[EffectiveDate], '''')
+	   ,[OneTimePayment] = ISNULL(s.[OneTimePayment], 0)
+	   ,[ProfileId] = ISNULL(s.[ProfileId], 0)
+	   ,[StatusId] = ISNULL(s.[StatusId], 0)
+	   ,s.[SenderAddress]
+	   ,@UserId
+	   ,GETDATE()
+	   ,0
+	   ,''1/1/1900''
+	   ,0
+	FROM #tmpTVP s
+	LEFT JOIN [payroll].[NetPayBrkdownHdr] d
+		ON 1 = 1
+			AND d.[EffectiveDate] = s.[EffectiveDate]
+			AND d.[ProfileId] = s.[ProfileId]
+			AND d.[StatusId] NOT IN (-1/*deleted*/, -2/*cancelled*/, 9/*Disapproved*/)
+	WHERE DetailNo = 1
+	AND ISNULL(s.[Effective Date], '''') <> ''''
+	AND ISNULL(s.[One Time Payment], '''') <> ''''
+	AND NOT s.[OneTimePayment] IS NULL
+	AND ISNULL(s.[Employee No.], '''') <> ''''
+	AND NOT s.[ProfileId] IS NULL
+	AND ISNULL(s.[DataValidationRemarks_], '''') = ''''
+	AND d.[EffectiveDate] IS NULL
+	AND d.[ProfileId] IS NULL
+	GROUP BY s.[EffectiveDate] 
+			 ,s.[ProfileId]
+			 ,s.[OneTimePayment]
+			 ,s.[StatusId]
+			 ,s.[SenderAddress]
+
+;
+INSERT INTO payroll.NetPayBrkdownDtl ([AcctNo], [Address], [Branch], [BreakdownType], [EmailAddress], [FirstName], [LastName], [MiddleName], [MobileNo], [NetPayBrkdownHdrId], [OtherPaymentMethod], [PaymentAmount], [PaymentMethodId], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate])
+	SELECT
+		[AcctNo] = ISNULL(s.[AcctNo], '''')
+	   ,[Address] = ISNULL(s.[Address], '''')
+	   ,[Branch] = ISNULL(s.[Branch], '''')
+	   ,[BreakdownType] = ISNULL(s.[BreakdownType], 0)
+	   ,[EmailAddress] = ISNULL(s.[EmailAddress], '''')
+	   ,[FirstName] = ISNULL(s.[FirstName], '''')
+	   ,[LastName] = ISNULL(s.[LastName], '''')
+	   ,[MiddleName] = ISNULL(s.[MiddleName], '''')
+	   ,[MobileNo] = ISNULL(s.[MobileNo], '''')
+	   ,[NetPayBrkdownHdrId] = ISNULL(k.[PRIMARYKEYFLD], ''0'')
+	   ,[OtherPaymentMethod] = ISNULL(s.[OtherPaymentMethod], '''')
+	   ,[PaymentAmount] = ISNULL(s.[PaymentAmount], 0)
+	   ,[PaymentMethodId] = ISNULL(s.[PaymentMethodId], -1)
+	   ,@UserId
+	   ,GETDATE()
+	   ,0
+	   ,''1/1/1900''
+	FROM #tmpTVP s
+	JOIN #TABLEKEYS k on k.EffectiveDate = s.[EffectiveDate]
+	and k.ProfileId = s.[ProfileId]
+SET @INSERTEDROWS = @@rowcount;
+
+
+INSERT INTO fileimport.ImportLogDtl (FileimportLogId, LogStatus, ImportKeyValue)
+	SELECT
+		@LOGID
+	   ,NULL
+	   ,[PRIMARYKEYFLD]
+	FROM #TABLEKEYS;
+
+INSERT INTO @LOGDETAIL
+	SELECT
+		fileimport.ImportLogDtl.ImportLogDtlId
+	FROM fileimport.ImportLogDtl
+	WHERE FileimportLogId = @LOGID;/* get key values of the inserted records*/
+UPDATE fileimport.FileImportLog
+SET ImportCount = @INSERTEDROWS
+WHERE FileimportLogId = @LOGID;
+/*output result*/
+SELECT
+	ImportedRecord = @INSERTEDROWS
+   ,[Log] = @ValidationLog;
+IF NOT OBJECT_ID(''tempdb..#tmpTVP'') IS NULL
+DROP TABLE tempdb..#tmpTVP;
+IF NOT OBJECT_ID(''tempdb..#TABLEKEYS'') IS NULL
+DROP TABLE tempdb..#TABLEKEYS;
+
+END TRY
+BEGIN CATCH
+SELECT
+	ImportedRecord = 0
+   ,[Log] = ERROR_MESSAGE()
+END CATCH';
+DECLARE @FILEIMPORTHEADERID BIGINT
+
+SELECT @FILEIMPORTHEADERID = FileImportCfgHdrId FROM fileimport.FileImportCfgHdr WHERE FileImportCode = 'NetPayBreakdown'
+DELETE FROM fileimport.FileImportCfgDetail WHERE FileImportCfgHdrId = @FILEIMPORTHEADERID
+DELETE FROM fileimport.FileImportCfgHdr WHERE FileImportCfgHdrId = @FILEIMPORTHEADERID
+
+INSERT [fileimport].[FileImportCfgHdr] ([FileImportCode], [SourceTableName], [DestinationTable], [DestinationSchema], [TableType], [FillTable], [IdentityColumns], [Description], [FileType], [AllowDuplicate], [RowStart], [OrderNo], [QueryToExecute], [QueryType], [QueryParameters], [SystemCode], [ImportType], [BulkInsertCmd], [FixQryFilter], [Delimiter], [FileExtension], [SystemModuleId], [ImportOption], [HeaderRow], [ParentSource], [ParentChildKey], [RequireChild], [ValidationFormula], [ValidationMessage], [TransactionIdColumnName], [InvalidTransactionMsg], [Status]) VALUES (N'NetPayBreakdown', N'NetPayBreakdown', N'NetPayBrkdownHdr', N'payroll', 0, NULL, NULL, N'Net Pay Breakdown', 1, 1, 2, 1, NULL, NULL, NULL, NULL, 1, @BULKINSERTNETPAYPAYMENTBREAKDOWN, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, 2);
+SET @FILEIMPORTHEADERID = SCOPE_IDENTITY();
+/*Header*/
+INSERT [fileimport].[FileImportCfgDetail] ([FileImportCfgHdrId], [SourceColumn], [DestinationColumnField], [DataType], [SourceDataType], [MaxLength], [ValidateDataType], [AllowEmpty], [CheckDuplicate], [DefaultValue], [IsFormula], [FieldDescription], [SourceColNum], [SourceLinkTable], [SourceLinkTableDesc], [LinkTableFields], [GetValueField], [Position], [FixLength], [DataFormat], [NoDuplicatePivotEntry], [IsPivot], [GetFieldAfterSourceCol], [PivotTable], [PivotLinkField], [PivotGetField], [PivotFieldType], [PivotDestinationField], [DestinationTable], [LinkToDestination], [ImportOption], [SourceType], [IgnoreEmpty], [InsertSourceIfNotExist], [SourceTable], [SourceField], [IsDistinct]) VALUES (@FILEIMPORTHEADERID, N'Employee No.', N'ProfileId', N'bigint', N'varchar', 8, 1, 0, 1, N'', 0, N'ProfileId', 1, N'employee.EmploymentInformation', N'Employee', N'CJI_EmployeeNo', N'ProfileId', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, N'', 1, NULL, NULL, NULL, NULL, NULL, 1);
+INSERT [fileimport].[FileImportCfgDetail] ([FileImportCfgHdrId], [SourceColumn], [DestinationColumnField], [DataType], [SourceDataType], [MaxLength], [ValidateDataType], [AllowEmpty], [CheckDuplicate], [DefaultValue], [IsFormula], [FieldDescription], [SourceColNum], [SourceLinkTable], [SourceLinkTableDesc], [LinkTableFields], [GetValueField], [Position], [FixLength], [DataFormat], [NoDuplicatePivotEntry], [IsPivot], [GetFieldAfterSourceCol], [PivotTable], [PivotLinkField], [PivotGetField], [PivotFieldType], [PivotDestinationField], [DestinationTable], [LinkToDestination], [ImportOption], [SourceType], [IgnoreEmpty], [InsertSourceIfNotExist], [SourceTable], [SourceField], [IsDistinct]) VALUES (@FILEIMPORTHEADERID, N'Effective Date', N'EffectiveDate', N'datetime', N'datetime', 8, 1, 0, 1, N'', 0, N'EffectiveDate', 2, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, N'', 1, NULL, NULL, NULL, NULL, NULL, 1);
+INSERT [fileimport].[FileImportCfgDetail] ([FileImportCfgHdrId], [SourceColumn], [DestinationColumnField], [DataType], [SourceDataType], [MaxLength], [ValidateDataType], [AllowEmpty], [CheckDuplicate], [DefaultValue], [IsFormula], [FieldDescription], [SourceColNum], [SourceLinkTable], [SourceLinkTableDesc], [LinkTableFields], [GetValueField], [Position], [FixLength], [DataFormat], [NoDuplicatePivotEntry], [IsPivot], [GetFieldAfterSourceCol], [PivotTable], [PivotLinkField], [PivotGetField], [PivotFieldType], [PivotDestinationField], [DestinationTable], [LinkToDestination], [ImportOption], [SourceType], [IgnoreEmpty], [InsertSourceIfNotExist], [SourceTable], [SourceField], [IsDistinct]) VALUES (@FILEIMPORTHEADERID, N'', N'StatusId', N'bigint', N'varchar', 8, 1, 0, 1, N'1', 0, N'StatusId', 0, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, N'', 1, NULL, NULL, NULL, NULL, NULL, 1);
+INSERT [fileimport].[FileImportCfgDetail] ([FileImportCfgHdrId], [SourceColumn], [DestinationColumnField], [DataType], [SourceDataType], [MaxLength], [ValidateDataType], [AllowEmpty], [CheckDuplicate], [DefaultValue], [IsFormula], [FieldDescription], [SourceColNum], [SourceLinkTable], [SourceLinkTableDesc], [LinkTableFields], [GetValueField], [Position], [FixLength], [DataFormat], [NoDuplicatePivotEntry], [IsPivot], [GetFieldAfterSourceCol], [PivotTable], [PivotLinkField], [PivotGetField], [PivotFieldType], [PivotDestinationField], [DestinationTable], [LinkToDestination], [ImportOption], [SourceType], [IgnoreEmpty], [InsertSourceIfNotExist], [SourceTable], [SourceField], [IsDistinct]) VALUES (@FILEIMPORTHEADERID, N'One Time Payment', N'OneTimePayment', N'smallint', N'varchar', 2, 1, 0, 0, N'', 0, N'OneTimePayment', 4, N'maintenance.EnumValues', NULL, N'SourceName=''YesNo''|DisplayText', N'Value', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, N'', 1, NULL, NULL, NULL, NULL, NULL, 1);
+INSERT [fileimport].[FileImportCfgDetail] ([FileImportCfgHdrId], [SourceColumn], [DestinationColumnField], [DataType], [SourceDataType], [MaxLength], [ValidateDataType], [AllowEmpty], [CheckDuplicate], [DefaultValue], [IsFormula], [FieldDescription], [SourceColNum], [SourceLinkTable], [SourceLinkTableDesc], [LinkTableFields], [GetValueField], [Position], [FixLength], [DataFormat], [NoDuplicatePivotEntry], [IsPivot], [GetFieldAfterSourceCol], [PivotTable], [PivotLinkField], [PivotGetField], [PivotFieldType], [PivotDestinationField], [DestinationTable], [LinkToDestination], [ImportOption], [SourceType], [IgnoreEmpty], [InsertSourceIfNotExist], [SourceTable], [SourceField], [IsDistinct]) VALUES (@FILEIMPORTHEADERID, N'Sender Address', N'SenderAddress', N'varchar', N'varchar', 8, 1, 0, 1, N'', 0, N'Sender Address', 5, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, N'', 1, NULL, NULL, NULL, NULL, NULL, 1);
+/*Detail*/
+INSERT [fileimport].[FileImportCfgDetail] ([FileImportCfgHdrId], [SourceColumn], [DestinationColumnField], [DataType], [SourceDataType], [MaxLength], [ValidateDataType], [AllowEmpty], [CheckDuplicate], [DefaultValue], [IsFormula], [FieldDescription], [SourceColNum], [SourceLinkTable], [SourceLinkTableDesc], [LinkTableFields], [GetValueField], [Position], [FixLength], [DataFormat], [NoDuplicatePivotEntry], [IsPivot], [GetFieldAfterSourceCol], [PivotTable], [PivotLinkField], [PivotGetField], [PivotFieldType], [PivotDestinationField], [DestinationTable], [LinkToDestination], [ImportOption], [SourceType], [IgnoreEmpty], [InsertSourceIfNotExist], [SourceTable], [SourceField], [IsDistinct]) VALUES (@FILEIMPORTHEADERID, N'', N'NetPayBrkdownHdrId', N'bigint', N'varchar', 8, 1, 0, 0, N'', 0, N'NetPayBrkdownHdrId', 6, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, N'payroll.NetPayBrkdownDtl', N'', 1, NULL, NULL, NULL, NULL, NULL, 0);
+INSERT [fileimport].[FileImportCfgDetail] ([FileImportCfgHdrId], [SourceColumn], [DestinationColumnField], [DataType], [SourceDataType], [MaxLength], [ValidateDataType], [AllowEmpty], [CheckDuplicate], [DefaultValue], [IsFormula], [FieldDescription], [SourceColNum], [SourceLinkTable], [SourceLinkTableDesc], [LinkTableFields], [GetValueField], [Position], [FixLength], [DataFormat], [NoDuplicatePivotEntry], [IsPivot], [GetFieldAfterSourceCol], [PivotTable], [PivotLinkField], [PivotGetField], [PivotFieldType], [PivotDestinationField], [DestinationTable], [LinkToDestination], [ImportOption], [SourceType], [IgnoreEmpty], [InsertSourceIfNotExist], [SourceTable], [SourceField], [IsDistinct]) VALUES (@FILEIMPORTHEADERID, N'Payment Method', N'PaymentMethodId', N'bigint', N'varchar', 8, 0, 0, 0, N'', 0, N'PaymentMethodId', 7, N'', N'', N'', N'', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, N'payroll.NetPayBrkdownDtl', N'', 1, NULL, NULL, NULL, NULL, NULL, 0);
+INSERT [fileimport].[FileImportCfgDetail] ([FileImportCfgHdrId], [SourceColumn], [DestinationColumnField], [DataType], [SourceDataType], [MaxLength], [ValidateDataType], [AllowEmpty], [CheckDuplicate], [DefaultValue], [IsFormula], [FieldDescription], [SourceColNum], [SourceLinkTable], [SourceLinkTableDesc], [LinkTableFields], [GetValueField], [Position], [FixLength], [DataFormat], [NoDuplicatePivotEntry], [IsPivot], [GetFieldAfterSourceCol], [PivotTable], [PivotLinkField], [PivotGetField], [PivotFieldType], [PivotDestinationField], [DestinationTable], [LinkToDestination], [ImportOption], [SourceType], [IgnoreEmpty], [InsertSourceIfNotExist], [SourceTable], [SourceField], [IsDistinct]) VALUES (@FILEIMPORTHEADERID, N'Account No.', N'AcctNo', N'varchar', N'varchar', 200, 1, 0, 0, N'', 0, N'AcctNo', 8, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, N'payroll.NetPayBrkdownDtl', N'', 1, NULL, NULL, NULL, NULL, NULL, 0);
+INSERT [fileimport].[FileImportCfgDetail] ([FileImportCfgHdrId], [SourceColumn], [DestinationColumnField], [DataType], [SourceDataType], [MaxLength], [ValidateDataType], [AllowEmpty], [CheckDuplicate], [DefaultValue], [IsFormula], [FieldDescription], [SourceColNum], [SourceLinkTable], [SourceLinkTableDesc], [LinkTableFields], [GetValueField], [Position], [FixLength], [DataFormat], [NoDuplicatePivotEntry], [IsPivot], [GetFieldAfterSourceCol], [PivotTable], [PivotLinkField], [PivotGetField], [PivotFieldType], [PivotDestinationField], [DestinationTable], [LinkToDestination], [ImportOption], [SourceType], [IgnoreEmpty], [InsertSourceIfNotExist], [SourceTable], [SourceField], [IsDistinct]) VALUES (@FILEIMPORTHEADERID, N'Payment Amount', N'PaymentAmount', N'decimal', N'decimal', 9, 1, 0, 0, N'', 0, N'PaymentAmount', 9, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, N'payroll.NetPayBrkdownDtl', N'', 1, NULL, NULL, NULL, NULL, NULL, 0);
+INSERT [fileimport].[FileImportCfgDetail] ([FileImportCfgHdrId], [SourceColumn], [DestinationColumnField], [DataType], [SourceDataType], [MaxLength], [ValidateDataType], [AllowEmpty], [CheckDuplicate], [DefaultValue], [IsFormula], [FieldDescription], [SourceColNum], [SourceLinkTable], [SourceLinkTableDesc], [LinkTableFields], [GetValueField], [Position], [FixLength], [DataFormat], [NoDuplicatePivotEntry], [IsPivot], [GetFieldAfterSourceCol], [PivotTable], [PivotLinkField], [PivotGetField], [PivotFieldType], [PivotDestinationField], [DestinationTable], [LinkToDestination], [ImportOption], [SourceType], [IgnoreEmpty], [InsertSourceIfNotExist], [SourceTable], [SourceField], [IsDistinct]) VALUES (@FILEIMPORTHEADERID, N'', N'OtherPaymentMethod', N'varchar', N'varchar', 200, 1, 0, 0, N'CASE WHEN PaymentMethodId IS NULL THEN s.[Payment Method] ELSE '''' END', 1, N'OtherPaymentMethod', 10, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, N'payroll.NetPayBrkdownDtl', N'', 1, NULL, NULL, NULL, NULL, NULL, 0);
+INSERT [fileimport].[FileImportCfgDetail] ([FileImportCfgHdrId], [SourceColumn], [DestinationColumnField], [DataType], [SourceDataType], [MaxLength], [ValidateDataType], [AllowEmpty], [CheckDuplicate], [DefaultValue], [IsFormula], [FieldDescription], [SourceColNum], [SourceLinkTable], [SourceLinkTableDesc], [LinkTableFields], [GetValueField], [Position], [FixLength], [DataFormat], [NoDuplicatePivotEntry], [IsPivot], [GetFieldAfterSourceCol], [PivotTable], [PivotLinkField], [PivotGetField], [PivotFieldType], [PivotDestinationField], [DestinationTable], [LinkToDestination], [ImportOption], [SourceType], [IgnoreEmpty], [InsertSourceIfNotExist], [SourceTable], [SourceField], [IsDistinct]) VALUES (@FILEIMPORTHEADERID, N'Branch', N'Branch', N'varchar', N'varchar', 200, 1, 0, 0, N'', 0, N'Branch', 11, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, N'payroll.NetPayBrkdownDtl', N'', 1, NULL, NULL, NULL, NULL, NULL, 0);
+INSERT [fileimport].[FileImportCfgDetail] ([FileImportCfgHdrId], [SourceColumn], [DestinationColumnField], [DataType], [SourceDataType], [MaxLength], [ValidateDataType], [AllowEmpty], [CheckDuplicate], [DefaultValue], [IsFormula], [FieldDescription], [SourceColNum], [SourceLinkTable], [SourceLinkTableDesc], [LinkTableFields], [GetValueField], [Position], [FixLength], [DataFormat], [NoDuplicatePivotEntry], [IsPivot], [GetFieldAfterSourceCol], [PivotTable], [PivotLinkField], [PivotGetField], [PivotFieldType], [PivotDestinationField], [DestinationTable], [LinkToDestination], [ImportOption], [SourceType], [IgnoreEmpty], [InsertSourceIfNotExist], [SourceTable], [SourceField], [IsDistinct]) VALUES (@FILEIMPORTHEADERID, N'Breakdown Type', N'BreakdownType', N'bigint', N'varchar', 8, 1, 0, 0, N'', 0, N'BreakdownType', 12, N'maintenance.EnumValues', N'Breakdown Type', N'SourceName=''NetPayBreakDownType''|DisplayText', N'Value', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, N'payroll.NetPayBrkdownDtl', N'', 1, NULL, NULL, NULL, NULL, NULL, 0);
+INSERT [fileimport].[FileImportCfgDetail] ([FileImportCfgHdrId], [SourceColumn], [DestinationColumnField], [DataType], [SourceDataType], [MaxLength], [ValidateDataType], [AllowEmpty], [CheckDuplicate], [DefaultValue], [IsFormula], [FieldDescription], [SourceColNum], [SourceLinkTable], [SourceLinkTableDesc], [LinkTableFields], [GetValueField], [Position], [FixLength], [DataFormat], [NoDuplicatePivotEntry], [IsPivot], [GetFieldAfterSourceCol], [PivotTable], [PivotLinkField], [PivotGetField], [PivotFieldType], [PivotDestinationField], [DestinationTable], [LinkToDestination], [ImportOption], [SourceType], [IgnoreEmpty], [InsertSourceIfNotExist], [SourceTable], [SourceField], [IsDistinct]) VALUES (@FILEIMPORTHEADERID, N'Email Address', N'EmailAddress', N'varchar', N'varchar', 150, 1, 1, 0, N'', 0, N'EmailAddress', 13, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, N'payroll.NetPayBrkdownDtl', N'', 1, NULL, NULL, NULL, NULL, NULL, 0);
+INSERT [fileimport].[FileImportCfgDetail] ([FileImportCfgHdrId], [SourceColumn], [DestinationColumnField], [DataType], [SourceDataType], [MaxLength], [ValidateDataType], [AllowEmpty], [CheckDuplicate], [DefaultValue], [IsFormula], [FieldDescription], [SourceColNum], [SourceLinkTable], [SourceLinkTableDesc], [LinkTableFields], [GetValueField], [Position], [FixLength], [DataFormat], [NoDuplicatePivotEntry], [IsPivot], [GetFieldAfterSourceCol], [PivotTable], [PivotLinkField], [PivotGetField], [PivotFieldType], [PivotDestinationField], [DestinationTable], [LinkToDestination], [ImportOption], [SourceType], [IgnoreEmpty], [InsertSourceIfNotExist], [SourceTable], [SourceField], [IsDistinct]) VALUES (@FILEIMPORTHEADERID, N'Address', N'Address', N'varchar', N'varchar', 500, 1, 1, 0, N'', 0, N'Address', 14, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, N'payroll.NetPayBrkdownDtl', N'', 1, NULL, NULL, NULL, NULL, NULL, 0);
+INSERT [fileimport].[FileImportCfgDetail] ([FileImportCfgHdrId], [SourceColumn], [DestinationColumnField], [DataType], [SourceDataType], [MaxLength], [ValidateDataType], [AllowEmpty], [CheckDuplicate], [DefaultValue], [IsFormula], [FieldDescription], [SourceColNum], [SourceLinkTable], [SourceLinkTableDesc], [LinkTableFields], [GetValueField], [Position], [FixLength], [DataFormat], [NoDuplicatePivotEntry], [IsPivot], [GetFieldAfterSourceCol], [PivotTable], [PivotLinkField], [PivotGetField], [PivotFieldType], [PivotDestinationField], [DestinationTable], [LinkToDestination], [ImportOption], [SourceType], [IgnoreEmpty], [InsertSourceIfNotExist], [SourceTable], [SourceField], [IsDistinct]) VALUES (@FILEIMPORTHEADERID, N'First Name', N'FirstName', N'varchar', N'varchar', 40, 1, 0, 0, N'', 0, N'FirstName', 15, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, N'payroll.NetPayBrkdownDtl', N'', 1, NULL, NULL, NULL, NULL, NULL, 0);
+INSERT [fileimport].[FileImportCfgDetail] ([FileImportCfgHdrId], [SourceColumn], [DestinationColumnField], [DataType], [SourceDataType], [MaxLength], [ValidateDataType], [AllowEmpty], [CheckDuplicate], [DefaultValue], [IsFormula], [FieldDescription], [SourceColNum], [SourceLinkTable], [SourceLinkTableDesc], [LinkTableFields], [GetValueField], [Position], [FixLength], [DataFormat], [NoDuplicatePivotEntry], [IsPivot], [GetFieldAfterSourceCol], [PivotTable], [PivotLinkField], [PivotGetField], [PivotFieldType], [PivotDestinationField], [DestinationTable], [LinkToDestination], [ImportOption], [SourceType], [IgnoreEmpty], [InsertSourceIfNotExist], [SourceTable], [SourceField], [IsDistinct]) VALUES (@FILEIMPORTHEADERID, N'Middle Name', N'MiddleName', N'varchar', N'varchar', 40, 1, 1, 0, N'', 0, N'MiddleName', 16, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, N'payroll.NetPayBrkdownDtl', N'', 1, NULL, NULL, NULL, NULL, NULL, 0);
+INSERT [fileimport].[FileImportCfgDetail] ([FileImportCfgHdrId], [SourceColumn], [DestinationColumnField], [DataType], [SourceDataType], [MaxLength], [ValidateDataType], [AllowEmpty], [CheckDuplicate], [DefaultValue], [IsFormula], [FieldDescription], [SourceColNum], [SourceLinkTable], [SourceLinkTableDesc], [LinkTableFields], [GetValueField], [Position], [FixLength], [DataFormat], [NoDuplicatePivotEntry], [IsPivot], [GetFieldAfterSourceCol], [PivotTable], [PivotLinkField], [PivotGetField], [PivotFieldType], [PivotDestinationField], [DestinationTable], [LinkToDestination], [ImportOption], [SourceType], [IgnoreEmpty], [InsertSourceIfNotExist], [SourceTable], [SourceField], [IsDistinct]) VALUES (@FILEIMPORTHEADERID, N'Mobile No.', N'MobileNo', N'varchar', N'varchar', 40, 1, 1, 0, N'', 0, N'MobileNo', 17, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, N'payroll.NetPayBrkdownDtl', N'', 1, NULL, NULL, NULL, NULL, NULL, 0);
+INSERT [fileimport].[FileImportCfgDetail] ([FileImportCfgHdrId], [SourceColumn], [DestinationColumnField], [DataType], [SourceDataType], [MaxLength], [ValidateDataType], [AllowEmpty], [CheckDuplicate], [DefaultValue], [IsFormula], [FieldDescription], [SourceColNum], [SourceLinkTable], [SourceLinkTableDesc], [LinkTableFields], [GetValueField], [Position], [FixLength], [DataFormat], [NoDuplicatePivotEntry], [IsPivot], [GetFieldAfterSourceCol], [PivotTable], [PivotLinkField], [PivotGetField], [PivotFieldType], [PivotDestinationField], [DestinationTable], [LinkToDestination], [ImportOption], [SourceType], [IgnoreEmpty], [InsertSourceIfNotExist], [SourceTable], [SourceField], [IsDistinct]) VALUES (@FILEIMPORTHEADERID, N'Last Name', N'LastName', N'varchar', N'varchar', 40, 1, 0, 0, N'', 0, N'LastName', 18, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, N'payroll.NetPayBrkdownDtl', N'', 1, NULL, NULL, NULL, NULL, NULL, 0);

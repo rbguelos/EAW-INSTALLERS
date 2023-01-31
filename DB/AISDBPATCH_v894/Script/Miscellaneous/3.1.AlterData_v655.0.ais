@@ -1,0 +1,3 @@
+EXEC [admin].[UpdateListColumns] 
+	@ListName = 'Project Assignment Column List', @ListType = 'ProjectAssignmentColumnList',
+	@DefaultColumn = 'EmployeeNo|EmployeeName|ProjectCode|JobCodes|PartimeOrFulltime|Chargeable|InclusiveDate'

@@ -1,0 +1,18 @@
+
+/****** Object:  UserDefinedTableType [fileimport].[tvpPivotData]   Script Date: 2/20/2019 10:57:29 AM ******/
+IF NOT TYPE_ID('[fileimport].[tvpPivotData]') IS NULL
+DROP TYPE [fileimport].[tvpPivotData]
+GO
+
+/****** Object:  UserDefinedTableType [fileimport].[SourceCfgDtl]    Script Date: 2/20/2019 10:57:29 AM ******/
+CREATE TYPE [fileimport].[tvpPivotData] AS TABLE(
+	[RowId] [int] NOT NULL,
+	[Source] [varchar](100) NULL,
+	[Value] [varchar](1000) NULL,
+	[ValueKey] [varchar](1000) NULL,
+	[CheckDuplicateValue] [varchar](1000) NULL,
+	[CheckDuplicateValueCol] [varchar](1000) NULL,
+	[ValidationRemarks] [varchar](1000) NULL
+)
+GO
+

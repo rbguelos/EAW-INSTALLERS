@@ -1,0 +1,304 @@
+GO
+/****** Object:  UserDefinedFunction [employee].[FN_GETEmployeeInformation]    Script Date: 5/27/2020 1:19:34 PM ******/
+IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[employee].[FN_GETEmployeeInformation]') AND type in (N'FN', N'IF', N'TF', N'FS', N'FT'))
+DROP FUNCTION [employee].[FN_GETEmployeeInformation]
+GO
+/****** Object:  UserDefinedFunction [employee].[FN_GETEmployeeInformation]    Script Date: 5/27/2020 1:19:34 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+/*===========================================*\
+**	   Last Update Date: 6/19/2018
+**	   Last Update By: Alexis
+**	   Last DBVersion executed: v710
+\*===========================================*/
+CREATE FUNCTION [employee].[FN_GETEmployeeInformation]
+(
+)
+RETURNS TABLE 
+AS
+RETURN
+(
+SELECT
+     ProfileId
+    ,EmployeeNo = COALESCE(EmploymentInformation.EmployeeNo, '')
+    ,LastName
+    ,FirstName
+    ,MiddleName
+    ,FullName =
+    (
+        --=====================================
+        --OUTPUT: LastName, FirstName MiddleName
+        --=====================================
+        COALESCE([Profile].LastName, '') +
+        (CASE
+            WHEN (LEN(COALESCE([Profile].FirstName, '')) > 0) THEN ', ' ELSE ''
+        END) +
+        COALESCE([Profile].FirstName, '') + ' ' +
+        COALESCE([Profile].MiddleName, '') +
+        (CASE
+            WHEN (LEN(COALESCE([Profile].Appellation, '')) > 0) THEN ', ' ELSE ''
+        END) +
+        (CASE
+            WHEN [Profile].Appellation = 'Jr' OR
+                [Profile].Appellation = 'Sr' THEN COALESCE([Profile].Appellation + '.', '')
+            ELSE COALESCE([Profile].Appellation, '')
+        END)
+    )
+    ,FullNameTitleAndMiddleInitialOnly =
+    (
+        --=====================================
+        --OUTPUT: Mr. FirstName M. LastName
+        --=====================================
+        (CASE
+            WHEN (LEN(COALESCE([Profile].Title, '')) > 0) THEN COALESCE([Profile].Title, '') + '. ' ELSE ''
+        END)
+
+        + COALESCE([Profile].FirstName, '') + ' ' +
+        CASE
+            WHEN
+                (
+                LEN(COALESCE([Profile].MiddleName, '')) > 0 --IF HAS MIDDLE NAME THEN..
+                ) THEN LEFT(UPPER(COALESCE([Profile].MiddleName, '')), 1) + '. '--GET THE 1ST CHARACTER ADD "."
+            ELSE ''
+        END +
+        +COALESCE([Profile].LastName, '')
+
+
+    )
+    ,FullNameMiddleInitialOnly =
+    (
+        --=====================================
+        --OUTPUT: LastName, FirstName M.
+        --=====================================
+        COALESCE([Profile].LastName, '')
+        + (CASE
+            WHEN (LEN(COALESCE([Profile].FirstName, '')) > 0) THEN ', ' ELSE ''
+        END) +
+        COALESCE([Profile].FirstName, '') + ' ' +
+        CASE
+            WHEN
+                (
+                LEN(COALESCE([Profile].MiddleName, '')) > 0 --IF HAS MIDDLE NAME THEN..
+                ) THEN LEFT(UPPER(COALESCE([Profile].MiddleName, '')), 1) + '.'--GET THE 1ST CHARACTER ADD "."
+            ELSE ''
+        END
+
+    )
+    ,FullAddress =
+    (
+        COALESCE([Profile].CityAddress1, '')
+        + (CASE
+            WHEN (LEN(COALESCE([Profile].CityAddressBarangay, '')) > 0) THEN ', ' ELSE ''
+        END) +
+        COALESCE([Profile].CityAddressBarangay, '')
+        + (CASE
+            WHEN (LEN(COALESCE([Profile].CityAddressCity, '')) > 0) THEN ', ' ELSE ''
+        END) +
+        COALESCE([Profile].CityAddressCity, '')
+    )
+    ,ProfileImage = COALESCE(ProfileImage.ProfileImage, '')
+    ,EmployeeAssignmentId = COALESCE([Profile].EmployeeAssignmentId, 0)
+    ,TIN = COALESCE([Profile].TIN, '')
+    ,SSS = COALESCE([Profile].SSS, '')
+    ,PhilHealth = COALESCE([Profile].PhilHealth, '')
+    ,Pagibig = COALESCE([Profile].Pagibig, '')
+    --============================
+    --==CURRENT JOB INFORMATION
+    --============================
+    ,EmploymentTypeId
+    ,EmploymentTypeCode
+    ,EmploymentStatusId
+    ,EmploymentStatus
+    ,DueToId
+    ,DueTo
+    ,JobRankId
+    ,JobRankCode
+    ,JobGradeId
+    ,JobGradeCode
+    ,JobLevelId
+    ,JobLevelCode
+    ,PositionId
+    ,Position
+    --======================
+    --==AREA OF ASSIGMENT
+    --======================
+    ,CompanyId
+    ,Company
+    ,CompanyCode
+    ,BranchId
+    ,Branch
+    ,BranchCode
+    ,DepartmentId
+    ,Department
+    ,OfficeId
+    ,Office
+    ,UnitId
+    ,UnitCode
+    ,DivisionId
+    ,DivisionCode
+    ,GroupsId
+    ,GroupsCode
+    ,DistrictId
+    ,DistrictCode
+    ,LocationId
+    ,Location
+    ,ProjectProfileId
+    ,ProjectName
+    ,CostCenterId
+    ,CostCenterCode
+    ,LineId
+    ,LineIdCode
+    ,TeamId
+    ,TeamCode
+    ,EmailAddress
+    ,ManHourClassificationId
+    ,ManHourClassificationCode
+    ,ApplicableTaxId
+    ,TaxExemptionStatusId
+    --=========
+    --==DATE
+    --=========
+    ,HireDate
+    ,ReglarizationDate
+    ,YearsInService = CASE WHEN YearsInService <= 0
+                      THEN 0
+                      ELSE EmploymentInformation.YearsInService
+                   END
+    ,Birthdate =COALESCE(Birthdate,'01/01/1900')
+    ,Age =COALESCE(dbo.fnGetAge(COALESCE(Birthdate,'01/01/1900')),0)
+    ,AccessId
+    ,Gender
+    ,EmploymentInformation.UnionMember
+	,SeparationDate
+	,EmploymentInformationId
+FROM employee.[Profile]
+OUTER APPLY 
+(
+    SELECT TOP 1
+        EmployeeNo = COALESCE(EmploymentInformation.CJI_EmployeeNo, '')
+        --============================
+        --==CURRENT JOB INFORMATION
+        --============================
+        ,EmploymentTypeId = COALESCE(EmploymentType.EmploymentTypeId, 0)
+        ,EmploymentTypeCode = COALESCE(EmploymentType.Code, '')
+        ,EmploymentStatusId = COALESCE(EmploymentInformation.CJI_EmploymentStatus, 0)
+        ,EmploymentStatus = COALESCE(EmploymentStatus.DisplayText, '')
+        ,DueToId = COALESCE(EmploymentInformation.CJI_DueTo, 0)
+        ,DueTo = COALESCE(DueTo.DisplayText, '')
+        ,JobRankId = COALESCE(JobRank.JobRankId, 0)
+        ,JobRankCode = COALESCE(JobRank.Code, '')
+        ,JobGradeId = COALESCE(JobGrade.JobGradeId, 0)
+        ,JobGradeCode = COALESCE(JobGrade.Code, '')
+        ,JobLevelId = COALESCE(JobLevel.JobLevelId, 0)
+        ,JobLevelCode = COALESCE(JobLevel.Code, '')
+        ,PositionId = COALESCE(JobPosition.JobPositionId, 0)
+        ,Position = COALESCE(JobPosition.Name, '')
+        --======================
+        --==AREA OF ASSIGMENT
+        --======================
+        ,CompanyId = COALESCE(Company.CompanyId, 0)
+        ,Company = COALESCE(Company.Name, '')
+        ,CompanyCode = COALESCE(Company.Code, '')
+        ,BranchId = COALESCE(Branch.BranchId, 0)
+        ,Branch = COALESCE(Branch.Name, '')
+        ,BranchCode = COALESCE(Branch.Code, '')
+        ,Department.DepartmentId
+        ,Department = COALESCE(Department.DepartmentName, '')
+        ,OfficeId = COALESCE(Office.OfficeId, 0)
+        ,Office = COALESCE(Office.Name, '')
+        ,UnitId = COALESCE(Unit.UnitId, 0)
+        ,UnitCode = COALESCE(Unit.Code, '')
+        ,DivisionId = COALESCE(Division.DivisionId, 0)
+        ,DivisionCode = COALESCE(Division.Code, '')
+        ,GroupsId = COALESCE(Groups.GroupsId, 0)
+        ,GroupsCode = COALESCE(Groups.Code, '')
+        ,DistrictId = COALESCE(District.DistrictId, 0)
+        ,DistrictCode = COALESCE(District.Code, '')
+        ,LocationId = COALESCE(Location.ProjectLocationId, 0)
+        ,Location = COALESCE(Location.LocationCode, '')
+        ,ProjectProfileId = COALESCE(ProjectProfile.ProjectProfileId, 0)
+        ,ProjectName = COALESCE(ProjectProfile.ProjectName, '')
+        ,CostCenterId = COALESCE(CostCenter.CostCenterId, 0)
+        ,CostCenterCode = COALESCE(CostCenter.Code, '')
+        ,LineId = COALESCE(Line.LineId, 0)
+        ,LineIdCode = COALESCE(Line.Code, '')
+        ,TeamId = COALESCE(Team.TeamId, 0)
+        ,TeamCode = COALESCE(Team.Code, '')
+        ,ManHourClassificationId = COALESCE(EmploymentInformation.CJI_ManHourClassification, 0)
+        ,ManHourClassificationCode = COALESCE(MHClass.MHClassCode,'')
+        --=========
+        --==DATE
+        --=========
+        ,HireDate = COALESCE(RED_HireDate,'01/01/1900')
+        ,ReglarizationDate = COALESCE(RED_ReglarizationDate,'01/01/1900')
+        ,YearsInService =COALESCE(dbo.fnGetAge(COALESCE(RED_HireDate,'01/01/1900')),0)
+        ,AccessId = COALESCE(CJI_AccessId, CAST(0 AS VARCHAR)) 
+        ,UnionMember = COALESCE(UnionMember, CAST(0 AS BIT)) 
+        ,SeparationDate = COALESCE(RED_SeparationDate,'01/01/1900')
+		,EmploymentInformationId
+    FROM employee.EmploymentInformation
+          --============================
+          --==CURRENT JOB INFORMATION
+          --============================
+           LEFT JOIN maintenance.EmploymentType
+               ON EmploymentInformation.CJI_EmployeeType = EmploymentType.EmploymentTypeId
+           LEFT JOIN maintenance.EnumValues EmploymentStatus
+               ON (EmploymentInformation.CJI_EmploymentStatus = (CAST(EmploymentStatus.Value AS BIGINT))
+               AND EmploymentStatus.SourceName = 'EmploymentStatus')
+           LEFT JOIN maintenance.EnumValues DueTo
+               ON (EmploymentInformation.CJI_DueTo = (CAST(DueTo.Value AS BIGINT))
+               AND DueTo.SourceName = 'DueTo')
+           LEFT JOIN maintenance.JobRank
+               ON EmploymentInformation.CJI_JobRank = JobRank.JobRankId
+           LEFT JOIN maintenance.JobGrade
+               ON EmploymentInformation.CJI_JobGrade = JobGrade.JobGradeId
+           LEFT JOIN maintenance.JobLevel
+               ON EmploymentInformation.CJI_JobLevel = JobLevel.JobLevelId
+           LEFT JOIN maintenance.JobPosition
+               ON JobPosition.JobPositionId = EmploymentInformation.CJI_Position
+          --======================
+          --==AREA OF ASSIGMENT
+          --======================
+           LEFT JOIN maintenance.Company
+               ON EmploymentInformation.AOA_Company = Company.CompanyId
+           LEFT JOIN maintenance.Branch
+               ON EmploymentInformation.AOA_Branch = Branch.BranchId
+           LEFT JOIN maintenance.Department
+               ON EmploymentInformation.AOA_Department = Department.DepartmentId
+           LEFT JOIN maintenance.Office
+               ON EmploymentInformation.AOA_Office = Office.OfficeId
+           LEFT JOIN maintenance.Unit
+               ON EmploymentInformation.AOA_Unit = Unit.UnitId
+           LEFT JOIN maintenance.Division
+               ON EmploymentInformation.AOA_Division = Division.DivisionId
+           LEFT JOIN maintenance.Groups
+               ON EmploymentInformation.AOA_Groups = Groups.GroupsId
+           LEFT JOIN maintenance.District
+               ON EmploymentInformation.AOA_District = District.DistrictId
+           LEFT JOIN projecttracking.ProjectLocation Location
+               ON EmploymentInformation.AOA_Location = Location.ProjectLocationId
+           LEFT JOIN projecttracking.ProjectProfile
+               ON EmploymentInformation.AOA_Project = ProjectProfile.ProjectProfileId
+           LEFT JOIN maintenance.CostCenter
+               ON EmploymentInformation.AOA_CostCenter = CostCenter.CostCenterId
+           LEFT JOIN maintenance.Line
+               ON EmploymentInformation.AOA_Line = Line.LineId
+           LEFT JOIN maintenance.Team
+               ON EmploymentInformation.AOA_Team = Team.TeamId
+           LEFT JOIN maintenance.MHClass 
+               ON MHClass.MHClassId = EmploymentInformation.CJI_ManpowerClassification
+           --======================================================
+    WHERE 
+       EmploymentInformation.ProfileId = [Profile].ProfileId
+    ORDER BY EmploymentInformation.LastUpdateDate DESC) EmploymentInformation
+OUTER APPLY 
+(
+     SELECT TOP 1
+        ProfileImage.ImageFile ProfileImage
+    FROM employee.ProfileImage
+       WHERE ProfileImage.ProfileId = [Profile].ProfileId
+    ORDER BY ProfileImage.LastUpdateDate DESC) ProfileImage
+)
+GO

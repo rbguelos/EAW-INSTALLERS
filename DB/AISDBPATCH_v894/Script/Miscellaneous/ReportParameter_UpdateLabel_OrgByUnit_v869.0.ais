@@ -1,0 +1,2 @@
+UPDATE report.ReportParameter SET LabelName = 'Based on Organization Unit'
+WHERE ParameterName = '@OrgBasedOnProfileTable'

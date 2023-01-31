@@ -1,0 +1,4 @@
+IF NOT EXISTS(SELECT * FROM admin.MenuSubMenu WHERE SubMenuName = 'Metrobank')
+DELETE FROM report.ReportMenu WHERE ReportId IN (520)
+ELSE 
+PRINT 'Has Metrobank'

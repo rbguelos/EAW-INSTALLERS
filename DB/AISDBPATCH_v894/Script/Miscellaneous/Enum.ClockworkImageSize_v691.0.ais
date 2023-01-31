@@ -1,0 +1,11 @@
+EXEC spInsertTableData 
+@SCHEMA = 'maintenance'
+,@TABLENAME = 'EnumValues'
+,@COLUMNS = '[SourceName],[DisplayText],[Value],[OrderNumber],[Status]'
+,@VALUETOINSERT = 'ClockworkImageSize|Low|1|1|1
+ClockworkImageSize|Medium|2|2|1
+ClockworkImageSize|High|3|3|1'
+,@COLUMNSEPARATOR = '|'
+,@ROWSEPARATATOR = '
+'
+

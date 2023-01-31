@@ -1,0 +1,41 @@
+IF NOT EXISTS(SELECT * FROM compben.EarningDeduction WHERE Code IN ('Benefit','TaxableBenefit'))
+BEGIN
+INSERT [compben].[EarningDeduction] ([TypeId],[Code],[Description],[Details],[IsRateTable],[MappedToId],[BIRFormIds],[TaxCategoryId],[AmountBasisId],[IncludeIn13thMonthPay],[IncludeInLeavePayConversion],[IsWithdrawal],[DonotAddToGrossPay],[IncludeInGrossPay],[IncludeInNetPay],[Priority],[Affects],[EarningDeductionCriteriaValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate],[IsSubjecttoAutoAdjustment],[HourlyRatePerMonthNoOfWorkingDaysPerMonth],[HourlyRatePerMonthNoOfWorkingHoursPerDay],[HourlyRatePerYearNoOfWorkingDaysPerYear],[HourlyRatePerYearNoOfWorkingHoursPerDay],[HourlyRatePerWeekNoOfWeeksPerYear],[HourlyRatePerWeekNoOfDaysPerWeek],[DailyRatePerMonthNoOfWorkingDaysPerMonth],[DailyRatePerYearNoOfWorkingDaysPerYear],[DailyRatePerYearNoOfWorkingWeeksPerYear],[DailyRatePerYearNoOfWorkingDaysPerWeek],[DailyRatePerPeriodNoOfDaysPerPeriod],[MultiplierFactor],[HourlyRateBasis],[DailyRateBasis],[EarningBusinessRuleId],[PreProcessBeforePayroll],[HourlyRateSpecifyHourlyRate],[EnableEmployerShare],[EmployerShareValue],[ComputationMethod])VALUES(1,'Benefit','Benefit','Benefit',0,85,'6,26,35,44,66,88',0,0,0,0,0,0,0,0,0,'',NULL,NULL,NULL,NULL,NULL,0,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0,0,0,0,0.0000,0,0,NULL)
+INSERT [compben].[EarningDeduction] ([TypeId],[Code],[Description],[Details],[IsRateTable],[MappedToId],[BIRFormIds],[TaxCategoryId],[AmountBasisId],[IncludeIn13thMonthPay],[IncludeInLeavePayConversion],[IsWithdrawal],[DonotAddToGrossPay],[IncludeInGrossPay],[IncludeInNetPay],[Priority],[Affects],[EarningDeductionCriteriaValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate],[IsSubjecttoAutoAdjustment],[HourlyRatePerMonthNoOfWorkingDaysPerMonth],[HourlyRatePerMonthNoOfWorkingHoursPerDay],[HourlyRatePerYearNoOfWorkingDaysPerYear],[HourlyRatePerYearNoOfWorkingHoursPerDay],[HourlyRatePerWeekNoOfWeeksPerYear],[HourlyRatePerWeekNoOfDaysPerWeek],[DailyRatePerMonthNoOfWorkingDaysPerMonth],[DailyRatePerYearNoOfWorkingDaysPerYear],[DailyRatePerYearNoOfWorkingWeeksPerYear],[DailyRatePerYearNoOfWorkingDaysPerWeek],[DailyRatePerPeriodNoOfDaysPerPeriod],[MultiplierFactor],[HourlyRateBasis],[DailyRateBasis],[EarningBusinessRuleId],[PreProcessBeforePayroll],[HourlyRateSpecifyHourlyRate],[EnableEmployerShare],[EmployerShareValue],[ComputationMethod])VALUES(1,'TaxableBenefit','TaxableBenefit','Taxable Benefit',0,94,'19,32,41,50,71,89',0,0,0,0,0,0,0,0,0,'',NULL,NULL,NULL,NULL,NULL,0,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0,0,0,0,0.0000,0,0,NULL)
+END
+
+GO
+
+IF NOT EXISTS(SELECT * FROM compben.EarningDeduction WHERE Code IN ('PagIbigTaxLimitExcess'))
+BEGIN
+INSERT [compben].[EarningDeduction] ([TypeId],[Code],[Description],[Details],[IsRateTable],[MappedToId],[BIRFormIds],[TaxCategoryId],[AmountBasisId],[IncludeIn13thMonthPay],[IncludeInLeavePayConversion],[IsWithdrawal],[DonotAddToGrossPay],[IncludeInGrossPay],[IncludeInNetPay],[Priority],[Affects],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate],[EarningDeductionCriteriaValue],[IsSubjecttoAutoAdjustment],[HourlyRatePerMonthNoOfWorkingDaysPerMonth],[HourlyRatePerMonthNoOfWorkingHoursPerDay],[HourlyRatePerYearNoOfWorkingDaysPerYear],[HourlyRatePerYearNoOfWorkingHoursPerDay],[HourlyRatePerWeekNoOfWeeksPerYear],[HourlyRatePerWeekNoOfDaysPerWeek],[DailyRatePerMonthNoOfWorkingDaysPerMonth],[DailyRatePerYearNoOfWorkingDaysPerYear],[DailyRatePerYearNoOfWorkingWeeksPerYear],[DailyRatePerYearNoOfWorkingDaysPerWeek],[DailyRatePerPeriodNoOfDaysPerPeriod],[MultiplierFactor],[HourlyRateBasis],[DailyRateBasis],[EnableEmployerShare],[EmployerShareValue],[EarningBusinessRuleId],[PreProcessBeforePayroll],[HourlyRateSpecifyHourlyRate],[ComputationMethod],[ExcessAmountBIRFormIds],[ExcessAmountTaxCategoryId],[DMBAnnualLimit])VALUES(1,'PagIbigTaxLimitExcess','PagIbigTaxLimitExcess','PagIbigTaxLimitExcess',0,98,'8,28,37,46,68,88,97',0,0,0,0,0,0,0,0,0,'',22,'Sep  2 2016  9:49:37:880AM',NULL,NULL,NULL,NULL,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0,0,0,0,0,0,NULL,NULL,NULL,NULL,NULL)
+END
+
+GO
+
+IF NOT EXISTS(SELECT * FROM compben.EarningDeduction WHERE Code IN ('TaxExempt'))
+BEGIN
+INSERT [compben].[EarningDeduction] ([TypeId],[Code],[Description],[Details],[IsRateTable],[MappedToId],[BIRFormIds],[TaxCategoryId],[AmountBasisId],[IncludeIn13thMonthPay],[IncludeInLeavePayConversion],[IsWithdrawal],[DonotAddToGrossPay],[IncludeInGrossPay],[IncludeInNetPay],[Priority],[Affects],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate],[EarningDeductionCriteriaValue],[IsSubjecttoAutoAdjustment],[HourlyRatePerMonthNoOfWorkingDaysPerMonth],[HourlyRatePerMonthNoOfWorkingHoursPerDay],[HourlyRatePerYearNoOfWorkingDaysPerYear],[HourlyRatePerYearNoOfWorkingHoursPerDay],[HourlyRatePerWeekNoOfWeeksPerYear],[HourlyRatePerWeekNoOfDaysPerWeek],[DailyRatePerMonthNoOfWorkingDaysPerMonth],[DailyRatePerYearNoOfWorkingDaysPerYear],[DailyRatePerYearNoOfWorkingWeeksPerYear],[DailyRatePerYearNoOfWorkingDaysPerWeek],[DailyRatePerPeriodNoOfDaysPerPeriod],[MultiplierFactor],[HourlyRateBasis],[DailyRateBasis],[EnableEmployerShare],[EmployerShareValue],[EarningBusinessRuleId],[PreProcessBeforePayroll],[HourlyRateSpecifyHourlyRate],[ComputationMethod],[ExcessAmountBIRFormIds],[ExcessAmountTaxCategoryId],[DMBAnnualLimit])VALUES(1,'TaxExempt','TaxExempt','TaxExempt',0,89,'',0,0,0,0,0,0,0,0,0,'',28,'Feb  2 2017  4:47:04:010PM',NULL,NULL,NULL,NULL,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0.0000,0,0,0,0,0,0,NULL,NULL,NULL,NULL,NULL)
+END
+
+GO
+
+UPDATE compben.EarningDeduction SET BIRFormIds = '24,34,43,56,75,90,101' WHERE Code IN ('WHT','WHTax') AND ISNULL(MappedToId,0) <> 0
+
+UPDATE admin.XMLReportDetail SET DataField = 'GrossTaxableCompensationIncome_2018' WHERE XMLReportId = 11 AND XMLTag = '72,15'
+
+UPDATE maintenance.BIRForms SET Taxable = 1 WHERE BIRFormId = 101
+
+UPDATE compben.EarningDeduction SET BIRFormIds = '6,26,35,44,66,88,95' WHERE Code = 'Benefit'
+
+UPDATE compben.EarningDeduction SET BIRFormIds = '19,32,41,50,71,89,99' WHERE Code = 'TaxableBenefit'
+
+UPDATE maintenance.BIRForms SET BIRNo = 'A.32, 27' WHERE BIRFormId = 1
+
+/*UPDATE THE MAPPING AS PER MA'AM JOANNA 02.17.2020 - FOR ZELLER*/
+UPDATE maintenance.BIRFormFieldGrp SET FormFieldId = '17,89,99,31,40,49' WHERE GroupName = 'T - Profit Sharing'
+UPDATE compben.EarningDeduction SET BIRFormIds = '17,89,99,31,40,49'  WHERE BIRFormIds = '17,89,99' 
+
+UPDATE compben.EarningDeduction SET BIRFormIds = '' WHERE Code = 'TaxExempt'
+
+GO

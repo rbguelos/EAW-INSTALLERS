@@ -1,0 +1,139 @@
+SET NOCOUNT ON
+/*start deleting existing report configss*/
+DELETE FROM report.Report WHERE ReportId = 383
+DELETE FROM report.ReportData WHERE ReportId = 383
+DELETE FROM report.ReportParameter WHERE ReportCode = 'TaxRemittancesReport'
+DELETE FROM report.ReportSubReport WHERE ReportCode = 'TaxRemittancesReport'
+DELETE FROM report.ReportMenu WHERE ReportId = 383
+DELETE FROM security.Module_Forms WHERE ModuleFormId = 10547
+/*end deleting existing report configs*/
+
+/*start insert data to report.Report*/
+SET IDENTITY_INSERT [report].[Report] ON
+INSERT [report].[Report] ([ReportId],[ReportCode],[ReportName],[ReportFile],[ReportExcelFile],[EmploymentStatus],[TableSPUsed],[SPUsed],[NoOrderBy],[QueryType],[InsertToReportTempTable],[Description],[ImageFile],[SortFields],[Event],[ExportFormat],[UseExportToExcelAPI],[DetailColStartPos],[DetailRowStartPos],[HeaderRowStartPos],[IncludeColHeader],[InsertNewRowAtRowPos],[Template],[SourceName],[ShowGrandTotals],[RepeatColumnHeaderOnHeaderGroup],[RepeatColumnHeaderOnGroupLevel],[AutoSizeColumn],[MaxRowPerPage],[DisplayReportHeader],[CreateId],[Createdate],[LastUpdateId],[LastUpdateDate])VALUES(383,'TaxRemittancesReport','Tax Remittances Report','\Reports\BankContribution\TaxRemittancesReport.rpt',NULL,3,'SELECT                
+	E.CostCenterCode
+	,E.CostCenterName
+	,Taxable =		SUM(ISNULL(PSD.TaxableIncome,0))
+	,NonTaxable =	SUM(ISNULL(COL1.NonTaxable,0))
+	,Benefit =	SUM(ISNULL(PSD.Benefit,0))
+	,TaxableBenefit = SUM(ISNULL(PSD.TaxableBenefit,0))
+	/*,GrossPay = SUM(ISNULL(PSD.GrossPay,0))*/
+	/*AS PER MA''AM JOANNA, ADD THE TAXABLE INCOME UPTO TAXABLE BENEFIT*/
+	,GrossPay = SUM(ISNULL(PSD.TaxableIncome,0) + ISNULL(COL1.NonTaxable,0) + ISNULL(PSD.Benefit,0) + ISNULL(PSD.TaxableBenefit,0))
+	,WHTax =	SUM(ISNULL(PSD.ActualWHT,0))
+	,UnionDuesGovt = SUM(ISNULL(PSD.SSS,0) + ISNULL(PSD.PhilHealth,0) + ISNULL(PSD.PAGIBIG,0))
+	,PreparedBy =	ISNULL(RD.PreparedBy,'''')
+	,CheckedBy =	ISNULL(RD.CertifiedCorrectBy,'''')
+	,NotedBy =		ISNULL(RD.NotedBy,'''')
+	,ApprovedBy =	ISNULL(RD.ApprovedBy,'''')
+	,E.CompanyId
+	,E.CostCenterId
+FROM report.vwRemittancesAndPaymentsDetail RD
+INNER JOIN (SELECT ProfileId FROM employee.Profile)EP ON EP.ProfileId = RD.ProfileId
+CROSS APPLY 
+(
+    SELECT TOP 1
+		e.CostCenterCode
+		,e.CostCenterName
+		,e.CompanyId
+		,e.CostCenterId
+    FROM dbo.fnProfileInfo(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, RD.PaysheetHeaderDetailId) E
+    WHERE E.ProfileId = EP.ProfileId
+) E
+
+OUTER APPLY 
+(
+	SELECT TOP 1 
+		PSD.PaySheetHeaderDetailId 
+		,PSD.MWE
+		,TaxableIncome =	SUM(CASE WHEN PD.Type = ''TaxableIncome'' THEN PD.Value ELSE 0 END)
+		,GrossPay =			SUM(CASE WHEN PD.Type = ''GrossPay'' THEN PD.Value ELSE 0 END)
+		,TaxExempt =		SUM(CASE WHEN PD.Type = ''TaxExempt'' THEN PD.Value ELSE 0 END)
+		,Benefit =			SUM(CASE WHEN PD.Type = ''Benefit'' THEN PD.Value ELSE 0 END)
+		,TaxableBenefit =	SUM(CASE WHEN PD.Type = ''TaxableBenefit'' THEN PD.Value ELSE 0 END)
+		,ActualWHT =		SUM(CASE WHEN PD.Type = ''WHT'' THEN PD.Value ELSE 0 END)
+		,SSS =				SUM(CASE WHEN PD.Type = ''SSS'' THEN PD.Value ELSE 0 END)
+		,PhilHealth =		SUM(CASE WHEN PD.Type = ''PhilHealth'' THEN PD.Value ELSE 0 END)
+		,PAGIBIG =			SUM(CASE WHEN PD.Type = ''Pagibig'' THEN PD.Value ELSE 0 END)
+	FROM payroll.PaySheetHeaderDetail PSD 
+	LEFT JOIN payroll.PaySheetDetail PD ON PD.PaySheetHeaderDetailId = PSD.PaySheetHeaderDetailId
+	WHERE PSD.PaySheetHeaderDetailId = RD.PaySheetHeaderDetailId
+	GROUP BY PSD.PaySheetHeaderDetailId,PSD.MWE
+	/*
+    SELECT TOP 1
+	   psd.TaxExempt
+	   ,psd.GrossPay
+	   ,psd.SSS
+	   ,psd.PhilHealth
+	   ,psd.PAGIBIG
+	   ,psd.TaxableIncome
+	   ,ActualWHT = psd.WHT
+	   ,ExpectedWHT = psd.WHT
+	   ,psd.TaxableOther
+	   ,psd.MWE
+	   ,psd.BasicPay
+	   ,psd.Benefit
+    FROM vwPaysheetDetail psd
+    WHERE psd.PaySheetHeaderId = RD.PaySheetHeaderId
+    AND psd.ProfileId = RD.ProfileId
+	*/
+) PSD
+
+CROSS APPLY
+(
+	SELECT
+		NonTaxable = (CASE WHEN ISNULL(PSD.MWE,0) = 1 THEN ISNULL(PSD.GrossPay,0) - ISNULL(PSD.TaxableIncome,0) ELSE 0 END + ISNULL(PSD.TaxExempt,0))
+)COL1
+
+WHERE RD.RemittancePaymentDetailId = @RemittancePaymentDetailId
+
+GROUP BY 
+		E.CostCenterCode
+		,E.CostCenterName
+		,E.CompanyId
+		,RD.CertifiedCorrectBy
+		,E.CostCenterId
+		,RD.PreparedBy
+		,RD.NotedBy
+		,RD.ApprovedBy
+',NULL,1,'QUERY',1,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+SET IDENTITY_INSERT [report].[Report] OFF
+/*end insert data to report.Report*/
+
+/*start insert data to report.ReportData*/
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate])VALUES(383,'Cost Center','CostCenterCode','string','','',NULL,1,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate])VALUES(383,'Description','CostCenterName','string','','',NULL,2,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate])VALUES(383,'Taxable','Taxable','decimal','','',NULL,3,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate])VALUES(383,'Non-Taxable','NonTaxable','decimal','','',NULL,4,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate])VALUES(383,'Gross Pay','GrossPay','decimal','','',NULL,5,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate])VALUES(383,'W/Tax','WHTax','decimal','','',NULL,6,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate])VALUES(383,'Union Dues + Govt','UnionDuesGovt','decimal','','',NULL,7,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate])VALUES(383,'Prepared By:','PreparedBy','string','','',NULL,8,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate])VALUES(383,'Checked By:','CheckedBy','string','','',NULL,9,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate])VALUES(383,'Noted By:','NotedBy','string','','',NULL,10,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate])VALUES(383,'Approved By:','ApprovedBy','string','','',NULL,11,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate])VALUES(383,'Benefit','Benefit','decimal','','',NULL,12,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate])VALUES(383,'Taxable Benefit','TaxableBenefit','decimal','','',NULL,13,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+/*end insert data to report.ReportData*/
+
+/*start insert data to report.ReportParameter*/
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('TaxRemittancesReport','CompanyId','Company','dropdownList','$table:maintenance.Company,CompanyId,Name','$table:maintenance.Branch WHERE CompanyId =  ,BranchId,Name|BranchId,',1,'','Param1','Stored','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('TaxRemittancesReport','BranchId','Branch','dropdownList','$table:maintenance.Branch,BranchId,Name','',2,'','Param1','Stored','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('TaxRemittancesReport','DepartmentId','Department','dropdownList','$table:maintenance.Department,DepartmentId,DepartmentName','',3,'','Param1','Stored','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('TaxRemittancesReport','@RemittancePaymentDetailId','Remittance Id','textbox','','',4,'','Param1','Stored','=',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+/*end insert data to report.ReportParameter*/
+
+/*start insert data to report.ReportSubReport*/
+/*end insert data to report.ReportSubReport*/
+
+/*start insert data to report.ReportMenu*/
+INSERT [report].[ReportMenu] ([ReportId],[AdminMenuModuleId],[MenuModuleId],[ReportGroupId],[ModuleFormId],[FileGeneratorHdrId],[XMLReportId],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES(383,0,0,NULL,128,0,0,NULL,NULL,NULL,NULL)
+/*end insert data to report.ReportMenu*/
+
+/*start insert data to security.Module_Forms*/
+SET IDENTITY_INSERT [security].[Module_Forms] ON
+INSERT [security].[Module_Forms] ([ModuleFormId],[ModuleId],[Name],[Form],[AccessTypeId],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES(10547,40,'Tax Remittances Report','TaxRemittancesReport','1,5',NULL,NULL,NULL,NULL)
+SET IDENTITY_INSERT [security].[Module_Forms] OFF
+/*end insert data to security.Module_Forms*/
+
+SET NOCOUNT OFF

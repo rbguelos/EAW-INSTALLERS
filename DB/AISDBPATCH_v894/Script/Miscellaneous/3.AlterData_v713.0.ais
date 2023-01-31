@@ -1,0 +1,1 @@
+UPDATE schedule.WorkSchedule SET ForOffsetting = 0, OffsettingExpirationDate = '1900-01-01' WHERE OffsettingExpirationDate IS NULL

@@ -1,0 +1,323 @@
+SET NOCOUNT ON
+/*start deleting existing report configs*/
+DELETE FROM report.Report WHERE ReportId IN (450)
+DELETE FROM report.ReportData WHERE ReportId IN (450)
+DELETE FROM report.ReportParameter WHERE ReportCode IN ('PersonnelActionNotice')
+DELETE FROM report.ReportSubReport WHERE ReportCode  IN ('PersonnelActionNotice')
+DELETE FROM report.ReportMenu WHERE ReportId IN (450)
+DELETE FROM security.Module_Forms WHERE ModuleFormId IN ('10620')
+/*end deleting existing report configs*/
+
+/*start insert data to report.Report*/
+SET IDENTITY_INSERT [report].[Report] ON
+INSERT [report].[Report] ([ReportId],[ReportCode],[ReportName],[ReportFile],[ReportExcelFile],[EmploymentStatus],[TableSPUsed],[SPUsed],[NoOrderBy],[QueryType],[InsertToReportTempTable],[Description],[ImageFile],[SortFields],[Event],[ExportFormat],[CreateId],[Createdate],[LastUpdateId],[LastUpdateDate],[UseExportToExcelAPI],[DetailColStartPos],[DetailRowStartPos],[HeaderRowStartPos],[IncludeColHeader],[InsertNewRowAtRowPos],[Template],[SourceName],[ShowGrandTotals],[RepeatColumnHeaderOnHeaderGroup],[RepeatColumnHeaderOnGroupLevel],[AutoSizeColumn],[MaxRowPerPage],[DisplayReportHeader])VALUES(450,'PersonnelActionNotice','Personnel Action Notice','\Reports\EmployeeAssignment\PersonnelActionReport.rpt',NULL,NULL,'SELECT      
+	EmployeeNumber = ISNULL(E.EmployeeNo,'''')
+	,EmployeeName = ISNULL(E.LastFirstMIName,'''')
+	,HireDate = ISNULL(E.HireDate,'''')
+	,ActionType = ISNULL(EA.MovementTypeText,'''')
+	,RefNo = ISNULL(EA.RefNo,'''')
+	,EffectiveDate = ISNULL(EA.EffectiveDate,'''') 
+	,OrgSort = 
+	(
+		CASE 
+			WHEN T.Org IN (''EmployeeTypeName'',''JobPositionName'',''JobRankName'',''JobLevelName'') THEN ''AB''
+			WHEN T.Org IN (''SalaryFactor'',''SalaryRate'') THEN ''AC''
+			ELSE ''AA''
+		END
+	)
+	,OrgHeader = 
+	(
+		CASE 
+			WHEN T.Org IN (''EmployeeTypeName'',''JobPositionName'',''JobRankName'',''JobLevelName'') THEN ''EMPLOYMENT CLASSIFICATION''
+			WHEN T.Org IN (''SalaryFactor'',''SalaryRate'') THEN ''SALARY INFORMATION''
+			ELSE ''WORK INFORMATION''
+		END
+	)
+	,Org =
+	(
+		CASE
+			WHEN T.Org = ''CompanyName'' THEN ''Company''
+			WHEN T.Org = ''BranchName'' THEN ''Branch''
+			WHEN T.Org = ''DepartmentName'' THEN ''Department''
+			WHEN T.Org = ''DivisionName'' THEN ''Division''
+			WHEN T.Org = ''OfficeName'' THEN ''Office''
+			WHEN T.Org = ''DistrictName'' THEN ''District''
+			WHEN T.Org = ''GroupName'' THEN ''Group''
+			WHEN T.Org = ''TeamName'' THEN ''Team''
+			WHEN T.Org = ''CostCenterGroupName'' THEN ''Cost Center Group''
+			WHEN T.Org = ''CostCenterName'' THEN ''Cost Center''
+			WHEN T.Org = ''UnitName'' THEN ''Unit''
+			WHEN T.Org = ''LineName'' THEN ''Line''
+			WHEN T.Org = ''JobPositionName'' THEN ''Position''
+			WHEN T.Org = ''JobRankName'' THEN ''Job Rank''
+			WHEN T.Org = ''JobLevelName'' THEN ''Job Level''
+			WHEN T.Org = ''SalaryFactor'' THEN ''Salary Factor''
+			WHEN T.Org = ''SalaryRate'' THEN ''Salary Rate''
+			ELSE T.Org
+		END
+	)
+	,PrevOrganization = ISNULL(PREV.Previous,'''')
+	,OrgTransfered = ISNULL(T.OrgTransfered,'''')
+	,EmploymentClassFrom =ISNULL('''','''')
+	,EmploymentClassTo	 =ISNULL('''','''')
+	,SalaryFactorFrom = ''''
+	,SalaryFactorTo = ''''
+	,Remarks	= ISNULL(EA.Remarks,'''')
+	,PreparedBy	= ISNULL(SEC.CreateName,'''')
+	,ApprovedBy	= ISNULL(AR.ApprovedBy,'''')
+	,NotedBy	= ISNULL('''','''')
+	,Conforme	= ISNULL('''','''')
+	,SalaryRateFrom = ''''
+	,SalaryRateTo = ''''
+	,E.ProfileId
+	,E.CompanyId
+	,E.CompanyName
+FROM dbo.fnProfileInfo(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0)E
+INNER JOIN report.vwEmploymentAssignment EA ON EA.ProfileId = E.ProfileId
+/*INNER JOIN employee.SalaryInformation SI ON SI.ProfileId = E.ProfileId*/
+
+/*Getting approver and requestor*/
+OUTER APPLY
+(
+	SELECT TOP 1
+		RequestedBy =  CONCAT(PR.LastName, '', '', PR.FirstName + '' '' + (CASE WHEN ISNULL(PR.MiddleName,'''') <> '''' THEN SUBSTRING(PR.MiddleName,1,1) + ''.'' ELSE '''' END)),
+		ApprovedBy =  CONCAT(PA.LastName, '', '', PA.FirstName + '' '' + (CASE WHEN ISNULL(PA.MiddleName,'''') <> '''' THEN SUBSTRING(PA.MiddleName,1,1) + ''.'' ELSE '''' END))
+	FROM employee.EmployeeAssignment EA
+	INNER JOIN workflow.WFTransactionHistory WFTH
+		ON TransactionId = EmployeeAssignmentId
+		AND TransactionTypeId = 28
+	INNER JOIN employee.Profile PA
+		ON PA.ProfileId = WFTH.ApproverId
+	INNER JOIN employee.Profile PR
+		ON PR.ProfileId = EA.ProfileId
+	WHERE StatusId = 2
+		AND HistoryTypeId = 5
+		AND ActionTriggeredId = 1
+		AND ISNULL(WFTH.StageDescription, ''Final Approver'') = ''Final Approver''
+) AR
+OUTER APPLY
+(
+	SELECT TOP 1 
+		CreateName = (CASE US.UserType WHEN 1 THEN EMP.CreateName WHEN 2 THEN NONEMP.CreateName END) 
+	FROM security.UserSecurity US
+	OUTER APPLY
+	(
+		SELECT TOP 1 
+			CreateName = CONCAT(NON.NELastName, '', '' , NON.NEFirstName, + '' '' + (CASE WHEN ISNULL(NON.NEMiddleName,'''') <> '''' THEN SUBSTRING(NON.NEMiddleName,1,1) ELSE '''' END)) 
+		FROM security.NonEmployeeUser NON
+		WHERE NON.UserSecurityId = US.UserSecurityId
+	)NONEMP
+	OUTER APPLY
+	(
+		SELECT TOP 1 
+			CreateName = CONCAT(EP.LastName, '', '' , EP.FirstName,+ '' '' + (CASE WHEN ISNULL(EP.MiddleName,'''') <> '''' THEN SUBSTRING(EP.MiddleName,1,1) ELSE '''' END)) 
+		FROM employee.Profile EP
+		WHERE EP.UserAccountId = US.UserSecurityId
+	)EMP
+	WHERE 1=1
+	AND US.UserSecurityId = EA.CreateId
+)SEC
+/*GETTING CURRENT ASSIGNMENT*/
+LEFT JOIN 
+(
+	SELECT 
+		ProfileId
+		,EffectiveDate
+		,EmployeeAssignmentId
+		,PrevEmployeeAssignmentId
+		,DurationStart
+		,DurationEnd
+		,Remarks
+		,SalaryInformationId
+		,CompanyName = CAST((CASE WHEN ISNULL(CompanyName,'''') = '''' THEN ''-'' ELSE CompanyName END) AS VARCHAR(250))
+		,BranchName = CAST((CASE WHEN ISNULL(BranchName,'''') = '''' THEN ''-'' ELSE BranchName END) AS VARCHAR(250))
+		,DepartmentName = CAST((CASE WHEN ISNULL(DepartmentName,'''') = '''' THEN ''-'' ELSE DepartmentName END) AS VARCHAR(250))
+		,DivisionName = CAST((CASE WHEN ISNULL(DivisionName,'''') = '''' THEN ''-'' ELSE DivisionName END) AS VARCHAR(250))
+		,OfficeName = CAST((CASE WHEN ISNULL(OfficeName,'''') = '''' THEN ''-'' ELSE OfficeName END) AS VARCHAR(250))
+		,DistrictName = CAST((CASE WHEN ISNULL(DistrictName,'''') = '''' THEN ''-'' ELSE DistrictName END) AS VARCHAR(250))
+		,GroupName = CAST((CASE WHEN ISNULL(GroupName,'''') = '''' THEN ''-'' ELSE GroupName END) AS VARCHAR(250))
+		,TeamName = CAST((CASE WHEN ISNULL(TeamName,'''') = '''' THEN ''-'' ELSE TeamName END) AS VARCHAR(250))
+		,ProjectName = CAST((CASE WHEN ISNULL(ProjectName,'''') = '''' THEN ''-'' ELSE ProjectName END) AS VARCHAR(250))
+		,UnitName = CAST((CASE WHEN ISNULL(UnitName,'''') = '''' THEN ''-'' ELSE UnitName END) AS VARCHAR(250))
+		,LineName = CAST((CASE WHEN ISNULL(LineName,'''') = '''' THEN ''-'' ELSE LineName END) AS VARCHAR(250))
+		,CostCenterGroupName = CAST((CASE WHEN ISNULL(CostCenterGroupName,'''') = '''' THEN ''-'' ELSE CostCenterGroupName END) AS VARCHAR(250))
+		,CostCenterName = CAST((CASE WHEN ISNULL(CostCenterName,'''') = '''' THEN ''-'' ELSE CostCenterName END) AS VARCHAR(250))
+		,EmployeeTypeName = CAST((CASE WHEN ISNULL(EmployeeTypeName,'''') = '''' THEN ''-'' ELSE EmployeeTypeName END) AS VARCHAR(250))
+		,JobPositionName = CAST((CASE WHEN ISNULL(JobPositionName,'''') = '''' THEN ''-'' ELSE JobPositionName END) AS VARCHAR(250))
+		,JobRankName = CAST((CASE WHEN ISNULL(JobRankName,'''') = '''' THEN ''-'' ELSE JobRankName END) AS VARCHAR(250))
+		,JobLevelName = CAST((CASE WHEN ISNULL(JobLevelName,'''') = '''' THEN ''-'' ELSE JobLevelName END) AS VARCHAR(250))
+		,SalaryFactor = CAST((CASE WHEN ISNULL(SalaryFactorText,'''') = '''' THEN ''-'' ELSE SalaryFactorText END) AS VARCHAR(250))
+		,SalaryRate = CAST(FORMAT(ISNULL(SalaryRate, 0),''#,0.00'') AS VARCHAR(250))
+	FROM report.vwEmploymentAssignment
+)AS C
+UNPIVOT
+(
+		OrgTransfered FOR Org IN 
+		(
+			CompanyName
+			,BranchName			
+			,DepartmentName		
+			,DivisionName			
+			,OfficeName			
+			,DistrictName			
+			,GroupName			
+			,TeamName			
+			,ProjectName			
+			,UnitName			
+			,LineName			
+			,CostCenterGroupName	
+			,CostCenterName	
+			,EmployeeTypeName
+			,JobPositionName
+			,JobRankName
+			,JobLevelName
+			,SalaryFactor
+			,SalaryRate
+		)
+)AS T ON T.EmployeeAssignmentId = EA.EmployeeAssignmentId
+/*Getting the Prev*/
+OUTER APPLY 
+(
+	SELECT
+		ProfileId
+		,EmployeeAssignmentId
+		,Organization
+		,Previous
+		,prev.EffectiveDate
+		,prev.Remarks
+	FROM 
+	(
+		SELECT
+			prev.ProfileId
+			,prev.EmployeeAssignmentId
+			,prev.EffectiveDate
+			,prev.Remarks
+			,CompanyName = CAST((CASE WHEN ISNULL(CompanyName,'''') = '''' THEN ''-'' ELSE CompanyName END) AS VARCHAR(250))
+			,BranchName = CAST((CASE WHEN ISNULL(BranchName,'''') = '''' THEN ''-'' ELSE BranchName END) AS VARCHAR(250))
+			,DepartmentName = CAST((CASE WHEN ISNULL(DepartmentName,'''') = '''' THEN ''-'' ELSE DepartmentName END) AS VARCHAR(250))
+			,DivisionName = CAST((CASE WHEN ISNULL(DivisionName,'''') = '''' THEN ''-'' ELSE DivisionName END) AS VARCHAR(250))
+			,OfficeName = CAST((CASE WHEN ISNULL(OfficeName,'''') = '''' THEN ''-'' ELSE OfficeName END) AS VARCHAR(250))
+			,DistrictName = CAST((CASE WHEN ISNULL(DistrictName,'''') = '''' THEN ''-'' ELSE DistrictName END) AS VARCHAR(250))
+			,GroupName = CAST((CASE WHEN ISNULL(GroupName,'''') = '''' THEN ''-'' ELSE GroupName END) AS VARCHAR(250))
+			,TeamName = CAST((CASE WHEN ISNULL(TeamName,'''') = '''' THEN ''-'' ELSE TeamName END) AS VARCHAR(250))
+			,ProjectName = CAST((CASE WHEN ISNULL(ProjectName,'''') = '''' THEN ''-'' ELSE ProjectName END) AS VARCHAR(250))
+			,UnitName = CAST((CASE WHEN ISNULL(UnitName,'''') = '''' THEN ''-'' ELSE UnitName END) AS VARCHAR(250))
+			,LineName = CAST((CASE WHEN ISNULL(LineName,'''') = '''' THEN ''-'' ELSE LineName END) AS VARCHAR(250))
+			,CostCenterGroupName = CAST((CASE WHEN ISNULL(CostCenterGroupName,'''') = '''' THEN ''-'' ELSE CostCenterGroupName END) AS VARCHAR(250))
+			,CostCenterName = CAST((CASE WHEN ISNULL(CostCenterName,'''') = '''' THEN ''-'' ELSE CostCenterName END) AS VARCHAR(250))
+			,EmployeeTypeName = CAST((CASE WHEN ISNULL(EmployeeTypeName,'''') = '''' THEN ''-'' ELSE EmployeeTypeName END) AS VARCHAR(250))
+			,JobPositionName = CAST((CASE WHEN ISNULL(JobPositionName,'''') = '''' THEN ''-'' ELSE JobPositionName END) AS VARCHAR(250))
+			,JobRankName = CAST((CASE WHEN ISNULL(JobRankName,'''') = '''' THEN ''-'' ELSE JobRankName END) AS VARCHAR(250))
+			,JobLevelName = CAST((CASE WHEN ISNULL(JobLevelName,'''') = '''' THEN ''-'' ELSE JobLevelName END) AS VARCHAR(250))
+			,SalaryFactor = CAST((CASE WHEN ISNULL(SalaryFactorText,'''') = '''' THEN ''-'' ELSE SalaryFactorText END) AS VARCHAR(250))
+			,SalaryRate = CAST(FORMAT(ISNULL(SalaryRate, 0),''#,0.00'') AS VARCHAR(250))
+		FROM report.vwEmploymentAssignment prev
+		WHERE prev.EmployeeAssignmentId = T.PrevEmployeeAssignmentId
+	) AS cols 
+	UNPIVOT 
+	(
+		Previous FOR Organization IN 
+		(	
+			CompanyName
+			,BranchName			
+			,DepartmentName		
+			,DivisionName			
+			,OfficeName			
+			,DistrictName			
+			,GroupName			
+			,TeamName			
+			,ProjectName			
+			,UnitName			
+			,LineName			
+			,CostCenterGroupName	
+			,CostCenterName		
+			,EmployeeTypeName
+			,JobPositionName
+			,JobRankName
+			,JobLevelName
+			,SalaryFactor
+			,SalaryRate
+		)
+	) AS PREV
+	WHERE PREV.Organization = T.Org
+) PREV
+WHERE 
+(
+	1=1
+	AND (ISNULL(PREV.Previous,'''') <> ISNULL(T.OrgTransfered,''''))
+	AND (CHARINDEX('''''''' + CAST(EA.EmployeeAssignmentId AS VARCHAR) + '''''''', (CASE WHEN CHARINDEX('''''''',CAST(@EmployeeAssignmentId AS VARCHAR(MAX))) > 0 THEN CAST(@EmployeeAssignmentId AS VARCHAR(MAX)) ELSE '''''''' + CAST(@EmployeeAssignmentId AS VARCHAR(MAX)) + '''''''' END)) > 0)
+)',NULL,1,'QUERY',1,'',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+SET IDENTITY_INSERT [report].[Report] OFF
+/*end insert data to report.Report*/
+
+/*start insert data to report.ReportData*/
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(450,'Employee No.','EmployeeNumber','string','','',NULL,1,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(450,'Employee Name','EmployeeName','string','','',NULL,2,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(450,'Hire Date','HireDate','date','','',NULL,3,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(450,'Action Type','ActionType','string','','',NULL,4,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(450,'Reference Number','RefNo','string','','',NULL,5,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(450,'Effective Date','EffectiveDate','date','','',NULL,6,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(450,'Org Type Unit From','PrevOrganization','string','','',NULL,8,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(450,'Org Type Unit From','OrgTransfered','string','','',NULL,9,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(450,'Employment Class From','EmploymentClassFrom','string','','',NULL,10,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(450,'Employment Class To','EmploymentClassTo','string','','',NULL,11,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(450,'Salary Factor From','SalaryFactorFrom','string','','',NULL,12,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(450,'Salary Factor To','SalaryFactorTo','string','','',NULL,13,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(450,'Remarks','Remarks','string','','',NULL,14,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(450,'Prepared By','PreparedBy','string','','',NULL,15,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(450,'Approved By','ApprovedBy','string','','',NULL,16,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(450,'Noted By','NotedBy','string','','',NULL,17,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(450,'Conforme','Conforme','string','','',NULL,18,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(450,'Salary Rate From','SalaryRateFrom','decimal','','',NULL,19,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(450,'Salary Rate To','SalaryRateTo','decimal','','',NULL,20,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(450,'Org','Org','string','','',NULL,7,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(450,'Org Header','OrgHeader','string','','',NULL,21,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(450,'Org Sort','OrgSort','string','','',NULL,22,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(450,'Company','CompanyName','string','','',NULL,23,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+/*end insert data to report.ReportData*/
+
+/*start insert data to report.ReportParameter*/
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat])VALUES('PersonnelActionNotice','@EmployeeAssignmentId','@EmployeeAssignmentId','textbox','','',1,'','Param1','Stored','=','',NULL,NULL,NULL,'',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+/*end insert data to report.ReportParameter*/
+
+/*start insert data to report.ReportSubReport*/
+/*end insert data to report.ReportSubReport*/
+
+/*start insert data to report.ReportMenu*/
+INSERT [report].[ReportMenu] ([ReportId],[AdminMenuModuleId],[MenuModuleId],[ReportGroupId],[ModuleFormId],[FileGeneratorHdrId],[XMLReportId],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES(450,0,0,NULL,187,0,0,NULL,NULL,NULL,NULL)
+/*end insert data to report.ReportMenu*/
+
+/*start insert data to security.Module_Forms*/
+SET IDENTITY_INSERT [security].[Module_Forms] ON
+INSERT [security].[Module_Forms] ([ModuleFormId],[ModuleId],[Name],[Form],[AccessTypeId],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES(10620,31,'Personnel Action Notice','PersonnelActionNotice','1,5',NULL,NULL,NULL,NULL)
+SET IDENTITY_INSERT [security].[Module_Forms] OFF
+/*end insert data to security.Module_Forms*/
+
+/*start insert data to security.Role_FormAccess*/
+INSERT INTO security.Role_FormAccess([RoleId],[ModuleId],[ModuleFormId],[AccessTypeId]) 
+				SELECT 
+				[RoleId] = 1,
+				[ModuleId] = F.ModuleId,
+				[ModuleFormId] = F.ModuleFormId,
+				[AccessTypeId] = F.AccessTypeId
+				FROM security.Module_Forms F
+				
+				WHERE F.ModuleFormId IN ('10620')
+				
+/*end insert data to security.Role_FormAccess*/
+
+/*start insert data to security.UserSecurity_Detail*/
+INSERT INTO security.UserSecurity_Detail([UserSecurityId],[ModuleFormId],[AccessTypeId],[ModuleId])
+				SELECT
+				[UserSecurityId] = US.UserSecurityId
+				,[ModuleFormId] = F.ModuleFormId
+				,[AccessTypeId] = F.AccessTypeId
+				,[ModuleId] = F.ModuleId
+				FROM security.Module_Forms F
+				
+				CROSS APPLY (SELECT DISTINCT USD.UserSecurityId FROM security.UserSecurity_Detail USD JOIN security.UserSecurity US ON US.UserSecurityId = USD.UserSecurityId WHERE USD.ModuleId IN ('31') AND US.RoleId = 1	AND US.UserSecurityId IS NOT NULL) US
+				WHERE F.ModuleFormId IN ('10620')
+				AND US.UserSecurityId NOT IN (SELECT UserSecurityId FROM security.UserSecurity_Detail WHERE ModuleFormId IN ('10620') AND UserSecurityId IS NOT NULL)
+/*end insert data to security.UserSecurity_Detail*/
+
+SET NOCOUNT OFF

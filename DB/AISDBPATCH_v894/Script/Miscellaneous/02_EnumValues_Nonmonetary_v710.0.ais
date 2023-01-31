@@ -1,0 +1,116 @@
+
+DELETE FROM [maintenance].[EnumValues]
+WHERE SourceName = 'EarningsDeductionType'
+
+
+--Earning
+INSERT INTO [maintenance].[EnumValues] ([SourceName]
+, [DisplayText]
+, [Value]
+, [OrderNumber]
+, [Status]
+, [CreateId]
+, [CreateDate]
+, [LastUpdateId]
+, [LastUpdateDate])
+    VALUES ('EarningsDeductionType', 'Earning', '1', '1', '1', NULL, NULL, NULL, NULL)
+GO
+
+
+--Deduction
+INSERT INTO [maintenance].[EnumValues] ([SourceName]
+, [DisplayText]
+, [Value]
+, [OrderNumber]
+, [Status]
+, [CreateId]
+, [CreateDate]
+, [LastUpdateId]
+, [LastUpdateDate])
+    VALUES ('EarningsDeductionType', 'Deduction', '2', '2', '1', NULL, NULL, NULL, NULL)
+GO
+
+
+--Allowance
+INSERT INTO [maintenance].[EnumValues] ([SourceName]
+, [DisplayText]
+, [Value]
+, [OrderNumber]
+, [Status]
+, [CreateId]
+, [CreateDate]
+, [LastUpdateId]
+, [LastUpdateDate])
+    VALUES ('EarningsDeductionType', 'Allowance', '3', '3', '1', NULL, NULL, NULL, NULL)
+GO
+
+
+--Savings
+INSERT INTO [maintenance].[EnumValues] ([SourceName]
+, [DisplayText]
+, [Value]
+, [OrderNumber]
+, [Status]
+, [CreateId]
+, [CreateDate]
+, [LastUpdateId]
+, [LastUpdateDate])
+    VALUES ('EarningsDeductionType', 'Savings', '4', '4', '1', NULL, NULL, NULL, NULL)
+GO
+
+
+--Flexible Benefit
+INSERT INTO [maintenance].[EnumValues] ([SourceName]
+, [DisplayText]
+, [Value]
+, [OrderNumber]
+, [Status]
+, [CreateId]
+, [CreateDate]
+, [LastUpdateId]
+, [LastUpdateDate])
+    VALUES ('EarningsDeductionType', 'Flexible Benefit', '5', '5', '1', NULL, NULL, NULL, NULL)
+GO
+
+
+--Loan
+INSERT INTO [maintenance].[EnumValues] ([SourceName]
+, [DisplayText]
+, [Value]
+, [OrderNumber]
+, [Status]
+, [CreateId]
+, [CreateDate]
+, [LastUpdateId]
+, [LastUpdateDate])
+    VALUES ('EarningsDeductionType', 'Loan', '6', '6', '1', NULL, NULL, NULL, NULL)
+GO
+
+
+--Government Deduction
+INSERT INTO [maintenance].[EnumValues] ([SourceName]
+, [DisplayText]
+, [Value]
+, [OrderNumber]
+, [Status]
+, [CreateId]
+, [CreateDate]
+, [LastUpdateId]
+, [LastUpdateDate])
+    VALUES ('EarningsDeductionType', 'Government Deduction', '7', '7', '1', NULL, NULL, NULL, NULL)
+GO
+
+--Non-monetary
+INSERT INTO [maintenance].[EnumValues] ([SourceName]
+, [DisplayText]
+, [Value]
+, [OrderNumber]
+, [Status]
+, [CreateId]
+, [CreateDate]
+, [LastUpdateId]
+, [LastUpdateDate])
+    VALUES ('EarningsDeductionType', 'Non-monetary', '8', '8', '1', NULL, NULL, NULL, NULL)
+GO
+
+

@@ -1,0 +1,13 @@
+IF NOT EXISTS(SELECT * FROM workflows.Keyword WHERE KeywordCode = '{PO-Effective Year}')
+BEGIN
+	INSERT INTO workflows.Keyword (
+	 TransactionTypeValue, TransactionTypeId, KeywordTypeId, KeywordCode, DisplayText, KeywordDescription, DataSource, FieldName)
+	VALUES (42, 42, 1, '{PO-Effective Year}', 'Effective Year', 'Effective Year', '', 'DatePrepared')
+END
+
+IF NOT EXISTS(SELECT * FROM workflows.Keyword WHERE KeywordCode = '{Remarks}')
+BEGIN
+	INSERT INTO workflows.Keyword (
+	 TransactionTypeValue, TransactionTypeId, KeywordTypeId, KeywordCode, DisplayText, KeywordDescription, DataSource, FieldName)
+	VALUES (0, 0, 5, '{Remarks}', 'Remarks', 'Remarks', '', '')
+END

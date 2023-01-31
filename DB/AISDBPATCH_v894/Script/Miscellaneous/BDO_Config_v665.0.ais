@@ -1,0 +1,63 @@
+DELETE FROM admin.FileGeneratorDtl WHERE FileGeneratorHdrId IN (34)
+
+SET IDENTITY_INSERT [admin].[FileGeneratorDtl] ON
+GO
+INSERT [admin].[FileGeneratorDtl] ([FileGeneratorDtlId],[FileGeneratorHdrId],[TableField],[Prefix],[PrefixLength],[Suffix],[SuffixLength],[DataStartColumn],[DisplayTotalAmount],[PrefixTotalAmount],[PrefixTotalAmountLength],[SuffixTotalAmount],[SuffixTotalAmountLength],[PaddingFieldLength],[Padding],[RightToLeftPadding],[IsNumericValue],[IncludeNumericComma],[DoNotIncludeDecimalPoint],[DecimalPlace],[RecordType],[FixedValueName],[FixedValue],[OrderNumber],[DataRowNumber],[DetailColumnName],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES(392,34,'AccountNo','',0,' ',6,0,0,'0',0,'',0,0,'',0,0,0,0,0,2,'','',1,0,'',NULL,NULL,NULL,NULL)
+INSERT [admin].[FileGeneratorDtl] ([FileGeneratorDtlId],[FileGeneratorHdrId],[TableField],[Prefix],[PrefixLength],[Suffix],[SuffixLength],[DataStartColumn],[DisplayTotalAmount],[PrefixTotalAmount],[PrefixTotalAmountLength],[SuffixTotalAmount],[SuffixTotalAmountLength],[PaddingFieldLength],[Padding],[RightToLeftPadding],[IsNumericValue],[IncludeNumericComma],[DoNotIncludeDecimalPoint],[DecimalPlace],[RecordType],[FixedValueName],[FixedValue],[OrderNumber],[DataRowNumber],[DetailColumnName],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES(393,34,'NetPay','',0,'',0,0,0,'0',0,'',0,0,'',0,1,0,0,2,2,'','',2,0,'',NULL,NULL,NULL,NULL)
+
+SET IDENTITY_INSERT [admin].[FileGeneratorDtl] OFF
+GO
+
+
+
+SET NOCOUNT ON
+/*start deleting existing report configs*/
+DELETE FROM admin.FileGeneratorHeader WHERE FileGeneratorHdrId IN (79)
+DELETE FROM admin.FileGeneratorDtl WHERE FileGeneratorHdrId IN (79)
+DELETE FROM admin.FileGeneratorParameter WHERE FileGeneratorHdrId IN (79)
+DELETE FROM admin.SecurityMappingReport WHERE Code IN ('BDO_OLDFILE')
+/*end deleting existing report configs*/
+
+/*NOTE: DELETE THE FILE TYPE INSERT COLUMN AND VALUE (LAST COLUMN AND LAST VALUE), THIS IS INTERNAL ONLY*/
+/*start insert data to admin.FileGeneratorHeader*/
+SET IDENTITY_INSERT [admin].[FileGeneratorHeader] ON
+INSERT [admin].[FileGeneratorHeader] ([FileGeneratorHdrId],[TemplateName],[TableNameHeader],[TableNameDetail],[TableNameFooter],[SaveFilePath],[FileName],[ExtensionName],[Header],[Footer],[HeaderRow],[HeaderColumn],[FooterRow],[FooterColumn],[DataStartRow],[TotalAmountRowGap],[Delimiter],[DisplayDetailColumnName],[DetailFooterRowGap],[ExcelSheetName],[ExcelDetailColumnNameGap],[SourceType],[WriteDataToExistingExcelFile],[TemplatePath],[ExcelSheetNumber],[FormName],[InsertNewRowStartPoint],[InsertNewRowInOtherExcelSheet],[MultipleExcelSheetFileGenerationTemplateName],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate],[FileType])VALUES(79,'BDO_OLDFILE','','bankfile.fnBankFileDetail(0,0,''1/1/1900'',''1/1/1900'','''',0,0,0,0,0,'''') ORDER BY RowId','','~/GeneratedFiles','PAYROLL','.txt','','',0,0,0,0,0,0,'',0,0,'',0,'function',0,'',0,'BDO',0,'','',NULL,NULL,NULL,NULL,NULL)
+SET IDENTITY_INSERT [admin].[FileGeneratorHeader] OFF
+/*end insert data to admin.FileGeneratorHeader*/
+
+/*start insert data to admin.FileGeneratorDtl*/
+SET IDENTITY_INSERT [admin].[FileGeneratorDtl] ON
+INSERT [admin].[FileGeneratorDtl] ([FileGeneratorDtlId],[FileGeneratorHdrId],[TableField],[Prefix],[PrefixLength],[Suffix],[SuffixLength],[DataStartColumn],[DisplayTotalAmount],[PrefixTotalAmount],[PrefixTotalAmountLength],[SuffixTotalAmount],[SuffixTotalAmountLength],[PaddingFieldLength],[Padding],[RightToLeftPadding],[IsNumericValue],[IncludeNumericComma],[DoNotIncludeDecimalPoint],[DecimalPlace],[RecordType],[FixedValueName],[FixedValue],[OrderNumber],[DataRowNumber],[DetailColumnName],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES(1366,79,'AccountNo','',0,'tab',1,0,0,'0',0,'',0,0,'',0,0,0,0,0,2,'','',1,0,'',NULL,NULL,NULL,NULL)
+INSERT [admin].[FileGeneratorDtl] ([FileGeneratorDtlId],[FileGeneratorHdrId],[TableField],[Prefix],[PrefixLength],[Suffix],[SuffixLength],[DataStartColumn],[DisplayTotalAmount],[PrefixTotalAmount],[PrefixTotalAmountLength],[SuffixTotalAmount],[SuffixTotalAmountLength],[PaddingFieldLength],[Padding],[RightToLeftPadding],[IsNumericValue],[IncludeNumericComma],[DoNotIncludeDecimalPoint],[DecimalPlace],[RecordType],[FixedValueName],[FixedValue],[OrderNumber],[DataRowNumber],[DetailColumnName],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES(1367,79,'NetPay','',0,'',0,0,0,'0',0,'',0,0,'',0,1,0,0,2,2,'','',2,0,'',NULL,NULL,NULL,NULL)
+SET IDENTITY_INSERT [admin].[FileGeneratorDtl] OFF
+/*end insert data to admin.FileGeneratorDtl*/
+
+/*start insert data to admin.FileGeneratorParameter*/
+SET IDENTITY_INSERT [admin].[FileGeneratorParameter] ON
+INSERT [admin].[FileGeneratorParameter] ([FileGeneratorParameterId],[FileGeneratorHdrId],[ParameterName],[RecordTypeParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ConditionalOperator],[DefaultValue],[RequiredField],[BankLookUp],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES(466,79,'GenerationType','numeric|$10$2-GenerationType','Generation Type','dropdownList','Regular Employees:1|On-hold Employees:2','',1,'','=',NULL,0,NULL,NULL,NULL,NULL,NULL)
+INSERT [admin].[FileGeneratorParameter] ([FileGeneratorParameterId],[FileGeneratorHdrId],[ParameterName],[RecordTypeParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ConditionalOperator],[DefaultValue],[RequiredField],[BankLookUp],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES(467,79,'CompanyId','numeric|$1$2-CompanyId','Company','dropdownList','$table:maintenance.Company,CompanyId,Code','$table:maintenance.Branch WHERE CompanyId = ,BranchId,Code|BranchId,',2,'','=',NULL,0,NULL,NULL,NULL,NULL,NULL)
+INSERT [admin].[FileGeneratorParameter] ([FileGeneratorParameterId],[FileGeneratorHdrId],[ParameterName],[RecordTypeParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ConditionalOperator],[DefaultValue],[RequiredField],[BankLookUp],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES(468,79,'BranchId','numeric|$2$2-BranchId','Branch','dropdownList','$table:maintenance.Branch,BranchId,Code','',2,'','=',NULL,0,NULL,NULL,NULL,NULL,NULL)
+INSERT [admin].[FileGeneratorParameter] ([FileGeneratorParameterId],[FileGeneratorHdrId],[ParameterName],[RecordTypeParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ConditionalOperator],[DefaultValue],[RequiredField],[BankLookUp],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES(469,79,'BankId','numeric|$6$2-BankId','Bank','dropdownList','$table:bankfile.fnRetrieveBankByBankCode(''BDO''),BankId,BankName','',3,'','=',NULL,0,'BDO',NULL,NULL,NULL,NULL)
+INSERT [admin].[FileGeneratorParameter] ([FileGeneratorParameterId],[FileGeneratorHdrId],[ParameterName],[RecordTypeParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ConditionalOperator],[DefaultValue],[RequiredField],[BankLookUp],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES(470,79,'MBankAccountId','numeric|$7$2-MBankAccountId','Bank Account','dropdownList','$table:bankfile.fnRetrieveCompanyBankByBankCode(''BDO''),MBankAccountId,AccountName','',4,'','=',NULL,0,NULL,NULL,NULL,NULL,NULL)
+INSERT [admin].[FileGeneratorParameter] ([FileGeneratorParameterId],[FileGeneratorHdrId],[ParameterName],[RecordTypeParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ConditionalOperator],[DefaultValue],[RequiredField],[BankLookUp],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES(471,79,'StartPayrollDate,EndPayrollDate','date|$3-4$2-StartPayrollDate,EndPayrollDate','Issued Date','daterange','','',5,'','>=,<=',NULL,0,NULL,NULL,NULL,NULL,NULL)
+INSERT [admin].[FileGeneratorParameter] ([FileGeneratorParameterId],[FileGeneratorHdrId],[ParameterName],[RecordTypeParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ConditionalOperator],[DefaultValue],[RequiredField],[BankLookUp],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES(472,79,'PayrollTypeIds','text|$5$2-PayrollTypeIds','Payroll Type','checkboxList','$table:payroll.PayrollType,PayrollTypeId,PayrollTypeName','',6,'','=',NULL,0,NULL,NULL,NULL,NULL,NULL)
+INSERT [admin].[FileGeneratorParameter] ([FileGeneratorParameterId],[FileGeneratorHdrId],[ParameterName],[RecordTypeParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ConditionalOperator],[DefaultValue],[RequiredField],[BankLookUp],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES(473,79,'GenerationOption','','Generation Option','generationOptionDropDownList',':0|Report Format:BankFileDetailsReport|File Format:file','',7,'','=',NULL,0,NULL,NULL,NULL,NULL,NULL)
+INSERT [admin].[FileGeneratorParameter] ([FileGeneratorParameterId],[FileGeneratorHdrId],[ParameterName],[RecordTypeParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ConditionalOperator],[DefaultValue],[RequiredField],[BankLookUp],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES(474,79,'UserSecurityId','numeric|$8$2-UserSecurityId','User Security Id','security','','',8,'','=',NULL,0,NULL,NULL,NULL,NULL,NULL)
+INSERT [admin].[FileGeneratorParameter] ([FileGeneratorParameterId],[FileGeneratorHdrId],[ParameterName],[RecordTypeParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ConditionalOperator],[DefaultValue],[RequiredField],[BankLookUp],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES(475,79,'GenerationId','numeric|$9$2-GenerationId','Generation Id','hidden','','',9,'','=','0',0,NULL,NULL,NULL,NULL,NULL)
+INSERT [admin].[FileGeneratorParameter] ([FileGeneratorParameterId],[FileGeneratorHdrId],[ParameterName],[RecordTypeParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ConditionalOperator],[DefaultValue],[RequiredField],[BankLookUp],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES(476,79,'BankFileHeaderId','numeric|$9$2-BankFileHeaderId','BankFileHeaderId','hidden','','',9,'','=','0',0,NULL,NULL,NULL,NULL,NULL)
+INSERT [admin].[FileGeneratorParameter] ([FileGeneratorParameterId],[FileGeneratorHdrId],[ParameterName],[RecordTypeParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ConditionalOperator],[DefaultValue],[RequiredField],[BankLookUp],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES(477,79,'PayGroupIds','text|$11$2-PayGroupIds','Pay Group','checkboxList','$table:payroll.Paygroup,PaygroupId,Code','',11,'','=',NULL,0,NULL,NULL,NULL,NULL,NULL)
+SET IDENTITY_INSERT [admin].[FileGeneratorParameter] OFF
+/*end insert data to admin.FileGeneratorParameter*/
+
+/*start insert data to admin.SecurityMappingReport*/
+SET IDENTITY_INSERT [admin].[SecurityMappingReport] ON
+INSERT [admin].[SecurityMappingReport] ([SecurityMappingReportId],[SecurityFormId],[Code],[Extension],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES(28,222,'BDO_OLDFILE','txt',NULL,NULL,NULL,NULL)
+SET IDENTITY_INSERT [admin].[SecurityMappingReport] OFF
+/*end insert data to admin.SecurityMappingReport*/
+
+SET NOCOUNT OFF
+
+/*start deleting existing report configs*/
+SELECT * FROM admin.FileGeneratorHeader WHERE FileGeneratorHdrId IN (79)
+SELECT * FROM admin.FileGeneratorDtl WHERE FileGeneratorHdrId IN (79)
+SELECT * FROM admin.FileGeneratorParameter WHERE FileGeneratorHdrId IN (79)

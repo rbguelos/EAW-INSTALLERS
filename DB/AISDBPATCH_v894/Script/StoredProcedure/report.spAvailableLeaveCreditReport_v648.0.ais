@@ -1,0 +1,412 @@
+IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[report].[spAvailableLeaveCreditReport]') AND type in (N'P', N'PC'))
+DROP PROCEDURE [report].[spAvailableLeaveCreditReport]
+GO
+/*===========================================*\
+**	Last Update Date: 01/10/2019
+**	Last Update By: Abdiel
+**	Last DBVersion executed: v648
+**	Changes: Create dynamic temp table
+\*===========================================*/
+CREATE PROCEDURE [report].[spAvailableLeaveCreditReport]
+--DECLARE
+@UserSecurityId BIGINT = 11404
+,@CompanyId BIGINT = 10010
+,@BranchId BIGINT = 0
+,@DepartmentId BIGINT = 0
+,@CostCenterId BIGINT = 0
+,@LineId BIGINT = 0
+,@LeaveTypeSetupId VARCHAR(MAX) = ''
+,@WithLeaveBalance SMALLINT = 0
+AS
+BEGIN
+
+SET NOCOUNT ON;
+
+DECLARE
+@UserSecurityId_ VARCHAR(10) = CAST(@UserSecurityId AS VARCHAR(10))
+,@CompanyId_ VARCHAR(10) = CAST(@CompanyId AS VARCHAR(10))
+,@BranchId_ VARCHAR(10) = CAST(@BranchId AS VARCHAR(10))
+,@DepartmentId_ VARCHAR(10) = CAST(@DepartmentId AS VARCHAR(10))
+,@CostCenterId_ VARCHAR(10) = CAST(@CostCenterId AS VARCHAR(10))
+,@LineId_ VARCHAR(10) = CAST(@LineId AS VARCHAR(10))
+--,@LeaveTypeSetupId_ VARCHAR(10) = CASE WHEN @LeaveTypeSetupId = '' THEN '''''' ELSE @LeaveTypeSetupId END
+,@LeaveTypeSetupId_ VARCHAR(MAX) = CASE WHEN @LeaveTypeSetupId = '' THEN '''''' ELSE @LeaveTypeSetupId END
+,@WithLeaveBalance_ VARCHAR(10) = CAST(@WithLeaveBalance AS VARCHAR(10))
+
+DECLARE @ReportId BIGINT = 226
+DECLARE @TMPTABLENAME VARCHAR(MAX) = 'report.TMPAvailableLeaveCreditReport'
+/*DROP TEMP TABLE IF EXISTS*/
+IF EXISTS(SELECT * FROM sys.tables WHERE object_id = object_id(@TMPTABLENAME))
+EXEC('DROP TABLE ' + @TMPTABLENAME)
+
+/*
+CREATE TABLE #LIST
+(
+	RowId INT IDENTITY(1,1),
+	LeaveBalanceHeaderId BIGINT, 
+	ProfileId BIGINT,
+	EmployeeName VARCHAR(100),
+	EmployeeNo VARCHAR(30),
+	LeaveTypeCode VARCHAR(100),
+	LeaveTypeDescription VARCHAR(MAX), 
+	BalanceHours DECIMAL(18,2),
+	BalanceDays DECIMAL(18,2),
+	DisplayInDays SMALLINT,
+	NoOfHoursPerDay SMALLINT,
+	LeaveTypeSetupId BIGINT
+	,UNIQUE CLUSTERED (LeaveTypeSetupId,ProfileId,RowId)
+)
+/*RETRIEVE DATA FROM THE SP*/
+INSERT INTO #LIST EXEC [leave].[spLeaveBalanceList]
+*/
+
+DECLARE @SPCOLUMNS TABLE
+(
+	ISHIDDEN INT NULL,
+	ORDINAL INT NULL,
+	COLUMNNAME  VARCHAR(300) NULL,
+	NULLABLE INT NULL,
+	TYPEID INT NULL,
+	DATATYPE VARCHAR(50) NULL,
+	CHARMAXLENGTH INT NULL,
+	[PRECISION] INT NULL,
+	SCALE INT NULL,
+	[COLLATIONNAME] VARCHAR(300),
+	USERTYPEID INT NULL,
+	USERDATABASE VARCHAR(300)NULL,
+	USERSCHEMA VARCHAR(300)NULL,
+	USERNAME VARCHAR(300)NULL,
+	ASSEMBLYNAME VARCHAR(300)NULL,
+	XMLID INT NULL,
+	XMLDB VARCHAR(300) NULL,
+	[XMLSCHEMA] VARCHAR(300) NULL,
+	XMLNAME VARCHAR(300) NULL,
+	XMLDOCUMENT INT NULL,
+	CASESENSITIVE INT NULL,
+	FIELDLENGTHTYPE INT NULL,
+	SOURCESERVER VARCHAR(300) NULL,
+	SOURCEDB VARCHAR(300) NULL,
+	SOURCESCHEMA VARCHAR(300) NULL,
+	SOURCETABLE VARCHAR(300) NULL,
+	SOURCECOLUMN VARCHAR(300) NULL,
+	ISDENTITY INT NULL,
+	ISPARTOFUNIQUEKEY VARCHAR(300) NULL,
+	ISUPDATETABLE INT NULL,
+	ISCOMPUTEDTABLE INT NULL,
+	ISPARSECOLUMN INT NULL,
+	ORDINALINLIST INT NULL,
+	ORDERBYDESC INT NULL,
+	ORDERBYLISTLEN INT NULL,
+	TDSTYPEID INT NULL,
+	TDSLEN INT NULL,
+	TDSCOLLID INT NULL,
+	TDSCOLLSORTID INT NULL
+)
+
+INSERT INTO @SPCOLUMNS EXEC sp_describe_first_result_set N'leave.spLeaveBalanceList'
+
+DECLARE
+@COLS VARCHAR(MAX) = 
+STUFF((
+SELECT 
+	CONCAT(',',QUOTENAME(COLUMNNAME)
+	,' '
+	,DATATYPE
+	)
+	/*, CASE WHEN CHARINDEX('char',DATATYPE) > 0 THEN concat('(',CHARMAXLENGTH,')') WHEN SCALE > 0 THEN concat('(',PRECISION,',',SCALE,')') ELSE '' END) */
+FROM @SPCOLUMNS 
+FOR XML PATH('')
+),1,1,'')
+
+/*SELECT * FROM #LIST;RETURN*/
+
+DECLARE @LTSCOLS VARCHAR(MAX) = STUFF((
+								SELECT ',' + QUOTENAME(Code) FROM leave.LeaveTypeSetup 
+								WHERE CompanyId = @CompanyId 
+								AND ((CHARINDEX(CAST(LeaveTypeSetupId AS VARCHAR(10)),@LeaveTypeSetupId_)) > 0 OR (@LeaveTypeSetupId_ = ''''''))
+								FOR XML PATH('')),1,1,'')
+
+DECLARE @LTSPIVOTCOLS VARCHAR(MAX) = STUFF((
+								SELECT 
+									',' + QUOTENAME('Leave Types|' + Code) + ' = ISNULL(' + QUOTENAME(Code) + ',0)' 
+								FROM leave.LeaveTypeSetup 
+								WHERE CompanyId = @CompanyId 
+								AND ((CHARINDEX(CAST(LeaveTypeSetupId AS VARCHAR(10)),@LeaveTypeSetupId_)) > 0 OR (@LeaveTypeSetupId_ = ''''''))
+								FOR XML PATH('')),1,1,'')
+
+DECLARE @LTSTOTAL VARCHAR(MAX) = STUFF((
+								SELECT '+' + 'ISNULL(' + QUOTENAME(Code) + ',0)' 
+								FROM leave.LeaveTypeSetup 
+								WHERE CompanyId = @CompanyId 
+								AND ((CHARINDEX(CAST(LeaveTypeSetupId AS VARCHAR(10)),@LeaveTypeSetupId_)) > 0 OR (@LeaveTypeSetupId_ = ''''''))
+								FOR XML PATH('')),1,1,'')
+
+/*MAIN DISPLAY*/
+DECLARE @LTSPIVOTCOLS2 VARCHAR(MAX) =
+		STUFF((
+			SELECT 
+				',' + CONCAT(COL.COLNAME, '=','ISNULL(AVAIL.',COL.COLNAME,',0)',',',COL.COLNAME2,'=','ISNULL(MAXCRED.',COL.COLNAME2,',0)')
+			FROM leave.LeaveTypeSetup LTS
+			CROSS APPLY
+			(
+				SELECT
+					COLNAME = QUOTENAME(LTS.Code + '|AVAILABLE')
+					,COLNAME2 = QUOTENAME(LTS.Code + '|MAX CREDIT')
+			)COL
+			WHERE 1=1 
+			AND (LTS.CompanyId = @CompanyId)
+			AND ((CHARINDEX(CAST(LeaveTypeSetupId AS VARCHAR(10)),@LeaveTypeSetupId_)) > 0 OR (@LeaveTypeSetupId_ = ''''''))
+			GROUP BY COL.COLNAME,COL.COLNAME2
+		FOR XML PATH(''), ROOT ('MyString'), TYPE)
+		.value('/MyString[1]', 'varchar(max)'), 1, 1, '')
+
+/*FOR AVAILABLE*/
+DECLARE @LTSCOLS2 VARCHAR(MAX) =
+		STUFF((
+			SELECT 
+				',' + COL.COLNAME
+			FROM leave.LeaveTypeSetup LTS
+			CROSS APPLY
+			(
+				SELECT
+					COLNAME = QUOTENAME(LTS.Code + '|AVAILABLE')
+			)COL
+			WHERE 1=1 
+			AND (LTS.CompanyId = @CompanyId)
+			AND ((CHARINDEX(CAST(LeaveTypeSetupId AS VARCHAR(10)),@LeaveTypeSetupId_)) > 0 OR (@LeaveTypeSetupId_ = ''''''))
+			GROUP BY COL.COLNAME
+		FOR XML PATH(''), ROOT ('MyString'), TYPE)
+		.value('/MyString[1]', 'varchar(max)'), 1, 1, '')
+
+/*FOR MAX CREDIT*/
+DECLARE @LTSCOLSMAX VARCHAR(MAX) =
+		STUFF((
+			SELECT 
+				',' + COL.COLNAME
+			FROM leave.LeaveTypeSetup LTS
+			CROSS APPLY
+			(
+				SELECT
+					COLNAME = QUOTENAME(LTS.Code + '|MAX CREDIT')
+			)COL
+			WHERE 1=1 
+			AND (LTS.CompanyId = @CompanyId)
+			AND ((CHARINDEX(CAST(LeaveTypeSetupId AS VARCHAR(10)),@LeaveTypeSetupId_)) > 0 OR (@LeaveTypeSetupId_ = ''''''))
+			GROUP BY COL.COLNAME
+		FOR XML PATH(''), ROOT ('MyString'), TYPE)
+		.value('/MyString[1]', 'varchar(max)'), 1, 1, '')
+
+/*TOTAL AVAILABLE*/
+DECLARE @LTSTOTAL2 VARCHAR(MAX) = 
+		STUFF((
+			SELECT 
+				'+' + 'ISNULL(AVAIL.',COL.COLNAME,',0)'
+			FROM leave.LeaveTypeSetup LTS
+			CROSS APPLY
+			(
+				SELECT
+					COLNAME = QUOTENAME(LTS.Code + '|AVAILABLE')
+			)COL
+			WHERE 1=1 
+			AND (LTS.CompanyId = @CompanyId)
+			AND ((CHARINDEX(CAST(LeaveTypeSetupId AS VARCHAR(10)),@LeaveTypeSetupId_)) > 0 OR (@LeaveTypeSetupId_ = ''''''))
+			GROUP BY COL.COLNAME
+		FOR XML PATH(''), ROOT ('MyString'), TYPE)
+		.value('/MyString[1]', 'varchar(max)'), 1, 1, '')
+
+/*QUERY FOR AVAILABLE*/
+DECLARE @AVAILQRY VARCHAR(MAX)= 
+'
+SELECT 
+	ProfileId 
+	,'+@LTSCOLS2+'
+FROM 
+(
+	SELECT 
+		LeaveTypeCode = ISNULL(COL.COLNAME,'''')
+		,BalanceHours = ISNULL(TEMP.BalanceHours,0)
+		,TEMP.ProfileId
+	FROM #LIST TEMP
+	CROSS APPLY
+	(
+		SELECT
+			COLNAME = TEMP.LeaveTypeCode + ''|AVAILABLE''
+	)COL
+	WHERE 1=1
+	'+CASE WHEN ISNULL(@LeaveTypeSetupId,'') <> '' THEN 'AND (TEMP.LeaveTypeSetupId IN ('+@LeaveTypeSetupId+'))' ELSE '' END+'
+	GROUP BY TEMP.BalanceHours,TEMP.ProfileId,COL.COLNAME
+)T
+PIVOT(SUM(BalanceHours) FOR LeaveTypeCode IN 
+('+@LTSCOLS2+')) AS PVT
+'
+
+/*QUERY FOR MAX CREDIT*/
+DECLARE @MAXCREDQRY VARCHAR(MAX) = 
+'
+SELECT 
+	ProfileId 
+	,'+@LTSCOLSMAX+'
+FROM 
+(
+	SELECT 
+		LeaveTypeCode = ISNULL(COL.COLNAME,'''')
+		,MaxCreditLimit = ISNULL(BENEFIT.MaxCreditLimit,0)
+		,TEMP.ProfileId
+	FROM #LIST TEMP
+	OUTER APPLY
+	(
+		SELECT TOP 1 
+			MaxCreditLimit = BENEFIT.MaxCreditLimit 
+		FROM leave.LeaveBenefit BENEFIT
+		WHERE 1=1
+		AND (BENEFIT.ProfileId = TEMP.ProfileId)
+		AND (BENEFIT.LeaveTypeSetupId = TEMP.LeaveTypeSetupId)
+	)BENEFIT
+	CROSS APPLY
+	(
+		SELECT
+			COLNAME = TEMP.LeaveTypeCode + ''|MAX CREDIT''
+	)COL
+	WHERE 1=1
+	'+CASE WHEN ISNULL(@LeaveTypeSetupId,'') <> '' THEN 'AND (TEMP.LeaveTypeSetupId IN ('+@LeaveTypeSetupId+'))' ELSE '' END+'
+	GROUP BY BENEFIT.MaxCreditLimit,TEMP.ProfileId,COL.COLNAME
+)T
+PIVOT(SUM(MaxCreditLimit) FOR LeaveTypeCode IN 
+('+@LTSCOLSMAX+')) AS PVT
+'
+
+/*SELECT @LTSCOLS,@LTSPIVOTCOLS,@LTSTOTAL,@AVAILQRY,@MAXCREDQRY;RETURN;*/
+
+/*VERSION 1 -- DO NOT DELETE FOR BACKUP*/
+DECLARE @QUERY_BACK NVARCHAR(MAX) = 
+'
+SELECT
+PVT.[EmployeeNo]
+,PVT.[EmployeeName]
+,PVT.[CostCenter]
+,PVT.[LineCostCenter]
+,PVT.[Section]
+,PVT.[Line]
+,PVT.[ManpowerClass]
+,' + @LTSPIVOTCOLS + '
+,[Total] = ' + @LTSTOTAL + '
+,PVT.CompanyId
+INTO ' + @TMPTABLENAME + '
+FROM
+(
+    SELECT 
+    [EmployeeNo] = ISNULL(P.EmployeeNo,'''') 
+    ,[EmployeeName] = ISNULL(P.LastFirstMIName,'''') 
+    ,[CostCenter] = ISNULL(P.CostCenterGroupCode,'''') 
+    ,[LineCostCenter] = ISNULL(P.CostCenterCode,'''') 
+    ,[Section] = ISNULL(P.DepartmentCode,'''') 
+    ,[Line] = ISNULL(P.LineCode,'''') 
+    ,[ManpowerClass] = ISNULL(P.ManpowerClassificationCode,'''') 
+    ,T.LeaveTypeCode
+    ,T.BalanceHours
+    ,P.CompanyId
+    FROM #LIST T
+	INNER JOIN (SELECT ProfileId FROM employee.Profile )EP ON EP.ProfileId = T.ProfileId
+	CROSS APPLY
+	(
+		SELECT TOP 1 
+			P.EmployeeNo
+			,P.LastFirstMIName
+			,P.CostCenterGroupCode
+			,P.CostCenterCode
+			,P.DepartmentCode
+			,P.LineCode
+			,P.ManpowerClassificationCode
+			,P.CompanyId
+		FROM dbo.fnProfileInfoWithScope(' + @UserSecurityId_ + ',0,' + @CompanyId_ + ',' + @BranchId_ + ',' + @DepartmentId_ + ',0,0,0,0,0,' + @CostCenterId_ + ',0,0,0,0,0,0,0,0,0,' + @LineId_ + ',0,0) P
+		WHERE P.ProfileId = EP.ProfileId
+	)P
+    /*JOIN dbo.fnProfileInfoWithScope(' + @UserSecurityId_ + ',0,' + @CompanyId_ + ',' + @BranchId_ + ',' + @DepartmentId_ + ',0,0,0,0,0,' + @CostCenterId_ + ',0,0,0,0,0,0,0,0,0,' + @LineId_ + ',0,0) P ON P.ProfileId = EP.ProfileId*/
+) T
+PIVOT
+(
+    SUM(T.BalanceHours) FOR T.LeaveTypeCode IN (' + @LTSCOLS + ')
+) PVT
+'
++ 
+CASE @WithLeaveBalance 
+	   WHEN 1 THEN 'WHERE (' + @LTSTOTAL + ') <> 0' 
+	   WHEN 2 THEN 'WHERE (' + @LTSTOTAL + ') = 0' 
+    ELSE ''
+END 
+
+/*VERSION 2 -- WITH MAX CREDIT LEAVE*/
+DECLARE @QUERY VARCHAR(MAX) = 
+'
+
+IF (OBJECT_ID(''tempdb..#LIST'') IS NOT NULL)
+DROP TABLE #LIST
+
+CREATE TABLE #LIST (' + @COLS + ')
+
+INSERT INTO #LIST EXEC [leave].[spLeaveBalanceList];
+
+
+SELECT 
+	[Employee No] = ISNULL(P.EmployeeNo,'''')
+	,[Employee Name] = ISNULL(P.LastFirstMIName,'''')
+	,[Cost Center] = ISNULL(P.CostCenterGroupCode,'''')
+	,[Line Cost Center] = ISNULL(P.CostCenterCode,'''')
+	,[Section] = ISNULL(P.DepartmentCode,'''')
+	,[Line] = ISNULL(P.LineCode,'''') 
+	,[Manpower Class] = ISNULL(P.ManpowerClassificationCode,'''')
+	'+CASE WHEN ISNULL(@LTSPIVOTCOLS2,'') <> '' THEN ',' + @LTSPIVOTCOLS2  ELSE '' END+'
+	,[Total] = '+CASE WHEN ISNULL(@LTSPIVOTCOLS2,'') <> '' THEN '('+@LTSTOTAL2+')' ELSE '0' END+'
+	,P.CompanyId
+/*
+FROM #LIST T
+INNER JOIN (SELECT ProfileId FROM employee.Profile)EP ON EP.ProfileId = T.ProfileId
+*/
+INTO ' + @TMPTABLENAME + '
+FROM employee.Profile EP
+CROSS APPLY
+(
+	SELECT TOP 1 
+		P.EmployeeNo
+		,P.LastFirstMIName
+		,P.CostCenterGroupCode
+		,P.CostCenterCode
+		,P.DepartmentCode
+		,P.LineCode
+		,P.ManpowerClassificationCode
+		,P.CompanyId
+		,P.ProfileId
+	FROM dbo.fnProfileInfoWithScope(' + @UserSecurityId_ + ',0,' + @CompanyId_ + ',' + @BranchId_ + ',' + @DepartmentId_ + ',0,0,0,0,0,' + @CostCenterId_ + ',0,0,0,0,0,0,0,0,0,' + @LineId_ + ',0,0) P
+	WHERE P.ProfileId = EP.ProfileId
+)P
+'+CASE WHEN ISNULL(@LTSPIVOTCOLS2,'') <> '' THEN 'LEFT JOIN('+@AVAILQRY+')AVAIL ON AVAIL.ProfileId = P.ProfileId' ELSE '' END+'
+'+CASE WHEN ISNULL(@LTSPIVOTCOLS2,'') <> '' THEN 'LEFT JOIN('+@MAXCREDQRY+')MAXCRED ON MAXCRED.ProfileId = P.ProfileId' ELSE '' END+'
+
+WHERE 1=1
+AND (P.ProfileId IN (SELECT T.ProfileId FROM #LIST T))
+
+'
++ CASE @WithLeaveBalance 
+	   WHEN 1 THEN 'AND (' + @LTSTOTAL2 + ') <> 0' 
+	   WHEN 2 THEN 'AND (' + @LTSTOTAL2 + ') = 0' 
+    ELSE ''
+END 
+
+BEGIN
+
+	/*
+	SELECT @QUERY;RETURN;
+	EXEC(@QUERY);RETURN
+	EXEC(@QUERY_BACK);EXEC('SELECT * FROM ' + @TMPTABLENAME);RETURN;
+	EXEC(@QUERY);EXEC('SELECT * FROM ' + @TMPTABLENAME);RETURN
+	*/
+    /*GET THE TMP TABLE COLUMNS, INSERT INTO REPORTDATA TABLE*/
+    EXEC (@QUERY);
+    EXEC [report].[spCreateReportColumn] @TMPTABLENAME, @ReportId, 'CompanyId'
+    --EXEC ('SELECT * FROM ' + @TMPTABLENAME)
+
+END
+
+END
+
+

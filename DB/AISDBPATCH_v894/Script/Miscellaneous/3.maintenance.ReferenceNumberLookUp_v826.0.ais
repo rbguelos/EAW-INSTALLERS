@@ -1,0 +1,7 @@
+
+DELETE FROM maintenance.ReferenceNumberLookUp WHERE [Transaction] = 'BatchNumber'
+INSERT INTO maintenance.ReferenceNumberLookUp([Transaction], Prefix, Suffix, [Sequence], [Format], Length)
+VALUES
+('BatchNumber','','','0','MMYYYY|SEQUENCE','4')
+
+--SELECT * FROM maintenance.ReferenceNumberLookUp WHERE [Transaction] = 'BatchNumber'

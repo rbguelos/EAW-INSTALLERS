@@ -1,0 +1,48 @@
+/****** Object:  View [fileimport].[vwTableDefinition]    Script Date: 6/26/2019 1:07:00 PM ******/
+IF EXISTS(SELECT TOP 1 1 FROM sys.objects WHERE object_id = object_id('[fileimport].[vwTableDefinition]'))
+DROP VIEW [fileimport].[vwTableDefinition]
+GO
+
+/****** Object:  View [fileimport].[vwTableDefinition]    Script Date: 6/26/2019 1:07:00 PM ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE VIEW [fileimport].[vwTableDefinition]
+AS
+SELECT c.column_id,TableId = c.[Object_id]
+,tbl.SchemaName
+,tbl.TableName
+,TableFullName = CONCAT(tbl.SchemaName,'.',tbl.TableName)
+,ColumnName = c.[name]
+, typ.DataType,max_length
+,DataTypeLength = CASE 
+		WHEN CHARINDEX('char',typ.DataType) > 0 
+			THEN CONCAT('(', CASE WHEN c.max_length = -1 THEN 'max' ELSE CAST(c.max_length AS VARCHAR) END,')')
+		WHEN typ.DataType IN ('date','datetime','time','') 
+			THEN ''
+		WHEN c.scale > 0 OR typ.DataType IN ('real','money','float','decimal','numeric','smallmoney') 
+			THEN CONCAT('(',c.[precision],',',c.scale,')') 
+		ELSE '' END
+,[DefaultValue] = CASE WHEN fk.IsForeinKey = 1 THEN 'NULL'
+	WHEN typ.DataType IN ('date','datetime','time','') THEN ''''''
+	WHEN typ.DataType IN ('real','money','float','bit','decimal','numeric','smallmoney','bigint') THEN '0' 
+	WHEN CHARINDEX('char',typ.DataType) > 0 THEN ''''''
+	WHEN CHARINDEX('date',typ.DataType) > 0 THEN ''''''
+	WHEN CHARINDEX('time',typ.DataType) > 0 THEN ''''''
+	WHEN CHARINDEX('int',typ.DataType) > 0 THEN '0'
+	ELSE '' END
+,ISNULL(fk.IsForeinKey,0) IsForeinKey
+,c.is_identity
+FROM sys.columns c 
+CROSS APPLY(SELECT DataType = TYPE_NAME(c.system_type_id))typ
+OUTER APPLY(SELECT IsForeinKey = 1 FROM sys.foreign_key_columns fkc WHERE fkc.parent_object_id = c.[object_id] AND fkc.parent_column_id = c.column_id)fk
+CROSS APPLY(SELECT [TableName] = OBJECT_NAME(c.[object_id]),[SchemaName] = OBJECT_SCHEMA_NAME(c.[object_id]))tbl
+JOIN sys.tables t ON t.object_id = c.object_id
+WHERE 1=1
+AND t.type = 'U'
+GO
+
+

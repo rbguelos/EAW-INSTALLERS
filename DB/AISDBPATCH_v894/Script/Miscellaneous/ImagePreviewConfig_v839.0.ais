@@ -1,0 +1,46 @@
+UPDATE report.Report SET ImageFile = '\TalentAcquisition\NoofHiredEmployeesbyJobPostChannel.png' WHERE ReportCode = 'NoofHiredEmployeesbyJobPostChannel'
+UPDATE report.Report SET ImageFile = '\TalentAcquisition\NoofHiredEmployeesbyManPowerAgencies.png' WHERE ReportCode = 'NoofHiredEmployeesbyManPowerAgencies'
+UPDATE report.Report SET ImageFile = '\Security\ScopeListReport.png' WHERE ReportCode = 'ScopeListReport'
+UPDATE report.Report SET ImageFile = '\Payroll\LoanPaymentDetailReport.png' WHERE ReportCode = 'LoanPaymentDetailReport'
+UPDATE report.Report SET ImageFile = '\EmployeeRelations\JotterNotesbyEmployees.png' WHERE ReportCode = 'JotterNotesbyEmployees'
+UPDATE report.Report SET ImageFile = '\EmployeeRelations\JotterNotesTallyReport.png' WHERE ReportCode = 'JotterNotesTallyReport'
+UPDATE report.Report SET ImageFile = '\Payroll\companyloanreport.png' WHERE ReportCode = 'CompanyLoanReport'
+UPDATE report.Report SET ImageFile = '\Payroll\YTDReports.png' WHERE ReportCode = 'YTDReports'
+UPDATE report.Report SET ImageFile = '\Payroll\YTDReportsPayrollRegister.png' WHERE ReportCode = 'YTDReportsPayrollRegister'
+UPDATE report.Report SET ImageFile = '\Payroll\ScheduleofContributionperDepartment.png' WHERE ReportCode = 'ScheduleOfContributionsPerDepartment'
+UPDATE report.Report SET ImageFile = '\Payroll\CompanyPayrollReportPerDepartment.png' WHERE ReportCode = 'CompanyPayrollAfterNetPayBreakdownPerDepartment'
+UPDATE report.Report SET ImageFile = '\Schedule\RestDayReport.png' WHERE ReportCode = 'RestDayReport'
+UPDATE report.Report SET ImageFile = '\Employee201\SSSRA1EmploymentReport.png' WHERE ReportCode = 'SSSRA1EmploymentReport'
+UPDATE report.Report SET ImageFile = '\Employee201\EAMReport.png' WHERE ReportCode = 'EAMReport'
+UPDATE report.Report SET ImageFile = '\TimeAndAttendance\DetailedAttendanceReportBreakdownWithOvertimeType.png' WHERE ReportCode = 'DetailedAttendanceReportBreakdownWithOvertimeType'
+UPDATE report.Report SET ImageFile = '\LeaveManagement\LeaveBalanceReportFinalPostedBalance.png' WHERE ReportCode = 'LeaveBalanceReportFinalPostedBalance'
+UPDATE report.Report SET ImageFile = '\TimeAndAttendance\PolicyConfigReport.png' WHERE ReportCode = 'PolicyConfigReport'
+UPDATE report.Report SET ImageFile = '\Payroll\CompanyPayrollReportPerDepartmentV2.png' WHERE ReportCode = 'CompanyPayrollReportPerDepartmentV2'
+UPDATE report.Report SET ImageFile = '\Payroll\TaxPaymentAdvice.png' WHERE ReportCode = 'TaxPaymentAdvice'
+UPDATE report.Report SET ImageFile = '\Payroll\PayrollStudyOnComparativeReport.png' WHERE ReportCode = 'PayrollStudyOnComparativeReport'
+UPDATE report.Report SET ImageFile = '\Payroll\CompanyPayrollReportPerDepartmentWithBreakdownV2.png' WHERE ReportCode = 'CompanyPayrollReportPerDepartmentWithBreakdownV2'
+UPDATE report.Report SET ImageFile = '\Payroll\SalaryRegisterReport.png' WHERE ReportCode = 'SalaryRegisterReport'
+UPDATE report.Report SET ImageFile = '\Payroll\ExceptionReportForPayroll.png' WHERE ReportCode = 'ExceptionReportForPayroll'
+UPDATE report.Report SET ImageFile = '\Payroll\LoanAndDeductionListReport.png' WHERE ReportCode = 'LoanAndDeductionListReport'
+UPDATE report.Report SET ImageFile = '\Payroll\LoansPerEmployeeWithBreakdownListReport.png' WHERE ReportCode = 'LoansPerEmployeeWithBreakdownListReport'
+UPDATE report.Report SET ImageFile = '\Payroll\BIRFieldMappingReport.png' WHERE ReportCode = 'BIRFieldMappingReport'
+UPDATE report.Report SET ImageFile = '\Payroll\OtherEarningsRegisterReport.png' WHERE ReportCode = 'OtherEarningsRegisterReport'
+UPDATE report.Report SET ImageFile = '\Payroll\ModifiedPAGIBIGTWOReport.png' WHERE ReportCode = 'ModifiedPAGIBIG2Report'
+UPDATE report.Report SET ImageFile = '\Payroll\PolicyConfigReport2.png' WHERE ReportCode = 'PolicyConfigReport2'
+UPDATE report.Report SET ImageFile = '\Payroll\EmployeePolicyConfigReport2.png' WHERE ReportCode = 'EmployeePolicyConfigReport2'
+UPDATE report.Report SET ImageFile = '\Security\WorkflowReport.png' WHERE ReportCode = 'WorkflowReport'
+UPDATE report.Report SET ImageFile = '\Security\EmployeeNotInScopeReport.png' WHERE ReportCode = 'EmployeeNotInScopeReport'
+UPDATE report.Report SET ImageFile = '\Security\WorkflowScopeReport.png' WHERE ReportCode = 'WorkflowScopeReport'
+UPDATE report.Report SET ImageFile = '\Security\WorkflowScopeReportWithEmployeeOrg.png' WHERE ReportCode = 'WorkflowScopeReportWithEmployeeOrg'
+
+
+
+
+
+
+
+
+
+
+
+

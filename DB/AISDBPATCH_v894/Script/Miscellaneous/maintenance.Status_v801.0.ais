@@ -1,0 +1,15 @@
+EXEC spInsertTableData 
+@SCHEMA = 'maintenance'
+,@TABLENAME = 'Status'
+,@COLUMNS = '[Name],[Value]'
+,@VALUETOINSERT = 'For Review|58
+For Assessment|59
+Acknowledged|60'
+,@COLUMNSEPARATOR = '|'
+,@ROWSEPARATATOR = '
+',
+@CHECKDUPLICATECOLUMNS = '[Name],[Value]'
+
+
+SELECT * FROM maintenance.Status
+

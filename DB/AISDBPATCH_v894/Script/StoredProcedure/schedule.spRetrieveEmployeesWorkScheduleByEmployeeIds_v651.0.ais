@@ -1,0 +1,80 @@
+/****** Object:  StoredProcedure [schedule].[spRetrieveEmployeesWorkScheduleByEmployeeIds]    Script Date: 10/22/2018 11:05:46 AM ******/
+IF NOT OBJECT_ID('[schedule].[spRetrieveEmployeesWorkScheduleByEmployeeIds]') IS NULL
+DROP PROCEDURE [schedule].[spRetrieveEmployeesWorkScheduleByEmployeeIds]
+GO
+
+/****** Object:  StoredProcedure [schedule].[spRetrieveEmployeesWorkScheduleByEmployeeIds]    Script Date: 10/22/2018 11:05:46 AM ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+/*===========================================*
+**	   Last Update Date: 01/18/2018
+**	   Last Update By: Ronald
+**	   Last DBVersion executed: v651
+\*===========================================*/
+
+-- =============================================
+-- Author:		JPPP
+-- Create date: 09192016
+-- Description:	Retrieve Employees Work Schedule by EmployeeIds
+-- =============================================
+
+
+CREATE PROCEDURE [schedule].[spRetrieveEmployeesWorkScheduleByEmployeeIds]
+(
+	@EmployeeIds varchar(max) = ''
+)
+AS
+BEGIN
+
+	SELECT 
+		COALESCE(WorkSchedule.WorkScheduleId,0) WorkScheduleId,
+		COALESCE(WorkSchedule.WorkDate,'1/1/1900') WorkDate,
+		COALESCE(WorkSchedule.ProfileId, '') EmployeeId,
+		COALESCE(WorkSchedule.ShiftId,0) ShiftId,
+		COALESCE(WorkSchedule.DaysOfWeek,'') DaysOfWeek,
+		COALESCE(WorkSchedule.StartTime,'1/1/1900') StartTime,
+		COALESCE(WorkSchedule.EndTime,'1/1/1900') EndTime,
+		COALESCE(WorkSchedule.Break1StartTime,'1/1/1900') Break1StartTime,
+		COALESCE(WorkSchedule.Break1EndTime,'1/1/1900') Break1EndTime,
+		COALESCE(WorkSchedule.Break2StartTime,'1/1/1900') Break2StartTime, 
+		COALESCE(WorkSchedule.Break2EndTime,'1/1/1900') Break2EndTime,
+		COALESCE(WorkSchedule.Break3StartTime,'1/1/1900') Break3StartTime,
+		COALESCE(WorkSchedule.Break3EndTime,'1/1/1900') Break3EndTime,
+		COALESCE(WorkSchedule.LunchBreakStartTime,'1/1/1900') LunchBreakStartTime,
+		COALESCE(WorkSchedule.LunchBreakEndTime,'1/1/1900') LunchBreakEndTime,
+		COALESCE(WorkSchedule.WorkingHours,0) WorkingHours,
+		COALESCE(WorkSchedule.FixedSchedule,0) FixedSchedule,
+		COALESCE(WorkSchedule.FixedStartDate,'1/1/1900') FixedStartDate,
+		COALESCE(WorkSchedule.FixedEndDate,'1/1/1900') FixedEndDate,
+		COALESCE(WorkSchedule.OverrideAttendancePolicyRule,0) OverrideAttendancePolicyRule, 
+		COALESCE(WorkSchedule.FlexiTime,0) FlexiTime,
+		COALESCE(WorkSchedule.FlexiTimeLimit,0) FlexiTimeLimit,
+		COALESCE(WorkSchedule.EarlyTimeIn,0) EarlyTimeIn,
+		COALESCE(WorkSchedule.EarlyTimeInLimit,0) EarlyTimeInLimit,
+		COALESCE(WorkSchedule.EarlyTimeInOvertime,0) EarlyTimeInOvertime,
+
+		COALESCE([Profile].LastName,'') + ', ' + COALESCE([Profile].FirstName,'') + 
+			CASE
+				WHEN COALESCE([Profile].Appellation,'') = '' THEN ' ' 
+				ELSE ' ' + [Profile].Appellation + ' ' 
+			END + COALESCE([Profile].MiddleName,'') EmployeeName,
+
+		COALESCE(EmploymentInformation.CJI_EmployeeNo,'') EmployeeNo,
+		/*added by RME.10.22.2018*/
+		LunchDuration = ISNULL(WorkSchedule.LunchDuration,0),
+		Break1Duration= ISNULL(WorkSchedule.Break1Duration,0),
+		Break2Duration= ISNULL(WorkSchedule.Break2Duration,0),
+		Break3Duration= ISNULL(WorkSchedule.Break3Duration,0)
+	FROM schedule.WorkSchedule
+	LEFT JOIN employee.Profile ON WorkSchedule.ProfileId = [Profile].ProfileId
+	LEFT JOIN employee.EmploymentInformation ON [Profile].ProfileId = EmploymentInformation.ProfileId
+	WHERE
+		WorkSchedule.ProfileId IN (SELECT VALUE FROM dbo.FN_SPLITWITHID(@EmployeeIds, ','))
+END
+GO
+
+

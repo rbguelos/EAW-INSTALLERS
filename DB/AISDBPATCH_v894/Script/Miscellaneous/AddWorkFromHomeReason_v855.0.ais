@@ -1,0 +1,13 @@
+EXEC spInsertTableData 
+@SCHEMA = 'maintenance', 
+@TABLENAME = 'EnumValues', 
+@COLUMNS = 'SourceName,DisplayText,Value,OrderNumber,Status',
+@VALUETOINSERT = 'OfficialBusinessType|Work from Home|9|8|0', 
+@COLUMNSEPARATOR = '|', 
+@ROWSEPARATATOR = '
+', 
+@CHECKDUPLICATECOLUMNS = 'SourceName,DisplayText,Value,OrderNumber,Status'
+
+UPDATE maintenance.EnumValues SET OrderNumber = 9 WHERE SourceName = 'OfficialBusinessType' AND DisplayText = 'Others'
+
+SELECT * FROM maintenance.EnumValues WHERE SourceName = 'OfficialBusinessType'

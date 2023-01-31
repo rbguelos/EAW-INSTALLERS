@@ -1,0 +1,1 @@
+UPDATE performanceappraisal.PerformanceObjectiveDetail SET EmployeeRating = 0 WHERE EmployeeRating IS NULL

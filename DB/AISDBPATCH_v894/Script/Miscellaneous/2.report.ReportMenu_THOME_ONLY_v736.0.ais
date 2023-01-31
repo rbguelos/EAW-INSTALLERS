@@ -1,0 +1,15 @@
+/****************************************
+INSERT THE REPORT MENU FOR THOME ONLY
+****************************************/
+
+DECLARE @CompanyCount INT = (SELECT COUNT(CompanyId) FROM maintenance.Company WHERE [Name] LIKE '%THOME%' OR [Code] LIKE '%THOME%')
+DECLARE @ReportCount INT = (SELECT COUNT(ReportMenuId) FROM report.ReportMenu WHERE FileGeneratorHdrId = 82)
+
+
+IF(@ReportCount = 0 AND @CompanyCount > 0)
+BEGIN
+	INSERT INTO report.ReportMenu (ReportId,AdminMenuModuleId,MenuModuleId,ReportGroupId,ModuleFormId,FileGeneratorHdrId,XMLReportId)
+	VALUES (0,0,0,NULL,242,82,0)
+END 
+ELSE
+	PRINT 'NOPE'

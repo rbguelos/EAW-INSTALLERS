@@ -1,0 +1,494 @@
+DECLARE @TIMEENTRY VARCHAR(MAX)
+SET @TIMEENTRY = 'SET NOCOUNT ON;
+
+DECLARE @TMPORGANIZATION TABLE (RowId bigint PRIMARY KEY,TimeEntryHeaderDetailId bigint, ProfileId bigint, EmployeeNo varchar(30), ShiftId bigint null, CompanyId bigint NULL,[BranchId] [bigint] NULL,[DepartmentId] [bigint] NULL,[OfficeId] [bigint] NULL,[UnitId] [bigint] NULL,[DivisionId] [bigint] NULL,[GroupId] [bigint] NULL,[DistrictId] [bigint] NULL,[LocationId] [bigint] NULL,[ProjectProfileId] [bigint] NULL,[CostCenterId] [bigint] NULL,[LineId] [bigint] NULL,[TeamId] [bigint] NULL,[EmployeeTypeId] [bigint] NULL,[JobRankId] [bigint] NULL,[JobGradeId] [bigint] NULL,[JobLevelId] [bigint] NULL,[PositionId] [bigint] NULL,AccessId varchar(20) NULL,ManpowerClassificationId bigint NULL, UNIQUE CLUSTERED (ProfileId, EmployeeNo, TimeEntryHeaderDetailId, RowId))
+DECLARE @TMPTIMEENTRY TABLE (TimeEntryHeaderDetailId bigint PRIMARY KEY, ProfileId bigint, WorkDate datetime, UNIQUE CLUSTERED(WorkDate,ProfileId,TimeEntryHeaderDetailId));
+
+/* insert raw data to temp table with duplicate row count (detailno) include also approved leave requests */
+SELECT DetailNo = ROW_NUMBER() OVER (PARTITION BY [Work Date],[Employee No] ORDER BY RowId),T.*,[Leave Hrs] = cast(L.NoOfHours as decimal(18,4)), [LeaveCode] = L.LeaveCode
+,[PaySheetLate] = ISNULL(T.[Late],0) /*default column*/
+INTO #MYTEMP FROM @tmpTVP T
+OUTER APPLY(SELECT LR.InclusiveStartDate,LR.ProfileId,SUM(LR.NoOfHours)NoOfHours, MIN(TMP.Code) LeaveCode, EI.CJI_EmployeeNo
+	FROM leave.LeaveRequest LR
+		OUTER APPLY(SELECT TOP 1 LeaveTypeId, NoOfHours, LT.Code FROM leave.LeaveRequest 
+		INNER JOIN leave.LeaveTypeSetup LT ON LT.LeaveTypeSetupId = LeaveTypeId
+		WHERE ProfileId = LR.ProfileId AND InclusiveStartDate = LR.InclusiveStartDate AND StatusId = 2)TMP
+		INNER JOIN employee.EmploymentInformation EI ON EI.ProfileId =  LR.ProfileId
+		WHERE LR.StatusId = 2 /*approved only*/
+		AND LR.InclusiveStartDate = T.[Work Date] AND EI.CJI_EmployeeNo = T.[Employee No]
+		GROUP BY LR.InclusiveStartDate, LR.ProfileId, EI.CJI_EmployeeNo)L
+
+
+
+/* CREATE INDEX  ON TEMP TABLE FOR OPTIMIZATION */
+--CREATE NONCLUSTERED INDEX [IXtmpTVPEmpWorkDate] ON #MYTEMP ([DetailNo],[RowId]) INCLUDE ([Employee No],[Shift Code],[Work Date],[Time-in],[Time-out]);
+
+INSERT INTO @TMPTIMEENTRY(TimeEntryHeaderDetailId,ProfileId,WorkDate) SELECT TD.TimeEntryHeaderDetailId,TD.ProfileId,TD.WorkDate FROM attendance.TimeEntryHeaderDetail TD
+INNER JOIN employee.EmploymentInformation EI ON EI.ProfileId = TD.ProfileId
+INNER JOIN #MYTEMP T ON T.[Employee No] = EI.CJI_EmployeeNo
+	AND T.[Work Date] = TD.WorkDate
+	AND T.DetailNo = 1
+	AND ISNULL(T.[DataValidationRemarks_], '''') = '''' /*no error*/
+
+/*get organizations and other necessary values*/
+INSERT INTO @TMPORGANIZATION (RowId,TimeEntryHeaderDetailId, ProfileId,EmployeeNo,ShiftId, CompanyId, BranchId, DepartmentId, OfficeId, UnitId, DivisionId, GroupId, DistrictId, LocationId, ProjectProfileId, CostCenterId, LineId, TeamId, JobLevelId, PositionId, AccessId, ManpowerClassificationId)
+	SELECT
+		T.RowId
+	   ,TE.TimeEntryHeaderDetailId
+	   ,EI.ProfileId
+	   ,EI.CJI_EmployeeNo
+	   ,S.ShiftId
+	   ,EI.AOA_Company
+	   ,EI.AOA_Branch
+	   ,0/*EI.AOA_Department			*/
+	   ,0/*EI.AOA_Office				*/
+	   ,0/*EI.AOA_Unit					*/
+	   ,0/*EI.AOA_Division				*/
+	   ,0/*EI.AOA_Groups				*/
+	   ,0/*EI.AOA_District				*/
+	   ,0/*EI.AOA_Location				*/
+	   ,0/*EI.AOA_Project				*/
+	   ,0/*EI.AOA_CostCenter			*/
+	   ,0/*EI.AOA_Line					*/
+	   ,0/*EI.AOA_Team					*/
+	   ,0/*EI.CJI_JobLevel				*/
+	   ,0/*EI.CJI_Position				*/
+	   ,0/*EI.CJI_AccessId				*/
+	   ,0/*EI.CJI_ManpowerClassification*/
+	FROM #MYTEMP T
+	INNER JOIN employee.EmploymentInformation EI ON EI.CJI_EmployeeNo = T.[Employee No]
+	LEFT JOIN schedule.Shift S ON S.Code = T.[Shift Code]
+	OUTER APPLY(SELECT TOP 1 TimeEntryHeaderDetailId FROM @TMPTIMEENTRY WHERE ProfileId = EI.ProfileId AND WorkDate = T.[Work Date])TE
+	WHERE ISNULL(T.[DataValidationRemarks_], '''') = '''' /*no error*/
+
+/* get column details */
+DECLARE @COLDETAIL VARCHAR(MAX)
+	   ,@COLDETAILNONULL VARCHAR(MAX)
+	   ,@COLDETAILSUM VARCHAR(MAX)
+	   ,@TABLEDESCRIPTION VARCHAR(250)
+	   ,@ValidationLog VARCHAR(MAX)
+	   ,@INSERTEDROWS INT
+
+
+/*VALIDATIONS*/  /*********************************************************************/
+SELECT @ValidationLog = (
+	SELECT 
+			'''' +
+			CASE
+				WHEN NOT ORG.TimeEntryHeaderDetailId IS NULL THEN CONCAT(''Row '', s.RowNum_,'' - Source data already exist on Employee Time Entry'', CHAR(10))
+				ELSE ''''
+			END +
+			CASE
+				WHEN s.DetailNo > 1 THEN CONCAT(''Row '', s.RowNum_,'' - Employee Time Entry was duplicated from the source data.'', CHAR(10))
+				ELSE ''''
+			END +
+			CASE
+				WHEN ISNULL(s.[Work Date], '''') = '''' THEN CONCAT(''Row '', s.RowNum_,'' - Work Date cannot be blank.'', CHAR(10))
+				ELSE ''''
+			END +
+			CASE
+				WHEN ISNULL(s.[Work Date], '''') <> '''' AND
+					ISDATE(s.[Work Date]) = 0 THEN CONCAT(''Row '', s.RowNum_,'' - '',s.[Work Date],'' is not a valid Work Date.'', CHAR(10))
+				ELSE ''''
+			END +
+
+			CASE
+				/*WHEN ISNULL(ORG.[ProfileId], '''') = '''' AND ISNULL(s.[Employee No], '''') <> '''' THEN CONCAT(''Row '', s.RowNum_,'' - '',s.[Employee No],'' is not a valid Employee No.'', CHAR(10))*/
+				WHEN ISNULL(s.[Employee No], '''') = '''' THEN CONCAT(''Row '', s.RowNum_,'' - "Employee No." cannot be blank.'', CHAR(10))
+				ELSE ''''
+			END +
+			/*CASE
+				WHEN ISNULL(ORG.ShiftId, '''') = '''' AND ISNULL(s.[Shift Code], '''') <> '''' THEN CONCAT(''Row '', s.RowNum_,'' - '',s.[Shift Code],'' is not a valid Shift Code.'', CHAR(10))
+				ELSE ''''
+			END +*/
+			CASE
+				WHEN ISNULL(s.[DataValidationRemarks_], '''') <> '''' THEN s.[DataValidationRemarks_]
+				ELSE ''''
+			END
+		FROM #MYTEMP s
+		LEFT JOIN @TMPORGANIZATION ORG
+			ON ORG.RowId = s.RowId
+		ORDER BY s.RowId
+		FOR XML PATH(''''), ROOT (''MyString''), TYPE).value(''/MyString[1]'', ''varchar(max)'')  
+/*********************************************************************/    
+
+/* INSERT COLLECTED DATA TO TIME ENTRY TABLES */
+
+DECLARE @TMPHEADER TABLE (
+	[TimeEntryHeaderId] [bigint] NOT NULL
+   ,[ReferenceNumber] [varchar](150) NULL
+   ,[CompanyId] [bigint] NULL
+   ,[BranchId] [bigint] NULL
+   ,[DepartmentId] [bigint] NULL
+   ,[PositionId] [bigint] NULL
+   ,[UnitId] [bigint] NULL
+   ,[ProjectId] [bigint] NULL
+   ,[LocationId] [bigint] NULL
+   ,[ProfileId] [varchar](MAX) NULL
+   ,[StartDate] [datetime] NULL
+   ,[EndDate] [datetime] NULL
+)
+INSERT INTO attendance.TimeEntryHeader ([ReferenceNumber], [CompanyId], [BranchId], [DepartmentId], [PositionId], [UnitId], [ProjectId], [LocationId], [ProfileId], [StartDate], [EndDate], [StatusId], [CreateId], [CreateDate])
+OUTPUT INSERTED.TimeEntryHeaderId, INSERTED.[ReferenceNumber], INSERTED.[CompanyId], INSERTED.[BranchId], INSERTED.[DepartmentId], INSERTED.[PositionId], INSERTED.[UnitId], INSERTED.[ProjectId], INSERTED.[LocationId], INSERTED.[ProfileId], INSERTED.[StartDate], INSERTED.[EndDate] INTO @TMPHEADER (TimeEntryHeaderId, [ReferenceNumber], [CompanyId], [BranchId], [DepartmentId], [PositionId], [UnitId], [ProjectId], [LocationId], [ProfileId], [StartDate], [EndDate])
+	SELECT
+		[ReferenceNumber] = ''''
+	   ,[CompanyId] = ISNULL(ORG.CompanyId, 0)
+	   ,[BranchId] = ISNULL(ORG.BranchId, 0)
+	   ,[DepartmentId] = ISNULL(ORG.DepartmentId, 0)
+	   ,[PositionId] = ISNULL(ORG.PositionId, 0)
+	   ,[UnitId] = ISNULL(ORG.UnitId, 0)
+	   ,[ProjectId] = ISNULL(ORG.ProjectProfileId, 0)
+	   ,[LocationId] = ISNULL(ORG.LocationId, 0)
+	   ,[ProfileId] = ''''
+	   ,[StartDate] = MIN(T.[Work Date])
+	   ,[EndDate] = MAX(T.[Work Date])
+	   ,[StatusId] = 2 /*Approved*/
+	   ,[CreateId] = @UserId
+	   ,[CreateDate] = GETDATE()
+	FROM #MYTEMP T
+	INNER JOIN employee.EmploymentInformation EI
+		ON EI.CJI_EmployeeNo = T.[Employee No]
+	LEFT JOIN @TMPORGANIZATION ORG
+		ON ORG.RowId = T.RowId
+	--LEFT JOIN attendance.TimeEntryHeader TH
+	--	ON TH.CompanyId = ISNULL(ORG.CompanyId, 0)
+	--		AND TH.BranchId = ISNULL(ORG.BranchId, 0)
+	--		AND TH.DepartmentId = ISNULL(ORG.DepartmentId, 0)
+	--		AND TH.PositionId = ISNULL(ORG.PositionId, 0)
+	--		AND TH.UnitId = ISNULL(ORG.UnitId, 0)
+	--		AND TH.ProjectId = ISNULL(ORG.ProjectProfileId, 0)
+	--		AND TH.LocationId = ISNULL(ORG.LocationId, 0)
+	--		AND T.[Work Date] BETWEEN TH.StartDate AND TH.EndDate
+	WHERE 
+	ORG.TimeEntryHeaderDetailId IS NULL
+	--AND TH.TimeEntryHeaderId IS NULL
+	AND T.DetailNo = 1
+	AND T.[Work Date] > ''1/1/1900''
+	AND ISNULL(T.[DataValidationRemarks_], '''') = '''' /*no error*/
+	GROUP BY ISNULL(ORG.CompanyId, 0)
+			,ISNULL(ORG.BranchId, 0)
+			,ISNULL(ORG.DepartmentId, 0)
+			,ISNULL(ORG.PositionId, 0)
+			,ISNULL(ORG.UnitId, 0)
+			,ISNULL(ORG.ProjectProfileId, 0)
+			,ISNULL(ORG.LocationId, 0);    
+			
+			
+/*HEADER DETAIL*/
+DECLARE @TMPTimeEntryHeaderDetail TABLE (
+	[TimeEntryHeaderDetailId] [bigint]
+   ,[TimeEntryHeaderId] [bigint] NULL
+   ,[ProfileId] [bigint] NULL
+   ,[Type] [varchar](50) NULL
+   ,[WorkDate] [datetime] NULL
+   ,[StartTime] [datetime] NULL
+   ,[EndTime] [datetime] NULL
+   ,[TimeIn] [datetime] NULL
+   ,[TimeOut] [datetime] NULL
+)
+INSERT INTO attendance.TimeEntryHeaderDetail ([TimeEntryHeaderId], [ProfileId], [Type], [WorkDate], [StartTime], [EndTime], [TimeIn], [TimeOut], [ActualTimeIn], [ActualTimeOut], [LunchTime], [LunchEndTime], [LunchBreak], [WeekDay], [DayOfWeek], [OTStartTime], [OTEndTime], [OTHrs], [OTNSHrs], [TimeOffReason], [TimeOffEffect], [TimeOffHrs], [WorkingHours], [Remarks], [LeaveRequestId], [LeaveCode], [LeaveHrs], [ShiftCodeId], [ShiftCode], [WorkScheduleId], [OvertimeId], [OfficialBussinessId], [DayTypeSequence], [BranchId], [DepartmentId], [OfficeId], [UnitId], [DivisionId], [GroupId], [DistrictId], [LocationId], [ProjectProfileId], [CostCenterId], [LineId], [TeamId], [EmployeeTypeId], [JobRankId], [JobGradeId], [JobLevelId], [PositionId], [AccessId], [Break1StartTime], [Break1EndTime], [Break2StartTime], [Break2EndTime], [Break3StartTime], [Break3EndTime], [RegularStatusId], [NightShiftStatusId], [RegularOTStatusId], [NightShiftOTStatusId], [UndertimeReason], [CreateId], [CreateDate], [ManpowerClassificationId], [PreOTStatusId], [NightShiftStatusId2])
+OUTPUT INSERTED.TimeEntryHeaderDetailId, INSERTED.[TimeEntryHeaderId], INSERTED.[ProfileId], INSERTED.[Type], INSERTED.[WorkDate], INSERTED.[StartTime], INSERTED.[EndTime],INSERTED.[TimeIn],INSERTED.[TimeOut] INTO @TMPTimeEntryHeaderDetail
+	SELECT
+		H.[TimeEntryHeaderId]
+	   ,[EI].[ProfileId]
+	   ,[Type] = t.[Shift Code]
+	   ,[WorkDate] = T.[Work Date]
+	   ,[StartTime] = bt.[StartTime]
+	   ,[EndTime] = bt.[EndTime]
+	   ,[TimeIn] = T.[Time-in]
+	   ,[TimeOut] = T.[Time-out]
+	   ,[ActualTimeIn] = T.[Time-in]
+	   ,[ActualTimeOut] = T.[Time-out]
+	   ,[LunchTime] = bt.[LunchBreakStartTime]
+	   ,[LunchEndTime] = bt.LunchBreakEndTime
+	   ,[LunchBreak] = S.[LunchDuration]
+	   ,[WeekDay] = DATEPART(dw, T.[Work Date])
+	   ,[DayOfWeek] = 1 /* saan galing to*/
+	   ,[OTStartTime] = ''1/1/1900''
+	   ,[OTEndTime] = ''1/1/1900''
+	   ,[OTHrs] = 0
+	   ,[OTNSHrs] = 0
+	   ,[TimeOffReason] = ''''
+	   ,[TimeOffEffect] = ''''
+	   ,[TimeOffHrs] = 0
+	   ,[WorkingHours] = ISNULL(T.[Regular Hrs],0)+(ISNULL(T.[Regular NS Hrs],0) + ISNULL(T.[Restday NS Hrs],0) + ISNULL(T.[Holiday NS Hrs],0) + ISNULL(T.[Special NS Hrs],0) + ISNULL(T.[Holiday Restday NS Hrs],0) + ISNULL(T.[Special Restday NS Hrs],0))
+						+(ISNULL([Regular OT Hrs],0) + ISNULL([Restday OT Hrs],0) + ISNULL([Holiday OT Hrs],0) + ISNULL([Special OT Hrs],0) + ISNULL([Holiday Restday OT Hrs],0) + ISNULL([Special Restday OT Hrs],0))
+						+(ISNULL([Regular NSOT Hrs],0) + ISNULL([Restday NSOT Hrs],0) + ISNULL([Holiday NSOT Hrs],0) + ISNULL([Special NSOT Hrs],0) + ISNULL([Holiday Restday NSOT Hrs],0) + ISNULL([Special Restday NSOT Hrs],0))
+	   ,[Remarks] = ''''
+	   ,[LeaveRequestId] = 0
+	   ,[LeaveCode] = T.[LeaveCode]
+	   ,[LeaveHrs] = T.[Leave Hrs]
+	   ,[ShiftCodeId] = ORG.ShiftId
+	   ,[ShiftCode] = T.[Shift Code]
+	   ,[WorkScheduleId] = 0
+	   ,[OvertimeId] = 0
+	   ,[OfficialBussinessId] = 0
+	   ,[DayTypeSequence] = ''''
+	   ,[BranchId] = ISNULL(ORG.BranchId, EI.AOA_Branch)
+	   ,[DepartmentId] = ISNULL(ORG.DepartmentId, EI.AOA_Department)
+	   ,[OfficeId] = ISNULL(ORG.OfficeId, EI.AOA_Office)
+	   ,[UnitId] = ISNULL(ORG.UnitId, H.UnitId)
+	   ,[DivisionId] = ISNULL(ORG.DivisionId, EI.AOA_Division)
+	   ,[GroupId] = ISNULL(ORG.GroupId, EI.AOA_Groups)
+	   ,[DistrictId] = ISNULL(ORG.DistrictId, EI.AOA_District)
+	   ,[LocationId] = ISNULL(ORG.LocationId, H.LocationId)
+	   ,[ProjectProfileId] = ISNULL(ORG.ProjectProfileId, H.ProjectId)
+	   ,[CostCenterId] = ISNULL(ORG.CostCenterId, EI.AOA_CostCenter)
+	   ,[LineId] = ISNULL(ORG.LineId, EI.AOA_Line)
+	   ,[TeamId] = ISNULL(ORG.TeamId, EI.AOA_Team)
+	   ,[EmployeeTypeId] = ISNULL(ORG.EmployeeTypeId, EI.CJI_EmployeeType)
+	   ,[JobRankId] = ISNULL(ORG.JobRankId, EI.CJI_JobRank)
+	   ,[JobGradeId] = ISNULL(ORG.JobGradeId, EI.CJI_JobGrade)
+	   ,[JobLevelId] = ISNULL(ORG.JobLevelId, EI.CJI_JobLevel)
+	   ,[PositionId] = ISNULL(ORG.PositionId, EI.CJI_Position)
+	   ,[AccessId] = NULL/*EI.CJI_AccessId*/
+	   ,[Break1StartTime] = S.Break1StartTime
+	   ,[Break1EndTime] = S.Break1EndTime
+	   ,[Break2StartTime] = S.Break2StartTime
+	   ,[Break2EndTime] = S.Break2EndTime
+	   ,[Break3StartTime] = S.Break3StartTime
+	   ,[Break3EndTime] = S.Break3EndTime
+	   ,[RegularStatusId] = 98 /*Normal*/
+	   ,[NightShiftStatusId] = CASE WHEN (ISNULL(T.[Regular NS Hrs],0) + ISNULL(T.[Restday NS Hrs],0) + ISNULL(T.[Holiday NS Hrs],0) + ISNULL(T.[Special NS Hrs],0) + ISNULL(T.[Holiday Restday NS Hrs],0) + ISNULL(T.[Special Restday NS Hrs],0)) <> 0 THEN 2 ELSE 0 END
+	   ,[RegularOTStatusId] = CASE WHEN (ISNULL([Regular OT Hrs],0) + ISNULL([Restday OT Hrs],0) + ISNULL([Holiday OT Hrs],0) + ISNULL([Special OT Hrs],0) + ISNULL([Holiday Restday OT Hrs],0) + ISNULL([Special Restday OT Hrs],0)) <> 0 THEN 2 ELSE 0 END
+	   ,[NightShiftOTStatusId] = CASE WHEN (ISNULL([Regular NSOT Hrs],0) + ISNULL([Restday NSOT Hrs],0) + ISNULL([Holiday NSOT Hrs],0) + ISNULL([Special NSOT Hrs],0) + ISNULL([Holiday Restday NSOT Hrs],0) + ISNULL([Special Restday NSOT Hrs],0)) <> 0 THEN 2 ELSE 0 END
+	   ,[UndertimeReason] = ''''
+	   ,[CreateId] = @UserId
+	   ,[CreateDate] = GETDATE()
+	   ,[ManpowerClassificationId] = ORG.ManpowerClassificationId
+	   ,[PreOTStatusId] = 0
+	   ,[NightShiftStatusId2] = 0
+	FROM #MYTEMP T
+	LEFT JOIN @TMPORGANIZATION ORG
+		ON ORG.RowId = T.RowId
+	LEFT JOIN schedule.Shift S
+		ON S.Code = T.[Shift Code]
+  OUTER APPLY(
+  SELECT 
+  [WorkDate] = t.[Work Date]
+  ,StartTime = cast(convert(varchar,s.StartTime,108) as datetime)
+  ,EndTime = cast(convert(varchar,s.EndTime,108) as datetime)
+  ,LunchBreakStartTime = cast(convert(varchar,s.LunchBreakStartTime,108) as datetime)
+  ,LunchBreakEndTime = cast(convert(varchar,s.LunchBreakEndTime,108) as datetime)
+  ,Break1StartTime = cast(convert(varchar,s.Break1StartTime,108) as datetime)
+  ,Break1EndTime = cast(convert(varchar,s.Break1EndTime,108) as datetime)
+  ,Break2StartTime = cast(convert(varchar,s.Break2StartTime,108) as datetime)
+  ,Break2EndTime = cast(convert(varchar,s.Break2EndTime,108) as datetime)
+  ,Break3StartTime = cast(convert(varchar,s.Break3StartTime,108) as datetime)
+  ,Break3EndTime = cast(convert(varchar,s.Break3EndTime,108) as datetime)
+  )b
+  OUTER APPLY(SELECT 
+  [StartTime]		= concat(convert(varchar,b.[WorkDate],101),'' '',convert(varchar,b.[StartTime],108))
+  ,[EndTime]		= concat(convert(varchar,dateadd(day,(case when b.StartTime > b.[EndTime] THEN 1 ELSE 0 END),b.[WorkDate]),101),'' '',convert(varchar,b.[EndTime],108))
+  ,[LunchBreakStartTime]	= case when b.LunchBreakStartTime <> b.LunchBreakEndTime THEN concat(convert(varchar,dateadd(day,(case when b.StartTime > b.[LunchBreakStartTime] THEN 1 ELSE 0 END),b.[WorkDate]),101),'' '',convert(varchar,b.[LunchBreakStartTime],108)) ELSE ''1/1/1900'' END
+  ,[LunchBreakEndTime]		= case when b.LunchBreakStartTime <> b.LunchBreakEndTime THEN concat(convert(varchar,dateadd(day,(case when b.StartTime > b.LunchBreakEndTime OR b.LunchBreakStartTime > b.LunchBreakEndTime THEN 1 ELSE 0 END),b.[WorkDate]),101),'' '',convert(varchar,b.[LunchBreakEndTime],108)) ELSE ''1/1/1900'' END
+  ,Break1StartTime			= CASE WHEN B.Break1StartTime <> B.Break1EndTime THEN concat(convert(varchar,dateadd(day,(case when b.StartTime > b.Break1StartTime THEN 1 ELSE 0 END),b.[WorkDate]),101),'' '',convert(varchar,b.Break1StartTime,108)) ELSE ''1/1/1900'' END
+  ,Break1EndTime			= CASE WHEN B.Break1StartTime <> B.Break1EndTime THEN concat(convert(varchar,dateadd(day,(case when b.StartTime > b.Break1EndTime OR b.Break1StartTime > b.Break1EndTime THEN 1 ELSE 0 END),b.[WorkDate]),101),'' '',convert(varchar,b.Break1EndTime,108)) ELSE ''1/1/1900'' END
+  ,Break2StartTime			= CASE WHEN B.Break2StartTime <> B.Break2EndTime THEN concat(convert(varchar,dateadd(day,(case when b.StartTime > b.Break2StartTime THEN 1 ELSE 0 END),b.[WorkDate]),101),'' '',convert(varchar,b.Break2StartTime,108)) ELSE ''1/1/1900'' END
+  ,Break2EndTime			= CASE WHEN B.Break2StartTime <> B.Break2EndTime THEN concat(convert(varchar,dateadd(day,(case when b.StartTime > b.Break2EndTime OR b.Break1StartTime > b.Break2EndTime THEN 1 ELSE 0 END),b.[WorkDate]),101),'' '',convert(varchar,b.Break2EndTime,108)) ELSE ''1/1/1900'' END
+  ,Break3StartTime			= CASE WHEN B.Break3StartTime <> B.Break3EndTime THEN concat(convert(varchar,dateadd(day,(case when b.StartTime > b.Break3StartTime THEN 1 ELSE 0 END),b.[WorkDate]),101),'' '',convert(varchar,b.Break3StartTime,108)) ELSE ''1/1/1900'' END
+  ,Break3EndTime			= CASE WHEN B.Break3StartTime <> B.Break3EndTime THEN concat(convert(varchar,dateadd(day,(case when b.StartTime > b.Break3EndTime OR b.Break1StartTime > b.Break3EndTime THEN 1 ELSE 0 END),b.[WorkDate]),101),'' '',convert(varchar,b.Break3EndTime,108)) ELSE ''1/1/1900'' END
+  )bt
+	INNER JOIN @TMPHEADER H
+		ON ISNULL(H.[CompanyId], 0) = ISNULL(ORG.CompanyId, 0)
+			AND ISNULL(H.[BranchId], 0) = ISNULL(ORG.[BranchId], 0)
+			AND ISNULL(H.[DepartmentId], 0) = ISNULL(ORG.[DepartmentId], 0)
+			AND ISNULL(H.[PositionId], 0) = ISNULL(ORG.[PositionId], 0)
+			AND ISNULL(H.[UnitId], 0) = ISNULL(ORG.[UnitId], 0)
+			AND ISNULL(H.[ProjectId], 0) = ISNULL(ORG.[ProjectProfileId], 0)
+			AND ISNULL(H.[LocationId], 0) = ISNULL(ORG.[LocationId], 0)
+	INNER JOIN employee.EmploymentInformation EI
+		ON EI.CJI_EmployeeNo = T.[Employee No]
+	WHERE 1 = 1
+	AND ORG.TimeEntryHeaderDetailId IS NULL
+	/*AND NOT ORG.ShiftId IS NULL*/
+	AND NOT ORG.CompanyId IS NULL
+	AND NOT EI.ProfileId IS NULL
+	AND T.DetailNo = 1
+	AND T.[Work Date] > ''1/1/1900''
+	AND ISNULL(T.[DataValidationRemarks_], '''') = '''' /*no error*/
+SET @INSERTEDROWS = @@rowcount;
+
+
+/*DETAIL*/
+DECLARE @TEMPTimeEntryDetail TABLE ([TimeEntryHeaderDetailId] bigint,[ProfileId] bigint,[WorkDate] datetime,[Type] varchar(150),[Value] decimal(18,4),[CreateId] bigint,[CreateDate] datetime)
+
+INSERT INTO attendance.TimeEntryDetail([TimeEntryHeaderDetailId],[ProfileId],[WorkDate],[Type],[Value],[CreateId],[CreateDate])
+/* TimeEntryHeaderDetailBreakdown */
+OUTPUT		INSERTED.[TimeEntryHeaderDetailId]
+           ,INSERTED.[ProfileId]
+           ,INSERTED.[WorkDate]
+           ,INSERTED.[Type]
+           ,INSERTED.[Value]
+           ,INSERTED.[CreateId]
+           ,INSERTED.[CreateDate]
+		   INTO @TEMPTimeEntryDetail ([TimeEntryHeaderDetailId],[ProfileId],[WorkDate],[Type],[Value],[CreateId],[CreateDate])
+SELECT 
+      [HD].[TimeEntryHeaderDetailId]
+      ,ei.[ProfileId]
+      ,t.[Work Date]
+      ,[TYPECODE] = TSC.[Name]
+      ,[Value] = [HRS]
+      ,[CreateId] = @UserId
+      ,[CreateDate] = GETDATE()
+FROM #MYTEMP T
+UNPIVOT ( [HRS] FOR [TYPECODE] IN ([Late]
+,[Undertime]
+,[Absent Hrs]
+,[Regular Hrs]
+,[Leave Hours]
+,[Regular OT Hrs]
+,[Regular NS Hrs]
+,[Regular NSOT Hrs]
+,[Restday Hrs]
+,[Restday OT Hrs]
+,[Restday NS Hrs]
+,[Restday NSOT Hrs]
+,[Holiday Hrs]
+,[Holiday OT Hrs]
+,[Holiday NS Hrs]
+,[Holiday NSOT Hrs]
+,[Special Hrs]
+,[Special OT Hrs]
+,[Special NS Hrs]
+,[Special NSOT Hrs]
+,[Holiday Restday Hrs]
+,[Holiday Restday OT Hrs]
+,[Holiday Restday NS Hrs]
+,[Holiday Restday NSOT Hrs]
+,[Special Restday Hrs]
+,[Special Restday OT Hrs]
+,[Special Restday NS Hrs]
+,[Special Restday NSOT Hrs]
+,[PaySheetLate]/*added 04.23.2019*/
+)) AS T 
+INNER JOIN employee.EmploymentInformation EI ON EI.CJI_EmployeeNo = T.[Employee No]
+INNER JOIN @TMPTimeEntryHeaderDetail HD ON HD.ProfileId = EI.ProfileId
+	AND HD.WorkDate = t.[Work Date] AND T.DetailNo = 1
+INNER JOIN maintenance.TimeSheetColumns TSC ON (REPLACE(TSC.Label,'' '','''') = REPLACE(T.TYPECODE,'' '','''') OR REPLACE(TSC.[Name],'' '','''') = REPLACE(T.TYPECODE,'' '','''')) 
+AND TSC.[Type] = ''D'' AND NOT TSC.[Group] IN (''PreShiftOT'')
+WHERE ISNULL(HRS,0) <> 0
+
+
+IF @@rowcount > 0
+BEGIN
+INSERT INTO attendance.TimeEntryHeaderDetailBreakdown ([TimeEntryHeaderDetailId], [ProfileId], [WorkDate], [Type], [Value], [CreateId], [CreateDate], [TimeIn], [TimeOut]
+, [BranchId], [DepartmentId], [OfficeId], [UnitId], [DivisionId], [GroupId], [DistrictId], [LocationId], [ProjectProfileId], [CostCenterId], [LineId], [TeamId], [EmployeeTypeId], [JobRankId]
+, [JobGradeId], [JobLevelId], [PositionId], [ManpowerClassificationId])
+	SELECT
+	[TimeEntryHeaderDetailId], [ProfileId], [WorkDate], [Type], [Value], [CreateId], [CreateDate],
+	 [TimeIn]				    = THD.[TimeIn]
+	,[TimeOut]				    = THD.[TimeOut]
+	,[BranchId]				    = THD.[BranchId]
+	,[DepartmentId]			    = THD.[DepartmentId]
+	,[OfficeId]				    = THD.[OfficeId]
+	,[UnitId]				    = THD.[UnitId]
+	,[DivisionId]			    = THD.[DivisionId]
+	,[GroupId]				    = THD.[GroupId]
+	,[DistrictId]			    = THD.[DistrictId]
+	,[LocationId]			    = THD.[LocationId]
+	,[ProjectProfileId]		    = THD.[ProjectProfileId]
+	,[CostCenterId]			    = THD.[CostCenterId]
+	,[LineId]				    = THD.[LineId]
+	,[TeamId]				    = THD.[TeamId]
+	,[EmployeeTypeId]		    = THD.[EmployeeTypeId]
+	,[JobRankId]			    = THD.[JobRankId]
+	,[JobGradeId]			    = THD.[JobGradeId]
+	,[JobLevelId]			    = THD.[JobLevelId]
+	,[PositionId]			    = THD.[PositionId]
+	,[ManpowerClassificationId] = THD.[ManpowerClassificationId] 
+	FROM(SELECT TD.[TimeIn],TD.[TimeOut],t.WorkDate,t.Type,t.Value,t.CreateId,t.CreateDate,ORG.* FROM @TEMPTimeEntryDetail T
+	INNER JOIN @TMPTimeEntryHeaderDetail TD ON TD.TimeEntryHeaderDetailId = T.TimeEntryHeaderDetailId
+	INNER JOIN @TMPORGANIZATION ORG ON ORG.ProfileId = T.ProfileId
+	)THD;
+
+	/* AUDIT TRAIL */
+	DECLARE @LOGID  BIGINT
+	;DECLARE @INSERTEDLEAVEROWCNT INT
+	;INSERT INTO [fileimport].[FileImportLog]([Filename],[SourceSheet],[DestinationTable],[ImportCount],[SourceDataCnt],[ImportedKeyIds],[ImportFileId],[ProcessedById],[ProcessedDate]) 
+	VALUES(@SourceFileName,@SourceSheet,''attendance.TimeEntryHeaderDetail'',@INSERTEDROWS,@SourceDataCnt,null,0,@UserId,GETDATE());
+	SET @LOGID = SCOPE_IDENTITY();
+	INSERT INTO fileimport.ImportLogDtl(FileimportLogId,LogStatus,ImportKeyValue) SELECT @LOGID,NULL,T.TimeEntryHeaderDetailId FROM @TMPTimeEntryHeaderDetail T;
+
+/* insert processed leaves in timeentry leave detail table */
+INSERT INTO [attendance].[TimeEntryLeaveDetail]([TimeEntryHeaderDetailId],[WorkDate],[LeaveHours],[LeaveType],[LeaveTypeId],[LeaveRequestId],[PartialDayLeave],[ProfileId],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate]) 
+	SELECT 
+			[TimeEntryHeaderDetailId] = T.TimeEntryHeaderDetailId
+           ,[WorkDate] = LR.InclusiveStartDate
+           ,[LeaveHours] = LR.NoOfHours
+           ,[LeaveType] = LT.Code
+           ,[LeaveTypeId] = LR.LeaveTypeId
+           ,[LeaveRequestId] = LR.LeaveRequestId
+           ,[PartialDayLeave] = LR.PartialDayLeave
+           ,[ProfileId] = LR.ProfileId
+           ,[CreateId] = @UserId
+           ,[CreateDate] = GETDATE()
+           ,[LastUpdateId] = @UserId
+           ,[LastUpdateDate] = GETDATE()
+	FROM leave.LeaveRequest LR
+		LEFT JOIN leave.LeaveTypeSetup LT ON LT.LeaveTypeSetupId = LR.LeaveTypeId
+		INNER JOIN @TMPTimeEntryHeaderDetail T ON T.ProfileId = LR.ProfileId AND T.WorkDate = LR.InclusiveStartDate
+		WHERE LR.StatusId = 2 /*approved only*/
+		AND NOT T.TimeEntryHeaderDetailId IS NULL;
+		SET @INSERTEDLEAVEROWCNT = @@rowcount
+
+
+/* leave detail */
+/*PIVOTDETAILSTART
+IF (ISNULL(@INSERTEDLEAVEROWCNT,0) = 0 AND ISNULL(@INSERTEDROWS,0) <> 0)
+BEGIN
+INSERT INTO attendance.TimeEntryLeaveDetail ([TimeEntryHeaderDetailId], [WorkDate], [LeaveHours], [LeaveType], [LeaveTypeId], [LeaveRequestId], [PartialDayLeave], [ProfileId], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate])
+	SELECT
+		[TimeEntryHeaderDetailId] = hdr.[TimeEntryHeaderDetailId]
+	   ,[WorkDate] = hdr.WorkDate
+	   ,[LeaveHours] = s.[Value]
+	   ,[LeaveType] = lt.[Code]
+	   ,[LeaveTypeId] = s.[ValueKey]
+	   ,[LeaveRequestId] = ISNULL(l.LeaveRequestId, 0)
+	   ,[PartialDayLeave] = ISNULL(l.PartialDayLeave, 0)
+	   ,[ProfileId] = hdr.ProfileId
+	   ,[CreateId] = hdr.CreateId
+	   ,[CreateDate] = hdr.CreateDate
+	   ,[LastUpdateId] = 0
+	   ,[LastUpdateDate] = ''1/1/1900''
+	FROM @tvpData s
+	JOIN [attendance].[TimeEntryHeaderDetail] AS hdr
+		ON CONCAT([ProfileId], [ShiftCodeId],FORMAT([WorkDate], N''MM/dd/yyyy hh:mm:ss'')) = s.[CheckDuplicateValue]
+	join leave.LeaveTypeSetup lt on cast(lt.LeaveTypeSetupId as varchar) = s.[ValueKey]
+	LEFT JOIN leave.LeaveRequest l on l.LeaveTypeId = lt.LeaveTypeSetupId AND l.ProfileId = hdr.ProfileId AND l.InclusiveStartDate = hdr.WorkDate
+END
+PIVOTDETAILEND*/
+
+/*set leave remarks*/
+UPDATE attendance.TimeEntryHeaderDetail
+SET Remarks = TR.Remarks
+FROM (SELECT
+		te.TimeEntryHeaderDetailId
+	   ,Remarks =
+		CASE
+			WHEN ISNULL(ld.Leaves, '''') <> '''' THEN CASE
+					WHEN ISNULL(te.Remarks, '''') <> '''' THEN CONCAT(te.Remarks, ''/'', ld.Leaves)
+					ELSE ld.Leaves
+				END
+			ELSE te.Remarks
+		END
+	FROM attendance.TimeEntryHeaderDetail te
+	JOIN @TMPTimeEntryHeaderDetail tmp on tmp.TimeEntryHeaderDetailId = te.TimeEntryHeaderDetailId
+	CROSS APPLY (SELECT
+			Leaves = STUFF((SELECT
+					CONCAT(''/Leave('', LeaveHours, ''Hr(s) '', LeaveType, '')'')
+				FROM attendance.TimeEntryLeaveDetail
+				WHERE TimeEntryHeaderDetailId = te.TimeEntryHeaderDetailId
+				  FOR XML PATH(''''), ROOT (''MyString''), TYPE).value(''/MyString[1]'', ''varchar(max)''
+				)
+			, 1, 1, '''')) ld) TR
+WHERE TR.TimeEntryHeaderDetailId = TimeEntryHeaderDetail.TimeEntryHeaderDetailId;
+
+
+END
+
+IF NOT OBJECT_ID(''tempdb..#MYTEMP'') IS NULL DROP TABLE #MYTEMP;
+/* OUTPUT RESULTS AND LOGS */
+SELECT	ImportedRecord = @INSERTEDROWS,[Log] = @ValidationLog;';
+
+UPDATE fileimport.FileImportCfgHdr SET BulkInsertCmd = @TIMEENTRY WHERE FileImportCode = 'TimeEntry';

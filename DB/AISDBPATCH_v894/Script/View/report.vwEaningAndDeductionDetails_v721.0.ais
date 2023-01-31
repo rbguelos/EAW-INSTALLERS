@@ -1,0 +1,224 @@
+/*===========================================*
+**	   Last Update Date: 07/15/2019
+**	   Last Update By: Abdiel
+**	   Last DBVersion executed: v721
+**	   Changes: Updated the LOAN DETAILS
+\*===========================================*/
+
+ALTER VIEW [report].[vwEaningAndDeductionDetails]
+AS
+
+SELECT 
+	PHD.PaySheetHeaderDetailId
+	,PaymentId = CAST(0 as bigint)
+	,ChargeslipNo = ISNULL(DETAILS.ChargeSlipNumber,'')
+	,PaymentDt = PH.IssuedDate
+	,TypeCode = ISNULL(PD.Type,'')
+	,TypeDescription = ISNULL(ED.Description,'')
+	,TypeCodeWithLoanTotal = (CONCAT(PD.Type,(CASE WHEN COALESCE(DETAILS.TypeId,PD.TypeId,ED.TypeId) = 6 THEN CONCAT('(',DETAILS.NoOfPayments,'/',DETAILS.NumberOfPayPeriod,')') ELSE '' END)))
+	,TypeId = COALESCE(DETAILS.TypeId,PD.TypeId,ED.TypeId)
+	,Amount = (ISNULL(DETAILS.ActualDeductionAmount,0))
+	,Amortization = (ISNULL(DETAILS.Amortization,0))
+	/*,Payment = SUM(COALESCE(DETAILS.Amount,PD.Value,0))*/
+	,Payment = (COALESCE(DETAILS.Amount,PD.Value,0))
+	,PaysheetActualPayment = (PD.Value)
+	,Balance = (ISNULL(DETAILS.Balance,0))
+	,Taxable = 
+	(
+		CASE ED.TaxCategoryId
+			WHEN 1 THEN 1 --Taxable
+			WHEN 2 THEN 0 --Non Taxable
+			WHEN 3 THEN 0 --Benefit
+			WHEN 4 THEN 1 --Company Tax
+			WHEN 5 THEN 1 --Other
+			ELSE 1
+		END
+	)
+	,TaxCategoryId = ED.TaxCategoryId
+	,PayrollStatusId = PH.StatusId
+	,ProfileId = PHD.ProfileId
+	,EarningDeductionDescription = ED.Description
+	,EarningDeductionId = ED.EarningDeductionId
+	,MappedToId = ED.MappedToId
+	,Remarks = (ISNULL(DETAILS.Remarks,''))
+	/*,EarningIncludedInNetPay = (CASE WHEN ISNULL(ED.IncludeInNetPay,0) = 1 THEN SUM(COALESCE(DETAILS.Amount,PD.Value,0)) ELSE 0 END)*/
+	,EarningIncludedInNetPay = (CASE WHEN ISNULL(ED.IncludeInNetPay,0) = 1 THEN (COALESCE(DETAILS.Amount,PD.Value,0)) ELSE 0 END)
+	,IncludeInNetPay = ISNULL(ED.IncludeInNetPay,0)
+	,IncludeInGrossPay = ISNULL(ED.IncludeInGrossPay,0)
+	,IncludeIn13thMonthPay = ISNULL(ED.IncludeIn13thMonthPay,0)
+	,IncludeInLeavePayConversion = ISNULL(ED.IncludeInLeavePayConversion,0)
+	,IsIncludedInGrossPay = 
+	(
+		CASE 
+			WHEN ISNULL(ED.IncludeInGrossPay,0) = 1 AND ISNULL(ED.IncludeInNetPay,0) = 0 THEN 1 
+			WHEN ISNULL(ED.IncludeIn13thMonthPay,0) = 1 THEN 1
+		ELSE 0 
+		END
+	)
+FROM payroll.PaySheetDetail PD
+INNER JOIN payroll.PaySheetHeaderDetail PHD ON PHD.PaySheetHeaderDetailId = PD.PaySheetHeaderDetailId
+INNER JOIN payroll.PaySheetHeader PH ON PH.PaySheetHeaderId = PHD.PaySheetHeaderId
+CROSS APPLY (SELECT TOP 1 EarningDeductionId, TypeId, Code, Description, TaxCategoryId, MappedToId, IncludeInNetPay, IncludeInGrossPay,IncludeIn13thMonthPay,IncludeInLeavePayConversion FROM payroll.vwCOMPBEN WHERE Code = PD.Type)ED
+OUTER APPLY
+(
+	/*PAYSHEET ALLOWANCE*/
+	SELECT 
+		Code = PA.Code
+		,TypeId = Cols.TypeId
+		,ActualDeductionAmount = 0
+		,Amount = SUM(PA.Amount)
+		,Balance = 0
+		,ChargeSlipNumber = AO.OENumber
+		,TotalPaid = 0
+		,Amortization = 0
+		,Remarks = ISNULL(AO.Remarks,'')
+		,NumberOfPayPeriod = 0
+		,NoOfPayments = 0
+	FROM payroll.PaysheetAllowance PA
+	INNER JOIN payroll.AllowanceOther AO ON AO.AllowanceOtherId = PA.TransactionId
+	CROSS APPLY
+	(
+		SELECT
+		TypeId = 
+		(
+			CASE WHEN ISNULL(PA.IsOtherDeduction,0) = 1 THEN 8 /*OTHER DEDUCTION*/
+			ELSE 
+			(
+				CASE WHEN ISNULL(PD.TypeId,ED.TypeId) = 1 AND ISNULL(ED.MappedToId,0) = 0 THEN 7 /*OTHER INCOME*/
+				ELSE ISNULL(PD.TypeId,ED.TypeId) END
+			) 
+			END
+		)
+	)Cols
+	WHERE PA.Code = PD.Type AND PA.PaySheetHeaderDetailId = PD.PaySheetHeaderDetailId
+	
+	GROUP BY 
+	PA.Code
+	,Cols.TypeId
+	,AO.OENumber
+	,AO.Remarks
+	/*
+	--,PA.IsOtherDeduction
+	--,AO.OENumber
+	--,AO.Remarks
+	*/
+	
+	UNION ALL
+
+	/*PAYSHEET DEDUCTION*/
+	SELECT /*TOP 1*/
+		Code = DDTL.Code
+		,TypeId = 2
+		,ActualDeductionAmount = AVG(D.Amount)
+		,Amount = SUM(DD.Amount)
+		,Balance = AVG(D.Balance) + ISNULL(SUM(DDTL.Amount),0)
+		,ChargeSlipNumber = D.ChargeSlipNumber
+		,TotalPaid = AVG(D.AmountPaid) - ISNULL(SUM(DDTL.Amount),0)
+		,Amortization = AVG(D.Amortization)
+		,Remarks = (ISNULL(D.Remarks,''))
+		,NumberOfPayPeriod = 0
+		,NoOfPayments = 0
+	FROM payroll.PaysheetDeduction DD
+	INNER JOIN payroll.Deduction D ON D.DeductionId = DD.TransactionId
+	OUTER APPLY
+    (
+	   SELECT 
+		  DPD.Code
+		  ,Amount = sum(DPD.Amount) 
+	   FROM payroll.PaysheetDeduction DPD
+	   INNER JOIN payroll.PaySheetHeaderDetail PDTL ON PDTL.PaySheetHeaderDetailId = DPD.PaySheetHeaderDetailId
+	   INNER JOIN payroll.PaySheetHeader DPH ON DPH.PaySheetHeaderId = PDTL.PaySheetHeaderId
+	   WHERE DPD.TransactionId = D.DeductionId
+	   AND DPD.PaysheetDeductionId <> DD.PaysheetDeductionId
+	   AND DPH.IssuedDate >= PH.IssuedDate
+	   AND DPH.PaySheetHeaderId <> PH.PaySheetHeaderId
+	   AND DPH.StatusId = 2
+	   GROUP BY DPD.Code
+    )DDTL
+
+	WHERE DD.Code = PD.Type AND DD.PaySheetHeaderDetailId = PD.PaySheetHeaderDetailId
+
+	GROUP BY DDTL.Code,D.ChargeSlipNumber,D.Remarks
+
+	UNION ALL
+
+	/*PAYSHEET LOAN*/
+	SELECT /*TOP 1*/
+	   Code = LDTL.Code
+	   ,TypeId = 6
+	   ,ActualLoanAmount = AVG(L.TotalAmountDue)
+	   ,Amount = SUM(LD.Amount)
+	   ,Balance = AVG(L.Balance) + ISNULL(SUM(LDTL.Amount),0)
+	   ,ChargeSlipNumber = L.ChargeSlipNumber
+	   ,TotalPaid = AVG(L.AmountPaid) - ISNULL(SUM(LDTL.Amount),0)
+	   ,Amortization = AVG(L.Amortization)
+	   ,Remarks = MAX(ISNULL(L.Remarks,''))
+	   ,NumberOfPayPeriod = AVG(ISNULL(L.NumberOfPayPeriod,0))
+	   ,NoOfPayments = SUM(ISNULL(PaymentCount.NoOfPayments,0))
+    FROM payroll.PaysheetLoan LD
+    INNER JOIN payroll.LoanRequest L ON L.LoanRequestId = LD.TransactionId
+    OUTER APPLY
+    (
+	   SELECT 
+		  LPD.Code
+		  ,sum(LPD.Amount)Amount 
+	   FROM payroll.PaysheetLoan LPD
+	   INNER JOIN payroll.PaySheetHeaderDetail DPD ON DPD.PaySheetHeaderDetailId = LPD.PaySheetHeaderDetailId
+	   INNER JOIN payroll.PaySheetHeader DPH ON DPH.PaySheetHeaderId = DPD.PaySheetHeaderId
+	   WHERE LPD.TransactionId = L.LoanRequestId
+	   AND LPD.PaysheetLoanId <> LD.PaysheetLoanId
+	   AND DPH.IssuedDate >= PH.IssuedDate
+	   AND DPH.PaySheetHeaderId <> PH.PaySheetHeaderId
+	   AND DPH.StatusId = 2
+	   GROUP BY LPD.Code
+    )LDTL
+
+	OUTER APPLY
+	(	
+		SELECT 
+			NoOfPayments = COUNT(LoanRequestPayment.LoanRequestPaymentId) 
+		FROM payroll.LoanRequestPayment LoanRequestPayment 
+		WHERE LoanRequestPayment.LoanRequestId = L.LoanRequestId AND LoanRequestPayment.PaymentDate <= PH.IssuedDate
+	)PaymentCount
+
+    WHERE LD.Code =  PD.Type AND LD.PaySheetHeaderDetailId = PD.PaySheetHeaderDetailId
+    GROUP BY LDTL.Code,L.ChargeSlipNumber,L.LoanRequestId ,L.Remarks
+
+)DETAILS
+
+WHERE 1=1
+AND ISNULL(ED.MappedToId,0) = 0
+AND COALESCE(DETAILS.TypeId,PD.TypeId,ED.TypeId,0) <> 0
+
+/*AND PHD.PaySheetHeaderDetailId IN (24457) AND ED.Code = 'OSSL'*/
+/*AND PHD.PaySheetHeaderDetailId IN (24457) AND ED.Code = 'OELAP'*/
+/*AND PHD.PaySheetHeaderDetailId IN (24457,26069) AND ED.Code = 'OPMLS'*/
+/*AND PHD.PaySheetHeaderDetailId = 27179*/
+/*AND PHD.PaySheetHeaderDetailId = 83955*/
+
+
+/*
+--GROUP BY 
+--PHD.PaySheetHeaderDetailId
+--,DETAILS.ChargeSlipNumber
+--,PH.IssuedDate
+--,PD.Type
+--,ED.Description
+--,COALESCE(DETAILS.TypeId,PD.TypeId,ED.TypeId)
+--,DETAILS.NoOfPayments
+--,DETAILS.NumberOfPayPeriod
+--,DETAILS.ActualDeductionAmount
+--,DETAILS.Amortization
+--,PD.Value
+--,DETAILS.Balance
+--,ED.TaxCategoryId
+--,PH.StatusId
+--,PHD.ProfileId
+--,ED.EarningDeductionId
+--,ED.MappedToId
+--,DETAILS.Remarks
+--,ED.IncludeInNetPay
+*/
+GO
+
+

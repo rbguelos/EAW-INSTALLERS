@@ -1,0 +1,30 @@
+DELETE FROM [maintenance].[EnumValues]
+WHERE SourceName = 'LeaveConversionType'
+
+
+--Cash Conversion
+INSERT INTO [maintenance].[EnumValues] ([SourceName]
+, [DisplayText]
+, [Value]
+, [OrderNumber]
+, [Status]
+, [CreateId]
+, [CreateDate]
+, [LastUpdateId]
+, [LastUpdateDate])
+    VALUES ('LeaveConversionType', 'Cash Conversion', '1', '1', '1', NULL, NULL, NULL, NULL)
+GO
+
+
+--Transfer to other Leave
+INSERT INTO [maintenance].[EnumValues] ([SourceName]
+, [DisplayText]
+, [Value]
+, [OrderNumber]
+, [Status]
+, [CreateId]
+, [CreateDate]
+, [LastUpdateId]
+, [LastUpdateDate])
+    VALUES ('LeaveConversionType', 'Transfer to other Leave', '2', '2', '1', NULL, NULL, NULL, NULL)
+GO

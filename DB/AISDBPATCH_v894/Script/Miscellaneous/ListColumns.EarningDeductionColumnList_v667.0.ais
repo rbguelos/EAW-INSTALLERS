@@ -1,0 +1,16 @@
+EXEC admin.UpdateListColumns 
+    @ListName = ''
+   ,@ListType ='EarningDeductionColumnList'
+   ,@DefaultColumn ='Code|Description|TypeDesc|TaxCategory|RateTable|Affects|BIRFormFieldGrpDescription|OtherSetUp'
+
+
+EXEC maintenance.UpdateJQListColumns 
+     @ListType  = 'EarningDeductionColumnList'
+    ,@ColumnType = 'label'
+    ,@Name  = 'BIRFormFieldGrpDescription'
+    ,@Label  = 'BIR Form Field'
+    ,@Width  = '180'
+    ,@Align  = ''
+    ,@Formatter = ''
+    ,@FormatterOption = ''
+    ,@Others = ''

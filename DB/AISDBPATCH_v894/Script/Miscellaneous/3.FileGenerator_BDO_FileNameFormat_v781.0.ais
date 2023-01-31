@@ -1,0 +1,7 @@
+UPDATE admin.FileGeneratorHeader SET [FileName] = '2$<MBANKCompanyBranchCode><CurrentDateMMDDYY><BatchNumber>' WHERE TemplateName IN
+(
+'BDOAnnexDigital'
+,'BDOCashCard'
+,'BDO_OLDFILE'
+,'BDOCashCard2'
+)

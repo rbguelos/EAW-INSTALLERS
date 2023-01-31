@@ -1,0 +1,11 @@
+EXEC spInsertTableData 
+@SCHEMA = 'maintenance'
+,@TABLENAME = 'EnumValues'
+,@COLUMNS = '[SourceName],[DisplayText],[Value],[OrderNumber],[Status]'
+,@VALUETOINSERT = 'PostingType|30 days from Hire Date|6|6|1
+PostingType|60 days from Hire Date|7|7|1
+PostingType|90 days from Hire Date|8|8|1'
+,@COLUMNSEPARATOR = '|'
+,@ROWSEPARATATOR = '
+'
+

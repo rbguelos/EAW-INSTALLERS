@@ -1,0 +1,398 @@
+/*===========================================*\
+**	   Last Update Date: 02/06/2019
+**	   Last Update By: Abdiel
+**	   Last DBVersion executed: v
+\*===========================================*/
+ALTER PROCEDURE [report].[spGenerateTemplateBuilderDoc]
+    --DECLARE 
+    @DocumentRequestId bigint = 32
+    ,@ModuleFormId bigint = 188 --(ex. 188-DocumentRequest,195-Violation )
+    ,@ReportParameter VARCHAR(MAX) = ''--CHAR SEPERATED VALUES (SEPARATOR '||')
+    ,@UserSecurityId bigint = 0
+AS
+BEGIN
+    -- SET NOCOUNT ON added to prevent extra result sets from
+    -- interfering with SELECT statements.
+    SET NOCOUNT ON;
+    --SET @REPORTPARAMETER = 'CompanyId=''6''|BranchId=''1'''
+    --SET @TemplateBuilderId = '11'
+    DECLARE @TABLEOFVALUES TABLE
+    (
+        FieldId int identity(1,1)
+		,TBFieldId bigint
+        ,Pos int
+        ,DisplayText varchar(250)
+        ,FieldName varchar(250)
+        ,SourceTable varchar(250)
+        ,SourceTableLink varchar(250)
+        ,SourceTableField varchar(250)
+        ,FieldType varchar(10)
+        ,DataFormat varchar(250)
+        ,DataValue varchar(500)
+        ,TableAlias varchar(50)
+        ,ValueIsParameter bit
+    )
+    DECLARE @TemplateBuilderId bigint
+    --IF @ModuleFormId = 188 --DocumentRequest
+    --BEGIN
+    --    SELECT @TemplateBuilderId = SourceId FROM employee.DocumentRequest
+    --        INNER JOIN maintenance.DocumentType ON DocumentTypeId = DocumentId 
+    --        WHERE SourceTypeId = 2
+    --        AND DocumentRequestId = @DocumentRequestId
+    --END
+    --ELSE IF @ModuleFormId = 195 --DocumentRequest
+    --BEGIN
+    --    SELECT TOP 1 @TemplateBuilderId = employeerelation.ViolationTypeDetail.MemoTemplateId FROM employeerelation.Violation
+    --        INNER JOIN employeerelation.ViolationType ON ViolationType.ViolationTypeId = Violation.ViolationTypeId
+    --        INNER JOIN employeerelation.ViolationTypeDetail on employeerelation.ViolationTypeDetail.ViolationTypeId = employeerelation.ViolationType.ViolationTypeId
+    --        WHERE 1=1
+    --        AND employeerelation.Violation.ViolationId = @DocumentRequestId
+    --        SET @ReportParameter = ISNULL(@ReportParameter,'') + 'ViolationId='+cast(@DocumentRequestId as varchar)
+    --END
+	set @TemplateBuilderId = (select top 1 TemplateBuilderId from report.vwTemplateBuilderParameter where ModuleFormId = @ModuleFormId and DocumentRequestId = @DocumentRequestId)
+	
+
+    --this will handle link tables
+    DECLARE @TABLELINKS TABLE
+    (
+        RowId int identity(1,1)
+        ,SourceTable varchar(150)
+        ,SourceTableLink varchar(150)
+        ,SourceTableLinkField varchar(150)
+        ,TableAlias varchar(50)
+    )
+    
+    --RETRIEVE TABLE LINKING
+    INSERT INTO @TABLELINKS
+    SELECT tbf.SourceTable,tbf.SourceTableLink,tbf.SourceFieldLink ,
+    TableAlias = CASE tbf.SourceTable 
+    WHEN 'dbo.fnProfileInfo' THEN 'Emp'
+    WHEN 'dbo.vwPaysheetDetail' THEN 'RP'
+    WHEN 'dbo.vwEmployeeTimeEntry' THEN 'TE'
+    WHEN 'dbo.vwEmployeeSchedule' THEN 'ES'
+    WHEN 'employeerelation.vwEmployeeViolation' THEN 'EV'
+    ELSE 'T' + CAST(ta.TableId AS VARCHAR) END
+    FROM maintenance.TemplateBuilderField tbf
+    LEFT JOIN(SELECT TableId = ROW_NUMBER() OVER(ORDER BY SourceTable),SourceTable FROM maintenance.TemplateBuilderField GROUP BY SourceTable)ta
+        ON ta.SourceTable = tbf.SourceTable
+
+        WHERE ISNULL(tbf.SourceTable,'')<>''
+
+    GROUP BY tbf.SourceTable,tbf.SourceTableLink,tbf.SourceFieldLink,ta.TableId
+    --select * from maintenance.TemplateBuilder where TemplateBuilderId = @TemplateBuilderId
+    --RETRIEVE TEMPLATEBUILDER HTML TEMPLATE
+    DECLARE @OpenTag varCHAR(10) = '{'
+    ,@CloseTag varCHAR(10) = '}'
+    ,@string VARCHAR(MAX) = 
+    (
+      SELECT --TOP 1  
+    '<html lang="en">' + 
+        '<head>' + 
+           '<meta http-equiv="Content-Type" content="text/html; charset=UTF-8"> ' + --windows-1252">    ' + 
+           ISNULL(LetterHead,'') +  + ISNULL(Header,'') + 
+        '</head>' + 
+        '<body>' + 
+          isnull(Body,'') + 
+          ISNULL( '<br/> <br/>'+ EV.ComplimentaryClose + ',','') + 
+          ISNULL('<br/> <br/>' + Signatory,'') + 
+        '</body>' + 
+        '<footer>' + 
+          isnull(Footer,'') + 
+        '</footer>' +
+    '</html>'
+    FROM maintenance.TemplateBuilder 
+    OUTER APPLY(SELECT TOP 1 ComplimentaryClose = DisplayText FROM maintenance.EnumValues ev WHERE ev.Value = ISNULL(ComplimentaryCloseId,0) AND ev.SourceName = 'ComplimentaryClose') EV
+    WHERE TemplateBuilderId = @TemplateBuilderId
+    )
+    --SET @string += '.' --Add any data here (different from the one searched) to get the position of the last character
+    DECLARE @stringLength BIGINT = len(@string)+1
+    --GET HTML FIELDS
+    INSERT INTO @TABLEOFVALUES(TBFieldId,Pos,DisplayText,FieldName,SourceTable,SourceTableLink,SourceTableField,FieldType,DataFormat,TableAlias)
+    SELECT tbf.TBFieldId,pos = Number - LEN(@OpenTag),tbf.DisplayText--SUBSTRING(@string,y.Number,y.ClostTagPos)
+    ,tbf.FieldName,tbf.SourceTable,tbf.SourceTableLink,tbf.SourceFieldLink,tbf.FieldType
+    ,DataFormat = CASE WHEN ISNULL(tbf.DataFormat,'') = '' THEN CASE tbf.FieldType WHEN 'date' THEN 'MMMM d, yyyy' WHEN 'time' THEN 'h:mm tt' WHEN 'datetime' THEN 'M/d/yyyy h:mm tt' WHEN 'number' THEN '#,##0.00' ELSE '' END ELSE tbf.DataFormat END--assign default formatting for date/time/number data type
+    ,ta.TableAlias
+    FROM 
+    maintenance.TemplateBuilderField tbf
+    OUTER APPLY(select top 1 t.TableAlias from @TABLELINKS t where t.SourceTable = tbf.SourceTable)ta
+    INNER JOIN
+    (
+        SELECT Number
+            , Item = LTRIM(RTRIM(SUBSTRING(@string, Number, CHARINDEX(@OpenTag, @string + @OpenTag, Number) - Number)))
+            , CloseTagPos = CHARINDEX(@CloseTag,LTRIM(RTRIM(SUBSTRING(@string, Number, CHARINDEX(@OpenTag, @string + @OpenTag, Number) - Number)))) - 1
+        FROM (
+            --All numbers between 1 and the lengh of @string. Better than use sys.all_objects
+            SELECT TOP (@stringLength) row_number() OVER (
+                    ORDER BY t1.number
+                    ) AS N
+            FROM master..spt_values t1 CROSS JOIN master..spt_values t2 WHERE t1.type = t2.type and t1.number > 0
+            ) AS n(Number)
+        WHERE Number > 1
+            AND Number <= CONVERT(INT, LEN(@string))
+            AND SUBSTRING(@OpenTag + @string, Number, LEN(@OpenTag)) = @OpenTag
+            AND CHARINDEX(@CloseTag,LTRIM(RTRIM(SUBSTRING(@string, Number, CHARINDEX(@OpenTag, @string + @OpenTag, Number) - Number))))>0
+        ) AS y
+        ON tbf.DisplayText = SUBSTRING(y.Item,1,y.CloseTagPos)
+		--AND ISNULL(tbf.SourceTable,'') <> '' /*RME.09.14.2018 - exclude no source table - causes issue*/
+
+    --REMOVE DUPLICATES 
+    ;WITH T AS (SELECT DETAILID = ROW_NUMBER() OVER (PARTITION BY DisplayText, FieldName, SourceTable ORDER BY DisplayText, FieldName, SourceTable),* FROM @TABLEOFVALUES)
+    DELETE FROM T WHERE DETAILID > 1;
+    --UPDATE LINK VALUES - ONLY SHOWS THOSE THAT ARE USED
+    DELETE FROM @TABLELINKS WHERE SourceTable NOT IN (SELECT SourceTable FROM @TABLEOFVALUES)
+    --GET PARAMETERS AND VALUES
+    BEGIN
+        DECLARE @PROFILETABLE VARCHAR(3000)
+        DECLARE @PARAMS AS TABLE
+        (
+            ParamId int identity(1,1)
+            ,ParamName varchar(200)
+            ,Paramvalue varchar(500)
+            ,ParamType varchar(15)
+            ,ConditionalOperator varchar(20)
+            ,TableAlias varchar(50)
+        )
+        DECLARE @ProfilePARAMS AS TABLE
+        (
+            ParamId int identity(1,1)
+            ,ParamName varchar(200)
+            ,Paramvalue varchar(500)
+            ,IsProfileParam bit
+        )
+        IF ISNULL(@ReportParameter,'') = ''
+        BEGIN
+            INSERT INTO @PARAMS(ParamName,Paramvalue,ParamType,ConditionalOperator)
+            SELECT ParameterName,ParameterValue,ParameterType,ConditionalOperator FROM report.vwTemplateBuilderParameter
+            WHERE DocumentRequestId = @DocumentRequestId
+            --TemplateBuilderId = @TemplateBuilderId
+        END
+        ELSE
+        BEGIN
+            INSERT INTO @PARAMS(ParamName,Paramvalue,ParamType,ConditionalOperator,TableAlias)
+            SELECT p.ParamName,p.ParamValue,tbp.DataType, tbp.ConditionalOperator 
+            ,p.TableAlias
+            FROM(
+            SELECT ParamName = SUBSTRING(VALUE,1,charindex('=',VALUE)-1)
+            ,ParamValue = SUBSTRING(VALUE,charindex('=',VALUE)+1,len(VALUE))
+            ,TableAlias = ''
+            FROM DBO.FN_SPLITWITHID(@ReportParameter,'|'))p
+            LEFT JOIN maintenance.TemplateBuilderParameter tbp on tbp.ParameterName=p.ParamName
+            WHERE tbp.TemplateBuilderId = @TemplateBuilderId
+            UNION ALL
+            SELECT ParamName = 'ViolationId',
+            Paramvalue = cast(@DocumentRequestId as varchar),
+            ParamType = 'numeric',
+            ConditionalOperator = '=',
+            TableAlias = (SELECT TOP 1 TableAlias FROM @TABLELINKS WHERE SourceTable = 'employeerelation.vwEmployeeViolation')
+        END
+
+        --select * from @TABLEOFVALUES
+        --SELECT * FROM @TABLELINKS --WHERE SourceTable = 'employeerelation.vwEmployeeViolation'
+        --SELECT * FROM @PARAMS
+        --RETURN
+        --retrieve profile function parameter from the list of parameter
+        INSERT INTO @ProfilePARAMS(ParamName,Paramvalue,IsProfileParam)
+        SELECT 
+        ParameterName = PARAMETER_NAME
+            ,DefaultValue =  CASE WHEN fp.PARAMETER_NAME = '@SourceTableType' THEN ISNULL((SELECT TOP 1 CASE T.SourceTable WHEN 'dbo.vwEmployeeTimeEntry' THEN '1' WHEN 'dbo.vwPaysheetDetail' THEN '2' ELSE '0' END FROM @TABLEOFVALUES T WHERE T.SourceTable IN ('dbo.vwEmployeeTimeEntry','dbo.vwPaysheetDetail')),'0')
+            WHEN fp.PARAMETER_NAME = '@SourceTableId' THEN ISNULL((SELECT TOP 1 CASE T.SourceTable WHEN 'dbo.vwEmployeeTimeEntry' THEN 'TE.TimeEntryHeaderDetailId' WHEN 'dbo.vwPaysheetDetail' THEN 'RP.PaySheetHeaderDetailId' ELSE '' END FROM @TABLEOFVALUES T WHERE T.SourceTable IN ('dbo.vwEmployeeTimeEntry','dbo.vwPaysheetDetail')),'0')
+            ELSE ISNULL(p.Paramvalue,(CASE WHEN CHARINDEX('char',DATA_TYPE) > 0 THEN '''''' WHEN CHARINDEX('date',DATA_TYPE) > 0 THEN '''1/1/1900''' ELSE '''0''' END)) 
+            END
+        ,1
+        FROM INFORMATION_SCHEMA.PARAMETERS fp
+        LEFT JOIN @PARAMS p on p.ParamName = fp.PARAMETER_NAME
+        WHERE (SPECIFIC_SCHEMA + '.'+ SPECIFIC_NAME) = 'dbo.fnEmployeeProfileInfo'
+        ORDER BY fp.ORDINAL_POSITION
+        --@SourceTableId
+        --set profile info function paramvalues
+        SET @PROFILETABLE = 'dbo.fnEmployeeProfileInfo(' + stuff((SELECT ',' + Paramvalue FROM @ProfilePARAMS FOR XML PATH('')),1,1,'') + ')'
+        --select @PROFILETABLE
+        --REMOVE PROFILE PARAMS IN LIST OF PARAMS TABLE (THIS WILL BE USE AS QUERY PARAMETERS)
+        DELETE FROM @PARAMS WHERE ParamName IN (SELECT ParamName FROM @ProfilePARAMS)
+
+
+		--select * from @TABLELINKS;RETURN
+        --RETRIEVE TABLE ALIAS TO BE USED IN QUERY PARAMETERS
+        UPDATE @PARAMS SET TableAlias = T.TableAlias
+        FROM(
+        SELECT p.ParamId
+		,TableAlias = CASE WHEN tl.SourceTable = 'dbo.fnProfileInfo' THEN 'E' ELSE tl.TableAlias END--tl.TableAlias 
+		
+		FROM @PARAMS p
+        INNER JOIN maintenance.TemplateBuilderField tbf on p.ParamName = tbf.FieldName
+        INNER JOIN @TABLELINKS tl on tl.SourceTable = tbf.SourceTable
+		CROSS APPLY(SELECT TOP 1 A.SourceTable FROM @TABLEOFVALUES A where A.SourceTable = tl.SourceTable)tv
+        )T
+        WHERE T.ParamId = [@PARAMS].ParamId
+        --assign local parameter values to field
+        UPDATE @TABLEOFVALUES SET DataValue = T.DataValue, ValueIsParameter = 1
+        FROM
+        (SELECT TV.FieldId, DataValue = CASE WHEN P.ParamType = 'Local' THEN REPLACE(P.Paramvalue,'''','') ELSE TV.DataValue END FROM @TABLEOFVALUES TV
+            INNER JOIN @PARAMS P ON P.ParamName = TV.FieldName)T
+            WHERE T.FieldId = [@TABLEOFVALUES].FieldId
+    END
+    --SELECT * FROM @TABLEOFVALUES;RETURN
+    
+    SET @PROFILETABLE = 'SELECT ProfileId, ' + STUFF((SELECT ', '+FieldName FROM @TABLEOFVALUES WHERE SourceTable = 'dbo.fnProfileInfo' AND FieldName <> 'ProfileId' FOR XML PATH('')),1,1,'') + ' FROM ' + @PROFILETABLE
+    --SELECT @PROFILETABLE
+    --DELETE FROM @TABLELINKS WHERE SourceTable = 'dbo.fnProfileInfo'
+    --SELECT * FROM @TABLELINKS
+    --RETURN
+IF EXISTS(SELECT * FROM @TABLEOFVALUES) --CHECK IF NOT EMPTY, ELSE RETURN STRING
+BEGIN
+    --GENERATE SQL STATEMENTS 
+    BEGIN
+    DECLARE @SQLQUERY VARCHAR(MAX)
+    ,@WHERECLAUSE VARCHAR(MAX)
+    ,@MAXROWID INT
+    ,@DATAID INT
+    ,@FIELDNAME VARCHAR(150)
+    ,@SOURCETABLE VARCHAR(150)
+    ,@WithProfileInfor bit
+    ,@WithPaysheetDetail bit
+    ,@WithTimeEntry bit
+    ,@WithEmployeeSchedule BIT
+    ,@TMPTABLENAME varchar(50)
+    --GENERATE COLUMN FIELD SELECT STATEMENT
+    SET @SQLQUERY = 'SELECT ROWID = IDENTITY(int,1,1),'
+    SET @DATAID = 1
+    ----REMOVE DUPLICATE FIELDS
+    --;WITH A AS (SELECT DETAILID = ROW_NUMBER() OVER (PARTITION BY T.FieldName,T.SourceTable ORDER BY T.FieldId),* FROM @TABLEOFVALUES T)
+    --DELETE FROM A WHERE DETAILID > 1;
+    --SELECT * FROM @TABLEOFVALUES WHERE FieldId IN (4,5,6)
+    SET @MAXROWID = (SELECT MAX(FieldId) FROM @TABLEOFVALUES)
+    WHILE @DATAID <= @MAXROWID
+    BEGIN
+        SELECT @FIELDNAME = '[' + TableAlias + '].[' + FieldName + ']', @SOURCETABLE = SourceTable 
+            ,@WithProfileInfor = CASE WHEN ISNULL(@WithProfileInfor,0) = 0 AND SourceTable = 'dbo.fnProfileInfo' THEN 1 ELSE @WithProfileInfor END
+            ,@WithPaysheetDetail = CASE WHEN ISNULL(@WithPaysheetDetail,0) = 0 AND SourceTable = 'dbo.vwPaysheetDetail' THEN 1 ELSE @WithPaysheetDetail END
+            ,@WithTimeEntry = CASE WHEN ISNULL(@WithTimeEntry,0) = 0 AND SourceTable = 'dbo.vwEmployeeTimeEntry' THEN 1 ELSE @WithTimeEntry END
+            ,@WithEmployeeSchedule = CASE WHEN ISNULL(@WithEmployeeSchedule,0) = 0 AND SourceTable = 'dbo.vwEmployeeSchedule' THEN 1 ELSE @WithEmployeeSchedule END
+        FROM @TABLEOFVALUES 
+        WHERE FieldId = @DATAID
+        IF CHARINDEX(@FIELDNAME,@SQLQUERY) = 0--SKIP IF ALREADY INCLUDED
+        BEGIN
+            SET @SQLQUERY = @SQLQUERY + @FIELDNAME + ', '
+        END
+        SET @DATAID = @DATAID + 1
+    END
+        --UNIQUE TMP TABLE NAME
+        SET @TMPTABLENAME = 'TMP_' + replace(NEWID(),'-','')
+        SET @SQLQUERY = left(@SQLQUERY,len(@SQLQUERY) - 1)
+        SET @SQLQUERY = @SQLQUERY + ' INTO ' + @TMPTABLENAME 
+    
+    SET @WHERECLAUSE = (SELECT ' AND ' + TableAlias + '.' + ParamName +  
+        CASE ConditionalOperator
+            WHEN 'IN' THEN + ' IN(' + Paramvalue + ')'
+            ELSE ConditionalOperator + Paramvalue END
+    FROM @PARAMS FOR XML PATH(''))
+
+
+    DECLARE @LINKINGQRY VARCHAR(MAX),@PROFILELINKS VARCHAR(MAX)
+
+    DELETE FROM @TABLELINKS WHERE (SourceTableLink = '' AND RowId <> 1) --OR SourceTable = 'dbo.fnProfileInfo';
+    SET @PROFILELINKS = (SELECT 'AND ' + ' [' + SourceTableLinkField + '] = [E].[' + SourceTableLinkField + ']' FROM @TABLELINKS WHERE SourceTableLink = 'dbo.fnProfileInfo' FOR XML PATH(''))
+    set @PROFILETABLE = @PROFILETABLE + ' WHERE 1=1 ' + ISNULL(@PROFILELINKS,' AND ProfileId = E.ProfileId')
+    --RETURN
+    --SELECT A.SourceTable FROM @TABLELINKS A FOR XML PATH('')
+
+    SET @LINKINGQRY = STUFF((SELECT 'LEFT JOIN ' + SourceTable + ' ' + TableAlias + ' WITH (NOLOCK) ' + CASE WHEN A.SourceTableLink <> '' AND ((SELECT COUNT(*) FROM @TABLELINKS) > 1) THEN ' ON [' + TableAlias + '].[' + SourceTableLinkField + ']=[' 
+                    + ISNULL((SELECT TOP 1 TableAlias = CASE WHEN T.SourceTable = 'dbo.fnProfileInfo' THEN 'E' ELSE t.TableAlias END FROM @TABLELINKS T WHERE (CASE WHEN T.SourceTable = 'dbo.fnProfileInfo' THEN 'employee.Profile' ELSE T.SourceTable END) = A.SourceTableLink),'T' + CAST(A.RowId AS VARCHAR)) 
+                    + '].['+ A.SourceTableLinkField + ']' ELSE ' ' END
+                            FROM (SELECT T.RowId, 
+                            SourceTable = CASE WHEN T.SourceTable = 'dbo.fnProfileInfo' THEN 'employee.Profile' ELSE T.SourceTable END, 
+                            SourceTableLink = CASE WHEN T.SourceTableLink = 'dbo.fnProfileInfo' THEN 'employee.Profile' ELSE T.SourceTableLink END, 
+                            t.SourceTableLinkField, 
+                            TableAlias = CASE WHEN T.SourceTable = 'dbo.fnProfileInfo' THEN 'E' ELSE t.TableAlias END
+                            FROM @TABLELINKS T
+							cross APPLY(select top 1 a.SourceTable from @TABLEOFVALUES a where a.SourceTable = t.SourceTable)tv
+							) A FOR XML PATH('')),1,10,'')
+
+    
+	--SELECT * FROM @TABLELINKS;RETURN
+    --SET @LINKINGQRY = replace(@LINKINGQRY,'dbo.fnProfileInfo',@PROFILETABLE)
+    SET @LINKINGQRY = @LINKINGQRY + ISNULL(' CROSS APPLY ('+ @PROFILETABLE + ') Emp','')
+    SET @SQLQUERY = @SQLQUERY 
+    + ' FROM ' + @LINKINGQRY
+    + '
+    WHERE 1=1
+    ' + ISNULL(@WHERECLAUSE,'')
+    END
+    --SELECT * FROM @TABLEOFVALUES
+    --SELECT @SQLQUERY,@PROFILETABLE,@LINKINGQRY;RETURN
+    EXEC (@SQLQUERY)
+    --return
+    DECLARE @DATAVALUE TABLE (DATAVALUE VARCHAR(1000))
+    DECLARE @TMPROWS TABLE (ROWID INT)
+    DECLARE @HTMLDATALIST TABLE (
+        DETAILID INT IDENTITY(1,1)
+        ,HTMLCODE VARCHAR(MAX))
+    DECLARE @CMD VARCHAR(MAX)
+        ,@DISPLAYTEXT VARCHAR(1000)
+        ,@FORMAT VARCHAR(50)
+        ,@VALUE varchar(1000)
+        ,@ValueIsParam bit
+        ,@HTMLRESULT VARCHAR(MAX)
+        ,@ROWID INT
+        ,@ROWCNT INT
+            
+    --initilize ids
+    SELECT @DATAID = 1, @ROWID = 1
+    INSERT INTO @TMPROWS EXEC('SELECT ROWID FROM ' + @TMPTABLENAME + ' WHERE ROWID = ' + @ROWID)
+    SET @ROWCNT = @@rowcount
+    --EXEC('SELECT * FROM ' + @TMPTABLENAME)
+    
+    --GET VALUES FROM TMP TABLE AND SET THIS VALUES TO THE HTML CODE
+    --SELECT * FROM @TMPROWS
+    --RETURN
+    WHILE @ROWCNT <> 0
+    BEGIN
+        --RESET
+        SELECT @DATAID = 1, @HTMLRESULT = @string
+        --WHILE EXISTS(SELECT * FROM @TABLEOFVALUES WHERE FieldId = @DATAID)
+        WHILE @DATAID <= @MAXROWID
+        BEGIN
+            SELECT @DISPLAYTEXT = DisplayText, @FIELDNAME = FieldName, @FORMAT = DataFormat,@ValueIsParam = DataValue, @VALUE = DataValue FROM @TABLEOFVALUES WHERE FieldId = @DATAID
+            SET @CMD = 'SELECT ' + (CASE WHEN ISNULL(@FORMAT,'') <> '' THEN 'FORMAT(' + @FIELDNAME + ',N''' + @FORMAT + ''')' ELSE @FIELDNAME END) + ' FROM ' + @TMPTABLENAME + ' WHERE ROWID = ' + CAST(@ROWID AS VARCHAR)
+        
+			BEGIN TRY
+				INSERT INTO @DATAVALUE EXEC(@CMD)
+			END TRY
+			BEGIN CATCH
+			END CATCH
+        
+            IF (ISNULL(@ValueIsParam,0) = 0)
+            BEGIN
+                SET @VALUE = (SELECT TOP 1 DATAVALUE FROM @DATAVALUE)
+            END
+            SET @HTMLRESULT = REPLACE(@HTMLRESULT,@OpenTag+@DISPLAYTEXT+@CloseTag,ISNULL(@VALUE,''))
+            --CLEAR TMP TABLE
+            DELETE FROM @DATAVALUE
+            SET @DATAID = @DATAID + 1
+        END
+        INSERT INTO @HTMLDATALIST 
+            SELECT @HTMLRESULT
+    
+    
+        SET @ROWID = @ROWID + 1
+        INSERT INTO @TMPROWS EXEC('SELECT ROWID FROM ' + @TMPTABLENAME + ' WHERE ROWID = ' + @ROWID)
+        SET @ROWCNT = @@rowcount
+    END
+END --END OF IF EXISTS @TABLEOFVALUES
+    --DELETE TMP TABLE
+    IF EXISTS(SELECT * FROM SYS.objects WHERE object_id(@TMPTABLENAME) = object_id)
+    BEGIN
+        EXEC ('DROP TABLE ' + @TMPTABLENAME)
+    END
+--select @SQLQUERY
+--return
+    --OUPUT RESULT
+    --SELECT HTMLCODE = @string 
+    IF EXISTS(SELECT * FROM @HTMLDATALIST)
+        BEGIN
+          SELECT TOP 1 HTMLCODE FROM @HTMLDATALIST T WHERE ISNULL(T.HTMLCODE,'') <> '' ORDER BY T.DETAILID DESC
+        END
+    ELSE
+       SELECT @string AS HTMLCODE
+END
+

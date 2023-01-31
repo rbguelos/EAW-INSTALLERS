@@ -1,0 +1,383 @@
+IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[report].[spAttendanceSummaryDetailedReport]') AND type in (N'P', N'PC'))
+DROP PROCEDURE [report].[spAttendanceSummaryDetailedReport]
+GO
+/*===========================================*\
+**		Last Update Date: 02/18/2020
+**		Last Update By: JPR 
+**		Last DBVersion executed: v
+**		Changes: Updated StartDate and WorkDate Param
+\*===========================================*/
+
+CREATE PROCEDURE [report].[spAttendanceSummaryDetailedReport]
+(
+	--DECLARE 
+	@StartWorkDate DATETIME = '01/01/2016'
+	,@EndWorkDate DATETIME = '01/31/2020'
+	,@CompanyId BIGINT = 1
+	,@BranchId BIGINT = 0
+	,@DepartmentIds VARCHAR(MAX) = ''
+	,@OfficeId BIGINT = 0
+	,@DivisionId BIGINT = 0
+	,@GroupId BIGINT = 0
+	,@TeamId BIGINT = 0
+	,@LineId BIGINT = 0
+	,@UnitId BIGINT = 0
+	,@DistrictId BIGINT = 0
+	,@CostCenterId BIGINT = 0
+	,@PositionId BIGINT = 0
+	,@StatusId VARCHAR(MAX) = ''
+	,@ProjectId BIGINT = 0
+	,@ColumnCategoryId VARCHAR(MAX) = ''
+	,@LeaveTypeSetupId VARCHAR(MAX) = ''
+	,@IncludeInactiveEmployees BIT = 0
+	,@EmployeeId VARCHAR(MAX) = ''
+	,@IncludeApprovedHours BIT = 0
+	,@IncludePreshiftHours BIT =0
+	,@UserSecurityId BIGINT = 10165
+	,@JobRankId BIGINT = 0
+	,@OrgBasedOnProfileTable BIT = 0
+	,@GroupBy BIGINT = 0
+)
+AS 
+BEGIN
+
+SET NOCOUNT ON;	
+
+DECLARE @ReportId BIGINT = 215;
+--DECLARE @StatusId_ VARCHAR(10) = '2,21'--Approve,Paid
+DECLARE @IsNullDate DATETIME = '1/1/1900'
+DECLARE @IsNullDate_ VARCHAR(30) = 'CAST(''1/1/1900'' AS DATETIME)';
+
+--DECLARE @StartWorkDate_ VARCHAR(10) = CONVERT(VARCHAR(10),@StartWorkDate,101)
+--DECLARE @EndWorkDate_ VARCHAR(10) = CONVERT(VARCHAR(10),@EndWorkDate,101) 
+DECLARE @CompanyId_ VARCHAR(10) = CAST(@CompanyId AS VARCHAR(10))
+DECLARE @BranchId_ VARCHAR(10) = CAST(@BranchId AS VARCHAR(10))
+--DECLARE @DepartmentId_ VARCHAR(10) = CAST(@DepartmentId AS VARCHAR(10))
+DECLARE @OfficeId_ VARCHAR(10) = CAST(@OfficeId AS VARCHAR(10))
+DECLARE @DivisionId_ VARCHAR(10) = CAST(@DivisionId AS VARCHAR(10))
+DECLARE @GroupId_ VARCHAR(10) = CAST(@GroupId AS VARCHAR(10))
+DECLARE @TeamId_ VARCHAR(10) = CAST(@TeamId AS VARCHAR(10))
+DECLARE @LineId_ VARCHAR(10) = CAST(@LineId AS VARCHAR(10))
+DECLARE @UnitId_ VARCHAR(10) = CAST(@UnitId AS VARCHAR(10))
+DECLARE @DistrictId_ VARCHAR(10) = CAST(@DistrictId AS VARCHAR(10))
+DECLARE @CostCenterId_ VARCHAR(10) = CAST(@CostCenterId AS VARCHAR(10))
+DECLARE @PositionId_ VARCHAR(10) = CAST(@PositionId AS VARCHAR(10))
+DECLARE @ProjectId_ VARCHAR(10) = CAST(@ProjectId AS VARCHAR(10))
+DECLARE @UserSecurityId_ VARCHAR(10) = CAST(@UserSecurityId AS VARCHAR(10))
+DECLARE @JobRankId_ VARCHAR(10) = CAST(@JobRankId AS VARCHAR(10))
+DECLARE @LeaveTypeSetupId_ VARCHAR(max) = CASE WHEN @LeaveTypeSetupId = '' THEN '''''' ELSE @LeaveTypeSetupId END
+DECLARE @GroupBy_ VARCHAR(500) = CAST(@GroupBy As VARCHAR(10))
+
+--DECLARE @HasNoStartDateFilter BIT = CASE WHEN @StartWorkDate <= @IsNullDate THEN 1 ELSE 0 END
+--DECLARE @HasNoEndDateFilter BIT = CASE WHEN @EndWorkDate <= @IsNullDate THEN 1 ELSE 0 END
+
+DECLARE @EmployeeStatusIds VARCHAR(10) = (CASE WHEN @IncludeInactiveEmployees = 1 THEN '''1,2''' ELSE '''0''' END)
+
+DECLARE @ProfileParam VARCHAR(500) = (CASE WHEN ISNULL(@OrgBasedOnProfileTable,0) = 1 THEN '0,0' ELSE '1,ETE.TimeEntryHeaderDetailId' END)
+
+/*
+maintenance.AttendanceSummaryColumnValue
+ColumnTypeId
+1 - NotApproved - Without Preshift
+2 - Approved - Without Preshift
+1 - Not Approved - With Preshift
+2 - Approved - With Preshift
+*/
+/*
+--commented out by: JAC 2018/10/10
+--included option - Include Preshift Hours
+DECLARE @COLUMNTYPE TINYINT = (CASE WHEN ISNULL(@IncludeApprovedHours,0) = 1 THEN 2 ELSE 1 END)
+*/
+
+DECLARE @COLUMNTYPE TINYINT = 
+(
+	CASE 
+		WHEN ISNULL(@IncludeApprovedHours,0) = 0 AND ISNULL(@IncludePreshiftHours,0) = 0 THEN 1 /*NotApproved - Without Preshift*/
+		WHEN ISNULL(@IncludeApprovedHours,0) = 1 AND ISNULL(@IncludePreshiftHours,0) = 0 THEN 2 /*Approved - Without Preshift*/
+		WHEN ISNULL(@IncludeApprovedHours,0) = 0 AND ISNULL(@IncludePreshiftHours,0) = 1 THEN 3 /*Not Approved - With Preshift*/
+		WHEN ISNULL(@IncludeApprovedHours,0) = 1 AND ISNULL(@IncludePreshiftHours,0) = 1 THEN 4 /*Approved - With Preshift*/
+		ELSE 4 /*Approved - With Preshift*/
+	END
+)
+
+
+/*
+ *Generate Leave Type columns that will be concatenate to the select statement
+DECLARE @LeaveTypeCols VARCHAR(MAX) = (SELECT STUFF((SELECT ',[Leave Types|' + Code + '] = SUM(ISNULL([' + Code + '],0))'
+									FROM leave.LeaveTypeSetup
+									WHERE 
+									(
+										(CompanyId = @CompanyId)
+										AND ((@LeaveTypeSetupId = '') OR (CHARINDEX('''' + CAST(LeaveTypeSetupId AS VARCHAR(10)) + '''',@LeaveTypeSetupId) > 0))
+									)
+									FOR XML PATH('')),1,1,''))
+
+/*Generates pivot columns that will concantenate to pivot statement*/
+DECLARE @LeaveTypePivotCols VARCHAR(MAX) = (SELECT STUFF((SELECT ',[' + Code + ']'
+									FROM leave.LeaveTypeSetup
+									WHERE 
+									(
+										(CompanyId = @CompanyId)
+										AND ((@LeaveTypeSetupId = '') OR (CHARINDEX('''' + CAST(LeaveTypeSetupId AS VARCHAR(10)) + '''',@LeaveTypeSetupId) > 0))
+									)
+									FOR XML PATH('')),1,1,''))
+*
+*/
+
+/* Generate Earning Columns */
+
+DECLARE @EarningCols VARCHAR(MAX) = 
+(
+    SELECT 
+	   STUFF
+	   (
+		  (
+			 SELECT 
+				',[' + COLS.Name + '] = SUM(' + COLS.Value + ')' 
+			 FROM report.AttendanceSummaryColumnValue COLS 
+			 WHERE 
+			 (COLS.CategoryId IN (1,2,3,4,5,6) OR CHARINDEX('''' + CAST(COLS.CategoryId AS VARCHAR(3)) + '''','') > 0)
+			 AND
+			 (ISNULL(COLS.ColumnType,0) = @COLUMNTYPE)
+			 FOR XML PATH('')
+		  ),1,1,''
+	   )
+)
+
+DECLARE @LeaveTypeCols VARCHAR(MAX) = 
+STUFF
+(
+    (
+	   SELECT DISTINCT
+		  ','+ '[Leave Types|' + CASE WHEN LTS.Code <> '' THEN LTS.Code ELSE 'Leave Types|OtherLeave' + CAST((ROW_NUMBER() OVER (ORDER BY LTS.Code)) AS VARCHAR) END  + ']'
+	   FROM leave.LeaveTypeSetup LTS
+	   WHERE
+	   (
+		  ((LTS.CompanyId = @CompanyId) OR (@CompanyId = 0))
+		  AND 
+		  ((@LeaveTypeSetupId = '') OR (CHARINDEX('''' + CAST(LeaveTypeSetupId AS VARCHAR(10)) + '''',@LeaveTypeSetupId) > 0))
+	   )
+	   FOR XML PATH(''), ROOT ('MyString')
+    ,TYPE
+    ).value('/MyString[1]', 'varchar(max)'), 1, 1, ''
+)
+
+DECLARE @LeaveTypePivotCols VARCHAR(MAX) = 
+STUFF
+(
+    (
+	   SELECT DISTINCT
+		  ',' + '[Leave Types|' + CASE WHEN LTS.Code <> '' THEN LTS.Code ELSE 'Leave Types|OtherLeave' + CAST((ROW_NUMBER() OVER (ORDER BY LTS.Code)) as varchar)END  + ' ]' + ' = SUM(ISNULL(LEAVE.[Leave Types|' + CASE WHEN LTS.Code <> '' THEN LTS.Code ELSE 'Leave Types|OtherLeave' + CAST((ROW_NUMBER() OVER (ORDER BY LTS.Code)) as varchar)END  + '],0))'  
+	   FROM leave.LeaveTypeSetup LTS
+	   WHERE
+	   (
+		  ((LTS.CompanyId = @CompanyId) OR (@CompanyId = 0))
+		  AND ((@LeaveTypeSetupId = '') OR (CHARINDEX('''' + CAST(LeaveTypeSetupId AS VARCHAR(10)) + '''',@LeaveTypeSetupId) > 0))
+	   )
+	   FOR XML PATH(''), ROOT ('MyString')
+    ,TYPE
+    ).value('/MyString[1]', 'varchar(max)'), 1, 1, ''
+)
+
+
+DECLARE @LEAVEQUERY VARCHAR(MAX) = 
+'
+SELECT 
+    TimeEntryHeaderDetailId
+    ,ProfileId
+    ,'+@LeaveTypeCols+'
+FROM 
+(
+    SELECT 
+	   TELD.TimeEntryHeaderDetailId 
+	   ,TELD.LeaveHours
+	   ,LeaveType = ''Leave Types|'' + TELD.LeaveType
+	   ,TELD.ProfileId
+    FROM attendance.TimeEntryLeaveDetail TELD
+    '
+    +
+    /*only add filtering when user passes report date filter*/
+
+  /*  CASE WHEN @HasNoStartDateFilter = 1 AND @HasNoEndDateFilter = 1 THEN '' 
+    ELSE 
+    'WHERE 
+    (
+    ' +
+	   STUFF((CASE WHEN @HasNoStartDateFilter = 1 THEN '' ELSE 'AND (WorkDate >= CAST(''' + @StartWorkDate_ + ''' AS DATE))' END +
+	   CASE WHEN @HasNoEndDateFilter = 1 THEN '' ELSE 'AND (WorkDate <= CAST(''' + @EndWorkDate_ + ''' AS DATE))' END
+	   ),1,3,'')
+    + '
+    )' END */
+    +
+    '
+)T
+PIVOT(SUM(LeaveHours) FOR LeaveType IN
+('+@LeaveTypeCols+')) AS PVT
+'
+
+DECLARE @TMPTABLENAME VARCHAR(150) = 'report.TMPAttendanceSummaryDetailedReport'
+
+--/*DROP TEMP TABLE IF EXISTS*/
+--IF EXISTS(SELECT * FROM sys.tables WHERE object_id = object_id(@TMPTABLENAME))
+--EXEC('DROP TABLE ' + @TMPTABLENAME)
+
+DECLARE @QUERY NVARCHAR(MAX) = 'SELECT     
+[Group By] = '+CASE WHEN @GroupBy = 0 THEN '''''' ELSE + 'ISNULL(Cols.GroupBy,'''')' END + ' /*ISNULL(Cols.GroupBy,'''')*/
+,[Employee] = E.LastFirstMIName
+,[Employee No.] = E.EmployeeNo
+,[Total Hours Worked] = SUM(ISNULL(ETE.ActualWorkingHours, 0))
+,[Absences] = SUM(ISNULL(ETE.Absent, 0))
+,[Lates] = SUM(ISNULL(ETE.Late, 0))
+,[Undertime] = SUM(ISNULL(ETE.Undertime, 0))
+' + CASE WHEN ISNULL(@EarningCols,'') = '' THEN '' ELSE ',' + @EarningCols END + '
+,[OB Hrs] = SUM(ISNULL(OB.OBHOURS, 0))
+,[Time Off Hrs] = SUM(ISNULL(OB.TIMEOFFHOURS, 0))
+' + CASE WHEN ISNULL(@LeaveTypePivotCols,'') = '' THEN '' ELSE ',' + @LeaveTypePivotCols END + '
+,E.CompanyId
+INTO ' + @TMPTABLENAME + '
+/*FROM vwEmployeeTimeEntry ETE*/
+FROM report.fnEmployeeTimeEtnry(0,0,CAST(''' + CAST(@StartWorkDate AS VARCHAR(MAX)) + ''' AS DATETIME),CAST(''' + CAST(@EndWorkDate AS VARCHAR(MAX)) + ''' AS DATETIME),0) ETE
+INNER JOIN (SELECT ProfileId FROM employee.Profile) EP on EP.ProfileId = ETE.ProfileId
+CROSS APPLY 
+(
+    SELECT TOP 1
+    e.LastFirstMIName
+    ,e.ProjectId
+    ,e.EmployeeNo
+    ,e.ProfileId
+    ,e.DepartmentId
+    ,e.BranchId
+    ,e.CompanyId
+    ,e.Officeid
+    ,e.DivisionId
+    ,GroupId = e.GroupsCodeId 
+    ,TeamId = e.TeamCodeId
+    ,LineId = e.LineCodeId
+    ,UnitId = e.UnitId
+    ,e.DistrictId
+    ,e.CostCenterId
+    ,e.PositionId
+	,e.JobRankId
+	,e.JobLevelId
+	,e.BranchName
+	,e.OfficeName
+	,e.DepartmentName
+	,e.DivisionName
+	,e.TeamName
+	,e.GroupName
+	,e.UnitName
+    FROM dbo.fnProfileInfoWithScope(' + @UserSecurityId_ + ',0,0,0,0,0,0,0,0,0,0,0,0,0,' + @EmployeeStatusIds + ',0,0,0,0,0,0,'+@ProfileParam+') e
+    WHERE e.ProfileId = EP.ProfileId
+) E
+CROSS APPLY
+(
+	SELECT GroupBy = (
+			CASE ISNULL('+@GroupBy_+',0)
+				WHEN 0 THEN ''''
+				WHEN 1 THEN E.BranchName
+				WHEN 2 THEN E.OfficeName
+				WHEN 3 THEN E.DepartmentName
+				WHEN 4 THEN E.DivisionName
+				WHEN 5 THEN E.Teamname
+				WHEN 6 THEN E.GroupName
+				WHEN 7 THEN E.UnitName
+			END)
+)Cols
+/*OB DETAILS*/
+OUTER APPLY
+(
+    SELECT TOP 1 
+	  OBHOURS = 
+	  (
+		  CASE WHEN ETE.OBTypeId = 1 THEN OB.NoOfHours ELSE 0 END   
+	  )
+	  ,TIMEOFFHOURS = 
+	  (
+		  CASE WHEN ETE.OBTypeId = 2 THEN OB.NoOfHours ELSE 0 END
+	  )
+    FROM schedule.OfficialBusiness OB
+    WHERE OB.OfficialBusinessId = ETE.OfficialBussinessId 
+)OB
+
+
+' + CASE WHEN @LeaveTypeCols <> '' THEN  'LEFT JOIN ('+ @LEAVEQUERY +') LEAVE ON LEAVE.TimeEntryHeaderDetailId = ETE.TimeEntryHeaderDetailId ' ELSE ' ' END + '
+
+ 
+/*ETE.TimeEntryHeaderStatusId = 2 Includes only approve attendance*/
+WHERE 1=1
+'+ CASE WHEN @StatusId <> '' THEN ' AND (ETE.TimeEntryHeaderStatusId IN (' + @StatusId + '))' ELSE '' END +'
+
+'/*UPDATED BY AGC 10.10.2019*/+CASE WHEN ISNULL(@CompanyId_,'0') <> '0' THEN 'AND (E.CompanyId = ' + @CompanyId_ + ')' ELSE '' END +' 
+
+' + CASE WHEN @DepartmentIds <> '' THEN ' AND (E.DepartmentId IN (' + @DepartmentIds + '))' ELSE '' END + '
+
+
+'+ 
+/*only add filtering when user passes report date filter*/
+/*CASE WHEN @HasNoStartDateFilter = 1 AND @HasNoEndDateFilter = 1 THEN 
+'' 
+ELSE 
+'AND (
+' +
+    STUFF((CASE WHEN @HasNoStartDateFilter = 1 THEN '' ELSE 'AND (CAST(ETE.WorkDate AS DATE) >= CAST(''' + @StartWorkDate_ + ''' AS DATE))' END +
+	   CASE WHEN @HasNoEndDateFilter = 1 THEN '' ELSE 'AND (CAST(ETE.WorkDate AS DATE) <= CAST(''' + @EndWorkDate_ + ''' AS DATE))' END
+	   ),1,3,'')
++ '
+) 
+' 
+END */
++
+/* include only the given organizations when user used it as a parameter*/
+--STUFF((
+    CASE WHEN @EmployeeId = '' THEN '' ELSE + 'AND (E.ProfileId IN (' + @EmployeeId + '))' END + 
+    CASE WHEN @ProjectId = 0 THEN '' ELSE + 'AND (E.ProjectId = ' + @ProjectId_ + ')' END + 
+    CASE WHEN @BranchId = 0 THEN '' ELSE + 'AND (E.BranchId = ' + @BranchId_ + ')' END + 
+    --CASE WHEN @DepartmentId = 0 THEN '' ELSE + 'AND (ETE.DepartmentId = ' + @DepartmentId_ + ')' END +
+    CASE WHEN @DepartmentIds = '' THEN '' ELSE 'AND (E.DepartmentId IN (' + @DepartmentIds + '))' END +
+    CASE WHEN @OfficeId = 0 THEN '' ELSE + 'AND (E.OfficeId = ' + @OfficeId_ + ')' END +
+    CASE WHEN @DivisionId = 0 THEN '' ELSE + 'AND (E.DivisionId = ' + @DivisionId_ + ')' END +
+    CASE WHEN @GroupId = 0 THEN '' ELSE + 'AND (E.GroupId = ' + @GroupId_ + ')' END + 
+    CASE WHEN @TeamId = 0 THEN '' ELSE + 'AND (E.TeamId = ' + @TeamId_ + ')' END +
+    CASE WHEN @LineId = 0 THEN '' ELSE + 'AND (E.LineId = ' + @LineId_ + ')' END +
+    CASE WHEN @UnitId = 0 THEN '' ELSE + 'AND (E.UnitId = ' + @UnitId_ + ')' END +
+    CASE WHEN @DistrictId = 0 THEN '' ELSE + 'AND (E.DistrictId = ' + @DistrictId_ + ')' END +
+    CASE WHEN @CostCenterId = 0 THEN '' ELSE + 'AND (E.CostCenterId = ' + @CostCenterId_ + ')' END +
+	CASE WHEN @JobRankId = 0 THEN '' ELSE + 'AND (E.JobRankId = ' + @JobRankId_ + ')' END +
+	--CASE WHEN @JobRankId = 0 THEN '' ELSE + 'AND (E.JobLevelId = ' + @JobRankId_ + ')' END +
+    CASE WHEN @PositionId = 0 THEN '' ELSE + 'AND (E.PositionId = ' + @PositionId_ + ')' END 
+ 
+
+--),1,3,'')
+ + '
+
+GROUP BY	
+E.LastFirstMIName
+,E.EmployeeNo
+,E.ProfileId
+,E.CompanyId' + 
+/* include only the given organizations when user used it as a parameter*/
+CASE WHEN @ProjectId = 0 THEN '' ELSE + ',E.ProjectId' END + 
+CASE WHEN @BranchId = 0 THEN '' ELSE + ',E.BranchId' END + 
+CASE WHEN @DepartmentIds = '' THEN '' ELSE + ',E.DepartmentId' END +
+CASE WHEN @OfficeId = 0 THEN '' ELSE + ',E.OfficeId' END +
+CASE WHEN @DivisionId = 0 THEN '' ELSE + ',E.DivisionId' END +
+CASE WHEN @GroupId = 0 THEN '' ELSE + ',E.GroupId' END + 
+CASE WHEN @TeamId = 0 THEN '' ELSE + ',E.TeamId' END +
+CASE WHEN @LineId = 0 THEN '' ELSE + ',E.LineId' END +
+CASE WHEN @UnitId = 0 THEN '' ELSE + ',E.UnitId' END +
+CASE WHEN @DistrictId = 0 THEN '' ELSE + ',E.DistrictId' END +
+CASE WHEN @CostCenterId = 0 THEN '' ELSE + ',E.CostCenterId' END +
+CASE WHEN @PositionId = 0 THEN '' ELSE + ',E.PositionId' END +
+CASE WHEN @GroupBy = 0 THEN '' ELSE + ',Cols.GroupBy' END +  
+CASE WHEN @JobRankId = 0 THEN '' ELSE + ',E.JobRankId' END + ''
+
+BEGIN
+    --===================================================================================================================================
+    --GET THE TMP TABLE COLUMNS, INSERT INTO REPORTDATA TABLE
+    --===================================================================================================================================
+	EXEC (@QUERY);
+    EXEC [report].[spCreateReportColumn] @TMPTABLENAME, @ReportId, 'CompanyId'
+END
+
+END
+/*SELECT @QUERY RETURN; */

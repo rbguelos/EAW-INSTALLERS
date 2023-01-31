@@ -1,0 +1,6 @@
+DECLARE @HasData BIT = (SELECT CASE WHEN COUNT(C.ClockworkConfigId) > 0 THEN 1 ELSE 0 END FROM attendance.ClockworkConfig C)
+
+IF @HasData = 1
+	UPDATE attendance.ClockworkConfig SET
+	TimeInLabel = 'Time In', TimeOutLabel = 'Time Out',
+	BreakInLabel = 'Break In', BreakOutLabel = 'Break Out'

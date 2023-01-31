@@ -1,0 +1,9 @@
+
+IF NOT EXISTS(SELECT TOP 1 1 FROM admin.MenuMenuAdmin WHERE MenuMenuId = 37)
+BEGIN
+SET NOCOUNT ON
+SET IDENTITY_INSERT [admin].[MenuMenuAdmin] ON
+INSERT [admin].[MenuMenuAdmin] ([MenuMenuId],[MenuModuleId],[MenuName],[MenuIcon],[MenuLink],[SortOrder],[Hidden],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES(37,2,'Reports','menu-icon fa fa-caret-right','/Report/List?adminMenuModuleId=2',99,0,NULL,NULL,NULL,NULL)
+SET IDENTITY_INSERT [admin].[MenuMenuAdmin] OFF
+SET NOCOUNT OFF
+END

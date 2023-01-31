@@ -1,0 +1,264 @@
+IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[report].[spTapOvertimeSummaryReport]') AND type in (N'P', N'PC'))
+DROP PROCEDURE [report].[spTapOvertimeSummaryReport]
+GO
+/*===========================================*\
+**		Last Update Date: 02.18.2020
+**		Last Update By: JPR
+**		Last DBVersion executed: v
+**		Changes: Update StartWorkDate and EndWorkDate
+\*===========================================*/
+
+
+--====================================================
+--Author:		 AGC
+--Create date:	 08/31/2017
+--Description:	 For Overtime Summary Report (TAP)
+--====================================================
+
+CREATE PROCEDURE [report].[spTapOvertimeSummaryReport]
+	--DECLARE 
+    @StartWorkDate  DATETIME = '02/10/2019'
+    ,@EndWorkDate DATETIME = '02/25/2019'
+    ,@CompanyId BIGINT = 1
+    ,@BranchId BIGINT = 0
+    ,@DepartmentIds VARCHAR(MAX) = ''
+    ,@OfficeId BIGINT = 0
+    ,@DivisionId BIGINT = 0
+    ,@GroupId BIGINT = 0
+    ,@TeamId BIGINT = 0
+    ,@LineId BIGINT = 0
+    ,@UnitId BIGINT = 3
+    ,@DistrictId BIGINT = 0
+    ,@ProjectProfileId BIGINT = 0
+    ,@EmployeeId VARCHAR(MAX) = ''
+    ,@IncludeInactiveEmployees BIT = 0
+	,@OrgBasedOnProfileTable BIT = 0
+    ,@UserSecurityId BIGINT = 10165
+AS
+BEGIN
+
+SET NOCOUNT ON;
+--====================================================
+--DECLARATIONS
+--====================================================
+DECLARE @ReportId BIGINT = 238
+DECLARE @TMPTABLENAME VARCHAR(200) = 'report.TMPTAPOVERTIMESUMMARYREPORT'
+
+/*DROP TEMP TABLE IF EXISTS*/
+IF EXISTS (SELECT * FROM sys.tables	WHERE object_id = OBJECT_ID(@TMPTABLENAME))
+EXEC ('DROP TABLE ' + @TMPTABLENAME)
+
+--IF EXISTS(SELECT * FROM SYS.tables WHERE name = 'TMPMHCLASSTABLE' AND schema_id = SCHEMA_ID('report'))
+--DROP TABLE #TMPMHCLASSTABLE
+
+DECLARE @EmployeeStatusIds VARCHAR(10) = (CASE WHEN @IncludeInactiveEmployees = 1 THEN '''1,2''' ELSE '''0''' END)
+
+SET @StartWorkDate =
+(
+CASE
+	WHEN CAST(@StartWorkDate AS DATETIME) = CAST('1/1/1900' AS DATETIME) THEN CAST(FORMAT(CURRENT_TIMESTAMP, N'1/1/yyyy') AS DATETIME)
+	ELSE CAST(@StartWorkDate AS DATETIME)
+END
+)
+SET @EndWorkDate =
+(
+CASE
+	WHEN CAST(@EndWorkDate AS DATETIME) = CAST('1/1/1900' AS DATETIME) THEN CAST(FORMAT(CURRENT_TIMESTAMP, N'12/31/yyyy') AS DATETIME)
+	ELSE CAST(@EndWorkDate AS DATETIME)
+END
+)
+
+/*FOR GETTING OF ORG ON PROFILE TABLE NOT ON ATTENDANCE. REPLACE THIS ON PROFILE FUNCTION*/
+DECLARE @ProfileParam VARCHAR(500) = (CASE WHEN ISNULL(@OrgBasedOnProfileTable,0) = 1 THEN '0, 0' ELSE '1, ETE.TimeEntryHeaderDetailId' END)
+
+--===================================================================================================================================
+--DETAILS FOR MH CLASS SOUCE TABLE
+--===================================================================================================================================
+IF OBJECT_ID('tempdb..#TMPMHCLASSTABLE') is not null
+DROP TABLE #TMPMHCLASSTABLE
+
+SELECT
+	MHCLASS.MHClassCode
+   ,MHVALUE = ISNULL(DURATION.value, 0)
+   ,DETAIL.ProfileId
+   ,DETAIL.WorkDate 
+INTO #TMPMHCLASSTABLE
+FROM attendance.MHClassDetail DETAIL
+INNER JOIN attendance.MHClassDetailDuration DURATION
+	ON DETAIL.MHClassDetailId = DURATION.MHClassDetailId
+INNER JOIN attendance.MHClassHeader HEADER
+	ON HEADER.MHClassHeaderId = DETAIL.MHClassHeaderId
+INNER JOIN maintenance.MHClass MHCLASS
+	ON MHCLASS.MHClassId = DURATION.MHClassId
+WHERE 
+(
+	(DETAIL.WorkDate >= CAST(@StartWorkDate AS DATETIME))
+	AND 
+	(DETAIL.WorkDate <= CAST(@EndWorkDate AS DATETIME))
+	AND 
+	(ISNULL(DETAIL.MHClassType, 0) = 2)
+)
+
+--===================================================================================================================================
+--DETAILS FOR MH CLASS
+--===================================================================================================================================
+DECLARE @PIVOTCOLS VARCHAR(MAX) = STUFF((
+				SELECT 
+				    ','+ COL.COLNAME
+				FROM maintenance.MHClass MH
+				CROSS APPLY
+				(
+				    SELECT
+					   COLNAME = QUOTENAME(CASE WHEN MH.MHClassCode <> '' THEN MH.MHClassCode ELSE 'Others' + CAST((ROW_NUMBER() OVER (ORDER BY MH.MHClassCode)) AS VARCHAR(MAX)) END)
+				)COL
+				GROUP BY COL.COLNAME
+			 FOR XML PATH(''), ROOT ('MyString'), TYPE)
+			 .value('/MyString[1]', 'varchar(max)'), 1, 1, '')
+
+DECLARE @PIVOTCOLUMNS VARCHAR(MAX) = STUFF((
+				SELECT 
+				    ','+ CONCAT(COL.COLNAME,'=','(ISNULL(COLS.',COL.COLNAME,',0))')
+				FROM maintenance.MHClass MH
+				CROSS APPLY
+				(
+				    SELECT
+					   COLNAME = QUOTENAME(CASE WHEN MH.MHClassCode <> '' THEN MH.MHClassCode ELSE 'Others' + CAST((ROW_NUMBER() OVER (ORDER BY MH.MHClassCode)) AS VARCHAR(MAX)) END)
+				)COL
+				GROUP BY COL.COLNAME
+			 FOR XML PATH(''), ROOT ('MyString'), TYPE)
+			 .value('/MyString[1]', 'varchar(max)'), 1, 1, '')
+
+DECLARE @PIVOTQUERY VARCHAR(MAX) = 
+'
+	SELECT 
+		ProfileId
+		,WorkDate
+		,'+@PIVOTCOLS+'
+	FROM 
+	(
+		SELECT
+			ProfileId
+			,WorkDate
+			,MHClassCode
+			,MHVALUE = ISNULL(MHVALUE,0)
+		FROM #TMPMHCLASSTABLE
+	)T
+	PIVOT(SUM(MHVALUE) FOR MHClassCode IN
+    ('+@PIVOTCOLS+')) AS PVT
+
+'
+
+/*SELECT @PIVOTQUERY;RETURN*/
+
+--===================================================================================================================================
+--MAIN QUERY
+--===================================================================================================================================
+DECLARE @GROUPBY VARCHAR(MAX) = ' GROUP BY E.EmployeeNo,E.LastFirstMIName,E.CostCenterGroupCode,E.CostCenterCode,E.DepartmentCode,E.LineCode,E.ManpowerClassificationCode,COLS2.ActualIn,COLS2.ActualOut,ETE.ShiftCode,ShiftCodeId,ISNULL(FORMULA.DayType,''''),ETE.OvertimeId,E.CompanyId'
+
+
+DECLARE @MAINQUERY VARCHAR(MAX) =
+'
+	SELECT
+		ROWID = 0
+		,[Employee No.] = E.EmployeeNo
+		,[Employee Name] = E.LastFirstMIName
+		,[Cost Center Group] = E.CostCenterGroupCode
+		,[Cost Center] = E.CostCenterCode
+		,[Section] = E.DepartmentCode
+		,[Line] = E.LineCode
+		,[Manpower Class] = E.ManpowerClassificationCode
+		,[Time-In] = ISNULL(COLS2.ActualIn,'''')
+		,[Time-Out] = ISNULL(COLS2.ActualOut,'''')
+		,[Shift Code] = ETE.ShiftCode
+		,[8 hrs] = (ISNULL(COLS2.EightHrs,0))
+		,[> 8hrs] = (ISNULL(COLS2.GtEightHrs,0))
+		,[Day Type] = ISNULL(FORMULA.DayType,'''')
+		,Reason = ISNULL((SELECT TOP 1 OT.Reason FROM schedule.Overtime ot WHERE ot.OvertimeId = ETE.OvertimeId),'''')
+		'+CASE WHEN ISNULL(@PIVOTCOLS,'') <> '' THEN ',' + @pivotcolumns ELSE '' END+'
+		,E.CompanyId
+	INTO '+@TMPTABLENAME+'
+	/*FROM vwEmployeeTimeEntry ETE*/
+	FROM report.fnEmployeeTimeEtnry(0,0,CAST(''' + CAST(@StartWorkDate AS VARCHAR(MAX)) + ''' AS DATETIME),CAST(''' + CAST(@EndWorkDate AS VARCHAR(MAX)) + ''' AS DATETIME),0) ETE
+	INNER JOIN (SELECT ProfileId FROM employee.Profile) EP ON EP.ProfileId = ETE.ProfileId
+	CROSS APPLY 
+	(
+		SELECT TOP 1
+			e.EmployeeNo
+			,e.LastFirstMIName
+			,e.CostCenterGroupCode
+			,e.CostCenterCode
+			,e.DepartmentCode
+			,e.LineCode
+			,e.ManpowerClassificationCode
+			,e.CompanyId
+			,e.DepartmentId
+	   FROM dbo.fnProfileInfoWithScope(' + CAST(@UserSecurityId AS VARCHAR) + ',0,' + CAST(@CompanyId AS VARCHAR) + ', ' + CAST(@BranchId AS VARCHAR) + ', 0, ' + CAST(@OfficeId AS VARCHAR) + ', 0, 0, 0, ' + CAST(@ProjectProfileId AS VARCHAR) + ', 0, ' + CAST(@DistrictId AS VARCHAR) + ', 0, 0, ' + @EmployeeStatusIds + ', ' + CAST(@UnitId AS VARCHAR) + ', 0, ' + CAST(@DivisionId AS VARCHAR) + ', ' + CAST(@GroupId AS VARCHAR) + ', ' + CAST(@TeamId AS VARCHAR) + ', ' + CAST(@LineId AS VARCHAR) + ', ' + @ProfileParam + ') E
+	   WHERE E.ProfileId = EP.ProfileId
+	) E
+	OUTER APPLY
+	(
+		SELECT 
+			TOTALHRS = 
+			(
+				ETE.HO + ETE.SP + ETE.RE + ETE.HR + ETE.SR +
+				ETE.HONS +  ETE.SPNS +  ETE.RENS +  ETE.HRNS +  ETE.SRNS + 
+				ETE.HOOT + ETE.SPOT + ETE.REOT + ETE.HROT + ETE.SROT + ETE.OROT +     
+				ETE.HONSOT + ETE.SPNSOT + ETE.RENSOT + ETE.HRNSOT + ETE.SRNSOT  + ETE.ORNSOT + 
+				ETE.CompanyNonWorkingDay + ETE.CompanyNonWorkingNightShiftDay + ETE.CompanyNonWorkingDayOT + ETE.CompanyNonWorkingNightShiftDayOT
+			)
+		    ,DayType = 
+			(
+			   ISNULL
+			   (	  STUFF
+				  (
+					 (
+						CASE WHEN (ETE.OROT + ETE.ORNSOT) > 0 THEN ''/Regular Day'' ELSE '''' END + 
+						CASE WHEN (ETE.CompanyNonWorkingDay + ETE.CompanyNonWorkingNightShiftDay + ETE.CompanyNonWorkingDayOT + ETE.CompanyNonWorkingNightShiftDayOT) > 0 THEN ''/Company Non-working Day'' ELSE '''' END +
+						CASE WHEN (ETE.HOOT + ETE.HONSOT + ETE.HO + ETE.HONS + ETE.HR + ETE.HRNS + ETE.HROT + ETE.HRNSOT) > 0 THEN ''/Regular Holiday'' ELSE '''' END + 
+						CASE WHEN (ETE.SPOT + ETE.SPNSOT + ETE.SP + ETE.SPNS + ETE.SR + ETE.SRNS + ETE.SROT + ETE.SRNSOT) > 0 THEN ''/Special Holiday'' ELSE '''' END + 
+						CASE WHEN (ETE.REOT + ETE.RENSOT + ETE.RE + ETE.RENS) > 0 THEN ''/Restday'' ELSE '''' END
+					 ),1,1,''''
+				  ),''''
+			   )
+			)
+			
+	)FORMULA
+	CROSS APPLY
+	(
+		SELECT
+			EightHrs = 
+			(
+			   CASE 
+				  WHEN ISNULL(FORMULA.TOTALHRS,0) >= 8 THEN 8 
+				  ELSE ISNULL(FORMULA.TOTALHRS,0)
+			   END
+			)
+			,GtEightHrs = 
+			(
+			   CASE 
+				  WHEN ISNULL(FORMULA.TOTALHRS,0) > 8 THEN ISNULL(FORMULA.TOTALHRS,0) - 8
+				  ELSE 0
+			   END
+			)
+			,[ActualIn] = (CASE WHEN ISNULL(ETE.ActualTimeIn,''1/1/1900'') > ''1/1/1900'' THEN FORMAT(ETE.ActualTimeIn,N''MM/dd/yyyy hh:mm tt'') ELSE '''' END)
+			,[ActualOut] = (CASE WHEN ISNULL(ETE.ActualTimeIn,''1/1/1900'') > ''1/1/1900'' THEN FORMAT(ETE.ActualTimeOut,N''MM/dd/yyyy hh:mm tt'') ELSE '''' END)
+	)COLS2
+	' + CASE WHEN @PIVOTCOLS <> '' THEN  'LEFT JOIN ('+ @PIVOTQUERY +') COLS ON COLS.ProfileId = EP.ProfileId AND COLS.WorkDate = ETE.WorkDate' ELSE ' ' END + '
+WHERE 1=1
+AND ISNULL(FORMULA.TOTALHRS,0) > 0
+'
+/*+ CASE WHEN ISNULL(@StartWorkDate,'1/1/1900') > '1/1/1900' THEN 'AND (ETE.WorkDate >= CAST(''' + CAST(@StartWorkDate AS VARCHAR) + ''' AS DATETIME))' ELSE '' END 
++ CASE WHEN ISNULL(@EndWorkDate,'1/1/1900') > '1/1/1900' THEN 'AND (ETE.WorkDate <= CAST(''' + CAST(@EndWorkDate AS VARCHAR) + ''' AS DATETIME))' ELSE '' END */
++ CASE WHEN ISNULL(@EmployeeId,'') <> '' THEN ' AND (ETE.ProfileId IN (' + @EmployeeId + '))' ELSE '' END
++ CASE WHEN ISNULL(@DepartmentIds,'') <> '' THEN ' AND (E.DepartmentId IN (' + @DepartmentIds + '))' ELSE '' END
+
+
+/*SELECT @MAINQUERY;RETURN */ 
+EXEC (@MAINQUERY);
+--===================================================================================================================================
+--GET THE TMP TABLE COLUMNS, INSERT INTO REPORTDATA TABLE
+--===================================================================================================================================
+
+EXEC [report].[spCreateReportColumn] @TMPTABLENAME, @ReportId, 'CompanyId,ROWID'
+
+END

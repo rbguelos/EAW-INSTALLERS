@@ -1,0 +1,155 @@
+/****** Object:  StoredProcedure [employee].[spRetrieveImportedEmployeeProfileMainInformation]    Script Date: 4/4/2019 2:23:37 PM ******/
+IF NOT OBJECT_ID('[employee].[spRetrieveImportedEmployeeProfileMainInformation]') IS NULL
+DROP PROCEDURE [employee].[spRetrieveImportedEmployeeProfileMainInformation]
+GO
+
+/****** Object:  StoredProcedure [employee].[spRetrieveImportedEmployeeProfileMainInformation]    Script Date: 4/4/2019 2:23:37 PM ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+/*===========================================*\
+**	   Last Update Date: 04/17/2019
+**	   Last Update By: Ronald
+**	   Last DBVersion executed: v690
+\*===========================================*/
+-- =============================================
+-- Author:		JPPP
+-- Create date: 09052017
+-- Description:	Retrieve Imported Employee Profile
+-- =============================================
+CREATE PROCEDURE [employee].[spRetrieveImportedEmployeeProfileMainInformation]
+(
+	@UserId bigint = 0
+)
+AS
+BEGIN
+
+	SELECT 
+		COALESCE(ImportEmployeeProfile.ImportEmployeeProfileId,0) ImportEmployeeProfileId,
+		COALESCE(ImportEmployeeProfile.Title,'') Title,
+		COALESCE(ImportEmployeeProfile.LastName,'') LastName,
+		COALESCE(ImportEmployeeProfile.FirstName,'') FirstName,
+		COALESCE(ImportEmployeeProfile.MiddleName,'') MiddleName,
+		COALESCE(ImportEmployeeProfile.Appellation,'') Appellation,
+		COALESCE(ImportEmployeeProfile.NickName,'') NickName,
+		COALESCE(ImportEmployeeProfile.Alias,'') Alias,
+		COALESCE(ImportEmployeeProfile.Gender,0) Gender,
+		COALESCE(ImportEmployeeProfile.CivilStatus,0) CivilStatus,
+		COALESCE(ImportEmployeeProfile.DateOfMarriage,'1/1/1900') DateOfMarriage,
+		COALESCE(ImportEmployeeProfile.Religion,0) Religion,
+		COALESCE(ImportEmployeeProfile.Birthdate,'1/1/1900') Birthdate,
+		COALESCE(ImportEmployeeProfile.BirthPlace,'') BirthPlace,
+		COALESCE(ImportEmployeeProfile.Nationality,0) Nationality,
+		COALESCE(ImportEmployeeProfile.DualNationality,0) DualNationality,
+		COALESCE(ImportEmployeeProfile.[Weight],'') [Weight],
+		COALESCE(ImportEmployeeProfile.Height,'') Height,
+		COALESCE(ImportEmployeeProfile.BloodType,0) BloodType,
+		COALESCE(ImportEmployeeProfile.HairColor,0) HairColor,
+		COALESCE(ImportEmployeeProfile.EyeColor,0) EyeColor,
+		COALESCE(ImportEmployeeProfile.CityAddress1,'') CityAddress1,
+		COALESCE(ImportEmployeeProfile.CityAddress2,'') CityAddress2,
+		COALESCE(ImportEmployeeProfile.CityAddressBarangay,'') CityAddressBarangay,
+		COALESCE(ImportEmployeeProfile.CityAddressCity,'') CityAddressCity,
+		COALESCE(ImportEmployeeProfile.CityAddresProvince,'') CityAddresProvince,
+		COALESCE(ImportEmployeeProfile.CityAddresZipCode,'') CityAddresZipCode,
+		COALESCE(ImportEmployeeProfile.ProvincialAddress1,'') ProvincialAddress1,
+		COALESCE(ImportEmployeeProfile.ProvincialAddress2,'') ProvincialAddress2,
+		COALESCE(ImportEmployeeProfile.ProvincialBarangay,'') ProvincialBarangay,
+		COALESCE(ImportEmployeeProfile.ProvincialCityMunipality,'') ProvincialCityMunipality,
+		COALESCE(ImportEmployeeProfile.ProvincialProvice,'') ProvincialProvice,
+		COALESCE(ImportEmployeeProfile.ProvincialZipCode,'') ProvincialZipCode,
+		COALESCE(ImportEmployeeProfile.PhoneNumber,'') PhoneNumber,
+		COALESCE(ImportEmployeeProfile.MobileNumber,'') MobileNumber,
+		COALESCE(ImportEmployeeProfile.EmailAddress,'') EmailAddress,
+		COALESCE(ImportEmployeeProfile.Twitter,'') Twitter,
+		COALESCE(ImportEmployeeProfile.Facebook,'') Facebook,
+		COALESCE(ImportEmployeeProfile.Skype,'') Skype,
+		COALESCE(ImportEmployeeProfile.LinkedIn,'') LinkedIn,
+		COALESCE(ImportEmployeeProfile.GooglePlus,'') GooglePlus,
+		COALESCE(ImportEmployeeProfile.Instagram,'') Instagram,
+		COALESCE(ImportEmployeeProfile.Youtube,'') Youtube,
+		COALESCE(ImportEmployeeProfile.GoogleMail,'') GoogleMail,
+		COALESCE(ImportEmployeeProfile.YahooMail,'') YahooMail,
+		COALESCE(ImportEmployeeProfile.EmergencyContactName,'') EmergencyContactName,
+		COALESCE(ImportEmployeeProfile.EmergencyContactRelationship,'') EmergencyContactRelationship,
+		COALESCE(ImportEmployeeProfile.EmergencyContactAddress,'') EmergencyContactAddress,
+		COALESCE(ImportEmployeeProfile.EmergencyContactContactNumber,'') EmergencyContactContactNumber,
+		COALESCE(ImportEmployeeProfile.EmergencyContactSpecialMedicalNeeds,'') EmergencyContactSpecialMedicalNeeds,
+		COALESCE(ImportEmployeeProfile.EmergencyContactDrugAllergies,'') EmergencyContactDrugAllergies,
+		COALESCE(ImportEmployeeProfile.TIN,'') TIN,
+		COALESCE(ImportEmployeeProfile.SSS,'') SSS,
+		COALESCE(ImportEmployeeProfile.PhilHealth,'') PhilHealth,
+		COALESCE(ImportEmployeeProfile.Pagibig,'') Pagibig,
+		COALESCE(ImportEmployeeProfile.ApplicableTaxId,0) ApplicableTaxId,
+		COALESCE(ImportEmployeeProfile.TaxExemptionStatusATC,'') TaxExemptionStatusATC,
+		COALESCE(ImportEmployeeProfile.WaiveClaimingOfDependents,0) WaiveClaimingOfDependents,
+		COALESCE(ImportEmployeeProfile.SubstitutedFiling,0) SubstitutedFiling,
+		COALESCE(ImportEmployeeProfile.MinimumWageEarner,0) MinimumWageEarner,
+		COALESCE(ImportEmployeeProfile.SoloParent,0) SoloParent,
+		COALESCE(ImportEmployeeProfile.IDCertificate,'') IDCertificate,
+		COALESCE(ImportEmployeeProfile.CJI_EmployeeNo,'') CJI_EmployeeNo,
+		COALESCE(ImportEmployeeProfile.CJI_AccessId,'') CJI_AccessId,
+		COALESCE(ImportEmployeeProfile.CJI_EmployeeType,0) CJI_EmployeeType,
+		COALESCE(ImportEmployeeProfile.CJI_EmploymentStatus,0) CJI_EmploymentStatus,
+		COALESCE(ImportEmployeeProfile.CJI_ManpowerClassification,0) CJI_ManpowerClassification,
+		COALESCE(ImportEmployeeProfile.CJI_Position,0) CJI_Position,
+		COALESCE(ImportEmployeeProfile.CJI_JobRank,0) CJI_JobRank,
+		COALESCE(ImportEmployeeProfile.CJI_JobGrade,0) CJI_JobGrade,
+		COALESCE(ImportEmployeeProfile.CJI_JobLevel,0) CJI_JobLevel,
+		COALESCE(ImportEmployeeProfile.CJI_ManHourClassification,0) CJI_ManHourClassification,
+		COALESCE(ImportEmployeeProfile.AOA_Company,0) AOA_Company,
+		COALESCE(ImportEmployeeProfile.AOA_Branch,0) AOA_Branch,
+		COALESCE(ImportEmployeeProfile.AOA_Department,0) AOA_Department,
+		COALESCE(ImportEmployeeProfile.AOA_Office,0) AOA_Office,
+		COALESCE(ImportEmployeeProfile.AOA_Unit,0) AOA_Unit,
+		COALESCE(ImportEmployeeProfile.AOA_Division,0) AOA_Division,
+		COALESCE(ImportEmployeeProfile.AOA_Groups,0) AOA_Groups,
+		COALESCE(ImportEmployeeProfile.AOA_District,0) AOA_District,
+		COALESCE(ImportEmployeeProfile.AOA_Location,0) AOA_Location,
+		COALESCE(ImportEmployeeProfile.AOA_Project,0) AOA_Project,
+		COALESCE(ImportEmployeeProfile.AOA_CostCenter,0) AOA_CostCenter,
+		COALESCE(ImportEmployeeProfile.AOA_Line,0) AOA_Line,
+		COALESCE(ImportEmployeeProfile.AOA_Team,0) AOA_Team,
+		COALESCE(ImportEmployeeProfile.RED_HireDate,'1/1/1900') RED_HireDate,
+		COALESCE(ImportEmployeeProfile.RED_ReglarizationDate,'1/1/1900') RED_ReglarizationDate,
+		COALESCE(ImportEmployeeProfile.RED_EndOfContractDate,'1/1/1900') RED_EndOfContractDate,
+		COALESCE(ImportEmployeeProfile.CJI_DueTo,0) CJI_DueTo,
+		COALESCE(ImportEmployeeProfile.RED_Reason,'') RED_Reason,
+		COALESCE(ImportEmployeeProfile.RED_Others,'') RED_Others,
+		COALESCE(ImportEmployeeProfile.RED_SeparationDate,'1/1/1900') RED_SeparationDate,
+		COALESCE(ImportEmployeeProfile.RED_ClearanceDate,'1/1/1900') RED_ClearanceDate,
+		COALESCE(ImportEmployeeProfile.SalaryInfoEffectiveDate,'1/1/1900') SalaryInfoEffectiveDate,
+		COALESCE(ImportEmployeeProfile.SalaryFactor,0) SalaryFactor,
+		COALESCE(ImportEmployeeProfile.SalaryInfoCurrencyId,0) SalaryInfoCurrencyId,
+		COALESCE(ImportEmployeeProfile.SalaryRate,0) SalaryRate,
+		COALESCE(ImportEmployeeProfile.MinimumTakeHomePayType,0)MinimumTakeHomePayType,
+		COALESCE(ImportEmployeeProfile.MinimumTakeHomePayValue,0) MinimumTakeHomePayValue,
+		COALESCE(ImportEmployeeProfile.ImportStatusId,0) ImportStatusId
+		,ISNULL(ImportEmployeeProfile.WHTTypeId,0) WHTTypeId
+		,ISNULL(ImportEmployeeProfile.SSSTypeId,0) SSSTypeId
+		,ISNULL(ImportEmployeeProfile.PhilhealthTypeId,0) PhilhealthTypeId
+		,ISNULL(ImportEmployeeProfile.PagibigTypeId,0) PagibigTypeId
+		,ISNULL(ImportEmployeeProfile.WHTLimit,0) WHTLimit
+		,ISNULL(ImportEmployeeProfile.SSSLimit,0) SSSLimit
+		,ISNULL(ImportEmployeeProfile.PhilhealthLimit,0) PhilhealthLimit
+		,ISNULL(ImportEmployeeProfile.PagibigLimit,0) PagibigLimit
+	FROM employee.ImportEmployeeProfile
+	WHERE
+		ImportEmployeeProfile.ImportStatusId = 1 /*DRAFT*/
+	AND ImportEmployeeProfile.CreateId = COALESCE(@UserId, 0)
+
+	UPDATE
+		employee.ImportEmployeeProfile
+	SET
+		ImportEmployeeProfile.ImportStatusId = 27 /*PROCESSED*/
+	WHERE
+		ImportEmployeeProfile.ImportStatusId = 1 /*DRAFT*/
+	AND ImportEmployeeProfile.CreateId = COALESCE(@UserId,0)
+
+END
+GO
+
+

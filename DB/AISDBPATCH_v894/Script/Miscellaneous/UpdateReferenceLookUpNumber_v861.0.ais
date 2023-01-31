@@ -1,0 +1,6 @@
+DELETE FROM maintenance.EnumValues WHERE SourceName ='TemplateType' AND DisplayText = 'Notice To Explain'
+INSERT INTO maintenance.EnumValues (SourceName, DisplayText, Value, OrderNumber,Status)
+VALUES
+('TemplateType','Notice To Explain','5','5','1')  
+
+UPDATE maintenance.ReferenceNumberLookUp SET [Format] = 'MMYYYY|SEQUENCE' Where [Transaction] = 'ViolationReportNumber'

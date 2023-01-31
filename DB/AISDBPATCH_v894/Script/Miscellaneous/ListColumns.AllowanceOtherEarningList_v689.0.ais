@@ -1,0 +1,148 @@
+--====================================================================
+--001 AllowanceOtherEarningList
+--====================================================================
+EXEC admin.UpdateListColumns @ListName = 'Allowance and Other Earning List'
+					   ,@ListType = 'AllowanceOtherEarningList'
+					   ,@DefaultColumn = 'EffectiveDate|Status|EarningType|OENo|EmployeeNo|EmployeeName|Branch|Frequency|Amount|AmountPaid|EndDate_String|MaximumLimit|Remarks'
+
+--001.1 AllowanceOtherEarningList, add columns EarningType
+EXEC maintenance.UpdateJQListColumns @ListType = 'AllowanceOtherEarningList'
+							 ,@ColumnType = 'label'
+							 ,@Name = 'EarningType'
+							 ,@Label = 'Earning Type'
+							 ,@Width = '100'
+							 ,@Align = ''
+							 ,@Formatter = ''
+							 ,@FormatterOption = ''
+							 ,@Others = ''
+
+--001.2 AllowanceOtherEarningList, add columns AmountPaid
+EXEC maintenance.UpdateJQListColumns @ListType = 'AllowanceOtherEarningList'
+							 ,@ColumnType = 'amount'
+							 ,@Name = 'AmountPaid'
+							 ,@Label = 'Amount Paid'
+							 ,@Width = '100'
+							 ,@Align = ''
+							 ,@Formatter = ''
+							 ,@FormatterOption = ''
+							 ,@Others = ''
+
+--001.3 AllowanceOtherEarningList, add columns OENo
+EXEC maintenance.UpdateJQListColumns @ListType = 'AllowanceOtherEarningList'
+							 ,@ColumnType = 'label'
+							 ,@Name = 'OENo'
+							 ,@Label = 'Ref No.'
+							 ,@Width = '85'
+							 ,@Align = ''
+							 ,@Formatter = ''
+							 ,@FormatterOption = ''
+							 ,@Others = ''
+
+--001.4 AllowanceOtherEarningList, add columns Amount
+EXEC maintenance.UpdateJQListColumns @ListType = 'AllowanceOtherEarningList'
+							 ,@ColumnType = 'amount'
+							 ,@Name = 'Amount'
+							 ,@Label = 'Amount'
+							 ,@Width = '100'
+							 ,@Align = ''
+							 ,@Formatter = ''
+							 ,@FormatterOption = ''
+							 ,@Others = ''
+
+
+
+--====================================================================
+--====================================================================
+
+
+--====================================================================
+--002 Other Deduction
+--====================================================================
+EXEC admin.UpdateListColumns @ListName = 'Other Deduction List'
+					   ,@ListType = 'OtherDeductionList'
+					   ,@DefaultColumn = 'EffectiveDate|Status|EarningType|OENo|EmployeeNo|EmployeeName|Branch|Frequency|Amount|AmountPaid|EndDate_String|MaximumLimit|Remarks'
+
+
+--002.1 OtherDeductionList, add columns EarningType
+EXEC maintenance.UpdateJQListColumns @ListType = 'OtherDeductionList'
+							 ,@ColumnType = 'label'
+							 ,@Name = 'EarningType'
+							 ,@Label = 'Deduction Type'
+							 ,@Width = '100'
+							 ,@Align = ''
+							 ,@Formatter = ''
+							 ,@FormatterOption = ''
+							 ,@Others = ''
+
+
+--002.2 OtherDeductionList, add columns AmountPaid
+EXEC maintenance.UpdateJQListColumns @ListType = 'OtherDeductionList'
+							 ,@ColumnType = 'amount'
+							 ,@Name = 'AmountPaid'
+							 ,@Label = 'Amount Deducted'
+							 ,@Width = '100'
+							 ,@Align = ''
+							 ,@Formatter = ''
+							 ,@FormatterOption = ''
+							 ,@Others = ''
+
+--001.3 OtherDeductionList, add columns OENo
+EXEC maintenance.UpdateJQListColumns @ListType = 'OtherDeductionList'
+							 ,@ColumnType = 'label'
+							 ,@Name = 'OENo'
+							 ,@Label = 'Ref No.'
+							 ,@Width = '85'
+							 ,@Align = ''
+							 ,@Formatter = ''
+							 ,@FormatterOption = ''
+							 ,@Others = ''
+
+
+--001.4 OtherDeductionList, add columns Amount
+EXEC maintenance.UpdateJQListColumns @ListType = 'OtherDeductionList'
+							 ,@ColumnType = 'amount'
+							 ,@Name = 'Amount'
+							 ,@Label = 'Amount'
+							 ,@Width = '100'
+							 ,@Align = ''
+							 ,@Formatter = ''
+							 ,@FormatterOption = ''
+							 ,@Others = ''
+
+--====================================================================
+
+--003 CommonListColumn, add columns Frequency
+EXEC maintenance.UpdateJQListColumns @ListType = 'CommonListColumn'
+							 ,@ColumnType = 'label'
+							 ,@Name = 'Frequency'
+							 ,@Label = 'Frequency'
+							 ,@Width = '85'
+							 ,@Align = ''
+							 ,@Formatter = ''
+							 ,@FormatterOption = ''
+							 ,@Others = ''
+
+
+--004 CommonListColumn, add columns EndDate_String
+EXEC maintenance.UpdateJQListColumns @ListType = 'CommonListColumn'
+							 ,@ColumnType = 'label'
+							 ,@Name = 'EndDate_String'
+							 ,@Label = 'End Date'
+							 ,@Width = '85'
+							 ,@Align = ''
+							 ,@Formatter = ''
+							 ,@FormatterOption = ''
+							 ,@Others = ''
+
+--005 CommonListColumn, add columns MaximumLimit
+EXEC maintenance.UpdateJQListColumns @ListType = 'CommonListColumn'
+							 ,@ColumnType = 'amount'
+							 ,@Name = 'MaximumLimit'
+							 ,@Label = 'Limit'
+							 ,@Width = '85'
+							 ,@Align = ''
+							 ,@Formatter = ''
+							 ,@FormatterOption = ''
+							 ,@Others = ''
+
+

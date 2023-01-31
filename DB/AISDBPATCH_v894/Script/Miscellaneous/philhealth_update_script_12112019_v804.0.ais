@@ -1,0 +1,7 @@
+/*Update philhealth table*/
+UPDATE maintenance.PhilHealthTable SET EffectiveDate = CAST(CONCAT('01/01/', EffectiveYear) AS DATETIME)
+
+/*Update List columns*/
+UPDATE admin.ListColumns SET DefaultColumns = 'MinAmount|MaxAmount|SalaryBase|MonthlyContribution|EmployeeShare|EmployerShare|ContributionType|BracketId|EffectiveYear'
+,MasterColumns = 'MinAmount|MaxAmount|SalaryBase|MonthlyContribution|EmployeeShare|EmployerShare|ContributionType|BracketId|EffectiveYear'
+WHERE ListType = 'PhilHealthColumnList'

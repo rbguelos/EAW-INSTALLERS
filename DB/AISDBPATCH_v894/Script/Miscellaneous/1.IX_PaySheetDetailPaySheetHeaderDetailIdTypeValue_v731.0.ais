@@ -1,0 +1,22 @@
+/*
+Missing Index Details from SQLQuery6.sql - DATABASE-SERVER\SQLDEVELOPER2017.EatWork_TSMProd (aisapp)
+The Query Processor estimates that implementing the following index could improve the query cost by 39.7611%.
+*/
+
+
+IF NOT EXISTS(SELECT index_id FROM SYS.indexes WHERE name = 'IX_PaySheetDetailPaySheetHeaderDetailIdTypeValue' AND object_id = object_id('[payroll].[PaySheetDetail]'))
+	CREATE NONCLUSTERED INDEX [IX_PaySheetDetailPaySheetHeaderDetailIdTypeValue]
+	ON [payroll].[PaySheetDetail] ([PaySheetHeaderDetailId]) INCLUDE ([Type],[Value])
+GO
+
+
+IF NOT EXISTS(SELECT index_id FROM SYS.indexes WHERE name = 'IX_PaySheetHeaderDetailPaySheetHeaderId' AND object_id = object_id('[payroll].[PaySheetHeaderDetail]'))
+	CREATE NONCLUSTERED INDEX [IX_PaySheetHeaderDetailPaySheetHeaderId]
+	ON [payroll].[PaySheetHeaderDetail] ([PaySheetHeaderId])INCLUDE ([ProfileId],[SalaryRate],[HourlyRate])
+GO
+
+IF NOT EXISTS(SELECT index_id FROM SYS.indexes WHERE name = 'IX_PaysheetAllowancePaySheetHeaderDetailId' AND object_id = object_id('[payroll].[PaysheetAllowance]'))
+	CREATE NONCLUSTERED INDEX [IX_PaysheetAllowancePaySheetHeaderDetailId]
+	ON [payroll].[PaysheetAllowance] ([PaySheetHeaderDetailId])
+GO
+

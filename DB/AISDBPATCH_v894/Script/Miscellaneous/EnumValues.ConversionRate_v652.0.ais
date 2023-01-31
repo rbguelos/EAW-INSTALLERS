@@ -1,0 +1,29 @@
+  DELETE [maintenance].[EnumValues] 
+  WHERE SourceName = 'ConversionRate'
+
+   --Latest
+   INSERT INTO [maintenance].[EnumValues] ([SourceName]
+, [DisplayText]
+, [Value]
+, [OrderNumber]
+, [Status]
+, [CreateId]
+, [CreateDate]
+, [LastUpdateId]
+, [LastUpdateDate])
+    VALUES ('ConversionRate', 'Current Salary Rate', '1', '1', '1', NULL, NULL, NULL, NULL)
+GO
+
+   
+   --Average Rate
+   INSERT INTO [maintenance].[EnumValues] ([SourceName]
+, [DisplayText]
+, [Value]
+, [OrderNumber]
+, [Status]
+, [CreateId]
+, [CreateDate]
+, [LastUpdateId]
+, [LastUpdateDate])
+    VALUES ('ConversionRate', 'Effective Salary Rate (Leave Balance - As of Date)', '2', '2', '1', NULL, NULL, NULL, NULL)
+GO

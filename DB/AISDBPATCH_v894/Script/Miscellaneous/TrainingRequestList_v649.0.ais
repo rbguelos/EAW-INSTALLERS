@@ -1,0 +1,4 @@
+EXEC [maintenance].[UpdateJQListColumns]
+	@ListType = 'TrainingRequestColumnList', @ColumnType = 'date',
+	@Name = 'DateFiled', @Label = 'Date Filed', @Width = '85',
+	@Align = '', @Formatter = 'AIS_JQChildCustomDate', @FormatterOption = '', @Others = ''

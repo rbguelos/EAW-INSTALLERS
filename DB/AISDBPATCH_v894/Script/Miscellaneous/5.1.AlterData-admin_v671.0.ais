@@ -1,0 +1,20 @@
+/* PA Template */
+EXEC [admin].[UpdateListColumns]
+	@ListName = 'PA Template List', @ListType = 'PATemplateColumnList',
+	@DefaultColumn = 'Name|EffectiveYear|Company|EvaluatorType|CriteriaSource|Domain'
+
+/* PA Schedule */
+EXEC [admin].[UpdateListColumns]
+	@ListName = 'PA Schedule List', @ListType = 'PAScheduleColumnList',
+	@DefaultColumn = 'EmployeeName|EmployeeDepartment|ApplicableTo|EmployeeHireDate|EmployeeRegularizationDate|Domain|StatusName|PAType|PeriodCovered_String|PAScheduleDate_String|PAScheduleEndDate'
+
+/* PA Actual */
+EXEC [admin].[UpdateListColumns]
+	@ListName = 'Performance Appraisal List', @ListType = 'PerformanceAppraisalColumnList',
+	@DefaultColumn = 'EmployeeName|EmployeeDepartment|ApplicableTo|EmployeeHireDate|EmployeeRegularizationDate|Domain|StatusName|PAType|PeriodCovered_String|PAScheduleDate_String|PAScheduleEndDate'
+
+/* KPI */
+EXEC [admin].[UpdateListColumns]
+	@ListName = 'Key Performance Indicator List',
+	@ListType = 'KeyPerformanceIndicatorColumnList',
+	@DefaultColumn = 'KPICode|KRACode|Measure|Domain|Company'

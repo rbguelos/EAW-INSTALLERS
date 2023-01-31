@@ -1,0 +1,31 @@
+IF  EXISTS (
+	SELECT TOP  1 1  
+	FROM sys.objects WHERE object_id = OBJECT_ID(N'[recruitment].[ExamScreeningScheduleDetail]')
+)
+/****** Object:  Table [recruitment].[ExamScreeningScheduleDetail]    Script Date: 6/29/2020 11:39:41 AM ******/
+DROP TABLE [recruitment].[ExamScreeningScheduleDetail]
+GO
+/****** Object:  Table [recruitment].[ExamScreeningScheduleDetail]    Script Date: 6/29/2020 11:39:41 AM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [recruitment].[ExamScreeningScheduleDetail](
+	[ExamScreeningScheduleDetailId] [bigint] IDENTITY(1,1) NOT NULL,
+	[ApplicantScreeningScheduleId] [bigint] NULL,
+	[ScreeningDate] [datetime] NULL,
+	[OverallRating] [varchar](50) NULL,
+	[Percentage] [decimal](18, 4) NULL,
+	[HighestPossibleScore] [bigint] NULL,
+	[Remarks] [varchar](max) NULL,
+	[Section] [varchar](max) NULL,
+	[CreateId] [bigint] NULL,
+	[CreateDate] [datetime] NULL,
+	[LastUpdateId] [bigint] NULL,
+	[LastUpdateDate] [datetime] NULL,
+ CONSTRAINT [PK_ExamScreeningScheduleDetail] PRIMARY KEY CLUSTERED 
+(
+	[ExamScreeningScheduleDetailId] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+GO

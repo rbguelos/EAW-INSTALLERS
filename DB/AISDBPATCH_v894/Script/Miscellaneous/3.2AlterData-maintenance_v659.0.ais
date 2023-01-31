@@ -1,0 +1,44 @@
+/* Undertime */
+EXEC [maintenance].[UpdateJQListColumns]
+	@ListType = 'UndertimeColumnList', @ColumnType = 'label', @Name = 'Division', @Label = 'Division',
+	@Width = '200', @Align = '', @Formatter = '', @FormatterOption = '', @Others = '', @Clients = '19'
+
+/* Overtime */
+EXEC [maintenance].[UpdateJQListColumns]
+	@ListType = 'OvertimeColumnList', @ColumnType = 'label', @Name = 'Division', @Label = 'Division',
+	@Width = '200', @Align = '', @Formatter = '', @FormatterOption = '', @Others = '', @Clients = '19'
+
+/* Timeoff */
+EXEC [maintenance].[UpdateJQListColumns]
+	@ListType = 'TimeOffColumnList', @ColumnType = 'label', @Name = 'Division', @Label = 'Division',
+	@Width = '200', @Align = '', @Formatter = '', @FormatterOption = '', @Others = '', @Clients = '19'
+
+/* Change Work Schedule */
+EXEC [maintenance].[UpdateJQListColumns]
+	@ListType = 'ChangeWorkScheduleColumnList', @ColumnType = 'label', @Name = 'Division', @Label = 'Division',
+	@Width = '200', @Align = '', @Formatter = '', @FormatterOption = '', @Others = '', @Clients = '19'
+
+/* Change Restday Schedule */
+EXEC [maintenance].[UpdateJQListColumns]
+	@ListType = 'ChangeRestDayColumnList', @ColumnType = 'label', @Name = 'Division', @Label = 'Division',
+	@Width = '200', @Align = '', @Formatter = '', @FormatterOption = '', @Others = '', @Clients = '19'
+
+/* Special Work Schedule */
+EXEC [maintenance].[UpdateJQListColumns]
+	@ListType = 'WorkScheduleRequestColumnList', @ColumnType = 'label', @Name = 'Division', @Label = 'Division',
+	@Width = '200', @Align = '', @Formatter = '', @FormatterOption = '', @Others = '', @Clients = '19'
+
+/* Official Business */
+EXEC [maintenance].[UpdateJQListColumns]
+	@ListType = 'OfficialBusinessColumnList', @ColumnType = 'label', @Name = 'Division', @Label = 'Division',
+	@Width = '200', @Align = '', @Formatter = '', @FormatterOption = '', @Others = '', @Clients = '19'
+
+/* Leave Request */
+EXEC [maintenance].[UpdateJQListColumns]
+	@ListType = 'LeaveRequestColumnsList', @ColumnType = 'label', @Name = 'Division', @Label = 'Division',
+	@Width = '200', @Align = '', @Formatter = '', @FormatterOption = '', @Others = '', @Clients = '19'
+
+/* Time Entry Logs */
+EXEC [maintenance].[UpdateJQListColumns]
+	@ListType = 'TimeEntryLogListColumn', @ColumnType = 'label', @Name = 'Division', @Label = 'Division',
+	@Width = '200', @Align = '', @Formatter = '', @FormatterOption = '', @Others = '', @Clients = '19'

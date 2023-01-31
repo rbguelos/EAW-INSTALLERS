@@ -1,0 +1,34 @@
+IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[payroll].[fnJournalVoucherHeader]') AND type in (N'FN', N'IF', N'TF', N'FS', N'FT'))
+DROP FUNCTION [payroll].[fnJournalVoucherHeader]
+GO
+
+ --=============================================
+ --Author:      Jomari Rimbao
+ --Create date: 11/04/2019
+ --Description: For JV File Generator File
+ --=============================================
+
+CREATE FUNCTION [payroll].[fnJournalVoucherHeader]
+(
+	--DECLARE
+	@JVHeaderId BIGINT = 0
+	,@UserSecurityId BIGINT = 0
+)
+RETURNS TABLE 
+AS
+RETURN
+(
+	SELECT 
+		CompanyName = C.[Name]
+	   ,PayrollEntry = CONCAT('PAYROLL ENTRY - ',FORMAT(JV.JVDate,N'MMMM dd, yyyy'))
+       ,PayrollPeriod = 
+	   CONCAT('PAYROLL PERIOD: '
+	   ,FORMAT(JV.CutOffStartDate,N'MMMM dd')
+	   ,(CASE WHEN YEAR(JV.CutOffStartDate) = YEAR(JV.CutOffEndDate) THEN '' ELSE FORMAT(JV.CutOffStartDate,N'yyyy') END)
+	   ,' - '
+	    ,(CASE WHEN MONTH(JV.CutOffStartDate) <> MONTH(JV.CutOffEndDate) THEN  FORMAT(JV.CutOffEndDate,N'MMMM dd, yyyy') ELSE FORMAT(JV.CutOffEndDate,N'dd yyyy') END))
+	FROM payroll.JVHeader JV
+	INNER JOIN maintenance.Company C ON C.CompanyId = JV.CompanyId
+	WHERE 1=1
+	AND JV.JVHeaderId = @JVHeaderId
+)

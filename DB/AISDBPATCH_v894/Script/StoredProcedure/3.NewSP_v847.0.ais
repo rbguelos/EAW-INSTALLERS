@@ -1,0 +1,39 @@
+GO
+/****** Object:  StoredProcedure [attendance].[spClockworkOtherTypeList]    Script Date: 3/30/2020 9:48:57 AM ******/
+IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[attendance].[spClockworkOtherTypeList]') AND type in (N'P', N'PC'))
+DROP PROCEDURE [attendance].[spClockworkOtherTypeList]
+GO
+/****** Object:  StoredProcedure [attendance].[spClockworkOtherTypeList]    Script Date: 3/30/2020 9:48:57 AM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+-- =============================================
+-- Author:		Bryan Avellana
+-- Create date: March 10, 2020
+-- =============================================
+CREATE PROCEDURE [attendance].[spClockworkOtherTypeList]
+@ClockworkConfigId BIGINT = NULL
+AS
+BEGIN
+	-- SET NOCOUNT ON added to prevent extra result sets from
+	-- interfering with SELECT statements.
+	SET NOCOUNT ON;
+
+    -- Insert statements for procedure here
+	SELECT
+		C.ClockworkOtherTypeId,
+		C.ClockworkOtherTypeId AS TempClockworkOtherTypeId,
+		C.ClockworkConfigId,
+		C.OtherTypeCode AS txtOtherTypeCode,
+		C.OtherTypeName AS txtOtherTypeName,
+		C.InColor AS txtInColor,
+		C.OutColor AS txtOutColor,
+		C.InLabel AS txtInLabel,
+		C.OutLabel AS txtOutLabel,
+		C.ShowColumn AS optShowColumn,
+		CASE C.ShowColumn WHEN 1 THEN 'Yes' ELSE 'No' END AS ShowColumn
+	FROM attendance.ClockworkOtherType C
+	WHERE C.ClockworkConfigId = @ClockworkConfigId
+END
+GO

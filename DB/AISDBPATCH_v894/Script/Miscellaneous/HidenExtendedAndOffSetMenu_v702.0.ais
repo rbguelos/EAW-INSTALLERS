@@ -1,0 +1,1 @@
+UPDATE admin.MenuMenu SET Hidden = 1 WHERE MenuMenuId = 54

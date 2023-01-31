@@ -1,0 +1,369 @@
+IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[report].[spDetailedAttendanceReportBreakdownWithOvertimeType]') AND type in (N'P', N'PC'))
+DROP PROCEDURE [report].[spDetailedAttendanceReportBreakdownWithOvertimeType]
+GO
+
+--=============================================
+--Author:		Angelito Dela Cruz
+--Create date:	07.15.2019
+--Remarks:		For Detailed Attendance Report Breakdown with Overtime Type
+--=============================================
+CREATE PROCEDURE [report].[spDetailedAttendanceReportBreakdownWithOvertimeType]
+--DECLARE
+ @ForThePeriodFrom DATETIME = '01/01/2018'
+,@ForThePeriodTo DATETIME = '01/15/2018'
+,@CompanyId BIGINT = 0
+,@BranchId BIGINT = 0
+,@DepartmentId VARCHAR(MAX) =''
+,@OfficeId BIGINT = 0
+,@DivisionId VARCHAR(MAX) =''
+,@GroupId BIGINT = 0
+,@TeamId BIGINT = 0
+,@LineId BIGINT = 0
+,@UnitId BIGINT = 0
+,@DistrictId BIGINT = 0
+,@ProjectProfileId BIGINT = 0
+,@CostCenterId BIGINT = 0
+,@PositionId BIGINT = 0
+,@StatusIds VARCHAR(MAX) =''
+,@IncludeInactiveEmployees BIT = 1
+,@EmployeeId VARCHAR(MAX) =''
+,@ColumnCategoryId VARCHAR(MAX) =''
+,@LeaveTypeId VARCHAR(MAX) =''
+,@IncludeApprovedHours BIT = 0
+,@IncludePreshiftHours BIT = 0
+,@ShowMissingLogs BIT = 0
+,@UserSecurityId BIGINT= 10165
+AS
+BEGIN
+SET NOCOUNT ON;	
+
+--===================================================================================================================================
+--DECLARATIONS
+--===================================================================================================================================
+
+DECLARE @ReportId BIGINT = (SELECT TOP 1 r.ReportId FROM report.Report r Where r.ReportCode = 'DetailedAttendanceReportBreakdownWithOvertimeType');
+DECLARE @TMPTABLENAME VARCHAR(150) = 'report.TMPDetailedAttendanceReportBreakdownWithOvertimeType'
+/*DROP TEMP TABLE IF EXISTS*/
+IF EXISTS(SELECT * FROM sys.tables WHERE object_id = object_id(@TMPTABLENAME))
+EXEC('DROP TABLE ' + @TMPTABLENAME)
+
+DECLARE @EmployeeStatusIds VARCHAR(10) = (CASE WHEN @IncludeInactiveEmployees = 1 THEN '''1,2''' ELSE '''0''' END)
+
+DECLARE @IsNullDate DATETIME = '1/1/1900'
+DECLARE @IsNullDate_ VARCHAR(30) = 'CAST(''1/1/1900'' AS DATETIME)';
+
+DECLARE @HasNoStartDateFilter BIT = CASE WHEN @ForThePeriodFrom <= @IsNullDate THEN 1 ELSE 0 END
+DECLARE @HasNoEndDateFilter BIT = CASE WHEN @ForThePeriodTo <= @IsNullDate THEN 1 ELSE 0 END
+
+DECLARE @LeaveTypeSetupId_ VARCHAR(max) = CASE WHEN @LeaveTypeId = '' THEN '''''' ELSE @LeaveTypeId END
+
+DECLARE @StartWorkDate_ VARCHAR(10) = CONVERT(VARCHAR(10),@ForThePeriodFrom,101)
+DECLARE @EndWorkDate_ VARCHAR(10) = CONVERT(VARCHAR(10),@ForThePeriodTo,101)
+DECLARE @CompanyId_ VARCHAR(10) = CAST(@CompanyId AS VARCHAR(10))
+DECLARE @BranchId_ VARCHAR(10) = CAST(@BranchId AS VARCHAR(10))
+--DECLARE @DepartmentId_ VARCHAR(10) = CAST(@DepartmentId AS VARCHAR(10))
+DECLARE @OfficeId_ VARCHAR(10) = CAST(@OfficeId AS VARCHAR(10))
+DECLARE @DivisionId_ VARCHAR(10) = CAST(@DivisionId AS VARCHAR(10))
+DECLARE @GroupId_ VARCHAR(10) = CAST(@GroupId AS VARCHAR(10))
+DECLARE @TeamId_ VARCHAR(10) = CAST(@TeamId AS VARCHAR(10))
+DECLARE @LineId_ VARCHAR(10) = CAST(@LineId AS VARCHAR(10))
+DECLARE @UnitId_ VARCHAR(10) = CAST(@UnitId AS VARCHAR(10))
+DECLARE @DistrictId_ VARCHAR(10) = CAST(@DistrictId AS VARCHAR(10))
+DECLARE @CostCenterId_ VARCHAR(10) = CAST(@CostCenterId AS VARCHAR(10))
+DECLARE @PositionId_ VARCHAR(10) = CAST(@PositionId AS VARCHAR(10))
+DECLARE @ProjectId_ VARCHAR(10) = CAST(@ProjectProfileId AS VARCHAR(10))
+DECLARE @UserSecurityId_ VARCHAR(10) = CAST(@UserSecurityId AS VARCHAR(10))
+DECLARE @ShowMissingLogs_ VARCHAR(10) = CAST(@ShowMissingLogs AS VARCHAR(10))
+--===================================================================================================================================
+--DETAILS FOR LEAVE PAYS
+--===================================================================================================================================
+
+DECLARE @LeaveTypeCols VARCHAR(MAX) = 
+STUFF
+(
+    (
+	   SELECT 
+		  /*','+ '[Leave Types|' + CASE WHEN LTS.Code <> '' THEN LTS.Code ELSE 'Leave Types|OtherLeave' + CAST((ROW_NUMBER() OVER (ORDER BY LTS.Code)) AS VARCHAR) END  + ']'*/
+		  ',' + COL.COLNAME
+	   FROM leave.LeaveTypeSetup LTS
+	   CROSS APPLY
+	   (
+			SELECT 
+			COLNAME = QUOTENAME(CASE WHEN LTS.Code <> '' THEN LTS.Code ELSE 'Others' + CAST((ROW_NUMBER() OVER (ORDER BY LTS.Code)) AS VARCHAR(MAX)) END)
+			,COLNAME2 = QUOTENAME('Leave Types|'+CASE WHEN LTS.Code <> '' THEN LTS.Code ELSE 'Others' + CAST((ROW_NUMBER() OVER (ORDER BY LTS.Code)) AS VARCHAR(MAX)) END)
+	   )COL
+	   WHERE
+	   (
+		  (LTS.CompanyId = @CompanyId)
+		  AND ((@LeaveTypeId = '') OR (CHARINDEX('''' + CAST(LeaveTypeSetupId AS VARCHAR(10)) + '''',@LeaveTypeId) > 0))
+	   )
+	   FOR XML PATH(''), ROOT ('MyString')
+    ,TYPE
+    ).value('/MyString[1]', 'varchar(max)'), 1, 1, ''
+)
+
+DECLARE @LeaveTypePivotCols VARCHAR(MAX) = 
+STUFF
+(
+    (
+	   SELECT 
+		  /*',' + '[Leave Types|' + CASE WHEN LTS.Code <> '' THEN LTS.Code ELSE 'Leave Types|OtherLeave' + CAST((ROW_NUMBER() OVER (ORDER BY LTS.Code)) as varchar)END  + ' ]' + ' = SUM(ISNULL(LEAVE.[Leave Types|' + CASE WHEN LTS.Code <> '' THEN LTS.Code ELSE 'Leave Types|OtherLeave' + CAST((ROW_NUMBER() OVER (ORDER BY LTS.Code)) as varchar)END  + '],0))'  */
+		  ','+ CONCAT(COL.COLNAME2,'=','ISNULL(LEAVE.',COL.COLNAME,',0)')
+	   FROM leave.LeaveTypeSetup LTS
+	   CROSS APPLY
+	   (
+			SELECT 
+			COLNAME = QUOTENAME(CASE WHEN LTS.Code <> '' THEN LTS.Code ELSE 'Others' + CAST((ROW_NUMBER() OVER (ORDER BY LTS.Code)) AS VARCHAR(MAX)) END)
+			,COLNAME2 = QUOTENAME('Leave Types|'+CASE WHEN LTS.Code <> '' THEN LTS.Code ELSE 'Others' + CAST((ROW_NUMBER() OVER (ORDER BY LTS.Code)) AS VARCHAR(MAX)) END)
+	   )COL
+	   WHERE
+	   (
+		  (LTS.CompanyId = @CompanyId)
+		  AND ((@LeaveTypeId = '') OR (CHARINDEX('''' + CAST(LeaveTypeSetupId AS VARCHAR(10)) + '''',@LeaveTypeId) > 0))
+	   )
+	   FOR XML PATH(''), ROOT ('MyString')
+    ,TYPE
+    ).value('/MyString[1]', 'varchar(max)'), 1, 1, ''
+)
+
+
+DECLARE @LEAVEQUERY VARCHAR(MAX) = 
+'
+SELECT 
+    TimeEntryHeaderDetailId
+    ,ProfileId
+    ,'+@LeaveTypeCols+'
+FROM 
+(
+    SELECT 
+	   TELD.TimeEntryHeaderDetailId 
+	   ,TELD.LeaveHours
+	   /*,LeaveType = ''Leave Types|'' + TELD.LeaveType*/
+	   ,LeaveType = TELD.LeaveType
+	   ,TELD.ProfileId
+    FROM attendance.TimeEntryLeaveDetail TELD
+    '
+    +
+    /*only add filtering when user passes report date filter*/
+    CASE WHEN @HasNoStartDateFilter = 1 AND @HasNoEndDateFilter = 1 THEN '' 
+    ELSE 
+    'WHERE 
+    (
+    ' +
+	  STUFF((CASE WHEN @HasNoStartDateFilter = 1 THEN '' ELSE 'AND (WorkDate >= CAST(''' + @StartWorkDate_ + ''' AS DATE))' END +
+	   CASE WHEN @HasNoEndDateFilter = 1 THEN '' ELSE 'AND (WorkDate <= CAST(''' + @EndWorkDate_ + ''' AS DATE))' END
+	   ),1,3,'')
+    + '
+    )' END
+    +
+    '
+)T
+PIVOT(SUM(LeaveHours) FOR LeaveType IN
+('+@LeaveTypeCols+')) AS PVT
+'
+
+
+--===================================================================================================================================
+--MAIN QUERY
+--===================================================================================================================================
+DECLARE @MainQuery VARCHAR(MAX) = 
+'SELECT 
+[Employee Name] = E.LastFirstMIName
+,[Employee No.] = E.EmployeeNo
+,[Work Date] = ETE.WorkDate
+,[Remarks] = ISNULL(ETE.WorkDateRemarks,'''') + ISNULL(COLS.LogRemarks,'''')
+,[Schedule|Time In] = Cols.StartTime
+,[Schedule|Time Out] =  Cols.EndTime
+,[Actual|Time In] = (CASE WHEN ISNULL('+@ShowMissingLogs_+',0) = 1 AND ISNULL(COLS.ActualTimeIn,'''') = '''' THEN COLS.LogTimeIn ELSE COLS.ActualTimeIn END)
+,[Actual|Time Out] = (CASE WHEN ISNULL('+@ShowMissingLogs_+',0) = 1 AND ISNULL(COLS.ActualTimeOut,'''') = '''' THEN COLS.LogTimeOut ELSE COLS.ActualTimeOut END)
+,[Hours Worked] = ETE.ActualWorkingHours
+,[Tardiness | Absences] = ETE.Absent 
+,[Tardiness | Late] = ETE.Late
+,[Tardiness | Undertime] = ETE.Undertime
+,[Basic | Hours] = ETE.[OR]
+,[Basic | NS Hours] = ETE.ORNS
+,[Basic | OT Hours] = ETE.OROT
+,[Basic | NSOT Hours] = ETE.ORNSOT
+,[Regular Holiday|Hours] = ETE.HO
+,[Regular Holiday|NS Hours] = ETE.HONS
+,[Regular Holiday|OT Hours] = ETE.HOOT
+,[Regular Holiday|NSOT Hours] = ETE.HONSOT
+,[Special Holiday|Hours] = ETE.SP
+,[Special Holiday|NS Hours] = ETE.SPNS
+,[Special Holiday|OT Hours] = ETE.SPOT
+,[Special Holiday|NSOT Hours] = ETE.SPNSOT
+,[Regular Restday|Hours] = ETE.RE
+,[Regular Restday|NS Hours] = ETE.RENS
+,[Regular Restday|OT Hours] = ETE.REOT
+,[Regular Restday|NSOT Hours] = ETE.RENSOT
+,[Holiday Restday|Hours] = ETE.HR
+,[Holiday Restday|NS Hours] = ETE.HRNS
+,[Holiday Restday|OT Hours] = ETE.HROT
+,[Holiday Restday|NSOT Hours] = ETE.HRNSOT
+,[Special Restday|Hours] = ETE.SP
+,[Special Restday|NS Hours] = ETE.SPNS
+,[Special Restday|OT Hours] = ETE.SPOT
+,[Special Restday|NSOT Hours] = ETE.SPNSOT
+,[Total Pre-Shift OT|Regular Ot] = ETE.ApprovePreshiftOT
+,[Total Pre-Shift OT|Night Shift Ot] = ETE.ApprovePreshiftNSOT
+,[Total After Shift OT|Regular Ot]= ETE.ApprovedRegularOT
+,[Total After Shift OT|Night Shift Ot]= ETE.ApprovedNSOT
+,[OB Hours]= (CASE WHEN ISNULL(ETE.OBTypeId,0) = 1 THEN ISNULL(OB.OBHRS,0) ELSE 0 END)
+,[Time Off Hours]= (CASE WHEN ISNULL(ETE.OBTypeId,0) = 2 THEN ISNULL(OB.OBHRS,0) ELSE 0 END)
+,[Net Hrs] = ETE.NetHrs
+/*LEAVE DETAILS HERE*/
+'+CASE WHEN ISNULL(@LeaveTypePivotCols,'') <> '' THEN ','+@LeaveTypePivotCols ELSE '' END+'
+,E.CompanyId
+INTO '+@TMPTABLENAME+'
+FROM dbo.vwEmployeeTimeEntry ETE
+INNER JOIN (SELECT ProfileId FROM employee.Profile) P ON P.ProfileId = ETE.ProfileId
+OUTER APPLY
+(
+	SELECT TOP 1
+		OBHRS = OB.NoOfHours 
+	FROM schedule.OfficialBusiness OB WHERE OB.OfficialBusinessId = ETE.OfficialBussinessId
+)OB
+CROSS APPLY
+(
+	 SELECT TOP 1
+		 e.LastFirstMIName
+		,e.ProjectId
+		,e.EmployeeNo
+		,e.ProfileId
+		,e.DepartmentId
+		,e.BranchId
+		,e.CompanyId
+		,e.Officeid
+		,e.DivisionId
+		,GroupId = e.GroupsCodeId 
+		,TeamId = e.TeamCodeId
+		,LineId = e.LineCodeId
+		,UnitId = e.UnitId
+		,e.DistrictId
+		,e.CostCenterId
+		,e.PositionId
+    FROM dbo.fnProfileInfoWithScope(' + @UserSecurityId_ + ',0,0,0,0,0,0,0,0,0,0,0,0,0,' + @EmployeeStatusIds + ',0,0,0,0,0,0, 1, ETE.TimeEntryHeaderDetailId) e
+    WHERE e.ProfileId = P.ProfileId
+) E
+'+CASE WHEN ISNULL(@LEAVEQUERY,'') <> '' THEN 'LEFT JOIN ('+ @LEAVEQUERY +') LEAVE ON LEAVE.TimeEntryHeaderDetailId = ETE.TimeEntryHeaderDetailId' ELSE '' END+'
+/*CHECKING COLUMNS*/
+CROSS APPLY
+(
+	SELECT
+		HasShiftCode = (CASE WHEN (ISNULL(ETE.ShiftCodeId,0) <> 0) THEN 1 ELSE 0 END)
+		,HasStartTime = (CASE WHEN CAST(ISNULL(ETE.StartTime, ''1/1/1900'') AS DATETIME) > CAST(''1/1/1900'' AS DATETIME) THEN 1 ELSE 0 END)
+		,HasEndTime = (CASE WHEN CAST(ISNULL(ETE.EndTime, ''1/1/1900'') AS DATETIME) > CAST(''1/1/1900'' AS DATETIME) THEN 1 ELSE 0 END)
+		,HasActualTimeIn = (CASE WHEN CAST(ISNULL(ETE.ActualTimeIn, ''1/1900'') AS DATETIME) > CAST(''1/1/1900'' AS DATETIME) THEN 1 ELSE 0 END)
+		,HasActualTimeOut = (CASE WHEN CAST(ISNULL(ETE.ActualTimeOut, ''1/1/1900'') AS DATETIME) > CAST(''1/1/1900'' AS DATETIME) THEN 1 ELSE 0 END)
+		,HasActualAndAbsentHrsAndFixSched = (CASE WHEN ISNULL(ETE.ActualWorkingHours,0) = 0 AND ISNULL(ETE.Absent,0) = 0  THEN 1 ELSE 0 END)
+)CHECKER
+
+/*COLUMNS WITH CHECKING AND FORMULA*/
+CROSS APPLY
+(
+	SELECT
+		StartTime =
+		(
+			CASE WHEN (CHECKER.HasShiftCode = 1 AND CHECKER.HasActualAndAbsentHrsAndFixSched = 0) THEN
+			(
+				CASE WHEN (CHECKER.HasStartTime = 1) THEN
+				(
+					CASE WHEN CONVERT(VARCHAR, ETE.WorkDate, 101) <> CONVERT(VARCHAR, ETE.StartTime, 101) 
+						THEN FORMAT(ETE.StartTime, N''MM/dd/yyyy hh:mm tt'')
+						ELSE FORMAT(ETE.StartTime, N''hh:mm tt'')
+					END
+				)
+				ELSE '''' END
+			)
+			ELSE '''' END
+		)
+		,EndTime =
+		(
+			CASE WHEN (CHECKER.HasShiftCode = 1 AND CHECKER.HasActualAndAbsentHrsAndFixSched = 0) THEN
+			(
+				CASE WHEN (CHECKER.HasEndTime = 1) THEN
+				(
+					CASE WHEN CONVERT(VARCHAR, ETE.WorkDate, 101) <> CONVERT(VARCHAR, ETE.EndTime, 101) 
+						THEN FORMAT(ETE.EndTime, N''MM/dd/yyyy hh:mm tt'')
+						ELSE FORMAT(ETE.EndTime, N''hh:mm tt'')
+					END
+				)
+				ELSE '''' END
+			)
+			ELSE '''' END
+		)
+		,ActualTimeIn =
+		(
+			CASE WHEN (CHECKER.HasActualTimeIn = 1) THEN
+			(
+				CASE WHEN CONVERT(VARCHAR, ETE.WorkDate, 101) <> CONVERT(VARCHAR, ETE.ActualTimeIn, 101) 
+					THEN FORMAT(ETE.ActualTimeIn, N''MM/dd/yyyy hh:mm tt'')
+					ELSE FORMAT(ETE.ActualTimeIn, N''hh:mm tt'')
+				END
+			)
+			ELSE '''' END
+		)
+		,ActualTimeOut =
+		(
+			CASE WHEN (CHECKER.HasActualTimeOut = 1) THEN
+			(
+				CASE WHEN CONVERT(VARCHAR, ETE.WorkDate, 101) <> CONVERT(VARCHAR, ETE.ActualTimeOut, 101) 
+					THEN FORMAT(ETE.ActualTimeOut, N''MM/dd/yyyy hh:mm tt'')
+					ELSE FORMAT(ETE.ActualTimeOut, N''hh:mm tt'')
+				END
+			)
+			ELSE '''' END
+		)
+	   ,LogTimeIn = 
+	   (
+		  CASE WHEN CAST(ISNULL(ETE.LogTimeIn, ''1/1/1900'') AS DATETIME) > CAST(''1/1/1900'' AS DATETIME) THEN 
+		  (
+			 CASE WHEN CONVERT(VARCHAR, ETE.WorkDate, 101) <> CONVERT(VARCHAR, ETE.LogTimeIn, 101) 
+				THEN FORMAT(ETE.LogTimeIn, N''MM/dd/yyyy hh:mm tt'')
+				ELSE FORMAT(ETE.LogTimeIn, N''hh:mm tt'')
+			 END
+		  )
+		  ELSE '''' END
+	   )
+	   ,LogTimeOut = 
+	   (
+		  CASE WHEN CAST(ISNULL(ETE.LogTimeOut, ''1/1/1900'') AS DATETIME) > CAST(''1/1/1900'' AS DATETIME) THEN 
+		  (
+			 CASE WHEN CONVERT(VARCHAR, ETE.WorkDate, 101) <> CONVERT(VARCHAR, ETE.LogTimeOut, 101) 
+				THEN FORMAT(ETE.LogTimeOut, N''MM/dd/yyyy hh:mm tt'')
+				ELSE FORMAT(ETE.LogTimeOut, N''hh:mm tt'')
+			 END
+		  )
+		  ELSE '''' END
+	   )
+		,LogRemarks = 
+		(
+			CASE WHEN ISNULL('+@ShowMissingLogs_+',0) = 1
+					AND ISNULL(ETE.LogRemarks,'''') <> ''''
+					AND 
+					(
+					(CONVERT(VARCHAR,ETE.LogTimeIn,101) <> ''1/1/1900'') OR (CONVERT(VARCHAR,ETE.LogTimeOut,101) <> ''1/1/1900'')
+					)
+					AND (ISNULL(ETE.VLHrs,0) + ISNULL(ETE.SLHrs,0) + ISNULL(ETE.OtherLeave,0) + ISNULL(ETE.LWOP,0) = 0)
+					AND ISNULL(ETE.WorkDateRemarks,'''') NOT IN (''Restday'',''Holiday'',''Special'',''Holiday/Restday'',''Special/Restday'')
+			THEN (CASE WHEN ISNULL(ETE.WorkDateRemarks,'''') <> '''' THEN ''/'' ELSE '''' END)+ ETE.LogRemarks 
+			ELSE '''' END
+		)
+)COLS
+
+WHERE 1=1
+'
++ CASE WHEN ISNULL(@HasNoStartDateFilter,0) = 0 THEN  'AND (CAST(ETE.WorkDate AS DATE) >= CAST(''' + @StartWorkDate_ + ''' AS DATE))' ELSE '' END
++ CASE WHEN ISNULL(@HasNoEndDateFilter,0) = 0 THEN ' AND (CAST(ETE.WorkDate AS DATE) <= CAST(''' + @EndWorkDate_ + ''' AS DATE))' ELSE '' END
+
+EXEC(@MainQuery);
+
+/*EXEC('SELECT * FROM ' +@TMPTABLENAME);RETURN*/
+
+--===================================================================================================================================
+--GET THE TMP TABLE COLUMNS, INSERT INTO REPORTDATA TABLE
+--===================================================================================================================================
+
+EXEC [report].[spCreateReportColumn] @TMPTABLENAME, @ReportId, 'CompanyId'
+
+END

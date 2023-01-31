@@ -1,0 +1,3 @@
+UPDATE maintenance.ConfigSetupDetail 
+SET Source = 'Daily Rate x Worked Days / Calendar Days for the month:1,Monthly Rate x Hire Date up to end of year / 365:2,Monthly Rate x # Calendar Work Days / # Calendar Days for the Month:3,Monthly Rate x # Work Days / # Work Days for the Month:4'
+WHERE ConfigSetupDetailId = 190

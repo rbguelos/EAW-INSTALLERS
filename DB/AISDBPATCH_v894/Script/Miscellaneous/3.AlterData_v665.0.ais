@@ -1,0 +1,3 @@
+UPDATE schedule.HolidaySetup SET OfficeIds = '' WHERE OfficeIds IS NULL
+
+UPDATE schedule.HolidaySetup SET UnitIds = '' WHERE UnitIds IS NULL

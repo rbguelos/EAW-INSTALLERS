@@ -1,0 +1,19 @@
+IF NOT EXISTS(SELECT * FROM maintenance.ConfigSetupDetail WHERE PropertyName = 'PayrollDeductionPAGIBIGMinimumMonthlyContribution')
+BEGIN
+	UPDATE maintenance.ConfigSetupDetail SET SortOrder += 1
+	--SELECT * FROM maintenance.ConfigSetupDetail
+	WHERE 1 = 1
+	AND ConfigSetupHeaderId = 3 
+	AND [Group] = 6
+	AND SortOrder >=6
+
+	INSERT INTO maintenance.ConfigSetupDetail (
+		ConfigSetupHeaderId, PropertyName, LabelName, PropertyValue, Type, Source, [Group], SubGroup, SortOrder, Alignment
+	)
+	VALUES (
+		3, 'PayrollDeductionPAGIBIGMinimumMonthlyContribution', 'PAGIBIG Minimum Monthly Contribution', '', 'number', '', 6, 0, 6, ''
+	)
+
+	UPDATE maintenance.ConfigSetupHeader SET Panel6 = 'Payroll Deduction;15;2'
+	WHERE ConfigSetupHeaderId = 3
+END

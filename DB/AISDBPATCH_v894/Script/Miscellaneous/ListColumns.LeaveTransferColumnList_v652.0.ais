@@ -1,0 +1,66 @@
+EXEC admin.UpdateListColumns 
+    @ListName = 'LeaveTransferColumnList'
+   ,@ListType ='LeaveTransferColumnList'
+   ,@DefaultColumn ='DateProcessed|EmployeeNo|EmployeeName|LeaveType|LeaveBalanceDisplay|LeaveHrsToConvertDisplay|TransferToLeaveTypeSetup|TransferToLeaveCurrentBalanceDisplay|TransferToLeaveNewBalanceDisplay|Status'
+   
+
+--TransferToLeaveTypeSetup
+EXEC maintenance.UpdateJQListColumns 
+     @ListType  = 'LeaveTransferColumnList'
+    ,@ColumnType = 'label'
+    ,@Name  = 'TransferToLeaveTypeSetup'
+    ,@Label  = 'Transfer To '
+    ,@Width  = '140'
+    ,@Align  = ''
+    ,@Formatter = ''
+    ,@FormatterOption = ''
+    ,@Others = ''
+
+--TransferToLeaveCurrentBalanceDisplay
+EXEC maintenance.UpdateJQListColumns 
+     @ListType  = 'LeaveTransferColumnList'
+    ,@ColumnType = 'label'
+    ,@Name  = 'TransferToLeaveCurrentBalanceDisplay'
+    ,@Label  = 'Balance '
+    ,@Width  = '140'
+    ,@Align  = ''
+    ,@Formatter = ''
+    ,@FormatterOption = ''
+    ,@Others = ''
+
+--TransferToLeaveNewBalanceDisplay
+EXEC maintenance.UpdateJQListColumns 
+     @ListType  = 'LeaveTransferColumnList'
+    ,@ColumnType = 'label'
+    ,@Name  = 'TransferToLeaveNewBalanceDisplay'
+    ,@Label  = 'New Balance '
+    ,@Width  = '140'
+    ,@Align  = ''
+    ,@Formatter = ''
+    ,@FormatterOption = ''
+    ,@Others = ''
+
+--TransferToLeaveNewBalance
+EXEC maintenance.UpdateJQListColumns 
+     @ListType  = 'LeaveTransferColumnList'
+    ,@ColumnType = 'label'
+    ,@Name  = 'LeaveBalanceDisplay'
+    ,@Label  = 'Leave Balance '
+    ,@Width  = '125'
+    ,@Align  = ''
+    ,@Formatter = ''
+    ,@FormatterOption = ''
+    ,@Others = ''
+
+
+--LeaveHrsToConvertDisplay
+EXEC maintenance.UpdateJQListColumns 
+     @ListType  = 'LeaveTransferColumnList'
+    ,@ColumnType = 'label'
+    ,@Name  = 'LeaveHrsToConvertDisplay'
+    ,@Label  = 'Leave Balance to Convert'
+    ,@Width  = '126'
+    ,@Align  = ''
+    ,@Formatter = ''
+    ,@FormatterOption = ''
+    ,@Others = ''

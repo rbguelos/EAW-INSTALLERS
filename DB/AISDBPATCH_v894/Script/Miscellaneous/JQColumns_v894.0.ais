@@ -1,0 +1,16 @@
+INSERT INTO maintenance.JQListColumns (ListType,ColumnType,Name,Label,Width,Align,Formatter,FormatterOption,Others)
+VALUES
+('RestDayColumnList','label','CreateUser','Added By','180','','','','')
+
+INSERT INTO maintenance.JQListColumns (ListType,ColumnType,Name,Label,Width,Align,Formatter,FormatterOption,Others)
+VALUES
+('RestDayColumnList','datetime','CreateDate','Added On','130','','','','')
+
+INSERT INTO maintenance.JQListColumns (ListType,ColumnType,Name,Label,Width,Align,Formatter,FormatterOption,Others)
+VALUES
+('RestDayColumnList','label','Source','Source','180','','','','')
+
+UPDATE admin.ListColumns 
+	SET DefaultColumns = 'Date|EmployeeNo|EmployeeName|Department|Position|FixedSchedule|Days|Type|CreateUser|CreateDate|Source',
+	MasterColumns = 'Date|EmployeeNo|EmployeeName|Department|Position|FixedSchedule|Days|Type|CreateUser|CreateDate|Source'
+WHERE ListType = 'RestDayColumnList' 

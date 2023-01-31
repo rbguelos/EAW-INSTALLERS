@@ -1,0 +1,62 @@
+IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[report].[fnConfigSetUpSplittedSource]') AND type in (N'FN', N'IF', N'TF', N'FS', N'FT'))
+DROP FUNCTION [report].[fnConfigSetUpSplittedSource]
+GO
+/*===========================================*\
+**	Last Update Date: 03/11/2018
+**	Last Update By: Abdiel
+**	Last DBVersion executed: v676
+\*===========================================*/
+-- =============================================
+-- Author:		Abdiel Corda
+-- Create date: 02/09/2019
+-- =============================================
+
+CREATE FUNCTION [report].[fnConfigSetUpSplittedSource]
+(
+--DECLARE 
+@string VARCHAR(MAX)= '$table: compben.EarningDeduction WHERE EarningDeduction.MappedToId IS NULL OR  EarningDeduction.MappedToId = 0 ,EarningDeductionId,Code'
+,@configSetUpHdrId BIGINT = 1
+,@ConfigSetupDetailId BIGINT = 1
+,@TempTable VARCHAR(MAX) = ''
+)
+RETURNS VARCHAR(MAX) 
+AS
+BEGIN
+DECLARE @TableSource VARCHAR(MAX) = ''
+
+SELECT 
+@TableSource = 
+'
+'+CASE WHEN ISNULL(@TempTable,'') <> '' THEN 'INSERT INTO ' + @TempTable ELSE '' END +'
+SELECT 
+	ConfigSetupHeaderId = '+CAST(@configSetUpHdrId AS VARCHAR)+'
+	,ConfigSetupDetailId = '+CAST(@ConfigSetupDetailId AS VARCHAR)+'
+	,DisplayText = '+T.DisplayText+'
+	,DisplayValue = '+T.DisplayValue+'
+FROM '+T.TableSource+'
+' 
+FROM 
+(
+	SELECT 
+		TableSource =	MAX(RTRIM(LTRIM((CASE WHEN Splitted.ROWID = 1 THEN [Splitted].[VALUE] ELSE '' END))))
+		,DisplayValue =		MAX(RTRIM(LTRIM((CASE WHEN Splitted.ROWID = 2 THEN [Splitted].[VALUE] ELSE '' END))))
+		,DisplayText =	MAX(RTRIM(LTRIM((CASE WHEN Splitted.ROWID = 3 THEN [Splitted].[VALUE] ELSE '' END))))
+	FROM 
+	(
+		SELECT 
+			DisplaySource = REPLACE(@string,'$table: ','')
+	)DTL
+	CROSS APPLY
+	(
+		SELECT 
+			ROWID
+			,[VALUE]
+		FROM dbo.SplitStrings_XML(DTL.DisplaySource,',')
+	)Splitted
+)T
+
+/*SELECT @TableSource*/
+RETURN @TableSource
+
+END
+

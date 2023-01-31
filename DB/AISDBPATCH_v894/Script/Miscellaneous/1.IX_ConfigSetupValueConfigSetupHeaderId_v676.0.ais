@@ -1,0 +1,20 @@
+/*
+Missing Index Details from SQLQuery18.sql - SQLDEVELOPER2014.EatWork_ReportProd (aisapp)
+The Query Processor estimates that implementing the following index could improve the query cost by 48.3264%.
+*/
+
+IF NOT EXISTS(SELECT index_id FROM SYS.indexes WHERE name = 'IX_ConfigSetupValueConfigSetupHeaderId' AND object_id = object_id('[maintenance].[ConfigSetupValue]'))
+CREATE NONCLUSTERED INDEX [IX_ConfigSetupValueConfigSetupHeaderId]
+ON [maintenance].[ConfigSetupValue] ([ConfigSetupHeaderId]) INCLUDE ([SetupName],[ConfigSetDetailId],[Value])
+GO
+
+
+IF NOT EXISTS(SELECT index_id FROM SYS.indexes WHERE name = 'IX_ConfigSetupValueConfigSetupHeaderIdConfigSetDetailId' AND object_id = object_id('[maintenance].[ConfigSetupValue]'))
+CREATE NONCLUSTERED INDEX [IX_ConfigSetupValueConfigSetupHeaderIdConfigSetDetailId]
+ON [maintenance].[ConfigSetupValue] ([ConfigSetupHeaderId],[ConfigSetDetailId]) INCLUDE ([SetupName],[Value])
+GO
+
+IF NOT EXISTS(SELECT index_id FROM SYS.indexes WHERE name = 'IX_ConfigSetupHeaderIdConfigAssignmentHeaderId' AND object_id = object_id('[maintenance].[ConfigAssignmentDetail]'))
+CREATE NONCLUSTERED INDEX [IX_ConfigSetupHeaderIdConfigAssignmentHeaderId]
+ON [maintenance].[ConfigAssignmentDetail] ([ConfigSetupHeaderId]) INCLUDE ([ConfigAssignmentHeaderId])
+GO

@@ -1,0 +1,29 @@
+
+IF (OBJECT_ID('report.ConfigTemplate') IS NOT NULL) 
+DROP TABLE report.ConfigTemplate
+
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [report].[ConfigTemplate](
+	[ReportConfigId] [bigint] NOT NULL,
+	[ReportCode] [varchar](max) NULL,
+	[NumberOfColumns] [bigint] NULL,
+	[TemplatePath] [varchar](max) NULL,
+	[CreateId] [bigint] NULL,
+	[CreateDate] [datetime] NULL,
+	[LastUpdateId] [bigint] NULL,
+	[LastUpdateDate] [datetime] NULL,
+ CONSTRAINT [PK_ConfigTemplate] PRIMARY KEY CLUSTERED 
+(
+	[ReportConfigId] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+GO
+INSERT [report].[ConfigTemplate] ([ReportConfigId], [ReportCode], [NumberOfColumns], [TemplatePath], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (1, N'PerformanceAppraisalReportSummary', 16, N'\Reports\PerformanceAppraisalSchedule\PerformanceAppraisalReportSummaryOne.rpt', NULL, NULL, NULL, NULL)
+INSERT [report].[ConfigTemplate] ([ReportConfigId], [ReportCode], [NumberOfColumns], [TemplatePath], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (2, N'PerformanceAppraisalReportSummary', 18, N'\Reports\PerformanceAppraisalSchedule\PerformanceAppraisalReportSummaryTwo.rpt', NULL, NULL, NULL, NULL)
+INSERT [report].[ConfigTemplate] ([ReportConfigId], [ReportCode], [NumberOfColumns], [TemplatePath], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (3, N'PerformanceAppraisalReportSummary', 20, N'\Reports\PerformanceAppraisalSchedule\PerformanceAppraisalReportSummaryThree.rpt', NULL, NULL, NULL, NULL)
+INSERT [report].[ConfigTemplate] ([ReportConfigId], [ReportCode], [NumberOfColumns], [TemplatePath], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (4, N'PerformanceAppraisalReportSummary', 22, N'\Reports\PerformanceAppraisalSchedule\PerformanceAppraisalReportSummaryFour.rpt', NULL, NULL, NULL, NULL)
+INSERT [report].[ConfigTemplate] ([ReportConfigId], [ReportCode], [NumberOfColumns], [TemplatePath], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (5, N'PerformanceAppraisalReportSummary', 24, N'\Reports\PerformanceAppraisalSchedule\PerformanceAppraisalReportSummaryFive.rpt', NULL, NULL, NULL, NULL)
+INSERT [report].[ConfigTemplate] ([ReportConfigId], [ReportCode], [NumberOfColumns], [TemplatePath], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (6, N'PerformanceAppraisalReportSummary', 26, N'\Reports\PerformanceAppraisalSchedule\PerformanceAppraisalReportSummarySix.rpt', NULL, NULL, NULL, NULL)
+INSERT [report].[ConfigTemplate] ([ReportConfigId], [ReportCode], [NumberOfColumns], [TemplatePath], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (7, N'PerformanceAppraisalReportSummary', 28, N'\Reports\PerformanceAppraisalSchedule\PerformanceAppraisalReportSummarySeven.rpt', NULL, NULL, NULL, NULL)
+INSERT [report].[ConfigTemplate] ([ReportConfigId], [ReportCode], [NumberOfColumns], [TemplatePath], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (8, N'PerformanceAppraisalReportSummary', 30, N'\Reports\PerformanceAppraisalSchedule\PerformanceAppraisalReportSummaryEight.rpt', NULL, NULL, NULL, NULL)

@@ -1,0 +1,2 @@
+DECLARE @HasConfig BIT = (SELECT CAST(CASE WHEN COUNT(C.ClockworkConfigId) > 0 THEN 1 ELSE 0 END AS BIT) FROM attendance.ClockworkConfig C)
+IF @HasConfig = 1 BEGIN UPDATE attendance.ClockworkConfig SET BaseTimeEntryOnLocation = 0 END

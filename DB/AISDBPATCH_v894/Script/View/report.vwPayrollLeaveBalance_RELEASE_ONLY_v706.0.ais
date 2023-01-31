@@ -1,0 +1,174 @@
+/*===========================================*\
+**	   Last Update Date: 06/11/2019
+**	   Last Update By: Abdiel
+**	   Last DBVersion executed: v706
+\*===========================================*/
+
+ALTER VIEW [report].[vwPayrollLeaveBalance]
+--THIS WILL BE USED TO DISPLAY AVAILABLE LEAVE CREDITS IN PAYSLIP
+AS
+
+SELECT 
+    T.PostedDate
+    ,T.ProfileId
+    ,T.LeaveTypeCode
+    ,EarnedHours = 
+    (
+	   CASE WHEN ISNULL(COMPCONFIG.DisplayInDays,0) = 1 THEN ISNULL(T.EarnedHours / COMPCONFIG.NoOfDays,8) ELSE ISNULL(T.EarnedHours,0) END
+    )
+    
+    ,LeaveCreditsDays = 
+    (
+	   CASE WHEN ISNULL(COMPCONFIG.DisplayInDays,0) = 1 THEN ISNULL(T.EarnedHours / COMPCONFIG.NoOfDays,8) ELSE ISNULL(T.EarnedHours,0) END
+    )
+    ,T.LBDStatus
+    ,Earned = 
+    (
+	   CASE WHEN ISNULL(COMPCONFIG.DisplayInDays,0) = 1 THEN ISNULL(T.Earned / COMPCONFIG.NoOfDays,8) ELSE ISNULL(T.Earned,0) END
+    )
+    ,Used =
+    (
+	   CASE WHEN ISNULL(COMPCONFIG.DisplayInDays,0) = 1 THEN ISNULL(T.Used / COMPCONFIG.NoOfDays,8) ELSE ISNULL(T.Used,0) END
+    ) 
+    ,T.CompanyId
+    ,COMPCONFIG.DisplayInDays
+    ,COMPCONFIG.NoOfDays
+	,T.UseExpiration
+	,T.ExpiryDate
+	,EarnedHoursLookUp = T.EarnedHours
+	,LeaveInDays =	
+	(
+		FLOOR(CASE WHEN ISNULL(T.EarnedHours,0) > 0 THEN T.EarnedHours / ISNULL(EmpPolicy.NoOfWorkingHoursperDay,COMPCONFIG.NoOfDays) ELSE 0 END)
+	)
+	,LeaveInHours = 
+	(
+		FLOOR(CASE WHEN ISNULL(T.EarnedHours,0) > 0 THEN (T.EarnedHours % ISNULL(EmpPolicy.NoOfWorkingHoursperDay,COMPCONFIG.NoOfDays)) ELSE 0 END)
+	)
+	,LeaveInMins =	
+	(
+		(CASE WHEN ISNULL(T.EarnedHours,0) > 0 THEN (((T.EarnedHours % ISNULL(EmpPolicy.NoOfWorkingHoursperDay,COMPCONFIG.NoOfDays)) * 60) % 60) ELSE 0 END)
+	)
+	/*LOOKUPS*/
+	,LeaveInDaysLookUp =	
+	(
+		(CASE WHEN ISNULL(T.EarnedHours,0) > 0 THEN T.EarnedHours / ISNULL(EmpPolicy.NoOfWorkingHoursperDay,COMPCONFIG.NoOfDays) ELSE 0 END)
+	)
+	,LeaveInHoursLookUp = 
+	(
+		(CASE WHEN ISNULL(T.EarnedHours,0) > 0 THEN (T.EarnedHours % ISNULL(EmpPolicy.NoOfWorkingHoursperDay,COMPCONFIG.NoOfDays)) ELSE 0 END)
+	)
+	,LeaveInMinsLookUp =	
+	(
+		(CASE WHEN ISNULL(T.EarnedHours,0) > 0 THEN (((T.EarnedHours % ISNULL(EmpPolicy.NoOfWorkingHoursperDay,COMPCONFIG.NoOfDays)) * 60) % 60) ELSE 0 END)
+	)
+
+	,NoOfWorkingHoursperDay = ISNULL(EmpPolicy.NoOfWorkingHoursperDay,1)
+FROM 
+(
+    SELECT
+	   PostedDate,
+	   ProfileId,
+	   LeaveTypeCode = LT.Code,
+
+	   
+	   LBDStatus = LBD.StatusId,
+	   Earned = LBD.EarnedHours,
+
+	   Used = LBD.UsedHours,
+	   EarnedHours = (CASE WHEN ST.StatusDesc = 'Posted' THEN LBD.AvailableHours ELSE 0 END),
+	   LeaveCreditsDays = (CASE WHEN ST.StatusDesc = 'Posted' THEN LBD.AvailableHours ELSE 0 END),
+
+	   /*
+	   Used = 0,
+	   LBD.EarnedHours,
+	   LeaveCreditsDays = LBD.EarnedHours,
+	   */
+
+	   LT.CompanyId
+	   ,LBD.UseExpiration
+	   ,LBD.ExpiryDate
+	/*
+    FROM leave.LeaveBalanceDetail LBD
+    INNER JOIN leave.LeaveBalanceHeader LB ON LBD.LeaveBalanceHeaderId = LB.LeaveBalanceHeaderId
+    INNER JOIN leave.LeaveTypeSetup LT ON LT.LeaveTypeSetupId = LB.LeaveTypeSetupId
+    OUTER APPLY (SELECT TOP 1 StatusDesc = Name FROM maintenance.Status WHERE Value = LBD.StatusId)ST
+	*/
+
+	FROM leave.LeaveBalanceHeader LB
+	JOIN leave.LeaveTypeSetup LT ON LT.LeaveTypeSetupId = LB.LeaveTypeSetupId
+
+	OUTER APPLY
+	(	
+		SELECT
+			LBD.*
+		FROM leave.LeaveBalanceDetail LBD
+		WHERE LBD.LeaveBalanceHeaderId = LB.LeaveBalanceHeaderId
+		--AND
+		--(
+		--	(LBD.ExpiryDate >= GETDATE() AND LBD.UseExpiration = 1) OR LBD.UseExpiration = 0
+		--)
+	)LBD
+
+	OUTER APPLY (SELECT TOP 1 StatusDesc = Name FROM maintenance.Status WHERE Value = LBD.StatusId)ST
+	
+	/*
+    WHERE ST.StatusDesc IN ('Posted', 'Expired Not Deducted', 'Expired Deducted') 
+
+    UNION ALL 
+    SELECT
+	   InclusiveStartDate,
+	   ProfileId,
+	   LeaveTypeCode = LT.Code,
+	   LeaveHours = LR.NoOfHours * -1,
+	   LeaveCreditsDays = LR.NoOfHours ,
+	   Status = 1,
+	   Earned = 0,
+	   Used = LR.NoOfHours,
+	   LT.CompanyId
+    FROM leave.LeaveRequest LR
+    INNER JOIN leave.LeaveTypeSetup LT ON LT.LeaveTypeSetupId = LR.LeaveTypeId
+    OUTER APPLY (SELECT TOP 1 StatusDesc = Name FROM maintenance.Status WHERE Value = LR.StatusId)ST
+    WHERE ST.StatusDesc = 'Paid'
+	*/
+)T
+/*EMPLOYEE POLICY*/
+OUTER APPLY
+(
+	SELECT TOP 1 
+		EmpPolicy.PropertyName
+		,NoOfWorkingHoursperDay = (CASE WHEN ISNULL(CAST(EmpPolicy.Value AS DECIMAL(18,4)),0) > 0 THEN CAST(EmpPolicy.Value AS DECIMAL(18,4)) ELSE 1 END)
+	FROM dbo.fnRetrieveEmployeePolicy(T.ProfileId,1,0) EmpPolicy
+	WHERE EmpPolicy.PropertyName IN ('NoOfWorkingHoursperDay')
+)EmpPolicy
+
+OUTER APPLY 
+(
+    SELECT TOP 1
+	   CompanyConfig.CompanyId
+	   ,DisplayInDays.DisplayInDays
+	   ,NoOfDays = (CASE WHEN ISNULL(CAST(NoOfDays.NoOfDays AS DECIMAL(18,4)),0) > 0 THEN CAST(NoOfDays.NoOfDays AS DECIMAL(18,4)) ELSE 1 END)
+    FROM maintenance.CompanyConfig CompanyConfig
+
+    OUTER APPLY
+    (
+	   SELECT
+	   DisplayInDays = REPLACE(value,'1:','') 
+	   FROM dbo.FN_SPLITWITHID(CompanyConfig.Value, '|') T
+	   WHERE T.ROWID = 1
+    )DisplayInDays
+
+    OUTER APPLY
+    (
+	   SELECT
+	   NoOfDays = REPLACE(value,'2:','') 
+	   FROM dbo.FN_SPLITWITHID(CompanyConfig.Value, '|') T
+	   WHERE T.ROWID = 2
+    )NoOfDays
+
+    WHERE CompanyConfig.CompanyId = T.CompanyId
+    AND (CompanyConfig.Type = 'LVEConfiguration')
+
+) COMPCONFIG
+GO
+
+

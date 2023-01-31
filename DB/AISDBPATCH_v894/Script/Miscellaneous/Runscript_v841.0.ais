@@ -1,0 +1,124 @@
+IF EXISTS (SELECT * FROM maintenance.PaySheetColumns WHERE Name = 'DoubleHolidayHrs' AND SortOrder = 141)
+BEGIN
+	UPDATE maintenance.PaySheetColumns SET SortOrder = SortOrder - 72 WHERE Name LIKE '%Double%'
+	UPDATE maintenance.PaySheetColumns SET SortOrder = 92 WHERE Name = 'DoubleHolidayRestdayNS2Pay'
+	UPDATE maintenance.PaySheetColumns SET SortOrder = 93 WHERE Name = 'DoubleHolidayRestdayNSOT2Pay'
+	UPDATE maintenance.PaySheetColumns SET SortOrder = 94 WHERE Name = 'DoubleHolidayNSOT2Pay'
+	UPDATE maintenance.PaySheetColumns SET SortOrder = SortOrder + 26 WHERE Name NOT LIKE '%Double%'AND SortOrder >= 69
+END
+
+UPDATE maintenance.TimeSheetColumns SET [Group] = 'RegularOvertime' WHERE Name = 'DoubleHolidayOTHrs'
+UPDATE maintenance.TimeSheetColumns SET [Group] = 'RegularOvertime' WHERE Name = 'DoubleHolidayRestdayOTHrs'
+UPDATE maintenance.TimeSheetColumns SET [Group] = 'RegularNSOvertime' WHERE Name = 'DoubleHolidayNSOTHrs'
+UPDATE maintenance.TimeSheetColumns SET [Group] = 'RegularNSOvertime' WHERE Name = 'DoubleHolidayRestdayNSOTHrs'
+UPDATE maintenance.TimeSheetColumns SET [Group] = 'TimeEntryNightShift' WHERE Name = 'DoubleHolidayNSHrs'
+UPDATE maintenance.TimeSheetColumns SET [Group] = 'TimeEntryNightShift' WHERE Name = 'DoubleHolidayRestdayNSHrs'
+
+IF NOT EXISTS(SELECT * FROM maintenance.TimeSheetColumns WHERE Name = 'PreDoubleHolidayOTHrs')
+BEGIN 
+	INSERT INTO maintenance.TimeSheetColumns (
+		ColumnType, 
+		Name,
+		Label,
+		Width,
+		Align,
+		Editable, 
+		EditType, 
+		Formatter, 
+		FormatterOption, 
+		Others, 
+		Type, 
+		SortOrder,
+		[Group]
+	)
+	SELECT 
+		ColumnType, 
+		Name = 'Pre' + Name,
+		Label,
+		Width,
+		Align,
+		Editable, 
+		EditType, 
+		Formatter, 
+		FormatterOption, 
+		Others, 
+		Type, 
+		SortOrder = MC.MaxSort + RowNum,
+		[Group] = 'PreShiftOT'
+	FROM 
+	maintenance.TimeSheetColumns TSC
+	CROSS APPLY (
+		SELECT TC.TimeSheetColumnsId,
+		ROW_NUMBER() OVER (ORDER BY TC.SortOrder) As RowNum
+		FROM maintenance.TimeSheetColumns TC
+		WHERE TC.Name LIKE '%Double%' AND TC.Name LIKE '%OT%'
+	) TC
+	CROSS APPLY (
+		SELECT 
+		MAX(MC.SortOrder) AS MaxSort 
+		FROM maintenance.TimeSheetColumns MC
+	) MC
+	WHERE TSC.TimeSheetColumnsId = TC.TimeSheetColumnsId 
+
+	UPDATE TSC SET SortOrder = MC.MaxSort + RowNum
+	FROM maintenance.TimeSheetColumns TSC
+	CROSS APPLY (
+		SELECT TC.TimeSheetColumnsId,
+		ROW_NUMBER() OVER (ORDER BY TC.SortOrder) As RowNum
+		FROM maintenance.TimeSheetColumns TC
+		WHERE TC.Name LIKE '%Status%'
+	) TC
+	CROSS APPLY (
+		SELECT 
+		MAX(MC.SortOrder) AS MaxSort 
+		FROM maintenance.TimeSheetColumns MC
+	) MC
+	WHERE TSC.TimeSheetColumnsId = TC.TimeSheetColumnsId 
+END
+
+DECLARE @SortTable TABLE (
+	Id INT, 
+	SortOrder INT
+) 
+
+INSERT INTO @SortTable
+SELECT ROW_NUMBER() OVER (ORDER BY SortOrder), SortOrder FROM maintenance.TimeSheetColumns 
+WHERE [Group] LIKE '%PreShiftOT%'
+
+DECLARE  @TempTable TABLE(
+	ColumnName VARCHAR(150),
+	SortOrder INT,
+	TimeSheetColumnsId BIGINT,
+	CurrentSortOrder INT
+);
+
+INSERT INTO @TempTable (ColumnName, SortOrder, TimeSheetColumnsId, CurrentSortOrder)
+SELECT Name, ROW_NUMBER() OVER (ORDER BY SortOrder), TimeSheetColumnsId, SortOrder FROM maintenance.TimeSheetColumns 
+WHERE [Group] LIKE '%PreShiftOT%'
+AND (Name NOT LIKE '%Night%' AND Name NOT LIKE '%NSOT%')
+AND Name NOT LIKE '%Status%'
+
+INSERT INTO @TempTable (ColumnName, SortOrder, TimeSheetColumnsId, CurrentSortOrder)
+SELECT Name, SortOrder, TimeSheetColumnsId, CurrentSortOrder 
+FROM (
+	SELECT 
+	Name, 
+	SortOrder = ROW_NUMBER() OVER (ORDER BY SortOrder),
+	TimeSheetColumnsId, 
+	CurrentSortOrder = SortOrder, 
+	C.ColumnName 
+	FROM maintenance.TimeSheetColumns 
+	OUTER APPLY (
+		 SELECT ColumnName FROM @TempTable
+		 WHERE ColumnName = Name
+	) C
+	WHERE [Group] LIKE '%PreShiftOT%'
+) C
+WHERE C.ColumnName IS NULL
+
+UPDATE TSC SET SortOrder = ST.SortOrder
+FROM @TempTable TT
+INNER JOIN maintenance.TimeSheetColumns TSC
+	ON TSC.TimeSheetColumnsId = TT.TimeSheetColumnsId
+INNER JOIN @SortTable ST
+	ON TT.SortOrder = ST.Id

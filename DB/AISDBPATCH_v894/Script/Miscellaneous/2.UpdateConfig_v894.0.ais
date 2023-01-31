@@ -1,0 +1,30 @@
+UPDATE report.Report SET TableSPUsed = 'report.TMPDetailedAttendanceReport', SPUsed = 'report.spDetailedAttendanceReport',QueryType = 'STORED' WHERE ReportCode = 'DetailedAttendanceReport'
+
+UPDATE report.Report SET TableSPUsed = 'report.TmpLateUndertimeAndAbsencesSummaryReportPerEmployee', SPUsed = 'report.spLateUndertimeAndAbsencesSummaryReportPerEmployee',QueryType = 'STORED' WHERE ReportCode = 'LateUndertimeAndAbsencesSummaryReportPerEmployee'
+
+UPDATE report.Report SET TableSPUsed = 'report.TmpLateUTAndAbsencesSummaryReportPerDepartment', SPUsed = 'report.spLateUTAndAbsencesSummaryReportPerDepartment',QueryType = 'STORED' WHERE ReportCode = 'LateUTAndAbsencesSummaryReportPerDepartment'
+
+/*INSERT PARAMETER*/
+DELETE FROM report.ReportParameter WHERE ParameterName = '@ConsolidateHoursWorked' AND ReportCode IN 
+(
+'DetailedAttendanceReport'
+,'DetailedAttendanceReportBreakdownWithOvertimeType'
+,'LateUndertimeAndAbsencesSummaryReportPerEmployee'
+,'LateUTAndAbsencesSummaryReportPerDepartment'
+/*,'PerfectAttendance_ForThePeriod'*/
+)
+
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('DetailedAttendanceReport','@ConsolidateHoursWorked','Consolidate Hours Worked','checkbox','','',22,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('DetailedAttendanceReportBreakdownWithOvertimeType','@ConsolidateHoursWorked','Consolidate Hours Worked','checkbox','','',28,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('LateUndertimeAndAbsencesSummaryReportPerEmployee','@ConsolidateHoursWorked','Consolidate Hours Worked','checkbox','','',23,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('LateUTAndAbsencesSummaryReportPerDepartment','@ConsolidateHoursWorked','Consolidate Hours Worked','checkbox','','',22,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+
+/*
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('PerfectAttendance_ForThePeriod','@ConsolidateHoursWorked','Consolidate Hours Worked','checkbox','','',12,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+UPDATE report.ReportParameter SET SortOrder = 11 WHERE ReportCode = 'PerfectAttendance_ForThePeriod' AND ParameterName = '@OrgBasedOnProfileTable'
+UPDATE report.ReportParameter SET ParameterName = '@CompanyId' WHERE ReportCode = 'PerfectAttendance_ForThePeriod' AND LabelName = 'Company'
+UPDATE report.ReportParameter SET ParameterName = '@BranchId' WHERE ReportCode = 'PerfectAttendance_ForThePeriod' AND LabelName = 'Branch'
+*/

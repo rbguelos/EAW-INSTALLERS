@@ -1,0 +1,115 @@
+DELETE FROM maintenance.ConfigSetupDetail WHERE ConfigSetupHeaderId = 1 AND [Group] = 7
+
+/* Overtime */
+INSERT INTO maintenance.ConfigSetupDetail
+(ConfigSetupHeaderId, PropertyName, LabelName, PropertyValue, [Type], [Source], [Group], SubGroup, SortOrder, Alignment)
+VALUES
+(1, 'OvertimeDays', 'Overtime', N'', 'number', N'', '7', '1', 1, '');
+
+INSERT INTO maintenance.ConfigSetupDetail
+(ConfigSetupHeaderId, PropertyName, LabelName, PropertyValue, [Type], [Source], [Group], SubGroup, SortOrder, Alignment)
+VALUES
+(1, 'OvertimeLead', '', N'', 'dropdownList', N' :0,Before:1,After:2', '7', '1', 2, '');
+
+INSERT INTO maintenance.ConfigSetupDetail
+(ConfigSetupHeaderId, PropertyName, LabelName, PropertyValue, [Type], [Source], [Group], SubGroup, SortOrder, Alignment)
+VALUES
+(1, 'OvertimeWorkDaysOnly', 'Work Days Only', N'', 'checkbox', N'', '7', '1', 3, '');
+
+/* Undertime */
+INSERT INTO maintenance.ConfigSetupDetail
+(ConfigSetupHeaderId, PropertyName, LabelName, PropertyValue, [Type], [Source], [Group], SubGroup, SortOrder, Alignment)
+VALUES
+(1, 'UndertimeDays', 'Undertime', N'', 'number', N'', '7', '2', 4, '');
+
+INSERT INTO maintenance.ConfigSetupDetail
+(ConfigSetupHeaderId, PropertyName, LabelName, PropertyValue, [Type], [Source], [Group], SubGroup, SortOrder, Alignment)
+VALUES
+(1, 'UndertimeLead', '', N'', 'dropdownList', N' :0,Before:1,After:2', '7', '2', 5, '');
+
+INSERT INTO maintenance.ConfigSetupDetail
+(ConfigSetupHeaderId, PropertyName, LabelName, PropertyValue, [Type], [Source], [Group], SubGroup, SortOrder, Alignment)
+VALUES
+(1, 'UndertimeWorkDaysOnly', 'Work Days Only', N'', 'checkbox', N'', '7', '2', 6, '');
+
+/* Change Work Schedule */
+INSERT INTO maintenance.ConfigSetupDetail
+(ConfigSetupHeaderId, PropertyName, LabelName, PropertyValue, [Type], [Source], [Group], SubGroup, SortOrder, Alignment)
+VALUES
+(1, 'ChangeWorkScheduleDays', 'Change Work Schedule', N'', 'number', N'', '7', '3', 7, '');
+
+INSERT INTO maintenance.ConfigSetupDetail
+(ConfigSetupHeaderId, PropertyName, LabelName, PropertyValue, [Type], [Source], [Group], SubGroup, SortOrder, Alignment)
+VALUES
+(1, 'ChangeWorkScheduleLead', '', N'', 'dropdownList', N' :0,Before:1,After:2', '7', '3', 8, '');
+
+INSERT INTO maintenance.ConfigSetupDetail
+(ConfigSetupHeaderId, PropertyName, LabelName, PropertyValue, [Type], [Source], [Group], SubGroup, SortOrder, Alignment)
+VALUES
+(1, 'ChangeWorkScheduleWorkDaysOnly', 'Work Days Only', N'', 'checkbox', N'', '7', '3', 9, '');
+
+/* Change Restday */
+INSERT INTO maintenance.ConfigSetupDetail
+(ConfigSetupHeaderId, PropertyName, LabelName, PropertyValue, [Type], [Source], [Group], SubGroup, SortOrder, Alignment)
+VALUES
+(1, 'ChangeRestdayScheduleDays', 'Change Restday', N'', 'number', N'', '7', '4', 10, '');
+
+INSERT INTO maintenance.ConfigSetupDetail
+(ConfigSetupHeaderId, PropertyName, LabelName, PropertyValue, [Type], [Source], [Group], SubGroup, SortOrder, Alignment)
+VALUES
+(1, 'ChangeRestdayScheduleLead', '', N'', 'dropdownList', N' :0,Before:1,After:2', '7', '4', 11, '');
+
+INSERT INTO maintenance.ConfigSetupDetail
+(ConfigSetupHeaderId, PropertyName, LabelName, PropertyValue, [Type], [Source], [Group], SubGroup, SortOrder, Alignment)
+VALUES
+(1, 'ChangeRestdayScheduleWorkDaysOnly', 'Work Days Only', N'', 'checkbox', N'', '7', '4', 12, '');
+
+/* Special Work Schedule */
+INSERT INTO maintenance.ConfigSetupDetail
+(ConfigSetupHeaderId, PropertyName, LabelName, PropertyValue, [Type], [Source], [Group], SubGroup, SortOrder, Alignment)
+VALUES
+(1, 'SpecialWorkScheduleDays', 'Special Work Schedule', N'', 'number', N'', '7', '5', 13, '');
+
+INSERT INTO maintenance.ConfigSetupDetail
+(ConfigSetupHeaderId, PropertyName, LabelName, PropertyValue, [Type], [Source], [Group], SubGroup, SortOrder, Alignment)
+VALUES
+(1, 'SpecialWorkScheduleLead', '', N'', 'dropdownList', N' :0,Before:1,After:2', '7', '5', 14, '');
+
+INSERT INTO maintenance.ConfigSetupDetail
+(ConfigSetupHeaderId, PropertyName, LabelName, PropertyValue, [Type], [Source], [Group], SubGroup, SortOrder, Alignment)
+VALUES
+(1, 'SpecialWorkScheduleWorkDaysOnly', 'Work Days Only', N'', 'checkbox', N'', '7', '5', 15, '');
+
+/* Official Business */
+INSERT INTO maintenance.ConfigSetupDetail
+(ConfigSetupHeaderId, PropertyName, LabelName, PropertyValue, [Type], [Source], [Group], SubGroup, SortOrder, Alignment)
+VALUES
+(1, 'OfficialBusinessDays', 'Official Business', N'', 'number', N'', '7', '6', 16, '');
+
+INSERT INTO maintenance.ConfigSetupDetail
+(ConfigSetupHeaderId, PropertyName, LabelName, PropertyValue, [Type], [Source], [Group], SubGroup, SortOrder, Alignment)
+VALUES
+(1, 'OfficialBusinessLead', '', N'', 'dropdownList', N' :0,Before:1,After:2', '7', '6', 17, '');
+
+INSERT INTO maintenance.ConfigSetupDetail
+(ConfigSetupHeaderId, PropertyName, LabelName, PropertyValue, [Type], [Source], [Group], SubGroup, SortOrder, Alignment)
+VALUES
+(1, 'OfficialBusinessWorkDaysOnly', 'Work Days Only', N'', 'checkbox', N'', '7', '6', 18, '');
+
+/* Time Off */
+INSERT INTO maintenance.ConfigSetupDetail
+(ConfigSetupHeaderId, PropertyName, LabelName, PropertyValue, [Type], [Source], [Group], SubGroup, SortOrder, Alignment)
+VALUES
+(1, 'TimeOffDays', 'Time Off', N'', 'number', N'', '7', '7', 19, '');
+
+INSERT INTO maintenance.ConfigSetupDetail
+(ConfigSetupHeaderId, PropertyName, LabelName, PropertyValue, [Type], [Source], [Group], SubGroup, SortOrder, Alignment)
+VALUES
+(1, 'TimeOffLead', '', N'', 'dropdownList', N' :0,Before:1,After:2', '7', '7', 20, '');
+
+INSERT INTO maintenance.ConfigSetupDetail
+(ConfigSetupHeaderId, PropertyName, LabelName, PropertyValue, [Type], [Source], [Group], SubGroup, SortOrder, Alignment)
+VALUES
+(1, 'TimeOffWorkDaysOnly', 'Work Days Only', N'', 'checkbox', N'', '7', '7', 21, '');
+
+UPDATE maintenance.ConfigSetupHeader SET Panel7 = 'Schedule Request Cut-off;24;2' WHERE ConfigSetupHeaderId = 1

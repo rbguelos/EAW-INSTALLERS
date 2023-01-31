@@ -1,0 +1,9 @@
+/*
+Missing Index Details from SQLQuery11.sql - ALGAR-WS0010\SQLDEVELOPER2017.EatWork_ReportProd (sa)
+The Query Processor estimates that implementing the following index could improve the query cost by 22.6341%.
+*/
+
+IF NOT EXISTS(SELECT index_id FROM SYS.indexes WHERE name = 'IX_TimeEntryDetailWorkDateTimeEntryHeaderDetailId' AND object_id = object_id('[attendance].[TimeEntryDetail]'))
+	CREATE NONCLUSTERED INDEX [IX_TimeEntryDetailWorkDateTimeEntryHeaderDetailId]
+	ON [attendance].[TimeEntryDetail] ([WorkDate]) INCLUDE ([TimeEntryHeaderDetailId],[Type],[Value])
+GO

@@ -1,0 +1,2 @@
+UPDATE compben.EarningDeduction SET BIRFormIds = '8,28,37,46,68,88,97' WHERE Code = 'PagIbigTaxLimitExcess'
+UPDATE compben.EarningDeduction SET BIRFormIds = '' WHERE Code = 'TaxExempt'

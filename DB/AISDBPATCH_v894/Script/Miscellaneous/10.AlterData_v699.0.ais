@@ -1,0 +1,5 @@
+INSERT INTO security.FieldLookUp (FormName, [Table], TableFieldName, FormFieldName, HideTag, RequiredTag)
+VALUES ('Special Work Schedule', 'WorkScheduleRequest', 'ForOffsetting', 'chkForOffsetting', 0, 0)
+
+INSERT INTO security.FieldLookUp (FormName, [Table], TableFieldName, FormFieldName, HideTag, RequiredTag)
+VALUES ('Special Work Schedule', 'WorkScheduleRequest', 'OffsettingExpirationDate', 'dtpOffsettingExpirationDate', 0, 0)

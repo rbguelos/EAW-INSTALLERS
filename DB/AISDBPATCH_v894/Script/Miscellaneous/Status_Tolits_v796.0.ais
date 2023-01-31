@@ -1,0 +1,17 @@
+IF NOT EXISTS(SELECT * FROM maintenance.Status WHERE Value IN(58,59,60))
+BEGIN
+INSERT INTO maintenance.Status (Name,Value) VALUES ('For Review',58)
+INSERT INTO maintenance.Status (Name,Value) VALUES ('For Assessment',59)
+INSERT INTO maintenance.Status (Name,Value) VALUES ('Acknowledged',60)
+END
+ELSE
+PRINT('MS: ALREADY ON DB')
+
+
+IF NOT EXISTS(SELECT * FROM workflow.Status WHERE Value IN(58,59))
+BEGIN
+INSERT INTO workflow.Status (Name,Value) VALUES ('For Review',58)
+INSERT INTO workflow.Status (Name,Value) VALUES ('For Assessment',59)
+END
+ELSE
+PRINT('WS: ALREADY ON DB')

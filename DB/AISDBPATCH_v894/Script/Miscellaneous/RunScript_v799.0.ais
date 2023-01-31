@@ -1,0 +1,10 @@
+  --  INSERT NEW ATTENDANCE POLICY OPTION
+
+  DELETE FROM maintenance.ConfigSetupDetail 
+  WHERE PropertyName = 'Nodecimalplaces'
+
+  INSERT INTO maintenance.ConfigSetupDetail (
+     ConfigSetupHeaderId, PropertyName, LabelName, 
+    PropertyValue, Type, Source, [Group], SubGroup, SortOrder, Alignment)
+  VALUES (4, 'Nodecimalplaces', 'No decimal places',
+    '', 'checkbox', '', 5, 0, 8, '')

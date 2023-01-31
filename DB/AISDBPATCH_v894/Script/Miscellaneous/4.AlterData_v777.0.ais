@@ -1,0 +1,10 @@
+UPDATE performanceappraisal.PerformanceAppraisalSchedule SET PATypeTitle = PAType.DisplayText
+FROM (
+	SELECT
+		E.[Value],
+		E.DisplayText
+	FROM maintenance.EnumValues E
+	WHERE SourceName = 'PerformanceAppraisalType'
+) PAType
+WHERE CAST(PAType.[Value] AS SMALLINT) = performanceappraisal.PerformanceAppraisalSchedule.PATypeId
+AND ISNULL(performanceappraisal.PerformanceAppraisalSchedule.PATypeTitle, '') = ''

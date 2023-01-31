@@ -1,0 +1,10 @@
+IF NOT EXISTS(SELECT * FROM report.ReportMenu WHERE XMLReportId = 3)
+INSERT INTO [report].[ReportMenu]
+([ReportId],[AdminMenuModuleId],[MenuModuleId],[ReportGroupId],[ModuleFormId],[FileGeneratorHdrId],[XMLReportId])
+VALUES
+(0,0,0,NULL,128,0,3)
+
+ELSE
+PRINT('EXISTS')
+
+

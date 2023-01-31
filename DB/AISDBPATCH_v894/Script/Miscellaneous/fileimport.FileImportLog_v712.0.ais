@@ -1,0 +1,2 @@
+	/*added column to save template code - 06.06.2019*/
+	;EXEC AddColumn @TABLENAME = 'FileImportLog', @SCHEMA = 'fileimport', @COLUMNNAME = 'FileImportCode', @DATATYPE = 'varchar(150)'

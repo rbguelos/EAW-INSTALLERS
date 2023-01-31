@@ -1,0 +1,34 @@
+IF EXISTS(SELECT * FROM workflow.WFTransactionHistoryType WHERE WFTransactionHistoryTypeId = 12)
+BEGIN
+  DELETE FROM workflow.WFTransactionHistoryType WHERE WFTransactionHistoryTypeId = 12
+END
+GO
+
+SET IDENTITY_INSERT workflow.WFTransactionHistoryType ON
+GO
+
+INSERT INTO workflow.WFTransactionHistoryType (WFTransactionHistoryTypeId, Name, MessageTemplate)
+VALUES (12, 'AddedApprover', '<b>{{ApproversName}}</b> has been added to the approvers')
+GO
+
+SET IDENTITY_INSERT workflow.WFTransactionHistoryType OFF
+GO
+
+
+------------------------------------------------------------------------------------------------
+
+IF EXISTS(SELECT * FROM workflow.WFTransactionHistoryType WHERE WFTransactionHistoryTypeId = 13)
+BEGIN
+  DELETE FROM workflow.WFTransactionHistoryType WHERE WFTransactionHistoryTypeId = 13
+END
+GO
+
+SET IDENTITY_INSERT workflow.WFTransactionHistoryType ON
+GO
+
+INSERT INTO workflow.WFTransactionHistoryType (WFTransactionHistoryTypeId, Name, MessageTemplate)
+VALUES (13, 'RemovedApprover', '<b>{{ApproversName}}</b> has been removed from the approvers')
+GO
+
+SET IDENTITY_INSERT workflow.WFTransactionHistoryType OFF
+GO

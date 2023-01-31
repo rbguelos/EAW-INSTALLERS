@@ -1,0 +1,6 @@
+IF NOT EXISTS (SELECT * FROM maintenance.ConfigSetupDetail WHERE PropertyName = 'DoNotDeductContributionsIfInsufficientEarnings')
+BEGIN
+	INSERT INTO maintenance.ConfigSetupDetail (
+	ConfigSetupHeaderId, PropertyName, LabelName, PropertyValue, Type, Source, [Group], SubGroup, SortOrder, Alignment)
+	VALUES(3, 'DoNotDeductContributionsIfInsufficientEarnings', 'Do not deduct contributions if insufficient earnings', '', 'checkbox', '', 6, 0, 14, '')
+END

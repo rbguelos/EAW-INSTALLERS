@@ -1,0 +1,57 @@
+
+   DELETE FROM [maintenance].[EnumValues] 
+   WHERE SourceName = 'EarningsDeductionComputationMethod'
+
+   --SSS
+   INSERT INTO [maintenance].[EnumValues] ([SourceName]
+, [DisplayText]
+, [Value]
+, [OrderNumber]
+, [Status]
+, [CreateId]
+, [CreateDate]
+, [LastUpdateId]
+, [LastUpdateDate])
+    VALUES ('EarningsDeductionComputationMethod', 'SSS', '1', '1', '1', NULL, NULL, NULL, NULL)
+GO
+   
+   --PhilHealth
+   INSERT INTO [maintenance].[EnumValues] ([SourceName]
+, [DisplayText]
+, [Value]
+, [OrderNumber]
+, [Status]
+, [CreateId]
+, [CreateDate]
+, [LastUpdateId]
+, [LastUpdateDate])
+    VALUES ('EarningsDeductionComputationMethod', 'PhilHealth', '2', '2', '1', NULL, NULL, NULL, NULL)
+GO
+
+   
+   --Pagibig
+   INSERT INTO [maintenance].[EnumValues] ([SourceName]
+, [DisplayText]
+, [Value]
+, [OrderNumber]
+, [Status]
+, [CreateId]
+, [CreateDate]
+, [LastUpdateId]
+, [LastUpdateDate])
+    VALUES ('EarningsDeductionComputationMethod', 'Pagibig', '3', '3', '1', NULL, NULL, NULL, NULL)
+GO
+
+   
+   --WHT
+   INSERT INTO [maintenance].[EnumValues] ([SourceName]
+, [DisplayText]
+, [Value]
+, [OrderNumber]
+, [Status]
+, [CreateId]
+, [CreateDate]
+, [LastUpdateId]
+, [LastUpdateDate])
+    VALUES ('EarningsDeductionComputationMethod', 'WHT', '4', '4', '1', NULL, NULL, NULL, NULL)
+GO

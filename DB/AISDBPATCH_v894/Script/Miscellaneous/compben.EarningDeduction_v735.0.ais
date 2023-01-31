@@ -1,0 +1,5 @@
+
+UPDATE compben.EarningDeduction
+	SET MappedToId = 140 /*PremiumPaidonHealthandorHospitalInsurance*/
+WHERE Code = 'PremiumPaidonHealthandorHospitalInsurance'
+AND MappedToId = 116

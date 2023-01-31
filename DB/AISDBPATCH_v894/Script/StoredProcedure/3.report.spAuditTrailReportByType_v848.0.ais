@@ -1,0 +1,153 @@
+IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[report].[spAuditTrailReportByType]') AND type in (N'P', N'PC'))
+DROP PROCEDURE [report].[spAuditTrailReportByType]
+GO
+
+--=============================================
+--Author:      AGC
+--Update date: 04.03.2020
+--Description: For Audit trail report
+--=============================================
+
+CREATE PROCEDURE [report].[spAuditTrailReportByType]
+--DECLARE
+@StartDate date = '01/01/2018'
+,@EndDate date = '12/31/2018'
+,@PortalId tinyint = 1
+,@ModuleId bigint = 0
+,@MenuId bigint = 59
+,@RecordType varchar(250) = ''
+,@TransactionTypeId bigint = 2
+,@User varchar(250) = ''
+,@DisplayId INT = 1
+,@UserSecurityId BIGINT = 0
+AS
+BEGIN
+
+SET NOCOUNT ON;
+
+--===================================================================================================================================
+--DECLARATIONS
+--===================================================================================================================================
+
+DECLARE @ReportId BIGINT = (CASE WHEN ISNULL(@DisplayId,0) = 1 THEN 502 ELSE 503 END)
+DECLARE @TMPTABLENAME VARCHAR(MAX) = 'report.TMPAuditTrailReports'
+
+/*DROP TEMP TABLE IF EXISTS*/
+IF EXISTS(SELECT * FROM sys.tables WHERE object_id = object_id(@TMPTABLENAME))
+EXEC('DROP TABLE ' + @TMPTABLENAME)
+
+
+DECLARE @TransactionType VARCHAR(500) = 
+(
+	CASE @TransactionTypeId
+		WHEN 1 THEN 'Added'
+		WHEN 2 THEN 'Updated'
+		WHEN 3 THEN 'Deleted'
+	END
+)
+
+DECLARE @LOOKUPTABLE VARCHAR(500) = 
+(
+	SELECT TOP 1 
+		TT.TableName 
+	FROM maintenance.AuditTrailSystemTable TT
+	WHERE TT.MenuMenuId = @MenuId
+)
+
+IF OBJECT_ID('tempdb..#AuditTrailReplaceField') IS NOT NULL
+DROP TABLE #AuditTrailReplaceField
+CREATE TABLE #AuditTrailReplaceField 
+(
+DetailId bigint identity(1,1)
+,TableValueId bigint
+,TableName varchar(250)
+,FieldNames varchar(MAX)
+,ReplaceValue varchar(250)
+,ReplaceName varchar(150)
+,UNIQUE NONCLUSTERED(TableValueId,TableName,DetailId)
+)
+
+
+--===================================================================================================================================
+--CREATE REPLACER
+--===================================================================================================================================
+
+DECLARE @SelectSourceTablesForValueReplacement VARCHAR(MAX) = STUFF((
+SELECT ' UNION ALL '+ char(10)+' SELECT TableValueId = '+ CAST(TableValueField AS VARCHAR(MAX)) + ',TableName = ''' + CAST(CASE WHEN CHARINDEX('WHERE',ReplaceTable) > 0 THEN LEFT(ReplaceTable,CHARINDEX(' ', ReplaceTable) - 1) ELSE ReplaceTable END AS VARCHAR(MAX)) + ''',FieldNames = ''' + CAST(FieldNames AS VARCHAR(MAX)) + ''',ReplaceValue = ' + CAST(ReplaceField  AS VARCHAR(MAX)) + ', ReplaceFieldName = '''+ CAST(DisplayFieldName AS VARCHAR(MAX)) +''' FROM ' + CAST(ReplaceTable AS VARCHAR(MAX)) 
+FROM maintenance.AuditTrailReplaceField 
+FOR XML PATH('')),1,10,'')
+
+
+INSERT INTO #AuditTrailReplaceField EXEC (@SelectSourceTablesForValueReplacement)
+
+/*SELECT * FROM #AuditTrailReplaceField;return*/
+
+--===================================================================================================================================
+--MAIN QUERY
+--===================================================================================================================================
+
+DECLARE 
+@CMD VARCHAR(MAX) = 
+'
+SELECT 
+	/*ATB.[Schema],ATB.TableName,ATB.IdentityColumn,ATB.TableIdValue,ATB.ProfileRelated*/
+	CompanyId = 1
+	'+CASE WHEN ISNULL(@DisplayId,0) = 1 
+	THEN 
+	',ATB.[User]
+	,[Date Time] = ATB.Date
+	,[Record] = LTRIM(REPLACE(COALESCE(ORF.ReplaceName,NRF.ReplaceName,ATB.ColumnName),''|'',''''))
+	,[Action] = '''+@TransactionType+'''
+	,[Old] = COALESCE (ORF.ReplaceValue,ATB.OldValues,'''')
+	,[New] = COALESCE (NRF.ReplaceValue,ATB.NewValues,'''')'
+	ELSE 
+	',[Record] = LTRIM(REPLACE(COALESCE(ORF.ReplaceName,NRF.ReplaceName,ATB.ColumnName),''|'',''''))
+	,[Action] = '''+@TransactionType+'''
+	,[Old] = COALESCE (ORF.ReplaceValue,ATB.OldValues,'''')
+	,[New] = COALESCE (NRF.ReplaceValue,ATB.NewValues,'''')
+	,[Date Time] = ATB.Date
+	,ATB.[User]
+	' 
+	END+'
+INTO ' + @TMPTABLENAME + ' 
+FROM dbo.fnRetrieveAuditTrailPerTransaction('''+CAST(@StartDate AS VARCHAR)+''','''+CAST(@EndDate AS VARCHAR)+''','''+CAST(@TransactionType AS VARCHAR)+''','''+@LOOKUPTABLE+''','''') ATB
+
+OUTER APPLY 
+(
+	SELECT TOP 1 
+	ReplaceName
+	,ReplaceValue 
+	FROM #AuditTrailReplaceField 
+	WHERE 
+	CHARINDEX('','' + ATB.ColumnName + '','','','' + FieldNames + '','') > 0
+	AND CAST(TableValueId AS VARCHAR) = ATB.OldValues
+) ORF
+
+OUTER APPLY 
+(
+	SELECT TOP 1 
+	ReplaceName
+	,ReplaceValue 
+	FROM #AuditTrailReplaceField 
+	WHERE 
+	CHARINDEX('','' + ATB.ColumnName + '','','','' + FieldNames + '','') > 0
+	AND (CAST(TableValueId AS VARCHAR) = ATB.NewValues)
+) NRF
+
+'
+
+EXEC(@CMD);
+
+/*
+EXEC('SELECT * FROM ' + @TMPTABLENAME);
+RETURN;
+*/
+
+--===================================================================================================================================
+--GET THE TMP TABLE COLUMNS, INSERT INTO REPORTDATA TABLE
+--===================================================================================================================================
+
+EXEC [report].[spCreateReportColumn] @TMPTABLENAME, @ReportId, 'CompanyId'
+
+
+END

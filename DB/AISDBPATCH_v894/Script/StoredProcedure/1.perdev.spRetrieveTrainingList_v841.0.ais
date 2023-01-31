@@ -1,0 +1,94 @@
+
+GO
+
+/****** Object:  StoredProcedure [perdev].[spTrainingList]    Script Date: 10/25/2019 02:32:49 pm ******/
+DROP PROCEDURE [perdev].[spTrainingList]
+GO
+
+/****** Object:  StoredProcedure [perdev].[spTrainingList]    Script Date: 10/25/2019 02:32:49 pm ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+/*===========================================*\
+**	Last Update Date: 12/12/2017
+**	Last Update By: Bryan
+**	Last DBVersion executed: v533
+\*===========================================*/
+
+-- =============================================
+-- Last Update By: B.E.A.
+-- Last Update Date: 12/11/2017
+-- =============================================
+CREATE PROCEDURE [perdev].[spTrainingList]
+@TrainingId bigint = NULL, 
+@Code varchar(50) = NULL, 
+@Description varchar(100) = NULL
+AS
+BEGIN
+	-- SET NOCOUNT ON added to prevent extra result sets from
+	-- interfering with SELECT statements.
+	SET NOCOUNT ON;
+
+    -- Insert statements for procedure here
+	DECLARE @JobLevel BIGINT = 2
+
+	SELECT 
+		T.TrainingId,
+		TC.TrainingCategory,
+		T.Code,
+		T.[Description],
+		ISNULL(
+			STUFF((
+				SELECT
+					', ' + TR.Code
+				FROM [dbo].[FN_SPLITWITHID](T.Prerequisite, ',') TP
+				-- Training --
+				JOIN perdev.Training TR ON TR.TrainingId = CAST(TP.[VALUE] AS BIGINT)
+			FOR XML PATH('')), 1, 1, '')
+		, '') AS Prerequisite,
+		ISNULL(
+			CASE T.TrainingBasisId
+				WHEN @JobLevel THEN
+					STUFF((
+						SELECT
+							', ' +  JL.[Description]
+						FROM [dbo].[FN_SPLITWITHID](T.TargetAttendees,',') TA
+						-- Job Level --
+						JOIN maintenance.JobLevel JL ON JL.JobLevelId = CAST(TA.[VALUE] AS BIGINT)
+					FOR XML PATH('')), 1, 1, '')
+				ELSE
+					STUFF((
+						SELECT
+							', ' +  JP.[Name]
+						FROM [dbo].[FN_SPLITWITHID](T.TargetAttendees, ',') TA
+						-- Job Position --
+						JOIN maintenance.JobPosition JP ON JP.JobPositionId = CAST(TA.[VALUE] AS BIGINT)
+					FOR XML PATH('')), 1, 1, '')
+			END
+		, '') AS TargetAttendees,
+		CASE
+			WHEN T.TermsOfService = 1 THEN CAST(T.NoOfMonths AS VARCHAR)
+			ELSE ''
+		END AS TermsOfService,
+		C.[Name] AS Competency
+	FROM perdev.Training T
+	-- Training Category --
+	JOIN perdev.TrainingCategory TC ON TC.TrainingCategoryId = T.TrainingCategoryId
+	---- Compentecy --
+	--JOIN perdev.Competency C ON C.CompetencyId = T.CompetencyId
+		OUTER APPLY
+	(
+		SELECT TOP 1* FROM perdev.Competency C
+		WHERE C.CompetencyId = T.CompetencyId
+	)C
+	WHERE ((ISNULL(@TrainingId, 0) != 0 AND T.TrainingId = ISNULL(@TrainingId, 0)) OR ISNULL(@TrainingId, 0) = 0)
+	AND ((ISNULL(@Code, '') != '' AND T.Code  = ISNULL(@Code, '')) OR ISNULL(@Code, '') = '')
+	AND ((ISNULL(@Description, '') != '' AND T.[Description]  = ISNULL(@Description, '')) OR COALESCE(@Description, '') = '');
+END
+GO
+
+

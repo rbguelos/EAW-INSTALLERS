@@ -1,0 +1,7 @@
+IF EXISTS(SELECT TOP 1 1 FROM security.Module WHERE ModuleId = 13)
+BEGIN
+	UPDATE admin.MenuMenu SET MenuModuleId = 14 WHERE MenuMenuId = 10163
+	UPDATE security.Module_Forms SET ModuleId = 13 WHERE ModuleFormId = 10607
+	UPDATE security.UserSecurity_Detail SET ModuleId = 13 WHERE ModuleFormId = 10607
+	UPDATE security.Role_FormAccess SET ModuleId = 13 WHERE ModuleFormId = 10607
+END

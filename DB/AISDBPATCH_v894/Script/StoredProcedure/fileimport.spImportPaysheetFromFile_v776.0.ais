@@ -1,0 +1,537 @@
+/****** Object:  StoredProcedure [fileimport].[spImportPaysheetFromFile]    Script Date: 8/18/2017 7:03:27 PM ******/
+DROP PROCEDURE [fileimport].[spImportPaysheetFromFile]
+GO
+
+/****** Object:  StoredProcedure [fileimport].[spImportPaysheetFromFile]    Script Date: 8/18/2017 7:03:27 PM ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+-- =============================================
+-- Author:		RME
+-- Create date: 8/17/2017
+-- Description:	will be use to import paysheet data from file (spreadsheet)
+-- =============================================
+CREATE PROCEDURE [fileimport].[spImportPaysheetFromFile] 
+--	 --Add the parameters for the stored procedure here
+--DECLARE
+	@CreateId bigint = 0,
+	@PaysheetHeader [fileimport].[tvpPaysheetHeader] readonly
+	,@PaysheetDetail [fileimport].[tvpPaysheetDetail] readonly
+	,@SourceFileName varchar(250) = 'sourcefile.xls'
+	,@SourceSheet varchar(250) = 'sheetname'
+	,@FileLogId bigint = 0
+	,@SourceDataCnt int = 0
+AS
+BEGIN
+-- SET NOCOUNT ON added to prevent extra result sets from
+-- interfering with SELECT statements.
+SET NOCOUNT ON;
+	/* PROCESS DETAIL
+	--- retrieve header data from on header parameter values
+	--	- get default values for header based on the given header parameter values
+	--	- retrieve config values based on supplied payrollgrou and payrolltype
+	--	- get generated id from result
+	--- populate header detail data
+	--	- get default values for header detail based on the given header parameter values
+	--	- retrieve employee data, organizations, salary info detail
+	--	- generate paysheet header detail data
+	--	- insert to payshee header detail table and get generated ids from result
+	--- populate paysheet detail data
+	--	- retrieve values and type from parameter
+	--	- get type details from compben.earninganddeduction table
+	--	- calculate required values (if necessary)
+	--	- begin insert to table process
+	*/
+
+	DECLARE @PAYROLLID INT = 1
+		,@PaysheetHeaderId bigint
+
+	DECLARE @INSERTEDPAYSHEET TABLE (RowId int identity(1,1), PaysheetHeaderId bigint)
+
+	BEGIN/* TEST DATA */
+		PRINT 'UNCOMMENT TEST DATA FOR TESTING'
+	/*
+		INSERT INTO @PaysheetHeader(
+	[RowId],
+	[PayrollTypeId],
+	[PayGroupId],
+	[MonthYear],
+	[IssuedDate],
+	[PeriodStartDate],
+	[PeriodEndDate],
+	[PayrollPeriod],
+	[ProfileId]
+	--[Rate] [decimal](18,4) NULL,
+	--[RateType] [varchar](30) NULL
+		)
+		SELECT 
+		[RowId]	= ROW_NUMBER() OVER (ORDER BY MAX(PH.PaySheetHeaderId), MAX(PHD.PaySheetHeaderDetailId))	
+		,[PayrollTypeId]	
+		,[PayGroupId]	= PaygroupId
+		,[MonthYear]		= MonthYear		
+		,[IssuedDate]		= PH.IssuedDate	
+		,[PeriodStartDate]		= CutOffStartDate		
+		,[PeriodEndDate]			= CutOffEndDate		
+		,[PayrollPeriod]	= PayrollPeriod	
+		,[ProfileId]		= PHD.ProfileId		
+		FROM payroll.PaySheetHeader PH
+		INNER JOIN payroll.PaySheetHeaderDetail PHD ON PHD.PaySheetHeaderId = PH.PaySheetHeaderId
+		GROUP BY [PayrollTypeId],PaygroupId
+				 ,MonthYear		
+				 ,PH.IssuedDate	
+				 ,CutOffStartDate	
+				 ,CutOffEndDate		
+				 ,PayrollPeriod	
+				 ,PHD.ProfileId		
+		INSERT INTO @PaysheetDetail
+		SELECT P.RowId 
+		,PD.[ProfileId]
+		,[TypeCode] = PD.[Type]
+		,[DataValue] = PD.[Value]
+		,[TypeId] = ISNULL(PD.TypeId,ED.TypeId)
+		,ISNULL(pd.[TaxCategoryId],ED.TaxCategoryId)
+		FROM payroll.PaySheetDetail PD
+		INNER JOIN payroll.PaySheetHeaderDetail PHD ON PHD.PaySheetHeaderDetailId = PD.PaySheetHeaderDetailId
+		INNER JOIN payroll.PaySheetHeader PH ON PH.PaySheetHeaderId = PHD.PaySheetHeaderId
+		INNER JOIN @PaysheetHeader P ON
+			P.PayrollTypeId = ph.[PayrollTypeId]	
+			AND P.PayGroupId = ph.[PaygroupId]
+			AND P.MonthYear = ph.[MonthYear]		
+			AND P.IssuedDate = ph.[IssuedDate]	
+			AND P.PeriodStartDate = ph.[CutOffStartDate]		
+			AND P.PeriodEndDate = ph.[CutOffEndDate]		
+			AND P.PayrollPeriod = ph.[PayrollPeriod]	
+			AND P.ProfileId = PHD.ProfileId
+		INNER JOIN compben.EarningDeduction ED ON ED.EarningDeductionId = (SELECT TOP 1 EarningDeductionId FROM compben.EarningDeduction WHERE Code = PD.[Type])
+		--return
+		*/
+	END
+
+	BEGIN/* temp payroll header */
+		DECLARE @PAYROLL TABLE
+		(
+			PayrollId int IDENTITY(1,1) PRIMARY KEY
+			,PaysheetHeaderId	bigint
+			,PayrollTypeId		bigint
+			,PaygroupId			bigint
+			,CompanyId			bigint
+			,BranchId			bigint
+			,MonthYear			datetime
+			,IssuedDate			datetime
+			,CutOffStartDate	datetime
+			,CutOffEndDate		datetime
+			,PayrollPeriod		smallint
+			,EndOfMonth			smallint
+			,DefaultCurrencyId	bigint
+			,ExchangeRate		decimal(18,4)
+		)
+
+		/*GET EMPLOYEE PRORATE FROM PAYROLL POLICY*/
+		BEGIN
+		DECLARE @PRORATE TABLE(ProfileId bigint, ProRateCalculation decimal(18,4), ProRateCalculationNoOfWorkingDays decimal(18,4), ProRateCalculationNoOfWorkingHoursPerDay decimal(18,4))
+		INSERT INTO @PRORATE
+		SELECT
+			p.ProfileId
+		   ,pp.ProRateCalculation
+		   ,pp.ProRateCalculationNoOfWorkingDays
+		   ,pp.ProRateCalculationNoOfWorkingHoursPerDay
+		FROM employee.[Profile] p
+		CROSS APPLY (SELECT
+				ProRateCalculation = MAX(CASE
+					WHEN PropertyName = 'ProRateCalculation' THEN [Value]
+					ELSE NULL
+				END)
+			   ,ProRateCalculationNoOfWorkingDays = MAX(CASE
+					WHEN PropertyName = 'ProRateCalculationNoOfWorkingDays' THEN [Value]
+					ELSE NULL
+				END)
+			   ,ProRateCalculationNoOfWorkingHoursPerDay = MAX(CASE
+					WHEN PropertyName = 'ProRateCalculationNoOfWorkingHoursPerDay' THEN [Value]
+					ELSE NULL
+				END)
+			FROM dbo.fnRetrieveEmployeePolicy(p.ProfileId, 3, 0)
+			WHERE PropertyName IN ('ProRateCalculation', 'ProRateCalculationNoOfWorkingDays', 'ProRateCalculationNoOfWorkingHoursPerDay')) pp
+		END
+
+		INSERT INTO @PAYROLL(PayrollTypeId, PaygroupId, CompanyId, BranchId, MonthYear, IssuedDate, CutOffStartDate, CutOffEndDate, PayrollPeriod, EndOfMonth, DefaultCurrencyId, ExchangeRate)
+		SELECT phd.PayrollTypeId
+					,phd.PayGroupId
+					,e.CompanyId
+					,BranchId=0--,e.BranchId/*branch grouping removed - 07.15.2019*/
+					,phd.MonthYear
+					,phd.IssuedDate
+					,phd.PeriodStartDate
+					,phd.PeriodEndDate
+					,phd.PayrollPeriod
+					,EndOfMonth = 0
+					,DefaultCurrencyId = 0
+					,ExchangeRate = 0 
+					FROM @PaysheetHeader PHD
+					CROSS APPLY(SELECT TOP 1 EMP.CompanyId,EMP.BranchId  from dbo.fnEmployeeProfileInfo(phd.ProfileId, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0) EMP) E
+		GROUP BY phd.PayrollTypeId
+					,phd.PayGroupId
+					,e.CompanyId
+					--,e.BranchId
+					,phd.MonthYear
+					,phd.IssuedDate
+					,phd.PeriodStartDate
+					,phd.PeriodEndDate
+					,phd.PayrollPeriod
+		--RETURN
+	END
+
+	BEGIN/* temp paysheet header detail*/
+		DECLARE @PaySheetHeaderDetail TABLE(
+			[PayrollId] int not null,
+			[RowId] int NOT NULL,
+			/* HEADER */
+			[PaySheetHeaderDetailId]	[bigint] NULL,
+			[PaySheetHeaderId]			[bigint] NULL,
+			[PayrollTypeId]				[bigint] NULL,
+			[ReferenceNo]				[varchar](50) NULL,
+			[PaygroupId]				[bigint] NULL,
+			[CompanyId]					[bigint] NULL,
+			[MonthYear]					[datetime] NULL,
+			[IssuedDate]				[datetime] NULL,
+			[CutOffStartDate]			[datetime] NULL,
+			[CutOffEndDate]				[datetime] NULL,
+			[PayrollPeriod]				[bigint] NULL,
+			[EndOfMonth]				[smallint] NULL,
+			[PayOutstandingLoan]		[smallint] NULL,
+			[PayOutstandingDeduction]	[smallint] NULL,
+			[DefaultCurrencyId]			[bigint] NULL,
+			[ExchangeRate]				[decimal](18, 2) NULL,
+			/* HEADER DEATAIL */
+			[ProfileId]					[bigint] NULL,
+			[PeriodStartDate]			[datetime] NULL,
+			[PeriodEndDate]				[datetime] NULL,
+			[BranchId]					[bigint] NULL,
+			[DepartmentId]				[bigint] NULL,
+			[OfficeId]					[bigint] NULL,
+			[UnitId]					[bigint] NULL,
+			[DivisionId]				[bigint] NULL,
+			[GroupId]					[bigint] NULL,
+			[DistrictId]				[bigint] NULL,
+			[LocationId]				[bigint] NULL,
+			[ProjectProfileId]			[bigint] NULL,
+			[CostCenterId]				[bigint] NULL,
+			[LineId]					[bigint] NULL,
+			[TeamId]					[bigint] NULL,
+			[EmployeeTypeId]			[bigint] NULL,
+			[JobRankId]					[bigint] NULL,
+			[JobGradeId]				[bigint] NULL,
+			[JobLevelId]				[bigint] NULL,
+			[PositionId]				[bigint] NULL,
+			[SalaryRate]				[decimal](18, 4) NULL,
+			[SalaryType]				[smallint] NULL,
+			[SalaryTypeDescription]		[varchar](30) NULL,
+			[HourlyRate]				[decimal](18, 4) NULL,
+			[DailyRate]					[decimal](18, 4) NULL,
+			[MonthlyRate]				[decimal](18, 4) NULL,
+			[YearlyRate]				[decimal](18, 4) NULL,
+			[PhilhealthBracketId]		[bigint] NULL,
+			[SSSBracketId]				[bigint] NULL,
+			[PagibigBracketId]			[bigint] NULL,
+			[WHTBracketId]				[bigint] NULL,
+			[MWE]						[tinyint] NULL,
+			[CurrencyId]				[bigint] NULL,
+			[CreateId]					[bigint] NULL,
+			[CreateDate]				[datetime] NULL,
+			[LastUpdateId]				[bigint] NULL,
+			[LastUpdateDate]			[datetime] NULL,
+			[ManPowerClassificationId]	[bigint] NULL,
+			[SalaryInformationId]		[bigint] NULL,
+			[TaxExemptionStatusId]		[bigint] NULL,
+			[ApplicableTaxId]			[bigint] NULL,
+			UNIQUE NONCLUSTERED([PayrollId],[MonthYear],[IssuedDate],[CutOffStartDate],[CutOffEndDate],[PayrollPeriod],[PayrollTypeId],[PaygroupId],[CompanyId],[RowId])
+			)	
+		/* retrieve needed values from profile and salary infor */
+		INSERT INTO @PaySheetHeaderDetail (PayrollId,RowId,
+		/* HEADER */[PayrollTypeId], [ReferenceNo], [PaygroupId], [CompanyId], [MonthYear], [IssuedDate], [CutOffStartDate], [CutOffEndDate], [PayrollPeriod], [EndOfMonth], [PayOutstandingLoan], [PayOutstandingDeduction], [DefaultCurrencyId], [ExchangeRate]
+		/* HEADER DETAIL */, [ProfileId], [PeriodStartDate], [PeriodEndDate], [BranchId], [DepartmentId], [OfficeId], [UnitId], [DivisionId], [GroupId], [DistrictId], [LocationId], [ProjectProfileId], [CostCenterId], [LineId], [TeamId], [EmployeeTypeId], [JobRankId], [JobGradeId], [JobLevelId], [PositionId], [SalaryRate], [SalaryType], [SalaryTypeDescription], [HourlyRate], [DailyRate], [MonthlyRate], [YearlyRate], [PhilhealthBracketId], [SSSBracketId], [PagibigBracketId], [WHTBracketId], [MWE], [CurrencyId], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate], [ManPowerClassificationId], [SalaryInformationId], [TaxExemptionStatusId], [ApplicableTaxId])
+				SELECT P.PayrollId,ph.RowId
+					/* HEADER */
+					--[PaySheetHeaderId] = 0
+					,p.[PayrollTypeId]
+					,[ReferenceNo] = ''
+					,[PaygroupId] = ph.PayGroupId
+					,[CompanyId] = E.CompanyId
+					,[MonthYear] = ph.MonthYear
+					,[IssuedDate] = ph.IssuedDate
+					,[CutOffStartDate] = ph.PeriodStartDate
+					,[CutOffEndDate] = ph.PeriodEndDate
+					,[PayrollPeriod] = ph.PayrollPeriod
+					,[EndOfMonth] = 0
+					,[PayOutstandingLoan] = 0
+					,[PayOutstandingDeduction] = 0
+					,[DefaultCurrencyId] = (SELECT TOP 1 CurrencyId FROM maintenance.Currency WHERE [Default] = 1)
+					,[ExchangeRate] = 1 /* check */
+					/* HEADER DETAIL */
+					,E.[ProfileId]
+					,[PeriodStartDate] = ph.PeriodStartDate
+					,[PeriodEndDate] = ph.PeriodEndDate
+					,E.[BranchId]
+					,E.[DepartmentId]
+					,E.[OfficeId]
+					,E.[UnitId]
+					,E.[DivisionId]
+					,[GroupId] = E.GroupsCodeId
+					,E.[DistrictId]
+					,E.[LocationId]
+					,[ProjectProfileId] = E.ProjectId
+					,E.[CostCenterId]
+					,[LineId] = E.LineCodeId
+					,[TeamId] = E.TeamCodeId
+					,E.[EmployeeTypeId]
+					,E.[JobRankId]
+					,E.[JobGradeId]
+					,E.[JobLevelId]
+					,E.[PositionId]
+					,[SalaryRate] = CASE WHEN ISNULL(ph.Rate,0) = 0 THEN ES.[SalaryRate] ELSE ph.Rate END
+					,[SalaryType] = ISNULL((SELECT TOP 1 [Value] FROM maintenance.EnumValues WHERE SourceName = 'SalaryFactor' AND DisplayText = ph.RateType),ES.SalaryFactor)
+					,[SalaryTypeDescription] =  CASE WHEN ISNULL(ph.RateType,'') = '' THEN (SELECT TOP 1 DisplayText FROM maintenance.EnumValues WHERE SourceName = 'SalaryFactor' AND [Value] = ES.SalaryFactor) ELSE ph.RateType END
+					,[HourlyRate] = ISNULL(ES.[HourlyRate], 0)
+					,[DailyRate] = ISNULL(ES.[DailyRate], 0)
+					,[MonthlyRate] = ISNULL(ES.[MonthlyRate], 0)
+					,[YearlyRate] = ISNULL(ES.[YearlyRate], 0)
+					,[PhilhealthBracketId] = 0
+					,[SSSBracketId] = 0
+					,[PagibigBracketId] = 0
+					,[WHTBracketId] = 0
+					,[MWE] = E.MinimumWageEarner
+					,[CurrencyId] = 0
+					,[CreateId] = @CreateId
+					,[CreateDate] = CURRENT_TIMESTAMP
+					,[LastUpdateId] = 0
+					,[LastUpdateDate] = '1/1/1900'
+					,[ManPowerClassificationId]
+					,[SalaryInformationId]
+					,[TaxExemptionStatusId] =
+					CASE
+						WHEN ISNUMERIC(E.TaxExemptionStatusValue) = 1 THEN E.TaxExemptionStatusValue
+						ELSE 0
+					END
+					,[ApplicableTaxId]
+				FROM @PaysheetHeader AS ph
+				OUTER APPLY (SELECT TOP 1
+						*
+					FROM dbo.fnEmployeeProfileInfo(ph.ProfileId, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0) EMP) E
+				OUTER APPLY (SELECT TOP 1
+						SalaryInformationId
+						,SalaryFactor
+						,SalaryRate
+						,MonthlyRate
+						,DailyRate
+						,HourlyRate
+						,YearlyRate
+						,EffectiveDate
+					FROM employee.SalaryInformation
+					WHERE ProfileId = E.ProfileId
+					AND EffectiveDate <= ph.PeriodEndDate) ES
+				INNER JOIN @PAYROLL P ON 
+				P.PayrollTypeId = ph.[PayrollTypeId]	
+				AND P.PaygroupId = ph.[PayGroupId]
+				AND P.MonthYear = ph.[MonthYear]		
+				AND P.IssuedDate = ph.[IssuedDate]	
+				AND P.CutOffStartDate = ph.[PeriodStartDate]		
+				AND P.CutOffEndDate = ph.[PeriodEndDate]		
+				AND P.PayrollPeriod = ph.[PayrollPeriod]	
+				AND P.CompanyId = E.CompanyId
+				--AND P.BranchId = E.BranchId
+	END
+
+		--BEGIN TRAN
+
+	WHILE EXISTS (SELECT PayrollId FROM @PAYROLL WHERE PayrollId = @PAYROLLID)
+	BEGIN
+
+
+		/* PAYSHEET HEADER */
+		--	- retrieve config values based on supplied payrollgrou and payrolltype
+
+		--	- get default values for header based on the given header parameter values
+
+		--  - set paysheet data and insert to paysheet header table
+			INSERT INTO payroll.PaySheetHeader([PayrollTypeId],[ReferenceNo],[PaygroupId],[CompanyId],[BranchId],[DepartmentId],[UnitId],[ProjectId],[LocationId],[MonthYear],[IssuedDate],[CutOffStartDate]
+,[CutOffEndDate],[PayrollPeriod],[EndOfMonth],[PayOutstandingLoan],[PayOutstandingDeduction],[ProfileId],[StatusId],[PositionId],[DefaultCurrencyId],[ExchangeRate],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])
+			SELECT 
+				[PayrollTypeId] , -- [bigint] NULL,
+				[ReferenceNo] = '' , -- [varchar](50) NULL,
+				[PaygroupId] , -- [bigint] NULL,
+				[CompanyId] , -- [bigint] NULL,
+				[BranchId] , -- [bigint] NULL,
+				[DepartmentId] = 0 , -- [bigint] NULL,
+				[UnitId] = 0, -- [bigint] NULL,
+				[ProjectId] = 0 , -- [bigint] NULL,
+				[LocationId] = 0 , -- [bigint] NULL,
+				[MonthYear] , -- [datetime] NULL,
+				[IssuedDate] , -- [datetime] NULL,
+				[CutOffStartDate] , -- [datetime] NULL,
+				[CutOffEndDate] , -- [datetime] NULL,
+				[PayrollPeriod] , -- [bigint] NULL,
+				[EndOfMonth] , -- [smallint] NULL,
+				[PayOutstandingLoan] = 0 , -- [smallint] NULL,
+				[PayOutstandingDeduction] = 0 , -- [smallint] NULL,
+				[ProfileId] = '' , -- [varchar](max) NULL,
+				[StatusId] = 1 , -- APPROVED,
+				[PositionId] = 0 , -- [bigint] NULL,
+				[DefaultCurrencyId] , -- [bigint] NULL,
+				[ExchangeRate] , -- [decimal](18, 2) NULL,
+				[CreateId] = @CreateId, -- [bigint] NULL,
+				[CreateDate] = CURRENT_TIMESTAMP, -- [datetime] NULL,
+				[LastUpdateId] = 0, -- [bigint] NULL,
+				[LastUpdateDate] = '1/1/1900'  -- [datetime] NULL,
+			FROM @PAYROLL WHERE PayrollId = @PAYROLLID
+
+		--	- get generated id from result
+			SET @PaysheetHeaderId = SCOPE_IDENTITY()
+
+		/* PAYSHEET HEADER DETAIL*/
+		--- populate header detail data
+		--	- get default values for header detail based on the given header parameter values
+		--	- retrieve employee data, organizations, salary info detail
+
+		--	- generate paysheet header detail data
+			UPDATE @PaySheetHeaderDetail SET PaySheetHeaderId = @PaysheetHeaderId WHERE PayrollId = @PAYROLLID;
+			UPDATE @PAYROLL SET PaySheetHeaderId = @PaysheetHeaderId WHERE PayrollId = @PAYROLLID;
+
+			-- this will handle inserted records and generated ids
+			DECLARE @InsertedPaysheetHeaderDetail TABLE(RowId int identity(1,1),PaysheetHeaderDetailId bigint, PaysheetHeaderId bigint, ProfileId bigint)
+			DELETE FROM @InsertedPaysheetHeaderDetail
+
+			--- insert to payshee header detail table and get generated ids from result
+			INSERT INTO payroll.PaySheetHeaderDetail([PaySheetHeaderId],[ProfileId],[IssuedDate],[PeriodStartDate],[PeriodEndDate],
+			[BranchId],[DepartmentId],[OfficeId],[UnitId],[DivisionId],[GroupId],[DistrictId],[LocationId],[ProjectProfileId],[CostCenterId],[LineId],[TeamId],[EmployeeTypeId],[JobRankId],[JobGradeId],[JobLevelId],[PositionId]
+			,[SalaryRate],[SalaryType],[SalaryTypeDescription],[HourlyRate],[DailyRate],[MonthlyRate],[YearlyRate],[PhilhealthBracketId],[SSSBracketId],[PagibigBracketId],[WHTBracketId]
+			,[MWE],[CompanyId],[CurrencyId],[ExchangeRate],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate],[ManPowerClassificationId],[SalaryInformationId],[TaxExemptionStatusId],[ApplicableTaxId])
+			OUTPUT INSERTED.PaySheetHeaderDetailId, INSERTED.PaySheetHeaderId, INSERTED.ProfileId INTO @InsertedPaysheetHeaderDetail
+			SELECT 
+			[PaySheetHeaderId],[ProfileId],[IssuedDate],[PeriodStartDate],[PeriodEndDate],
+			[BranchId],[DepartmentId],[OfficeId],[UnitId],[DivisionId],[GroupId],[DistrictId],[LocationId],[ProjectProfileId],[CostCenterId],[LineId],[TeamId],[EmployeeTypeId],[JobRankId],[JobGradeId],[JobLevelId],[PositionId]
+			,[SalaryRate],[SalaryType],[SalaryTypeDescription]
+			,[HourlyRate]	= case [SalaryType] WHEN 1 THEN [SalaryRate] WHEN 3 THEN [SalaryRate] / (pr.ProRateCalculationNoOfWorkingDays/sf.Mnth) / pr.ProRateCalculationNoOfWorkingHoursPerDay WHEN 2 THEN [SalaryRate] / pr.ProRateCalculationNoOfWorkingHoursPerDay ELSE 0 END
+			,[DailyRate]	= case [SalaryType] WHEN 2 THEN [SalaryRate] WHEN 3 THEN [SalaryRate] / (pr.ProRateCalculationNoOfWorkingDays/sf.Mnth) WHEN 1 THEN [SalaryRate] / (pr.ProRateCalculationNoOfWorkingDays/sf.Mnth) / pr.ProRateCalculationNoOfWorkingHoursPerDay ELSE 0 END
+			,[MonthlyRate]	= case [SalaryType] WHEN 3 THEN [SalaryRate] WHEN 2 THEN [SalaryRate] * (pr.ProRateCalculationNoOfWorkingDays/sf.Mnth) WHEN 1 THEN [SalaryRate] * (pr.ProRateCalculationNoOfWorkingDays/sf.Mnth) * pr.ProRateCalculationNoOfWorkingHoursPerDay ELSE 0 END
+			,[YearlyRate]
+			,[PhilhealthBracketId],[SSSBracketId],[PagibigBracketId],[WHTBracketId]
+			,[MWE],[CompanyId],[CurrencyId],[ExchangeRate],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate],[ManPowerClassificationId],[SalaryInformationId],[TaxExemptionStatusId],[ApplicableTaxId]
+				FROM @PaySheetHeaderDetail T 
+				CROSS APPLY(SELECT TOP 1 ProRateCalculation,ProRateCalculationNoOfWorkingDays,ProRateCalculationNoOfWorkingHoursPerDay FROM @PRORATE WHERE ProfileId = T.ProfileId)pr
+				cross APPLY(select Mnth = CASE pr.ProRateCalculation WHEN 1 THEN 1 WHEN 2 THEN 12 ELSE 1 END)sf
+				WHERE T.PayrollId = @PAYROLLID
+
+			/* SET COMMA DELIMITED PROFILEIDS IN HEADER */
+			UPDATE payroll.PaySheetHeader SET ProfileId = 
+			(SELECT ','+ cast(RP.ProfileId as varchar) FROM @InsertedPaysheetHeaderDetail RP WHERE RP.PaysheetHeaderId = PaySheetHeader.PaySheetHeaderId FOR XML PATH(''))
+			WHERE PaySheetHeaderId = @PaysheetHeaderId
+
+		/* PAYSHEET DETAIL */
+			--- populate paysheet detail data
+			--	- retrieve values and type from parameter
+			--	- get type details from compben.earninganddeduction table
+			--	- calculate required values (if necessary)
+			--	- begin insert to paysheet detail table
+			INSERT INTO payroll.PaySheetDetail([PaySheetHeaderDetailId],[ProfileId],[Type],[Value],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate],[TaxCategoryId],[TypeId])
+			--OUTPUT INSERTED.PaySheetDetailId, INSERTED.PaySheetHeaderDetailId,INSERTED.ProfileId,INSERTED.Type,INSERTED.Value
+			SELECT 
+				[PaySheetHeaderDetailId] = IPD.PaysheetHeaderDetailId,
+				[ProfileId] = PD.ProfileId,
+				[Type] = ED.Code,
+				[Value] = PD.DataValue,
+				PHD.[CreateId],
+				PHD.[CreateDate],
+				PHD.[LastUpdateId],
+				PHD.[LastUpdateDate],
+				[TaxCategoryId] = CASE WHEN ISNULL(PD.[TaxCategoryId],0) = 0 THEN ED.TaxCategoryId ELSE PD.[TaxCategoryId] END,
+				[TypeId] = CASE WHEN ISNULL(PD.[TypeId],0) = 0 THEN ED.[TypeId] ELSE PD.[TypeId] END
+				FROM @PaysheetDetail PD 
+				INNER JOIN @PaySheetHeaderDetail PHD ON PHD.RowId = PD.RowId
+				INNER JOIN @InsertedPaysheetHeaderDetail IPD ON IPD.ProfileId = PHD.ProfileId
+				AND IPD.PaysheetHeaderId = PHD.PaySheetHeaderId
+				LEFT JOIN payroll.VWCOMPBEN ED 
+					ON (ED.Code = PD.TypeCode OR PD.TypeCode in (ED.Code,ED.[Description]))
+				WHERE IPD.PaysheetHeaderId = @PaysheetHeaderId
+
+
+				/*added 11/20/2017 */
+				/*BENEFITS,TAX EXEMPT AND INCLUDE IN 13TH MONTH PAY, DEDUCTION AND LOAN*/ 
+				INSERT INTO payroll.PaySheetDetail([PaySheetHeaderDetailId],[ProfileId],[Type],[Value],[TaxCategoryId],[TypeId],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])
+				SELECT [PaySheetHeaderDetailId],ProfileId,Code,Amount,TaxCategoryId = CASE WHEN Code = 'Benefit' THEN 3 ELSE 0 END, TypeId = 1,[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate] 
+				FROM(SELECT T.[PaySheetHeaderDetailId],T.ProfileId ,T.PayrollYear 
+					--,[Benefit] = CASE WHEN (SELECT COUNT(PaySheetHeaderDetailId) FROM payroll.PaySheetDetail WHERE Type = 'Benefit' AND PaySheetHeaderDetailId = T.PaySheetHeaderDetailId) > 0 THEN 0 
+									--ELSE SUM(CASE WHEN T.TaxCategoryId = 3 AND T.[Type] <> 'Benefit' THEN ISNULL(T.[Value], 0) ELSE 0 END) END
+					,[TaxExempt] = CASE WHEN (SELECT COUNT(PaySheetHeaderDetailId) FROM payroll.PaySheetDetail WHERE Type = 'TaxExempt' AND PaySheetHeaderDetailId = T.PaySheetHeaderDetailId) > 0 THEN 0 
+									ELSE SUM(CASE WHEN T.TaxCategoryId = 2 AND T.[Type] <> 'TaxExempt' THEN ISNULL(T.[Value], 0) ELSE 0 END) END
+					,[AmtIncludeInThirteenthMonthPayCalc] = CASE WHEN (SELECT COUNT(PaySheetHeaderDetailId) FROM payroll.PaySheetDetail WHERE Type = 'TaxExempt' AND PaySheetHeaderDetailId = T.PaySheetHeaderDetailId) > 0 THEN 0 
+									ELSE SUM(CASE WHEN T.IncludeIn13thMonthPay = 1  AND T.[Type] <> 'AmtIncludeInThirteenthMonthPayCalc' THEN T.Value ELSE 0 END) END
+					,[Loan] = CASE WHEN (SELECT COUNT(PaySheetHeaderDetailId) FROM payroll.PaySheetDetail WHERE Type = 'Loan' AND PaySheetHeaderDetailId = T.PaySheetHeaderDetailId) > 0 THEN 0 
+									ELSE SUM(CASE WHEN T.TypeId = 6 AND T.[Type] <> 'Loan' THEN ISNULL(T.[Value], 0) ELSE 0 END) END
+					,[Deduction] = CASE WHEN (SELECT COUNT(PaySheetHeaderDetailId) FROM payroll.PaySheetDetail WHERE Type = 'Deduction' AND PaySheetHeaderDetailId = T.PaySheetHeaderDetailId) > 0 THEN 0 
+									ELSE SUM(CASE WHEN T.TypeId = 2 AND T.[Type] <> 'Deduction' THEN ISNULL(T.[Value], 0) ELSE 0 END) END
+
+					,[CreateId]		  = max([CreateId])
+					,[CreateDate]	  = max([CreateDate])
+					,[LastUpdateId]	  = max([LastUpdateId])
+					,[LastUpdateDate] = max([LastUpdateDate])
+				--,[TaxableBenefit] = SUM(CASE T.TaxCategoryId WHEN 3 THEN ISNULL(T.[Value],0) ELSE 0 END)
+				--,sum(T.Value)
+				FROM (SELECT PD.PaySheetHeaderDetailId,PD.ProfileId,PayrollYear = YEAR(ph.IssuedDate),PD.[Type],PD.[Value],ED.MappedToId
+						,TaxCategoryId = CASE WHEN ISNULL(PD.TaxCategoryId, 0) = 0 THEN ED.TaxCategoryId ELSE PD.TaxCategoryId END
+						,TypeId = CASE WHEN ISNULL(PD.TypeId, 0) = 0 THEN ED.TypeId ELSE ED.TypeId END
+						,ED.IncludeIn13thMonthPay
+						,PD.[CreateId]		 
+						,PD.[CreateDate]	 
+						,PD.[LastUpdateId]	 
+						,PD.[LastUpdateDate]
+					FROM payroll.PaySheetDetail PD
+					INNER JOIN payroll.PaySheetHeaderDetail phd ON phd.PaySheetHeaderDetailId = pd.PaySheetHeaderDetailId
+					INNER JOIN payroll.PaySheetHeader ph ON ph.PaySheetHeaderId = phd.PaySheetHeaderId
+					LEFT JOIN payroll.VWCOMPBEN ED ON ED.Code = PD.[Type]
+					WHERE 1=1 
+					AND (ph.PaySheetHeaderId = @PaysheetHeaderId)
+					AND ISNULL(ED.MappedToId, 0) = 0
+					) T
+				GROUP BY [PaySheetHeaderDetailId],T.ProfileId, T.PayrollYear)A UNPIVOT (Amount 
+				FOR Code IN (/*[Benefit], - removed 12.17.2018*/[TaxExempt],[AmtIncludeInThirteenthMonthPayCalc],[Loan],[Deduction]
+				)) AS a
+				WHERE a.Amount <> 0
+
+
+		/*this will be use to insert audit logs for inserted records*/
+		INSERT INTO @INSERTEDPAYSHEET(PaysheetHeaderId) VALUES(@PaysheetHeaderId)
+
+
+		SET @PAYROLLID = @PAYROLLID + 1
+	END
+
+	/*save audit logs*/
+	BEGIN
+		DECLARE @FileImportLogId bigint
+		INSERT INTO fileimport.FileImportLog([Filename],[SourceSheet],[DestinationTable],[ImportCount],[ImportFileId],[ProcessedById],[ProcessedDate])
+		VALUES(@SourceFileName,@SourceSheet,'[payroll].[PaySheetHeader]',@SourceDataCnt,@FileLogId,@CreateId,CURRENT_TIMESTAMP)
+
+		set @FileImportLogId = SCOPE_IDENTITY();
+		
+		IF NOT @FileImportLogId IS NULL
+		BEGIN 
+			INSERT INTO fileimport.ImportLogDtl(FileimportLogId,LogStatus,ImportKeyValue)
+			SELECT @FileImportLogId,'imported',PaysheetHeaderId FROM @INSERTEDPAYSHEET
+		END
+	END
+
+		--/* SHOW IMPORTED RESULTS */
+		--SELECT PHd.* FROM payroll.PaySheetHeader PH INNER JOIN @PAYROLL P ON P.PaysheetHeaderId = PH.PaySheetHeaderId
+		--inner join payroll.PaySheetHeaderDetail phd on phd.PaySheetHeaderId = ph.PaySheetHeaderId
+
+		--ROLLBACK TRAN
+
+END
+
+
+GO
+
+

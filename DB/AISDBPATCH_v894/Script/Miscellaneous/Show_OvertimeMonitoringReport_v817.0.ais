@@ -1,0 +1,15 @@
+DELETE FROM report.ReportMenu WHERE ReportId IN (81)
+DELETE FROM security.Module_Forms WHERE ModuleFormId IN ('10430')
+
+/*start insert data to security.Module_Forms*/
+SET IDENTITY_INSERT [security].[Module_Forms] ON
+INSERT [security].[Module_Forms] ([ModuleFormId],[ModuleId],[Name],[Form],[AccessTypeId],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES(10430,39,'Overtime Monitoring Report','OvertimeMonitoringReport','1,5',NULL,NULL,NULL,NULL)
+SET IDENTITY_INSERT [security].[Module_Forms] OFF
+/*end insert data to security.Module_Forms*/
+
+/*start insert data to report.ReportMenu*/
+INSERT [report].[ReportMenu] ([ReportId],[AdminMenuModuleId],[MenuModuleId],[ReportGroupId],[ModuleFormId],[FileGeneratorHdrId],[XMLReportId],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES(81,0,13,24,0,0,0,NULL,NULL,NULL,NULL)
+/*end insert data to report.ReportMenu*/
+
+SELECT * FROM report.ReportMenu WHERE ReportId IN (81)
+SELECT * FROM security.Module_Forms WHERE ModuleFormId IN ('10430')

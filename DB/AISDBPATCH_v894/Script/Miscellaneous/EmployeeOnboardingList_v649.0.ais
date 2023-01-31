@@ -1,0 +1,4 @@
+EXEC [admin].[UpdateListColumns]
+	@ListName = 'Employee Onboarding List',
+	@ListType = 'EmployeeOnboardingList',
+	@DefaultColumn = 'EmployeeNo|EmployeeName|HireDate|StartDate|EndDate|Status'

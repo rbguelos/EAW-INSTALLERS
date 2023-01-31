@@ -1,0 +1,49 @@
+SET NOCOUNT ON
+/*start deleting existing menu configs*/
+DELETE FROM admin.MenuSubMenu WHERE MenuSubMenuId = 161
+DELETE FROM admin.SecurityMapping WHERE MenuSubMenuId = 161
+DELETE FROM security.Module_Forms WHERE ModuleFormId = 222
+/*end deleting existing menu configs*/
+
+/* start insert data to admin.MenuSubMenu */
+SET IDENTITY_INSERT [admin].[MenuSubMenu] ON
+INSERT [admin].[MenuSubMenu] ([MenuSubMenuId],[MenuMenuId],[SubMenuName],[SubMenuIcon],[SubMenuLink],[SortOrder],[Hidden],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES(161,87,'AUB','','/BankFile/List?TemplateCode=AUBBankFile&Extension=xlsx',27,0,NULL,NULL,NULL,NULL)
+SET IDENTITY_INSERT [admin].[MenuSubMenu] OFF
+/* end insert data to admin.MenuSubMenu */
+
+/* start insert data to admin.SecurityMapping */
+INSERT [admin].[SecurityMapping] ([MenuMenuId],[MenuSubMenuId],[SecurityFormId],[AccessTypeId],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES(87,161,222,'1',NULL,NULL,NULL,NULL)
+/* end insert data to admin.SecurityMapping */
+
+/* start insert data to security.Module_Forms */
+SET IDENTITY_INSERT [security].[Module_Forms] ON
+INSERT [security].[Module_Forms] ([ModuleFormId],[ModuleId],[Name],[Form],[AccessTypeId],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES(222,40,'Bank File','Bank File','1,2,3,4,5,25,26',NULL,NULL,-999,'Nov  9 2016  9:59:47:173AM')
+SET IDENTITY_INSERT [security].[Module_Forms] OFF
+/* end insert data to security.Module_Forms */
+
+/*start insert data to security.Role_FormAccess*/
+INSERT INTO security.Role_FormAccess([RoleId],[ModuleId],[ModuleFormId],[AccessTypeId]) 
+				SELECT 
+				[RoleId] = RF.RoleId,
+				[ModuleId] = F.ModuleId,
+				[ModuleFormId] = F.ModuleFormId,
+				[AccessTypeId] = F.AccessTypeId
+				FROM security.Module_Forms F
+				OUTER APPLY (SELECT DISTINCT RoleId FROM security.Role_FormAccess WHERE ModuleId = 40) RF
+				WHERE F.ModuleFormId = 222
+				AND RF.RoleId NOT IN (SELECT DISTINCT RoleId FROM security.Role_FormAccess WHERE ModuleFormId = 222)
+/*end insert data to security.Role_FormAccess*/
+
+/*start insert data to security.UserSecurity_Detail*/
+INSERT INTO security.UserSecurity_Detail([UserSecurityId],[ModuleFormId],[AccessTypeId],[ModuleId])
+				SELECT
+				[UserSecurityId] = US.UserSecurityId
+				,[ModuleFormId] = F.ModuleFormId
+				,[AccessTypeId] = F.AccessTypeId
+				,[ModuleId] = F.ModuleId
+				FROM security.Module_Forms F
+				OUTER APPLY (SELECT DISTINCT UserSecurityId FROM security.UserSecurity_Detail WHERE ModuleId = 40) US
+				WHERE F.ModuleFormId = 222
+				AND US.UserSecurityId NOT IN (SELECT UserSecurityId FROM security.UserSecurity_Detail WHERE ModuleFormId = 222 AND UserSecurityId IS NOT NULL)
+/*end insert data to security.UserSecurity_Detail*/
+SET NOCOUNT OFF

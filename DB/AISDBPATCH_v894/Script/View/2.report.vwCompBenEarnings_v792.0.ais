@@ -1,0 +1,45 @@
+-- =============================================
+-- Author:      RME
+-- Create date: 
+-- Updated by AGC.10092019
+-- =============================================
+
+ALTER VIEW [report].[vwCompBenEarnings]
+AS
+
+SELECT 
+	EarningDeductionId
+	,Code
+	,[Description]
+	,TypeId 
+	,GroupCode =
+	(
+		CASE TypeId WHEN 3 THEN 'Allowance'
+		WHEN 2 THEN 'Deduction'
+		WHEN 1 THEN
+		(
+			CASE WHEN MappedToId = 0 THEN 'Other'
+			ELSE CASE WHEN Code IN ('SSS','SSSEC','SSSES','PhilHealth','PhilHealthES','Pagibig','PagIbigES','WHT') THEN 'GovContri'
+			ELSE 'Income' END END
+		) 
+		ELSE NULL END
+	) 
+	,MappedToId = ISNULL(MappedToId,0)
+FROM payroll.vwCOMPBEN WHERE TypeId in (1,3) and (right(Code,3) <> 'hrs') 
+AND NOT Code IN('PhilHealthBasis'
+,'SSSBasis'
+,'PagibigBasis'
+,'CompanyNonWorkingDayHrs'
+,'CompanyNonWorkingDayHrsPay'
+,'CompanyNonWorkingDayHrsPay_NoWork'
+,'CompanyNonWorkingDayNightShiftHrs'
+,'CompanyNonWorkingDayNightShiftHrsPay'
+,'CompanyNonWorkingDayNightShiftOvertimeHrs'
+,'CompanyNonWorkingDayNightShiftOvertimeHrsPay'
+,'CompanyNonWorkingDayOvertimeHrs'
+,'CompanyNonWorkingDayOvertimeHrsPay'
+,'CompanyTax'
+,'CompanyTaxable')
+GO
+
+

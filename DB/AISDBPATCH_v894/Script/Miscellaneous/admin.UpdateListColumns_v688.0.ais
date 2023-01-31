@@ -1,0 +1,6 @@
+EXEC admin.UpdateListColumns 
+    @ListName = ''
+   ,@ListType ='LeaveRequestColumnsList'
+   ,@DefaultColumn ='EmployeeNo|EmployeeName|Division|Department|LeaveTypeSetup|DateFiled|InclusiveDate|LeaveRequestDisplay|Status|Reason'
+
+

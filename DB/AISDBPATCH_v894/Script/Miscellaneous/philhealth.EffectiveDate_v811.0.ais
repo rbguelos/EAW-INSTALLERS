@@ -1,0 +1,5 @@
+UPDATE admin.ListColumns 
+	SET 
+		DefaultColumns = 'MinAmount|MaxAmount|SalaryBase|MonthlyContribution|EmployeeShare|EmployerShare|ContributionType|BracketId|EffectiveDate',
+		MasterColumns = 'MinAmount|MaxAmount|SalaryBase|MonthlyContribution|EmployeeShare|EmployerShare|ContributionType|BracketId|EffectiveDate'
+WHERE ListType = 'PhilHealthColumnList'

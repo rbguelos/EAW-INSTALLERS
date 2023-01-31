@@ -1,0 +1,69 @@
+IF NOT EXISTS(SELECT * FROM maintenance.ConfigSetupDetail WHERE PropertyName = 'ProcessLateRestdayApproval')
+BEGIN
+	INSERT INTO maintenance.ConfigSetupDetail(
+		ConfigSetupHeaderId, PropertyName, LabelName, PropertyValue, Type, Source, [Group], Subgroup, SortOrder, Alignment)
+	SELECT 
+	ConfigSetupHeaderId = 1, 
+	PropertyName = 'ProcessLateRestdayApproval', 
+	LabelName = 'Process late Restday Approval', 
+	PropertyValue = '', 
+	Type = 'checkbox', 
+	Source = '', 
+	[Group] = 3, 
+	Subgroup = 0, 
+	SortOrder = 5, 
+	Alignment = ''
+END
+
+IF NOT EXISTS(SELECT * FROM maintenance.ConfigSetupDetail WHERE PropertyName = 'ProcessLateRestdayApprovalEarning')
+BEGIN
+	INSERT INTO maintenance.ConfigSetupDetail(
+		ConfigSetupHeaderId, PropertyName, LabelName, PropertyValue, Type, Source, [Group], Subgroup, SortOrder, Alignment)
+	SELECT 
+	ConfigSetupHeaderId = 1, 
+	PropertyName = 'ProcessLateRestdayApprovalEarning', 
+	LabelName = '', 
+	PropertyValue = '', 
+	Type = 'dropdownList', 
+	Source = '$table: compben.EarningDeduction WHERE (EarningDeduction.MappedToId IS NULL OR EarningDeduction.MappedToId = 0) AND TypeId = 1,EarningDeductionId,Code', 
+	[Group] = 3, 
+	Subgroup = 0, 
+	SortOrder = 6, 
+	Alignment = ''
+END
+
+IF NOT EXISTS(SELECT * FROM maintenance.ConfigSetupDetail WHERE PropertyName = 'ProcessLateHolidayApproval')
+BEGIN
+	INSERT INTO maintenance.ConfigSetupDetail(
+		ConfigSetupHeaderId, PropertyName, LabelName, PropertyValue, Type, Source, [Group], Subgroup, SortOrder, Alignment)
+	SELECT 
+	ConfigSetupHeaderId = 1, 
+	PropertyName = 'ProcessLateHolidayApproval', 
+	LabelName = 'Process late Holiday Approval', 
+	PropertyValue = '', 
+	Type = 'checkbox', 
+	Source = '', 
+	[Group] = 3, 
+	Subgroup = 0, 
+	SortOrder = 7, 
+	Alignment = ''
+END
+
+IF NOT EXISTS(SELECT * FROM maintenance.ConfigSetupDetail WHERE PropertyName = 'ProcessLateHolidayApprovalEarning')
+BEGIN
+	INSERT INTO maintenance.ConfigSetupDetail(
+		ConfigSetupHeaderId, PropertyName, LabelName, PropertyValue, Type, Source, [Group], Subgroup, SortOrder, Alignment)
+	SELECT 
+	ConfigSetupHeaderId = 1, 
+	PropertyName = 'ProcessLateHolidayApprovalEarning', 
+	LabelName = '', 
+	PropertyValue = '', 
+	Type = 'dropdownList', 
+	Source = '$table: compben.EarningDeduction WHERE (EarningDeduction.MappedToId IS NULL OR EarningDeduction.MappedToId = 0) AND TypeId = 1,EarningDeductionId,Code', 
+	[Group] = 3, 
+	Subgroup = 0, 
+	SortOrder = 8, 
+	Alignment = ''
+END
+
+UPDATE maintenance.ConfigSetupHeader SET Panel3 = 'Holiday and Rest Day;8;2' WHERE ConfigSetupHeaderId = 1

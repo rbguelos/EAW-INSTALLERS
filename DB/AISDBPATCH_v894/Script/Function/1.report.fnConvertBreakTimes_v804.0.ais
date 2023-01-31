@@ -1,0 +1,58 @@
+GO
+/****** Object:  UserDefinedFunction [report].[fnConvertBreaktimes]    Script Date: 12/11/2019 2:49:55 PM ******/
+IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[report].[fnConvertBreaktimes]') AND type in (N'FN', N'IF', N'TF', N'FS', N'FT'))
+DROP FUNCTION [report].[fnConvertBreaktimes]
+GO
+/****** Object:  UserDefinedFunction [report].[fnConvertBreaktimes]    Script Date: 12/11/2019 2:49:55 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+-- =============================================
+-- Author:		AGC
+-- Create date: 01/04/2019
+-- Description:	CONVERT BREAKTIMES TO STRING AND CONCAT FOR SCHEDULE REPORTS
+-- =============================================
+
+CREATE FUNCTION [report].[fnConvertBreaktimes]
+(
+	--DECLARE
+	@WorkDate DATETIME = '01/01/1900'
+	,@BreakTimeActualValue DATETIME = '1/1/1900'
+	,@BreakTimeStart DATETIME = '1/1/1900'
+	,@BreakTimeEnd DATETIME = '1/1/1900'
+)
+RETURNS VARCHAR(500)
+AS
+BEGIN
+
+DECLARE @RETVAL VARCHAR(500) = ''
+	
+		SET @RETVAL = 
+		CASE WHEN FORMAT(@BreakTimeStart,N'hh:mm tt') <> FORMAT(@BreakTimeEnd,N'hh:mm tt') THEN 
+		(
+			CASE WHEN YEAR(@BreakTimeActualValue) > '1900'
+			THEN 
+			(
+				CASE WHEN CONVERT(VARCHAR,@WorkDate,101) <> CONVERT(VARCHAR, @BreakTimeActualValue, 101) 
+				THEN FORMAT(@BreakTimeActualValue, N'MM/dd/yyyy hh:mm tt') 
+				ELSE FORMAT(@BreakTimeActualValue, N'hh:mm tt') 
+				END
+			)
+			ELSE 
+			(
+				CASE WHEN CAST(@BreakTimeActualValue AS INT) > 0
+				/*CAST(CAST(FORMAT(@BreakTimeActualValue,N'MM/d/yyyy') AS DATETIME) AS INT) > 0 */
+				THEN FORMAT((@WorkDate + @BreakTimeActualValue),N'MM/dd/yyyy hh:mm tt') 
+				ELSE FORMAT(@BreakTimeActualValue,N'hh:mm tt') 
+				END
+			)
+			END
+		) 
+		ELSE '' END
+
+		--SELECT @RETVAL
+		RETURN @RETVAL;
+END
+GO

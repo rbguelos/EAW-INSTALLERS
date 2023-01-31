@@ -1,0 +1,26 @@
+EXEC [admin].[UpdateListColumns]
+	@ListName = 'Work Schedule List',
+	@ListType = 'WorkScheduleColumnList',
+	@DefaultColumn = 'WorkDate|EmployeeNo|EmployeeName|Department|Position|Remarks|FixedSchedule|Days|Shiftcode|WorkSchedule|WorkingHours|LunchSchedule|FirstBreakSchedule|SecondBreakSchedule|ThirdBreakSchedule|CreateUser|CreateDate'
+
+EXEC [maintenance].[UpdateJQListColumns]
+	@ListType = 'WorkScheduleColumnList',
+	@ColumnType = 'label',
+	@Name = 'FixedSchedule',
+	@Label = 'Fixed Schedule',
+	@Width = '100',
+	@Align = '',
+	@Formatter = '',
+	@FormatterOption = '',
+	@Others = ''
+
+EXEC [maintenance].[UpdateJQListColumns]
+	@ListType = 'WorkScheduleColumnList',
+	@ColumnType = 'amount',
+	@Name = 'WorkingHours',
+	@Label = 'Work Hours',
+	@Width = '80',
+	@Align = 'right',
+	@Formatter = '',
+	@FormatterOption = '',
+	@Others = ''

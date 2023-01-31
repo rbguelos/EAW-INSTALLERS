@@ -1,0 +1,11 @@
+UPDATE security.Module_Forms 
+SET AccessTypeId = '1,5' 
+WHERE ModuleFormId = 272
+
+UPDATE security.UserSecurity_Detail 
+SET AccessTypeId = '1,5'
+WHERE ModuleFormId = 272
+
+UPDATE security.Role_FormAccess
+SET AccessTypeId = '1,5'
+WHERE ModuleFormId = 272

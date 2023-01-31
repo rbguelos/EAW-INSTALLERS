@@ -1,0 +1,129 @@
+/****** Object:  Table [maintenance].[DOLERate]    Script Date: 2/21/2019 1:29:44 PM ******/
+DROP TABLE [maintenance].[DOLERate]
+GO
+/****** Object:  Table [maintenance].[DOLERate]    Script Date: 2/21/2019 1:29:44 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+SET ANSI_PADDING ON
+GO
+CREATE TABLE [maintenance].[DOLERate](
+	[DOLERateId] [bigint] IDENTITY(1,1) NOT NULL,
+	[PropertyName] [varchar](150) NULL,
+	[Rate] [decimal](18, 4) NULL,
+	[EffectiveDate] [datetime] NULL,
+	[CreateId] [bigint] NULL,
+	[CreateDate] [datetime] NULL,
+	[LastUpdateId] [bigint] NULL,
+	[LastUpdateDate] [datetime] NULL,
+ CONSTRAINT [PK_DOLERate] PRIMARY KEY CLUSTERED 
+(
+	[DOLERateId] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY]
+
+GO
+SET ANSI_PADDING OFF
+GO
+SET IDENTITY_INSERT [maintenance].[DOLERate] ON 
+
+GO
+INSERT [maintenance].[DOLERate] ([DOLERateId], [PropertyName], [Rate], [EffectiveDate], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (1, N'TaxTaxExemptLimitForBenefits', CAST(82000.0000 AS Decimal(18, 4)), CAST(N'2016-01-01 00:00:00.000' AS DateTime), NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[DOLERate] ([DOLERateId], [PropertyName], [Rate], [EffectiveDate], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (2, N'RRRestDay', CAST(1.3000 AS Decimal(18, 4)), CAST(N'2016-01-01 00:00:00.000' AS DateTime), NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[DOLERate] ([DOLERateId], [PropertyName], [Rate], [EffectiveDate], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (3, N'RRSpecialHoliday', CAST(1.3000 AS Decimal(18, 4)), CAST(N'2016-01-01 00:00:00.000' AS DateTime), NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[DOLERate] ([DOLERateId], [PropertyName], [Rate], [EffectiveDate], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (4, N'RRSpecialRestDay', CAST(1.5000 AS Decimal(18, 4)), CAST(N'2016-01-01 00:00:00.000' AS DateTime), NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[DOLERate] ([DOLERateId], [PropertyName], [Rate], [EffectiveDate], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (5, N'RRHoliday', CAST(2.0000 AS Decimal(18, 4)), CAST(N'2016-01-01 00:00:00.000' AS DateTime), NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[DOLERate] ([DOLERateId], [PropertyName], [Rate], [EffectiveDate], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (6, N'RRHolidayRestDay', CAST(2.6000 AS Decimal(18, 4)), CAST(N'2016-01-01 00:00:00.000' AS DateTime), NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[DOLERate] ([DOLERateId], [PropertyName], [Rate], [EffectiveDate], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (7, N'ROROrdinaryOT', CAST(1.2500 AS Decimal(18, 4)), CAST(N'2016-01-01 00:00:00.000' AS DateTime), NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[DOLERate] ([DOLERateId], [PropertyName], [Rate], [EffectiveDate], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (8, N'RORRestDayOT', CAST(1.6900 AS Decimal(18, 4)), CAST(N'2016-01-01 00:00:00.000' AS DateTime), NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[DOLERate] ([DOLERateId], [PropertyName], [Rate], [EffectiveDate], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (9, N'RORSpecialHoliday OT', CAST(1.6900 AS Decimal(18, 4)), CAST(N'2016-01-01 00:00:00.000' AS DateTime), NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[DOLERate] ([DOLERateId], [PropertyName], [Rate], [EffectiveDate], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (10, N'RORSpecialRest Day', CAST(1.9500 AS Decimal(18, 4)), CAST(N'2016-01-01 00:00:00.000' AS DateTime), NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[DOLERate] ([DOLERateId], [PropertyName], [Rate], [EffectiveDate], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (11, N'RORHolidayOT', CAST(2.6000 AS Decimal(18, 4)), CAST(N'2016-01-01 00:00:00.000' AS DateTime), NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[DOLERate] ([DOLERateId], [PropertyName], [Rate], [EffectiveDate], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (12, N'RORHolidayRestDayOT', CAST(3.3800 AS Decimal(18, 4)), CAST(N'2016-01-01 00:00:00.000' AS DateTime), NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[DOLERate] ([DOLERateId], [PropertyName], [Rate], [EffectiveDate], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (13, N'RNROrdinaryNS', CAST(1.1000 AS Decimal(18, 4)), CAST(N'2016-01-01 00:00:00.000' AS DateTime), NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[DOLERate] ([DOLERateId], [PropertyName], [Rate], [EffectiveDate], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (14, N'RNRRest DayNS', CAST(1.4300 AS Decimal(18, 4)), CAST(N'2016-01-01 00:00:00.000' AS DateTime), NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[DOLERate] ([DOLERateId], [PropertyName], [Rate], [EffectiveDate], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (15, N'RNRSpecialHolidayNS', CAST(1.4300 AS Decimal(18, 4)), CAST(N'2016-01-01 00:00:00.000' AS DateTime), NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[DOLERate] ([DOLERateId], [PropertyName], [Rate], [EffectiveDate], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (16, N'RNRSpecialRestDay', CAST(1.6500 AS Decimal(18, 4)), CAST(N'2016-01-01 00:00:00.000' AS DateTime), NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[DOLERate] ([DOLERateId], [PropertyName], [Rate], [EffectiveDate], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (17, N'RNRHolidayNS', CAST(2.2000 AS Decimal(18, 4)), CAST(N'2016-01-01 00:00:00.000' AS DateTime), NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[DOLERate] ([DOLERateId], [PropertyName], [Rate], [EffectiveDate], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (18, N'RNRHolidayRestDayNS', CAST(2.8600 AS Decimal(18, 4)), CAST(N'2016-01-01 00:00:00.000' AS DateTime), NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[DOLERate] ([DOLERateId], [PropertyName], [Rate], [EffectiveDate], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (19, N'NOROrdinaryNSOT', CAST(1.3800 AS Decimal(18, 4)), CAST(N'2016-01-01 00:00:00.000' AS DateTime), NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[DOLERate] ([DOLERateId], [PropertyName], [Rate], [EffectiveDate], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (20, N'NORRestDayNSOT', CAST(1.8600 AS Decimal(18, 4)), CAST(N'2016-01-01 00:00:00.000' AS DateTime), NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[DOLERate] ([DOLERateId], [PropertyName], [Rate], [EffectiveDate], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (21, N'NORSpecialHolidayNSOT', CAST(1.8600 AS Decimal(18, 4)), CAST(N'2016-01-01 00:00:00.000' AS DateTime), NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[DOLERate] ([DOLERateId], [PropertyName], [Rate], [EffectiveDate], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (22, N'NORSpecialRestDayNSOT', CAST(2.1500 AS Decimal(18, 4)), CAST(N'2016-01-01 00:00:00.000' AS DateTime), NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[DOLERate] ([DOLERateId], [PropertyName], [Rate], [EffectiveDate], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (23, N'NORHolidayNSOT', CAST(2.8600 AS Decimal(18, 4)), CAST(N'2016-01-01 00:00:00.000' AS DateTime), NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[DOLERate] ([DOLERateId], [PropertyName], [Rate], [EffectiveDate], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (24, N'NORHolidayRestDayNSOT', CAST(3.7200 AS Decimal(18, 4)), CAST(N'2016-01-01 00:00:00.000' AS DateTime), NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[DOLERate] ([DOLERateId], [PropertyName], [Rate], [EffectiveDate], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (25, N'TaxTaxExemptLimitForBenefits', CAST(90000.0000 AS Decimal(18, 4)), CAST(N'2018-06-01 00:00:00.000' AS DateTime), NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[DOLERate] ([DOLERateId], [PropertyName], [Rate], [EffectiveDate], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (26, N'RRRestDay', CAST(1.3000 AS Decimal(18, 4)), CAST(N'2018-06-01 00:00:00.000' AS DateTime), NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[DOLERate] ([DOLERateId], [PropertyName], [Rate], [EffectiveDate], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (27, N'RRSpecialHoliday', CAST(1.3000 AS Decimal(18, 4)), CAST(N'2018-06-01 00:00:00.000' AS DateTime), NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[DOLERate] ([DOLERateId], [PropertyName], [Rate], [EffectiveDate], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (28, N'RRSpecialRestDay', CAST(1.5000 AS Decimal(18, 4)), CAST(N'2018-06-01 00:00:00.000' AS DateTime), NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[DOLERate] ([DOLERateId], [PropertyName], [Rate], [EffectiveDate], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (29, N'RRHoliday', CAST(2.0000 AS Decimal(18, 4)), CAST(N'2018-06-01 00:00:00.000' AS DateTime), NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[DOLERate] ([DOLERateId], [PropertyName], [Rate], [EffectiveDate], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (30, N'RRHolidayRestDay', CAST(2.6000 AS Decimal(18, 4)), CAST(N'2018-06-01 00:00:00.000' AS DateTime), NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[DOLERate] ([DOLERateId], [PropertyName], [Rate], [EffectiveDate], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (31, N'ROROrdinaryOT', CAST(1.2500 AS Decimal(18, 4)), CAST(N'2018-06-01 00:00:00.000' AS DateTime), NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[DOLERate] ([DOLERateId], [PropertyName], [Rate], [EffectiveDate], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (32, N'RORRestDayOT', CAST(1.6900 AS Decimal(18, 4)), CAST(N'2018-06-01 00:00:00.000' AS DateTime), NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[DOLERate] ([DOLERateId], [PropertyName], [Rate], [EffectiveDate], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (33, N'RORSpecialHoliday OT', CAST(1.6900 AS Decimal(18, 4)), CAST(N'2018-06-01 00:00:00.000' AS DateTime), NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[DOLERate] ([DOLERateId], [PropertyName], [Rate], [EffectiveDate], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (34, N'RORSpecialRest Day', CAST(1.9500 AS Decimal(18, 4)), CAST(N'2018-06-01 00:00:00.000' AS DateTime), NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[DOLERate] ([DOLERateId], [PropertyName], [Rate], [EffectiveDate], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (35, N'RORHolidayOT', CAST(2.6000 AS Decimal(18, 4)), CAST(N'2018-06-01 00:00:00.000' AS DateTime), NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[DOLERate] ([DOLERateId], [PropertyName], [Rate], [EffectiveDate], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (36, N'RORHolidayRestDayOT', CAST(3.3800 AS Decimal(18, 4)), CAST(N'2018-06-01 00:00:00.000' AS DateTime), NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[DOLERate] ([DOLERateId], [PropertyName], [Rate], [EffectiveDate], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (37, N'RNROrdinaryNS', CAST(1.1000 AS Decimal(18, 4)), CAST(N'2018-06-01 00:00:00.000' AS DateTime), NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[DOLERate] ([DOLERateId], [PropertyName], [Rate], [EffectiveDate], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (38, N'RNRRest DayNS', CAST(1.4300 AS Decimal(18, 4)), CAST(N'2018-06-01 00:00:00.000' AS DateTime), NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[DOLERate] ([DOLERateId], [PropertyName], [Rate], [EffectiveDate], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (39, N'RNRSpecialHolidayNS', CAST(1.4300 AS Decimal(18, 4)), CAST(N'2018-06-01 00:00:00.000' AS DateTime), NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[DOLERate] ([DOLERateId], [PropertyName], [Rate], [EffectiveDate], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (40, N'RNRSpecialRestDay', CAST(1.6500 AS Decimal(18, 4)), CAST(N'2018-06-01 00:00:00.000' AS DateTime), NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[DOLERate] ([DOLERateId], [PropertyName], [Rate], [EffectiveDate], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (41, N'RNRHolidayNS', CAST(2.2000 AS Decimal(18, 4)), CAST(N'2018-06-01 00:00:00.000' AS DateTime), NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[DOLERate] ([DOLERateId], [PropertyName], [Rate], [EffectiveDate], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (42, N'RNRHolidayRestDayNS', CAST(2.8600 AS Decimal(18, 4)), CAST(N'2018-06-01 00:00:00.000' AS DateTime), NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[DOLERate] ([DOLERateId], [PropertyName], [Rate], [EffectiveDate], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (43, N'NOROrdinaryNSOT', CAST(1.3750 AS Decimal(18, 4)), CAST(N'2018-06-01 00:00:00.000' AS DateTime), NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[DOLERate] ([DOLERateId], [PropertyName], [Rate], [EffectiveDate], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (44, N'NORRestDayNSOT', CAST(1.8590 AS Decimal(18, 4)), CAST(N'2018-06-01 00:00:00.000' AS DateTime), NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[DOLERate] ([DOLERateId], [PropertyName], [Rate], [EffectiveDate], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (45, N'NORSpecialHolidayNSOT', CAST(1.8590 AS Decimal(18, 4)), CAST(N'2018-06-01 00:00:00.000' AS DateTime), NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[DOLERate] ([DOLERateId], [PropertyName], [Rate], [EffectiveDate], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (46, N'NORSpecialRestDayNSOT', CAST(2.1450 AS Decimal(18, 4)), CAST(N'2018-06-01 00:00:00.000' AS DateTime), NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[DOLERate] ([DOLERateId], [PropertyName], [Rate], [EffectiveDate], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (47, N'NORHolidayNSOT', CAST(2.8600 AS Decimal(18, 4)), CAST(N'2018-06-01 00:00:00.000' AS DateTime), NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[DOLERate] ([DOLERateId], [PropertyName], [Rate], [EffectiveDate], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (48, N'NORHolidayRestDayNSOT', CAST(3.7180 AS Decimal(18, 4)), CAST(N'2018-06-01 00:00:00.000' AS DateTime), NULL, NULL, NULL, NULL)
+GO
+SET IDENTITY_INSERT [maintenance].[DOLERate] OFF
+GO

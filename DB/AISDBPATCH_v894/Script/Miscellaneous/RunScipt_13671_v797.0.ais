@@ -1,0 +1,36 @@
+
+IF NOT EXISTS(SELECT * FROM maintenance.ConfigSetupDetail WHERE PropertyName = 'OTRoundDownMinutes')
+BEGIN
+	INSERT INTO maintenance.ConfigSetupDetail(
+		ConfigSetupHeaderId, PropertyName, LabelName, PropertyValue, Type, Source, [Group], Subgroup, SortOrder, Alignment)
+	SELECT 
+	ConfigSetupHeaderId = 1, 
+	PropertyName = 'OTRoundDownMinutes', 
+	LabelName = 'Round down overtime to [30] minute intervals', 
+	PropertyValue = '', 
+	Type = 'checkbox', 
+	Source = '', 
+	[Group] = 2, 
+	Subgroup = 0, 
+	SortOrder = 13, 
+	Alignment = ''
+END
+
+IF NOT EXISTS(SELECT * FROM maintenance.ConfigSetupDetail WHERE PropertyName = 'ApplyOTRoundDownToHolidayHours')
+BEGIN
+	INSERT INTO maintenance.ConfigSetupDetail(
+		ConfigSetupHeaderId, PropertyName, LabelName, PropertyValue, Type, Source, [Group], Subgroup, SortOrder, Alignment)
+	SELECT 
+	ConfigSetupHeaderId = 1, 
+	PropertyName = 'ApplyOTRoundDownToHolidayHours', 
+	LabelName = 'Apply overtime rounding to 1st 8 hours on Holidays and Restdays', 
+	PropertyValue = '', 
+	Type = 'checkbox', 
+	Source = '', 
+	[Group] = 2, 
+	Subgroup = 0, 
+	SortOrder = 14, 
+	Alignment = ''
+END
+
+UPDATE maintenance.ConfigSetupHeader SET Panel2 = 'Overtime and Undertime;14;2' WHERE ConfigSetupHeaderId = 1

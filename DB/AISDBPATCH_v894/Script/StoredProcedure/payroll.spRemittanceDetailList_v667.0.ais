@@ -1,0 +1,86 @@
+IF NOT OBJECT_ID('[payroll].[spRemittanceDetailList]') IS NULL
+DROP PROCEDURE [payroll].[spRemittanceDetailList]
+GO
+
+/*===========================================*\
+**	   Last Update Date: 03/11/2019
+**	   Last Update By: Michael
+**	   Last DBVersion executed: v667
+\*===========================================*/
+
+CREATE PROCEDURE [payroll].[spRemittanceDetailList]
+(
+	@RemittancePaymentDetailId BIGINT = 0
+)
+AS
+BEGIN
+
+	SET NOCOUNT ON;
+
+	--=========================================================
+	--CONSTANTS
+	DECLARE @RemittanceType_SSS smallint = 1
+	DECLARE @RemittanceType_PHILHEALTH smallint = 2
+	DECLARE @RemittanceType_PAGIBIG smallint = 3
+	DECLARE @RemittanceType_WHT smallint = 4
+	DECLARE @RemittanceType_EWT smallint = 5
+	DECLARE @RemittanceType_FIT smallint = 6
+	--=========================================================
+
+	SELECT 
+	*,
+	EE_Total = SUM(RP.EE) OVER (PARTITION BY RP.RemittancePaymentDetailId),
+	ER_Total = SUM(RP.ER) OVER (PARTITION BY RP.RemittancePaymentDetailId),
+	EC_Total = SUM(RP.EC) OVER (PARTITION BY RP.RemittancePaymentDetailId)
+	FROM (
+		SELECT 
+			 RemittanceDetailId = RemittanceDetail.RemittanceDetailId
+			,RemittancePaymentDetailId = RemittanceDetail.RemittancePaymentDetailId
+			,ProfileId = RemittanceDetail.ProfileId
+			,EmployeeName = EMP.FullNameMiddleInitialOnly
+			,RemittancePaymentDetail.RemittanceType 
+			,MemberNumber = 
+			(
+				CASE RemittancePaymentDetail.RemittanceType 
+					--//==SSS NUMBER
+					WHEN @RemittanceType_SSS
+						THEN COALESCE(EMP.SSS,'')
+					--//==PHILHEALTH NUMBER
+					WHEN @RemittanceType_PHILHEALTH
+						THEN COALESCE(EMP.PHILHEALTH,'')
+					--//==PAGIBIG NUMBER
+					WHEN @RemittanceType_PAGIBIG
+						THEN COALESCE(EMP.PAGIBIG,'')
+					--//==TIN NUMBER
+					WHEN @RemittanceType_WHT
+						THEN COALESCE(EMP.TIN,'')
+					--//==TIN NUMBER
+					WHEN @RemittanceType_EWT
+						THEN COALESCE(EMP.TIN,'')
+					--//==TIN NUMBER
+					WHEN @RemittanceType_FIT
+						THEN COALESCE(EMP.TIN,'')
+					--//==ERROR HANDLER
+					ELSE '***NO REMITTANCE TYPE***'
+				END
+			)
+			,IssueDate = COALESCE(RemittanceDetail.IssueDate,'')
+			--=====================================================
+			,EE = COALESCE(RemittanceDetail.EE,0)--== EMPLOYEE SHARE
+			,ER = COALESCE(RemittanceDetail.ER,0)--== EMPLOYER SHARE
+			,EC = COALESCE(RemittanceDetail.EC,0)--== EMPLOYER CONTRIBUTION
+			,TOTALCONTRIBUTION =
+			(
+				COALESCE(RemittanceDetail.EE,0)+ COALESCE(RemittanceDetail.ER,0) + COALESCE(RemittanceDetail.EC,0)
+			)
+
+		FROM payroll.RemittanceDetail  
+			JOIN payroll.RemittancePaymentDetail ON RemittanceDetail.RemittancePaymentDetailId = RemittancePaymentDetail.RemittancePaymentDetailId
+			JOIN employee.FN_GETEmployeeInformation() EMP ON RemittanceDetail.ProfileId = EMP.ProfileId	
+		WHERE		
+			(RemittancePaymentDetail.RemittancePaymentDetailId = COALESCE(@RemittancePaymentDetailId,0) )
+	) RP
+
+END
+
+

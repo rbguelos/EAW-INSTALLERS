@@ -1,0 +1,566 @@
+IF NOT OBJECT_ID('[dbo].[vwEmployeeTimeEntryTestingTool]') IS NULL
+DROP VIEW [dbo].[vwEmployeeTimeEntryTestingTool]
+GO
+
+
+CREATE VIEW [dbo].[vwEmployeeTimeEntryTestingTool]
+AS
+
+SELECT 
+    WorkDateRemarks = 
+    (
+	   CASE 
+		  WHEN (SUM(ISNULL([Absent],0)) > 0 AND (ISNULL(LeaveHrs.VLHrs,0) + ISNULL(LeaveHrs.SLHrs,0) + ISNULL(LeaveHrs.OtherLeave,0) + ISNULL(LeaveHrs.LWOP,0)) <= 0) AND (ISNULL(TE.Remarks,'') = '') 
+			 THEN 'Absent'
+		  WHEN ISNULL(TE.TimeOffHrs,0) > 0 
+			 THEN CONCAT((CASE ISNULL(ETimeOff.OBTypeId,0) WHEN  1 THEN 'OB' WHEN 2 THEN 'Time-off' END),ISNULL('-' + ETimeOff.Remarks,''))
+		  WHEN (ISNULL(LeaveHrs.VLHrs,0) + ISNULL(LeaveHrs.SLHrs,0) + ISNULL(LeaveHrs.OtherLeave,0) + ISNULL(LeaveHrs.LWOP,0)) > 0
+			 THEN CONCAT(LType.LeaveTypeCode,'(',(CAST(ISNULL(LeaveHrs.LWP,0) + ISNULL(LeaveHrs.LWOP,0) AS DECIMAL(18,2))),')', ISNULL('-' + ELeave.Reason,''))
+		  ELSE TE.Remarks
+	   END
+    )
+    ,ExcessTime3 = SUM(ISNULL([ExcessTime],0))
+	/*ADDED BY AGC 11.06.2018: TICKET#12172*/
+    ,ExcessTime = SUM
+	(
+		CASE WHEN (ISNULL(TE.ActualTimeIn,'1/1/1900') = '1/1/1900') OR (ISNULL(TE.ActualTimeOut,'1/1/1900') = '1/1/1900') 
+		THEN 0 
+		ELSE ISNULL([ExcessTime],0) 
+		END
+	),
+	TE.TimeEntryHeaderId,
+	TE.TimeEntryHeaderDetailId,
+	CompanyId = C.CompanyId,
+	TE.ProfileId,
+	TE.Type,
+	StartDate = TEH.StartDate,--(SELECT StartDate FROM attendance.TimeEntryHeader WHERE TimeEntryHeaderId = TE.TimeEntryHeaderId),
+	EndDate = TEH.EndDate,--(SELECT EndDate FROM attendance.TimeEntryHeader WHERE TimeEntryHeaderId = TE.TimeEntryHeaderId),
+	TE.WorkDate,
+	TE.StartTime,
+	TE.EndTime,
+	TE.TimeIn,
+	TE.TimeOut,
+	TE.ActualTimeIn,
+	TE.ActualTimeOut,
+	TE.LunchTime,
+	LunchStartTime = TE.LunchTime,
+	LunchEndTime = DATEADD(HOUR,TE.LunchBreak,TE.LunchTime),
+	TE.LunchBreak,
+	TE.WeekDay,
+	TE.DayOfWeek,
+	TE.OTStartTime,
+	TE.OTEndTime,
+	TE.OTHrs,
+	TE.OTNSHrs,
+	TE.TimeOffReason,
+	TE.TimeOffEffect,
+	TE.TimeOffHrs,
+	OBRemarks = ETimeOff.Remarks,
+	TE.WorkingHours,
+	Remarks2 = ISNULL(TE.Remarks,''),
+	TE.LeaveRequestId,
+	TE.LeaveCode,
+	TE.LeaveHrs,
+	TE.AccessId,
+	/*ShiftCode = ISNULL(TE.Type,(SELECT TOP 1 schedule.Shift.Code FROM schedule.Shift where ShiftId = TE.ShiftCodeId)),*/
+	ShiftCode = COALESCE((CASE WHEN TE.ShiftCodeId < 0 THEN 'Other' ELSE TE.Type END),(SELECT TOP 1 schedule.Shift.Code FROM schedule.Shift where ShiftId = TE.ShiftCodeId),''),
+	TE.Break1StartTime,
+	TE.Break1EndTime,
+	TE.Break2StartTime,
+	TE.Break2EndTime,
+	TE.Break3StartTime,
+	TE.Break3EndTime,
+	TE.ShiftCodeId,
+	TE.WorkScheduleId,
+	TE.OvertimeId,
+	TE.OfficialBussinessId,
+	TE.BranchId,
+	TE.DepartmentId,
+	TE.OfficeId,
+	TE.UnitId,
+	TE.DivisionId,
+	TE.GroupId,
+	TE.DistrictId,
+	TE.LocationId,
+	TE.ProjectProfileId,
+	TE.CostCenterId,
+	TE.LineId,
+	TE.TeamId,
+	TE.EmployeeTypeId,
+	TE.JobRankId,
+	TE.JobGradeId,
+	TE.JobLevelId,
+	TE.PositionId,
+
+	/*ABDIEL:05192017*/
+	ETimeOff.OBTypeId,
+	ETimeOffStatusId = ETimeOff.StatusId,
+	LType.LeaveTypeCode,
+
+	[Late] = SUM(ISNULL([Late], 0)),
+	[Undertime] = SUM(ISNULL([Undertime], 0)),
+	[Absent] = SUM(ISNULL([Absent], 0)),
+	[LateCount] = CASE WHEN SUM(ISNULL([Late], 0)) > 0 THEN 1 ELSE 0 END,
+	[UndertimeCount] = CASE WHEN SUM(ISNULL([Undertime], 0)) > 0 THEN 1 ELSE 0 END,
+	[AbsentCount] = CASE WHEN SUM(ISNULL([Absent], 0)) > 0 THEN 1 ELSE 0 END,
+	[UndertimeReason],
+	[LateReason] = cast('' as varchar(250)),
+	[AbsentReason] = cast('' as varchar(250)),
+
+	--update values of these fields
+	[VLHrs]			= (ISNULL(LeaveHrs.VLHrs,0)),--ISNULL((SELECT top 1 lr.NoOfHours FROM attendance.TimeEntryHeaderDetail t  INNER JOIN report.vwLeaveRequest lr on lr.LeaveRequestId = t.LeaveRequestId and lr.LeaveTypeCode like 'VL%' where  t.TimeEntryHeaderDetailId = TE.TimeEntryHeaderDetailId),0),
+	[SLHrs]			= (ISNULL(LeaveHrs.SLHrs,0)),--ISNULL((SELECT top 1 lr.NoOfHours FROM attendance.TimeEntryHeaderDetail t  INNER JOIN report.vwLeaveRequest lr on lr.LeaveRequestId = t.LeaveRequestId and lr.LeaveTypeCode like 'SL%' where  t.TimeEntryHeaderDetailId = TE.TimeEntryHeaderDetailId),0),
+	[OtherLeave]	= (ISNULL(LeaveHrs.OtherLeave,0)),--ISNULL((SELECT top 1 lr.NoOfHours FROM attendance.TimeEntryHeaderDetail t  INNER JOIN report.vwLeaveRequest lr on lr.LeaveRequestId = t.LeaveRequestId and lr.LeaveTypeCode not like 'SL%' and lr.LeaveTypeCode not like 'VL%' where  t.TimeEntryHeaderDetailId = TE.TimeEntryHeaderDetailId),0),
+	[LWOP]		    = (ISNULL(LeaveHrs.LWOP,0)),
+	[LWP]		    = (ISNULL(LeaveHrs.LWP,0)),
+	[HolidayHrs]	= SUM(ISNULL([HolidayHrs],0)),
+
+	[ExcessTime2]		= SUM(ISNULL([OROT], 0) + 
+						 ISNULL([REOT], 0) + 
+						 ISNULL([HOOT], 0) + 
+						 ISNULL([SPOT], 0) + 
+						 ISNULL([HROT], 0) + 
+						 ISNULL([SROT], 0) + 
+						 ISNULL([CompressedOTHrs], 0) + 
+						 ISNULL([ORNSOT], 0) + 
+						 ISNULL([RENSOT], 0) + 
+						 ISNULL([HONSOT], 0) + 
+						 ISNULL([SPNSOT], 0) +
+						 ISNULL([HRNSOT], 0) + 
+						 ISNULL([SRNSOT], 0)),
+
+	[ApprovedRegularOT] = SUM(CASE WHEN TE.RegularOTStatusId IN (2,98) THEN ISNULL([OROT], 0)+
+															  ISNULL([REOT], 0)+
+															  ISNULL([HOOT], 0)+
+															  ISNULL([SPOT], 0)+
+															  ISNULL([HROT], 0)+
+															  ISNULL([SROT], 0) ELSE 0 END + ISNULL([CompressedOTHrs], 0)),--CompressedOTHrs is always approved hours
+
+	[ApprovedNSOT]		= SUM(CASE WHEN TE.NightShiftOTStatusId IN (2,98) THEN ISNULL([ORNSOT], 0)+
+																ISNULL([RENSOT], 0)+
+																ISNULL([HONSOT], 0)+
+																ISNULL([SPNSOT], 0)+
+																ISNULL([HRNSOT], 0)+
+																ISNULL([SRNSOT], 0) ELSE 0 END),--SUM(ISNULL([ApprovedNSOT],0)),
+
+	[ApproveNS]	     = SUM(CASE WHEN TE.NightShiftStatusId IN (2,98) THEN ISNULL([ORNS], 0)+
+															   ISNULL([RENS], 0)+
+															   ISNULL([HONS], 0)+
+															   ISNULL([SPNS], 0)+
+															   ISNULL([HRNS], 0)+
+															   ISNULL([SRNS], 0) ELSE 0 END),
+
+	 [ApproveHolidayRestDay] = SUM(CASE WHEN TE.RegularStatusId IN (2,98) THEN ISNULL([RE], 0)+
+																ISNULL([HO], 0)+
+																ISNULL([SP], 0)+
+																ISNULL([HR], 0)+
+																ISNULL([SR], 0) ELSE 0 END),
+
+	 [ApproveHolidayRestDayNS] = SUM(CASE WHEN TE.RegularStatusId IN (2,98) THEN ISNULL([RENS], 0)+
+																ISNULL([HONS], 0)+
+																ISNULL([SPNS], 0)+
+																ISNULL([HRNS], 0)+
+																ISNULL([SRNS], 0) ELSE 0 END),
+	[TotalNSHrs] = SUM(ISNULL([ORNS], 0)
+				   + ISNULL([RENS], 0)
+				   + ISNULL([HONS], 0)
+				   + ISNULL([SPNS], 0)
+				   + ISNULL([HRNS], 0)
+				   + ISNULL([SRNS], 0)),
+
+	[OR] = SUM(ISNULL([OR], 0)) ,
+	[RE] = SUM(ISNULL([RE], 0)) ,
+	[HO] = SUM(ISNULL([HO], 0)) ,
+	[SP] = SUM(ISNULL([SP], 0)) ,
+	[HR] = SUM(ISNULL([HR], 0)) ,
+	[SR] = SUM(ISNULL([SR], 0)) ,
+
+	/*ADDED BY ABDIEL 03.09.2018*/
+	[ApprovedOR] = SUM(CASE WHEN TE.RegularStatusId IN (2,98) THEN ISNULL([OR], 0) ELSE 0 END) ,
+	[ApprovedRE] = SUM(CASE WHEN TE.RegularStatusId IN (2,98) THEN ISNULL([RE], 0) ELSE 0 END) ,
+	[ApprovedHO] = SUM(CASE WHEN TE.RegularStatusId IN (2,98) THEN ISNULL([HO], 0) ELSE 0 END) ,
+	[ApprovedSP] = SUM(CASE WHEN TE.RegularStatusId IN (2,98) THEN ISNULL([SP], 0) ELSE 0 END) ,
+	[ApprovedHR] = SUM(CASE WHEN TE.RegularStatusId IN (2,98) THEN ISNULL([HR], 0) ELSE 0 END) ,
+	[ApprovedSR] = SUM(CASE WHEN TE.RegularStatusId IN (2,98) THEN ISNULL([SR], 0) ELSE 0 END) ,
+
+	[ORNS] = SUM(ISNULL([ORNS], 0)),
+	[RENS] = SUM(ISNULL([RENS], 0)),
+	[HONS] = SUM(ISNULL([HONS], 0)),
+	[SPNS] = SUM(ISNULL([SPNS], 0)),
+	[HRNS] = SUM(ISNULL([HRNS], 0)),
+	[SRNS] = SUM(ISNULL([SRNS], 0)),
+
+	/*ADDED BY ABDIEL 03.09.2018*/
+	[ApprovedORNS] = SUM(CASE WHEN TE.NightShiftStatusId IN (2,98) THEN ISNULL([ORNS], 0) ELSE 0 END),
+	[ApprovedRENS] = SUM(CASE WHEN TE.NightShiftStatusId IN (2,98) THEN ISNULL([RENS], 0) ELSE 0 END),
+	[ApprovedHONS] = SUM(CASE WHEN TE.NightShiftStatusId IN (2,98) THEN ISNULL([HONS], 0) ELSE 0 END),
+	[ApprovedSPNS] = SUM(CASE WHEN TE.NightShiftStatusId IN (2,98) THEN ISNULL([SPNS], 0) ELSE 0 END),
+	[ApprovedHRNS] = SUM(CASE WHEN TE.NightShiftStatusId IN (2,98) THEN ISNULL([HRNS], 0) ELSE 0 END),
+	[ApprovedSRNS] = SUM(CASE WHEN TE.NightShiftStatusId IN (2,98) THEN ISNULL([SRNS], 0) ELSE 0 END),
+
+	[OROT] = SUM(ISNULL([OROT], 0) + ISNULL([CompressedOTHrs], 0)),
+	[REOT] = SUM(ISNULL([REOT], 0)),
+	[HOOT] = SUM(ISNULL([HOOT], 0)),
+	[SPOT] = SUM(ISNULL([SPOT], 0)),
+	[HROT] = SUM(ISNULL([HROT], 0)),
+	[SROT] = SUM(ISNULL([SROT], 0)),
+
+	/*ADDED BY ABDIEL 03.09.2018*/
+	[ApprovedOROT] = SUM(CASE WHEN TE.RegularOTStatusId IN (2,98) THEN ISNULL([OROT], 0) ELSE 0 END + ISNULL([CompressedOTHrs], 0)),
+	[ApprovedREOT] = SUM(CASE WHEN TE.RegularOTStatusId IN (2,98) THEN ISNULL([REOT], 0) ELSE 0 END),
+	[ApprovedHOOT] = SUM(CASE WHEN TE.RegularOTStatusId IN (2,98) THEN ISNULL([HOOT], 0) ELSE 0 END),
+	[ApprovedSPOT] = SUM(CASE WHEN TE.RegularOTStatusId IN (2,98) THEN ISNULL([SPOT], 0) ELSE 0 END),
+	[ApprovedHROT] = SUM(CASE WHEN TE.RegularOTStatusId IN (2,98) THEN ISNULL([HROT], 0) ELSE 0 END),
+	[ApprovedSROT] = SUM(CASE WHEN TE.RegularOTStatusId IN (2,98) THEN ISNULL([SROT], 0) ELSE 0 END),
+
+	[ORNSOT] = SUM(ISNULL([ORNSOT], 0)),
+	[RENSOT] = SUM(ISNULL([RENSOT], 0)),
+	[HONSOT] = SUM(ISNULL([HONSOT], 0)),
+	[SPNSOT] = SUM(ISNULL([SPNSOT], 0)),
+	[HRNSOT] = SUM(ISNULL([HRNSOT], 0)),
+	[SRNSOT] = SUM(ISNULL([SRNSOT], 0)),
+
+	/*ADDED BY ABDIEL 03.09.2018*/
+	[ApprovedORNSOT] = SUM(CASE WHEN TE.NightShiftOTStatusId IN (2,98) THEN ISNULL([ORNSOT], 0) ELSE 0 END),
+	[ApprovedRENSOT] = SUM(CASE WHEN TE.NightShiftOTStatusId IN (2,98) THEN ISNULL([RENSOT], 0) ELSE 0 END),
+	[ApprovedHONSOT] = SUM(CASE WHEN TE.NightShiftOTStatusId IN (2,98) THEN ISNULL([HONSOT], 0) ELSE 0 END),
+	[ApprovedSPNSOT] = SUM(CASE WHEN TE.NightShiftOTStatusId IN (2,98) THEN ISNULL([SPNSOT], 0) ELSE 0 END),
+	[ApprovedHRNSOT] = SUM(CASE WHEN TE.NightShiftOTStatusId IN (2,98) THEN ISNULL([HRNSOT], 0) ELSE 0 END),
+	[ApprovedSRNSOT] = SUM(CASE WHEN TE.NightShiftOTStatusId IN (2,98) THEN ISNULL([SRNSOT], 0) ELSE 0 END),
+
+	[NetHrs] = SUM(CASE WHEN ISNULL(TE.NightShiftStatusId,0) IN (2,98) THEN  ISNULL([ORNS], 0)+
+															   ISNULL([RENS], 0)+
+															   ISNULL([HONS], 0)+
+															   ISNULL([SPNS], 0)+
+															   ISNULL([HRNS], 0)+
+															   ISNULL([SRNS], 0) ELSE 0 END + 
+				   CASE WHEN ISNULL(TE.RegularStatusId,0)    IN (2,98) THEN  ISNULL([RE], 0)+
+															   ISNULL([HO], 0)+
+															   ISNULL([SP], 0)+
+															   ISNULL([HR], 0)+
+															   ISNULL([SR], 0)+ 
+															   ISNULL([OR], 0) ELSE 0 END ),
+    [ActualWorkingHours2] = SUM(ISNULL([ActualWorkingHours],0))
+	/*ADDED BY AGC 11.06.2018: TICKET#12172*/
+	,[ActualWorkingHours] = SUM
+	(
+		CASE WHEN (ISNULL(TE.ActualTimeIn,'1/1/1900') = '1/1/1900') OR (ISNULL(TE.ActualTimeOut,'1/1/1900') = '1/1/1900') 
+		THEN 0 
+		ELSE ISNULL([ActualWorkingHours],0)
+		END
+	)
+
+    ,CompressedOTHrs = SUM(ISNULL(CompressedOTHrs,0))
+    ,LeaveType = TE.LeaveCode
+    ,LeaveRemarks  = ELeave.Reason
+    ,TE.RegularStatusId,TE.NightShiftStatusId,TE.RegularOTStatusId,TE.NightShiftOTStatusId
+    ,UTStatusId = UT.StatusId,UT.UndertimeStatus
+    ,WorkDateRemarks2 = ISNULL(TE.Remarks,'')
+
+    ,[CompanyNonWorkingDay] = SUM(ISNULL([CompanyNonWorkingDay],0))
+    ,[CompanyNonWorkingNightShiftDay] = SUM(ISNULL([CompanyNonWorkingNightShiftDay],0))
+    ,[CompanyNonWorkingDayOT] = SUM(ISNULL([CompanyNonWorkingDayOT],0))
+    ,[CompanyNonWorkingNightShiftDayOT] = SUM(ISNULL([CompanyNonWorkingNightShiftDayOT],0))
+
+    /*ADDED BY ABDIEL 03.09.2018*/
+    ,[ApprovedCompanyNonWorkingDay] = SUM(CASE WHEN TE.RegularStatusId IN (2,98) THEN ISNULL([CompanyNonWorkingDay],0) ELSE 0 END)
+    ,[ApprovedCompanyNonWorkingNightShiftDay] = SUM(CASE WHEN TE.NightShiftStatusId IN (2,98) THEN ISNULL([CompanyNonWorkingNightShiftDay],0) ELSE 0 END)
+    ,[ApprovedCompanyNonWorkingDayOT] = SUM(CASE WHEN TE.RegularOTStatusId IN (2,98) THEN ISNULL([CompanyNonWorkingDayOT],0) ELSE 0 END)
+    ,[ApprovedCompanyNonWorkingNightShiftDayOT] = SUM(CASE WHEN TE.NightShiftOTStatusId IN (2,98) THEN ISNULL([CompanyNonWorkingNightShiftDayOT],0) ELSE 0 END)
+
+    ,[PreRegularOT] = SUM(ISNULL([PreRegularOT],0))
+    ,[PreRestdayOT] = SUM(ISNULL([PreRestdayOT],0))
+    ,[PreHolidayOT] = SUM(ISNULL([PreHolidayOT],0))
+    ,[PreSpecialOT] = SUM(ISNULL([PreSpecialOT],0))
+    ,[PreHolidayRestdayOT] = SUM(ISNULL([PreHolidayRestdayOT],0))
+    ,[PreSpecialRestdayOT] = SUM(ISNULL([PreSpecialRestdayOT],0))
+
+    /*ADDED BY ABDIEL 03.09.2018*/
+    ,[ApprovedPreRegularOT] = SUM(CASE WHEN ISNULL(TE.PreOTStatusId,0) IN (2,98) THEN ISNULL([PreRegularOT],0) ELSE 0 END)
+    ,[ApprovedPreRestdayOT] = SUM(CASE WHEN ISNULL(TE.PreOTStatusId,0) IN (2,98) THEN ISNULL([PreRestdayOT],0) ELSE 0 END)
+    ,[ApprovedPreHolidayOT] = SUM(CASE WHEN ISNULL(TE.PreOTStatusId,0) IN (2,98) THEN ISNULL([PreHolidayOT],0) ELSE 0 END)
+    ,[ApprovedPreSpecialOT] = SUM(CASE WHEN ISNULL(TE.PreOTStatusId,0) IN (2,98) THEN ISNULL([PreSpecialOT],0) ELSE 0 END)
+    ,[ApprovedPreHolidayRestdayOT] = SUM(CASE WHEN ISNULL(TE.PreOTStatusId,0) IN (2,98) THEN ISNULL([PreHolidayRestdayOT],0) ELSE 0 END)
+    ,[ApprovedPreSpecialRestdayOT] = SUM(CASE WHEN ISNULL(TE.PreOTStatusId,0) IN (2,98) THEN ISNULL([PreSpecialRestdayOT],0) ELSE 0 END)
+
+    ,[PreRegularNightshiftOT] = SUM(ISNULL([PreRegularNightshiftOT],0))
+    ,[PreRestdayNightshiftOT] = SUM(ISNULL([PreRestdayNightshiftOT],0))
+    ,[PreHolidayNightshiftOT] = SUM(ISNULL([PreHolidayNightshiftOT],0))
+    ,[PreSpecialNightshiftOT] = SUM(ISNULL([PreSpecialNightshiftOT],0))
+    ,[PreHolidayRestdayNightshiftOT] = SUM(ISNULL([PreHolidayRestdayNightshiftOT],0))
+    ,[PreSpecialRestdayNightshiftOT] = SUM(ISNULL([PreSpecialRestdayNightshiftOT],0))
+
+    /*ADDED BY ABDIEL 03.09.2018*/
+    ,[ApprovedPreRegularNightshiftOT] = SUM(CASE WHEN ISNULL(TE.PreOTStatusId,0) IN (2,98) THEN ISNULL([PreRegularNightshiftOT],0) ELSE 0 END)
+    ,[ApprovedPreRestdayNightshiftOT] = SUM(CASE WHEN ISNULL(TE.PreOTStatusId,0) IN (2,98) THEN ISNULL([PreRestdayNightshiftOT],0) ELSE 0 END)
+    ,[ApprovedPreHolidayNightshiftOT] = SUM(CASE WHEN ISNULL(TE.PreOTStatusId,0) IN (2,98) THEN ISNULL([PreHolidayNightshiftOT],0) ELSE 0 END)
+    ,[ApprovedPreSpecialNightshiftOT] = SUM(CASE WHEN ISNULL(TE.PreOTStatusId,0) IN (2,98) THEN ISNULL([PreSpecialNightshiftOT],0) ELSE 0 END)
+    ,[ApprovedPreHolidayRestdayNightshiftOT] = SUM(CASE WHEN ISNULL(TE.PreOTStatusId,0) IN (2,98) THEN ISNULL([PreHolidayRestdayNightshiftOT],0) ELSE 0 END)
+    ,[ApprovedPreSpecialRestdayNightshiftOT] = SUM(CASE WHEN ISNULL(TE.PreOTStatusId,0) IN (2,98) THEN ISNULL([PreSpecialRestdayNightshiftOT],0) ELSE 0 END)
+
+    ,[ApprovePreshiftOT] = SUM(CASE WHEN ISNULL(TE.PreOTStatusId,0) IN (2,98) THEN	   ISNULL([PreRegularOT], 0) +
+																	   ISNULL([PreRestdayOT], 0) +
+																	   ISNULL([PreHolidayOT], 0) +
+																	   ISNULL([PreSpecialOT], 0) +
+																	   ISNULL([PreHolidayRestdayOT], 0) +
+																	   ISNULL([PreSpecialRestdayOT], 0) ELSE 0 END)
+
+    ,[ApprovePreshiftNSOT] = SUM(CASE WHEN ISNULL(TE.PreOTStatusId,0) IN (2,98) THEN ISNULL([PreRegularNightshiftOT], 0) +
+																	   ISNULL([PreRestdayNightshiftOT], 0) +
+																	   ISNULL([PreHolidayNightshiftOT], 0) +
+																	   ISNULL([PreSpecialNightshiftOT], 0) +
+																	   ISNULL([PreHolidayRestdayNightshiftOT], 0) +
+																	   ISNULL([PreSpecialRestdayNightshiftOT], 0) ELSE 0 END)
+
+    ,[TotalPreshiftOT] = SUM(ISNULL([PreRegularOT], 0) +
+							 ISNULL([PreRestdayOT], 0) +
+							 ISNULL([PreHolidayOT], 0) +
+							 ISNULL([PreSpecialOT], 0) +
+							 ISNULL([PreHolidayRestdayOT], 0) +
+							 ISNULL([PreSpecialRestdayOT], 0))
+
+    ,[TotalPreshiftNSOT] = SUM(ISNULL([PreRegularNightshiftOT], 0) +
+							   ISNULL([PreRestdayNightshiftOT], 0) +
+							   ISNULL([PreHolidayNightshiftOT], 0) +
+							   ISNULL([PreSpecialNightshiftOT], 0) +
+							   ISNULL([PreHolidayRestdayNightshiftOT], 0) +
+							   ISNULL([PreSpecialRestdayNightshiftOT], 0))
+	
+	/*ADDED BY AGC 06282018*/
+	,[NonWorkRegularHoliday] = SUM(ISNULL([NonWorkRegularHoliday],0))
+	,[NonWorkSpecialHoliday] = SUM(ISNULL([NonWorkSpecialHoliday],0))
+
+
+    ,TimeEntryHeaderStatusId = TEH.StatusId--(select StatusId from attendance.TimeEntryHeader where TimeEntryHeaderId = TE.TimeEntryHeaderId)
+
+	/*ADDED BY AGC 06192018*/
+	,[LogTimeIn] = ISNULL(TE.LogTimeIn,'1/1/1900')
+	,[LogTimeOut] = ISNULL(TE.LogTimeOut,'1/1/1900')
+	,[LogRemarks] = ISNULL(TE.LogRemarks,'')
+
+FROM attendance.TimeEntryHeaderDetail TE
+INNER JOIN attendance.TimeEntryHeader TEH ON TEH.TimeEntryHeaderId = TE.TimeEntryHeaderId
+--OUTER APPLY (SELECT CompanyId FROM attendance.TimeEntryHeader WHERE TimeEntryHeaderId = TE.TimeEntryHeaderId)TEH
+--INNER JOIN maintenance.Company C ON C.CompanyId = TEH.CompanyId
+--OUTER APPLY(SELECT TOP 1 CompanyId FROM attendance.TimeEntryHeader WHERE TimeEntryHeaderId = TE.TimeEntryHeaderId)TH
+--INNER JOIN attendance.TimeEntryHeader TH ON TH.TimeEntryHeaderId = TE.TimeEntryHeaderId
+LEFT JOIN
+(SELECT 
+TimeEntryHeaderDetailId
+,[Late]							     = SUM(CASE WHEN [Type] = 'Late' THEN [Value] ELSE 0 END)
+,[Undertime]					     = SUM(CASE WHEN [Type] = 'Undertime' THEN [Value] ELSE 0 END) 
+,[Absent]						     = SUM(CASE WHEN [Type] = 'AbsentHours' THEN [Value] ELSE 0 END)
+,[OR]							     = SUM(CASE WHEN [Type] = 'Regular' THEN [Value] ELSE 0 END)
+,[RE]							     = SUM(CASE WHEN [Type] = 'Restday' THEN [Value] ELSE 0 END)
+,[HO]							     = SUM(CASE WHEN [Type] = 'Holiday' THEN [Value] ELSE 0 END)
+,[SP]							     = SUM(CASE WHEN [Type] = 'Special' THEN [Value] ELSE 0 END)
+,[HR]							     = SUM(CASE WHEN [Type] = 'HolidayRestday' THEN [Value] ELSE 0 END)
+,[SR]							     = SUM(CASE WHEN [Type] = 'SpecialRestday' THEN [Value] ELSE 0 END)
+,[ORNS]							     = SUM(CASE WHEN [Type] = 'RegularNightshift' THEN [Value] ELSE 0 END)
+,[RENS]							     = SUM(CASE WHEN [Type] = 'RestdayNightshift' THEN [Value] ELSE 0 END)
+,[HONS]							     = SUM(CASE WHEN [Type] = 'HolidayNightshift' THEN [Value] ELSE 0 END)
+,[SPNS]							     = SUM(CASE WHEN [Type] = 'SpecialNightshift' THEN [Value] ELSE 0 END)
+,[HRNS]							     = SUM(CASE WHEN [Type] = 'HolidayRestdayNightshift' THEN [Value] ELSE 0 END)
+,[SRNS]							     = SUM(CASE WHEN [Type] = 'SpecialRestdayNightshift' THEN [Value] ELSE 0 END)
+,[OROT]							     = SUM(CASE WHEN [Type] = 'RegularOT' THEN [Value] ELSE 0 END)
+,[REOT]							     = SUM(CASE WHEN [Type] = 'RestdayOT' THEN [Value] ELSE 0 END)
+,[HOOT]							     = SUM(CASE WHEN [Type] = 'HolidayOT' THEN [Value] ELSE 0 END)
+,[SPOT]							     = SUM(CASE WHEN [Type] = 'SpecialOT' THEN [Value] ELSE 0 END)
+,[HROT]							     = SUM(CASE WHEN [Type] = 'HolidayRestdayOT' THEN [Value] ELSE 0 END)
+,[SROT]							     = SUM(CASE WHEN [Type] = 'SpecialRestdayOT' THEN [Value] ELSE 0 END)
+,[ORNSOT]						  	 = SUM(CASE WHEN [Type] = 'RegularNightshiftOT' THEN [Value] ELSE 0 END)
+,[RENSOT]						  	 = SUM(CASE WHEN [Type] = 'RestdayNightshiftOT' THEN [Value] ELSE 0 END)
+,[HONSOT]						  	 = SUM(CASE WHEN [Type] = 'HolidayNightshiftOT' THEN [Value] ELSE 0 END)
+,[SPNSOT]						  	 = SUM(CASE WHEN [Type] = 'SpecialNightshiftOT' THEN [Value] ELSE 0 END)
+,[HRNSOT]						  	 = SUM(CASE WHEN [Type] = 'HolidayRestdayNightshiftOT' THEN [Value] ELSE 0 END)
+,[SRNSOT]						  	 = SUM(CASE WHEN [Type] = 'SpecialRestdayNightshiftOT' THEN [Value] ELSE 0 END)
+,[VLHrs]							 = SUM(CASE WHEN [Type] = 'VLHrs' THEN [Value] ELSE 0 END) 
+,[SLHrs]							 = SUM(CASE WHEN [Type] = 'SLHrs' THEN [Value] ELSE 0 END) 
+,[OtherLeave]					  	 = SUM(CASE WHEN [Type] = 'OtherLeave' THEN [Value] ELSE 0 END)
+,[LeaveHours]					  	 = SUM(CASE WHEN [Type] = 'LeaveHours' THEN [Value] ELSE 0 END)
+,[HolidayHrs]					  	 = SUM(CASE WHEN [Type] = 'HolidayHrs' THEN [Value] ELSE 0 END)
+,[ExcessTime]					  	 = SUM(CASE WHEN [Type] = 'ExcessTime' THEN [Value] ELSE 0 END)
+,[ApprovedRegularOT]				 = SUM(CASE WHEN [Type] = 'ApprovedRegularOT' THEN [Value] ELSE 0 END) 
+,[ApprovedNSOT]					     = SUM(CASE WHEN [Type] = 'ApprovedNSOT' THEN [Value] ELSE 0 END)
+,[NetHrs]						  	 = SUM(CASE WHEN [Type] = 'NetHrs' THEN [Value] ELSE 0 END)
+,[CompressedOTHrs]				  	 = SUM(CASE WHEN [Type] = 'CompressedOTHrs' THEN [Value] ELSE 0 END)
+,[ActualWorkingHours]			  	 = SUM(CASE WHEN [Type] = 'ActualWorkingHours' THEN [Value] ELSE 0 END)
+,[CompanyNonWorkingDay]			  	 = SUM(CASE WHEN [Type] = 'CompanyNonWorkingDay' THEN [Value] ELSE 0 END)
+,[CompanyNonWorkingNightShiftDay]  	 = SUM(CASE WHEN [Type] = 'CompanyNonWorkingNightShiftDay' THEN [Value] ELSE 0 END)
+,[CompanyNonWorkingDayOT]		  	 = SUM(CASE WHEN [Type] = 'CompanyNonWorkingDayOT' THEN [Value] ELSE 0 END)
+,[CompanyNonWorkingNightShiftDayOT]	 = SUM(CASE WHEN [Type] = 'CompanyNonWorkingNightShiftDayOT' THEN [Value] ELSE 0 END)
+
+,[NonWorkRegularHoliday]			 = SUM(CASE WHEN [Type] = 'NonWorkRegularHoliday' THEN [Value] ELSE 0 END)
+,[NonWorkSpecialHoliday]  			 = SUM(CASE WHEN [Type] = 'NonWorkSpecialHoliday' THEN [Value] ELSE 0 END)
+
+,[PreRegularOT] 					 = SUM(CASE WHEN [Type] = 'PreRegularOT' THEN [Value] ELSE 0 END)
+,[PreRestdayOT]					     = SUM(CASE WHEN [Type] = 'PreRestdayOT' THEN [Value] ELSE 0 END)
+,[PreHolidayOT]					     = SUM(CASE WHEN [Type] = 'PreHolidayOT' THEN [Value] ELSE 0 END)
+,[PreSpecialOT]					     = SUM(CASE WHEN [Type] = 'PreSpecialOT' THEN [Value] ELSE 0 END)
+,[PreHolidayRestdayOT]				 = SUM(CASE WHEN [Type] = 'PreHolidayRestdayOT' THEN [Value] ELSE 0 END)
+,[PreSpecialRestdayOT]				 = SUM(CASE WHEN [Type] = 'PreSpecialRestdayOT' THEN [Value] ELSE 0 END)
+
+,[PreRegularNightshiftOT]			 = SUM(CASE WHEN [Type] = 'PreRegularNightshiftOT' THEN [Value] ELSE 0 END)
+,[PreRestdayNightshiftOT]			 = SUM(CASE WHEN [Type] = 'PreRestdayNightshiftOT' THEN [Value] ELSE 0 END)
+,[PreHolidayNightshiftOT]			 = SUM(CASE WHEN [Type] = 'PreHolidayNightshiftOT' THEN [Value] ELSE 0 END)
+,[PreSpecialNightshiftOT]			 = SUM(CASE WHEN [Type] = 'PreSpecialNightshiftOT' THEN [Value] ELSE 0 END)
+,[PreHolidayRestdayNightshiftOT]	 = SUM(CASE WHEN [Type] = 'PreHolidayRestdayNightshiftOT' THEN [Value] ELSE 0 END)
+,[PreSpecialRestdayNightshiftOT]	 = SUM(CASE WHEN [Type] = 'PreSpecialRestdayNightshiftOT' THEN [Value] ELSE 0 END)
+
+FROM attendance.TimeEntryDetail
+GROUP BY TimeEntryHeaderDetailId
+) AS SC ON TE.TimeEntryHeaderDetailId = SC.TimeEntryHeaderDetailId
+
+INNER JOIN maintenance.Company C ON C.CompanyId = TEH.CompanyId
+OUTER APPLY(SELECT TOP 1 UndertimeId, Reason, StatusId, UndertimeStatus = (SELECT TOP 1 maintenance.Status.Name FROM maintenance.Status WHERE maintenance.Status.Value = schedule.Undertime.StatusId) FROM schedule.Undertime WHERE schedule.Undertime.UndertimeDate = TE.WorkDate AND ProfileId = TE.ProfileId AND schedule.Undertime.ArrivalTime > TE.StartTime)UT
+OUTER APPLY(SELECT TOP 1 leave.LeaveRequest.Reason,leave.LeaveRequest.LeaveTypeId FROM leave.LeaveRequest WHERE leave.LeaveRequest.LeaveRequestId = TE.LeaveRequestId)ELeave
+OUTER APPLY(SELECT TOP 1 LeaveTypeCode = lts.Code FROM leave.LeaveTypeSetup lts WHERE ELeave.LeaveTypeId = lts.LeaveTypeSetupId) LType
+OUTER APPLY(SELECT TOP 1 schedule.OfficialBusiness.Remarks,OBTypeId = TypeId ,StatusId FROM schedule.OfficialBusiness WHERE OfficialBusinessId = TE.OfficialBussinessId)ETimeOff
+OUTER APPLY(SELECT TOP 1 Reason  FROM schedule.Overtime WHERE OvertimeId = TE.OvertimeId) EOvertime
+OUTER APPLY(SELECT TOP 1 EP.ConfigSetupDetailId,EP.PropertyName,PropertyValue = EP.Value FROM dbo.fnRetrieveEmployeePolicy(TE.ProfileId,1,15) EP WHERE EP.ProfileId = TE.ProfileId)EP
+
+/*
+OUTER APPLY
+(
+    SELECT TOP 1 
+	   --[VLHrs] = CASE WHEN (lt.Code like 'VL%' AND ISNULL(lt.LeaveWithPay,0) = 1) THEN lr.NoOfHours ELSE 0 END 
+	   --,[SLHrs] = CASE WHEN (lt.Code like 'SL%' AND ISNULL(lt.LeaveWithPay,0) = 1) THEN lr.NoOfHours ELSE 0 END 
+	   --,[OtherLeave] = CASE WHEN (lt.Code NOT like 'VL%' AND lt.Code NOT like 'SL%' AND ISNULL(lt.LeaveWithPay,0) = 1) THEN lr.NoOfHours ELSE 0 END 
+	   [VLHrs] = (CASE WHEN (ISNULL(FieldLookup.VL,0) > 0 AND ISNULL(lt.LeaveWithPay,0) = 1) THEN lr.NoOfHours ELSE 0 END)
+	   ,[SLHrs] = (CASE WHEN (ISNULL(FieldLookup.SL,0) > 0 AND ISNULL(lt.LeaveWithPay,0) = 1) THEN lr.NoOfHours ELSE 0 END)
+	   ,[OtherLeave] = 
+	   (
+			CASE WHEN (ISNULL(FieldLookup.VL,0) + ISNULL(FieldLookup.SL,0)) = 0 AND ISNULL(lt.LeaveWithPay,0) = 1 
+			THEN lr.NoOfHours 
+			ELSE 0 END
+	   )
+	   ,[LWOP] = CASE WHEN ISNULL(lt.LeaveWithPay,0) = 0  THEN lr.NoOfHours ELSE 0 END 
+	   ,[LWP] = CASE WHEN  ISNULL(lt.LeaveWithPay,0) = 1 THEN lr.NoOfHours ELSE 0 END 
+	   ,FieldLookup.VL
+    FROM attendance.TimeEntryHeaderDetail t  INNER JOIN leave.LeaveRequest lr on lr.LeaveRequestId = t.LeaveRequestId 
+    LEFT JOIN leave.LeaveTypeSetup lt on lt.LeaveTypeSetupId =  lr.LeaveTypeId
+	
+	/*GET CONFIG TABLE*/
+	OUTER APPLY
+	(
+		SELECT TOP 1 
+			VL = (CASE WHEN CHARINDEX(LT.Code,LRC.LookupCode) > 0 AND LRC.Category = 'VL' THEN 1 ELSE 0 END)
+			,SL = (CASE WHEN CHARINDEX(LT.Code,LRC.LookupCode) > 0 AND LRC.Category = 'SL' THEN 1 ELSE 0 END)
+		FROM report.LeaveReportCategory LRC
+	)FieldLookup
+
+    WHERE  t.TimeEntryHeaderDetailId = TE.TimeEntryHeaderDetailId
+) LeaveHrs
+*/
+
+OUTER APPLY
+(
+    SELECT TOP 1
+		/*
+	   [VLHrs] = SUM(CASE WHEN TLD.LeaveType LIKE 'VL%' THEN TLD.LeaveHours ELSE 0 END)
+	   ,[SLHrs] = SUM(CASE WHEN TLD.LeaveType LIKE 'SL%' THEN TLD.LeaveHours ELSE 0 END)
+	   ,[OtherLeave] = SUM(CASE WHEN TLD.LeaveType NOT like 'VL%' AND TLD.LeaveType NOT like 'SL%' THEN TLD.LeaveHours ELSE 0 END)
+	   */
+	   [VLHrs] =		SUM(CASE WHEN ISNULL(FieldLookup.LeaveType,0) = 1 AND ISNULL(LTS.LeaveWithPay,0)=1 THEN TLD.LeaveHours ELSE 0 END)
+	   ,[SLHrs] =		SUM(CASE WHEN ISNULL(FieldLookup.LeaveType,0) = 2 AND ISNULL(LTS.LeaveWithPay,0)=1 THEN TLD.LeaveHours ELSE 0 END)
+	   ,[OtherLeave] =	SUM(CASE WHEN ISNULL(FieldLookup.LeaveType,0) = 0 AND ISNULL(LTS.LeaveWithPay,0)=1 THEN TLD.LeaveHours ELSE 0 END)
+	   ,[LWOP] = SUM(CASE WHEN ISNULL(LTS.LeaveWithPay,0) = 0 THEN TLD.LeaveHours ELSE 0 END)
+	   ,[LWP] =  SUM(CASE WHEN ISNULL(LTS.LeaveWithPay,0) = 1 THEN TLD.LeaveHours ELSE 0 END)
+    FROM attendance.TimeEntryLeaveDetail TLD 
+    LEFT JOIN leave.LeaveTypeSetup LTS ON LTS.LeaveTypeSetupId = TLD.LeaveTypeId
+	/*GET CONFIG TABLE*/
+	OUTER APPLY
+	(
+		SELECT 
+			LeaveType = 
+			(
+				CASE 
+				WHEN ISNULL((SELECT TOP 1 LRC.LookupCode FROM report.LeaveReportCategory LRC WHERE CHARINDEX(LRC.LookupCode,LTS.Code) > 0 AND LRC.Category = 'VL'),'') <> ''  THEN 1 
+				WHEN ISNULL((SELECT TOP 1 LRC.LookupCode FROM report.LeaveReportCategory LRC WHERE CHARINDEX(LRC.LookupCode,LTS.Code) > 0 AND LRC.Category = 'SL'),'') <> ''  THEN 2 
+				ELSE 0 END
+			)
+	)FieldLookup
+    WHERE TLD.TimeEntryHeaderDetailId = TE.TimeEntryHeaderDetailId
+) LeaveHrs
+
+GROUP BY 
+	   TE.TimeEntryHeaderId,
+	    TE.TimeEntryHeaderDetailId,
+	    C.CompanyId,
+	    TE.ProfileId,
+	    TE.Type,
+	    TE.WorkDate,
+	    TE.StartTime,
+	    TE.EndTime,
+	    TE.TimeIn,
+	    TE.TimeOut,
+	    TE.ActualTimeIn,
+	    TE.ActualTimeOut,
+	    TE.LunchTime,
+	    TE.LunchBreak,
+	    TE.WeekDay,
+	    TE.DayOfWeek,
+	    TE.OTStartTime,
+	    TE.OTEndTime,
+	    TE.OTHrs,
+	    TE.OTNSHrs,
+	    TE.TimeOffReason,
+	    TE.TimeOffEffect,
+	    TE.TimeOffHrs,
+	    TE.WorkingHours,
+	    TE.Remarks,
+	    TE.LeaveRequestId,
+	    TE.LeaveCode,
+	    TE.LeaveHrs,
+	    TE.AccessId,
+	    TE.ShiftCode,
+	    TE.DayOfWeek,
+	    TE.Break1StartTime,
+	    TE.Break1EndTime,
+	    TE.Break2StartTime,
+	    TE.Break2EndTime,
+	    TE.Break3StartTime,
+	    TE.Break3EndTime,
+	    TE.WorkingHours,
+	    TE.ShiftCodeId,
+	    TE.WorkScheduleId,
+	    TE.OvertimeId,
+	    TE.OfficialBussinessId,
+	    TE.BranchId,
+	    TE.DepartmentId,
+	    TE.OfficeId,
+	    TE.UnitId,
+	    TE.DivisionId,
+	    TE.GroupId,
+	    TE.DistrictId,
+	    TE.LocationId,
+	    TE.ProjectProfileId,
+	    TE.CostCenterId,
+	    TE.LineId,
+	    TE.TeamId,
+	    TE.EmployeeTypeId,
+	    TE.JobRankId,
+	    TE.JobGradeId,
+	    TE.JobLevelId,
+	    TE.PositionId,
+	    TE.LunchEndTime,
+	    TEH.StartDate,
+	    TEH.EndDate,
+	    TE.UndertimeReason,
+	    TE.RegularStatusId,
+	    TE.NightShiftStatusId,
+	    TE.RegularOTStatusId,
+	    TE.NightShiftOTStatusId,
+	    UT.StatusId,
+	    UT.UndertimeStatus,
+	    ETimeOff.Remarks,
+	    ELeave.Reason,
+	    EOvertime.Reason,
+	    ETimeOff.OBTypeId,
+	    ETimeOff.StatusId,
+	    LType.LeaveTypeCode,LeaveHrs.VLHrs,LeaveHrs.SLHrs,LeaveHrs.OtherLeave , LeaveHrs.LWOP,LeaveHrs.LWP
+	    ,TEH.StatusId
+		,TE.LogTimeIn,TE.LogTimeOut,TE.LogRemarks
+GO
+
+

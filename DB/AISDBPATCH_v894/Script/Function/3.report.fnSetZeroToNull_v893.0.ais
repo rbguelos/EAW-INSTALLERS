@@ -1,0 +1,29 @@
+IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[report].[fnSetZeroToNull]') AND type in (N'FN', N'IF', N'TF', N'FS', N'FT'))
+DROP FUNCTION [report].[fnSetZeroToNull]
+GO
+
+--=============================================
+--Authom:		RME
+--Create date:	07.14.2020
+--Description:	Zero to NULL
+--=============================================
+
+CREATE FUNCTION [report].[fnSetZeroToNull]
+(
+	-- Add the parameters for the function here
+	@Expression decimal(18,4)
+)
+RETURNS decimal(18,4)
+AS
+BEGIN
+	-- Declare the return variable here
+	declare @Value decimal(18,4)
+
+
+	set @Value = CASE WHEN @Expression = 0 THEN NULL ELSE @Expression END
+
+	-- Return the result of the function
+	RETURN @Value
+
+END
+GO

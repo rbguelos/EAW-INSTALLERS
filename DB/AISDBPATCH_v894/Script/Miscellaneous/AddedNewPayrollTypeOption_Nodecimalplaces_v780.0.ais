@@ -1,0 +1,21 @@
+  --  INSERT NEW ATTENDANCE POLICY OPTION
+
+  DELETE FROM maintenance.ConfigSetupDetail 
+  WHERE ConfigSetupDetailId = 249
+  AND PropertyName = 'Nodecimalplaces'
+
+  SET IDENTITY_INSERT maintenance.ConfigSetupDetail ON
+  GO
+  
+  INSERT INTO maintenance.ConfigSetupDetail (
+    ConfigSetupDetailId, ConfigSetupHeaderId, PropertyName, LabelName, 
+    PropertyValue, Type, Source, [Group], SubGroup, SortOrder, Alignment)
+  VALUES (249, 4, 'Nodecimalplaces', 'No decimal places',
+    '', 'checkbox', '', 5, 0, 8, '')
+
+  SET IDENTITY_INSERT maintenance.ConfigSetupDetail OFF
+  GO
+
+  -- MOVE ORDER OF # of Decimal Places for Amounts
+
+  UPDATE maintenance.ConfigSetupDetail SET SortOrder = 9 WHERE ConfigSetupDetailId = 216

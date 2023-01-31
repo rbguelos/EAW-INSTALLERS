@@ -1,0 +1,169 @@
+ IF  EXISTS (SELECT * FROM sys.views WHERE object_id = OBJECT_ID(N'[employeerelation].[vwEmployeeViolation]'))
+DROP VIEW [employeerelation].[vwEmployeeViolation]
+GO
+ --=============================================
+ --Author:		Alexis
+ --Update date: 11062019
+ --Description:	Template builder source
+ --Updates:	Added Chapter, Section, and Article
+ --=============================================
+
+CREATE VIEW [employeerelation].[vwEmployeeViolation]
+AS
+
+
+SELECT 
+	v.ViolationId
+	,v.ProfileId
+	,v.ViolationNo
+	,v.ViolationDate
+	,ViolationIssueDate = v.DateServed
+	,DisciplinaryAction = ISNULL(da.Action,'')
+	,v.ResponseDate
+	,LegalCounsel = lc.LegalCounsel
+	,ViolationReportingDepartment = ISNULL(d.DepartmentName,'')
+	,ViolationNotedBy = ISNULL(v.NotedBy,'')
+	,ViolaitonCount = v.OffenseCount
+	,v.SuspensionStartDate
+	,v.SuspensionEndDate
+	,PreventiveSuspensionStartDt = v.PreventiveStartSuspensionDate
+	,PreventiveSuspensionEndDt = v.PreventiveEndSuspensionDate
+	,ViolationLocation = ISNULL(v.Location,'')
+	,ViolationStatus = (SELECT TOP 1 maintenance.Status.Name FROM maintenance.Status WHERE Value = v.StatusId)
+	,[ViolationStatusId] = v.StatusId
+	,ViolationDescription = ISNULL(vt.Description,'')
+	,ViolationRemarks = ISNULL(v.Remarks,'')
+	,v.ViolationTypeId
+	,[ViolationTypeCode] = ISNULL(vt.Code,'')
+	,VC.ViolationCategoryId
+	,Narrative = ISNULL(v.Narrative,'')
+	,OtherPeople = ISNULL(vt.OtherPeople,'')
+	,PropertyInvolved = ISNULL(v.PropertyInvolved,'')
+	,AmountInvolved = ISNULL(v.AmountInvolved,0)
+		
+	,[ViolationCategoryCode] = ISNULL(VC.Code,'')
+	,[ViolationCategoryDescription] = ISNULL(VC.Description,'')
+    ,ViolationCurrentDate = CURRENT_TIMESTAMP 
+	
+	,ViolationCurrentDateMMDDYYYY = FORMAT(CURRENT_TIMESTAMP,N'MM/dd/yyyy')
+	,ViolationCurrentDateMMDDYYYYHHMMSSTT = FORMAT(CURRENT_TIMESTAMP,N'MM/dd/yyyy hh:mm:ss tt')
+	,ViolationCurrentDateMMDDYYYYHHMMTT = FORMAT(CURRENT_TIMESTAMP,N'MM/dd/yyyy hh:mm tt')
+	,ViolationCurrentDateYYYYMMDD = FORMAT(CURRENT_TIMESTAMP,N'yyyy/MM/dd')
+	,ViolationCurrentDateYYYYMMDDHHMMSSTT = FORMAT(CURRENT_TIMESTAMP,N'yyyy/MM/dd hh:mm:ss tt')
+	,ViolationCurrentDateYYYYMMDDHHMMTT = FORMAT(CURRENT_TIMESTAMP,N'yyyy/MM/dd hh:mm tt')
+	,ViolationCurrentDate24YYYYMMDDHHMM = FORMAT(CURRENT_TIMESTAMP,N'yyyy/MM/dd HH:mm')
+	,ViolationCurrentDate24MMDDYYYYHHMM = FORMAT(CURRENT_TIMESTAMP,N'MM/dd/yyyy HH:mm')
+	,ViolationCurrentMonthNameMMMM = FORMAT(CURRENT_TIMESTAMP,N'MMMM')
+	,ViolationCurrentMonthNameMMM = FORMAT(CURRENT_TIMESTAMP,N'MMM')
+	,ViolationCurrentMonthMM = FORMAT(CURRENT_TIMESTAMP,N'mm')
+	,ViolationCurrentDayFormatted = 
+	(
+		FORMAT(CURRENT_TIMESTAMP,'d'
+		+IIF(DAY(CURRENT_TIMESTAMP) IN (1,21,31),'''st'''
+		,IIF(DAY(CURRENT_TIMESTAMP) IN (2,22),'''nd'''
+		,IIF(DAY(CURRENT_TIMESTAMP) IN (3,23),'''rd'''
+		,'''th'''))))
+	)
+	,ViolationCurrentYear = FORMAT(CURRENT_TIMESTAMP,N'yyyy')
+
+	,ChapterTitle = ISNULL(HRPolicyChapter.ChapterTitle,'')
+	,ChapterContent = ISNULL(HRPolicyChapter.ChapterContent,'')
+	,SectionTitle = ISNULL(HRPolicySection.SectionTitle,'')
+	,SectionContent = ISNULL(HRPolicySection.SectionContent,'')
+	,ArticleTitle = ISNULL(HRPolicyArticle.ArticleTitle,'')
+	,ArticleContent = ISNULL(HRPolicyArticle.ArticleContent,'')
+
+	,Witnesses = ISNULL('','')
+	,Evidence = ISNULL('','')
+	,SuperiorName = ''
+
+	,InclusiveYear = ISNULL (v.InclusiveYear,'')
+	,ViolationCategory = ISNULL(VC.[Description],'')
+	,Condition = ISNULL (vt.Condition,'')
+	,Fidelity = ISNULL(v.FidelityInsurance,'')
+	,MemoIssue = ISNULL(v.MemoIssue,'')
+	,[From] = ISNULL(v.ViolationFrom,'')
+	,NotedBy = ISNULL(NotedBy.FullName,'')
+	,ApprovedBy = ISNULL(ApprovedBy.FullName,'')
+	,Reportedby = ISNULL(ReportedBy.FullName,'')
+	,Accountabilities = ISNULL(v.Accountabilities,'')
+	,ShowCauseDate = ISNULL(v.ShowCauseDate,'')
+	,ShowCauseDueDate = ''
+	,Recomendation = ISNULL(v.Recommendation,'')
+	,InvestigationStatus = ISNULL(InverstigationStatus.InverstigationStatus,'')
+	,RecommendDisciplinaryAction =ISNULL(DA.Code,'')
+	,MemoTemplate = ''
+	,DisciplinaryActionDateServed = ISNULL(DA.CreateDate,'') 
+
+
+FROM employeerelation.Violation v
+INNER JOIN employeerelation.ViolationType vt	ON vt.ViolationTypeId = v.ViolationTypeId
+INNER JOIN employee.ViolationCategory VC ON VC.ViolationCategoryId = vt.ViolationCategoryId
+LEFT JOIN employeerelation.DisciplinaryAction da on da.DisciplinaryActionId = v.DisciplinaryActionId
+LEFT JOIN employeerelation.LegalCase lc on lc.LegalCaseId = v.LegalCounsel
+LEFT JOIN maintenance.Department d on d.DepartmentId = v.ReportingDepartmentId
+	
+OUTER APPLY
+(
+	SELECT TOP 1 
+		 HRPolicyChapter.ChapterTitle
+		 ,HRPolicyChapter.ChapterContent
+	FROM employeerelation.HRPolicyChapter HRPolicyChapter
+	WHERE HRPolicyChapter.HRPolicyChapterId = vt.ChapterNo
+)HRPolicyChapter
+
+OUTER APPLY
+(
+	SELECT TOP 1 
+		 HRPolicySection.SectionTitle
+		 ,HRPolicySection.SectionContent
+	FROM employeerelation.HRPolicySection HRPolicySection
+	WHERE HRPolicySection.HRPolicySectionId = vt.SectionNo
+)HRPolicySection
+
+OUTER APPLY
+(
+	SELECT TOP 1 
+		 HRPolicyArticle.ArticleTitle
+		 ,HRPolicyArticle.ArticleContent
+	FROM employeerelation.HRPolicyArticle HRPolicyArticle
+	WHERE HRPolicyArticle.HRPolicyArticleId = vt.ArticleNo
+)HRPolicyArticle
+
+OUTER APPLY
+( 
+	SELECT TOP 1 
+		InverstigationStatus = Inverstigation.[Description] 
+	FROM employeerelation.InvestigationStatus Inverstigation	
+	WHERE v.InvestigationStatusId = Inverstigation.InvestigationStatusId
+) InverstigationStatus
+
+
+OUTER APPLY
+(
+	SELECT TOP 1
+		FullName =  CONCAT (ReportedBy.LastName,',', ReportedBy.FirstName)
+	From Employee.Profile ReportedBy
+	WHERE ReportedBy.Profileid = v.ReportedBy
+) ReportedBy
+
+OUTER APPLY
+(
+SELECT TOP 1
+	FullName =  CONCAT (ApprovedBy.LastName,',', ApprovedBy.FirstName)
+	From Employee.Profile ApprovedBy
+	WHERE ApprovedBy.Profileid = v.ApprovedBy
+)ApprovedBy
+
+OUTER APPLY
+(
+SELECT TOP 1
+	FullName =  CONCAT (NotedBy.LastName,',', NotedBy.FirstName)
+	From Employee.Profile NotedBy
+	WHERE NotedBy.Profileid = v.NotedBy
+)NotedBy
+
+
+GO
+
+

@@ -1,0 +1,8 @@
+UPDATE leave.LeaveTypeSetup SET LWOPId = 0 WHERE LWOPId IS NULL
+
+UPDATE E SET E.PostingType = S.PostingType
+FROM leave.LeaveTypeEligibility E
+JOIN leave.LeaveTypeSetup S ON S.LeaveTypeSetupId = E.LeaveTypeSetupId
+WHERE S.AccrualSource = 1
+
+UPDATE leave.LeaveProcessDetail SET PostingDate = CAST('1900-01-01' AS DATETIME), PostingType = 0

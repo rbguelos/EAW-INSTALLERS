@@ -1,0 +1,76 @@
+/*===========================================*\
+**	   Last Update Date: 04/30/2019
+**	   Last Update By: Ronald
+**	   Last DBVersion executed: v691
+\*===========================================*/
+
+-- =============================================
+-- Author:		JPPP
+-- Create date: 10172016
+-- Description:	Retrieve Imported Employee Salary Information and latest Salary Information Effective Date 
+-- =============================================
+
+ALTER PROCEDURE [compben].[spRetrieveImportedEmployeeSalaryInformation]
+( 
+	@UserId bigint = 0
+)
+AS
+BEGIN
+
+	SELECT
+		COALESCE(ImportSalaryInformation.ImportSalaryInformationId,0) ImportSalaryInformationId,
+		COALESCE(ImportSalaryInformation.ProfileId,0) ProfileId,
+		COALESCE(ImportSalaryInformation.EffectiveDate,'1/1/1900') EffectiveDate,
+		COALESCE(ImportSalaryInformation.CurrencyId,0) CurrencyId,
+		COALESCE(ImportSalaryInformation.SalaryFactor,0) SalaryFactor,
+		COALESCE(ImportSalaryInformation.SalaryRate,0) SalaryRate,
+		COALESCE(ImportSalaryInformation.MinimumTakeHomePayType,0) MinimumTakeHomePayTypeId,
+		COALESCE(ImportSalaryInformation.MinimumTakeHomePayValue,0) MinimumTakeHomePayValue,
+		COALESCE(SalaryInformation.EffectiveDate, '1/1/1900') LatestEffectiveDate,
+		RTRIM(EmployeeProfile.LastName) + ', ' + RTRIM(EmployeeProfile.FirstName) + 
+				CASE WHEN ISNULL(EmployeeProfile.Appellation,'') <> '' THEN + ' ' + RTRIM(EmployeeProfile.Appellation) + ' ' ELSE '' END + 
+				CASE WHEN RTRIM(EmployeeProfile.MiddleName) <> '' THEN ' ' + LEFT(EmployeeProfile.MiddleName, 1) + '.' ELSE ''
+			END EmployeeName,
+		COALESCE(ImportSalaryInformation.SSSType,0) SSSType,
+		COALESCE(ImportSalaryInformation.SSSSalaryLimit,0) SSSSalaryLimit,
+		COALESCE(ImportSalaryInformation.PhilHealthType,0) PhilHealthType,
+		COALESCE(ImportSalaryInformation.PhilHealthSalaryLimit,0) PhilHealthSalaryLimit,
+		COALESCE(ImportSalaryInformation.PagIbigType,0) PagIbigType,
+		COALESCE(ImportSalaryInformation.PagIbigSalaryLimit,0) PagIbigSalaryLimit,
+		COALESCE(ImportSalaryInformation.WHTType,0) WHTType,
+		COALESCE(ImportSalaryInformation.WHTSalaryLimit,0) WHTSalaryLimit,
+		COALESCE(ExistingSalaryInformation.ExistingEffectiveDate,'1/1/1900') ExistingEffectiveDate
+		,isnull(ImportSalaryInformation.MinimumWageEarner,0)MinimumWageEarner
+	FROM compben.ImportSalaryInformation
+	LEFT JOIN employee.[Profile] EmployeeProfile ON  ImportSalaryInformation.ProfileId = EmployeeProfile.ProfileId
+	OUTER APPLY
+	(
+		SELECT MAX(SalaryInformation.EffectiveDate)  EffectiveDate
+		FROM employee.SalaryInformation WHERE SalaryInformation.ProfileId = ImportSalaryInformation.ProfileId
+	) SalaryInformation
+	OUTER APPLY
+	(
+		SELECT 
+			COALESCE(SalaryInformation.EffectiveDate,'1/1/1900') ExistingEffectiveDate 
+		FROM employee.SalaryInformation
+		WHERE
+			SalaryInformation.ProfileId = ImportSalaryInformation.ProfileId
+		AND SalaryInformation.EffectiveDate = ImportSalaryInformation.EffectiveDate
+	) ExistingSalaryInformation
+	WHERE
+		ImportSalaryInformation.CreateId = @UserId
+	AND ImportSalaryInformation.RetrievalStatusId = 1 /*DRAFT*/
+	ORDER BY
+		ImportSalaryInformation.ImportSalaryInformationId
+		
+
+	/*UPDATE RECORD WITH PROCESSED STATUS AFTER THE RETRIEVAL OF RECORD*/
+	UPDATE 
+		compben.ImportSalaryInformation
+	SET 
+		ImportSalaryInformation.RetrievalStatusId = 27 /*PROCESSED*/
+	WHERE 
+		ImportSalaryInformation.CreateId = @UserId
+	AND ImportSalaryInformation.RetrievalStatusId = 1
+
+END

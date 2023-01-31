@@ -1,0 +1,6 @@
+
+DELETE FROM report.Report WHERE ReportId IN (489)
+DELETE FROM report.ReportData WHERE ReportId IN (489)
+DELETE FROM report.ReportParameter WHERE ReportCode IN ('NoofHiredEmployeesbyManPowerAgencies')
+DELETE FROM report.ReportMenu WHERE ReportId IN (489)
+

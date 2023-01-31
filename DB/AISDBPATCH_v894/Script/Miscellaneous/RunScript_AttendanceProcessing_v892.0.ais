@@ -1,0 +1,517 @@
+/****** Object:  StoredProcedure [attendance].[spInsertGeneratedAttendance]    Script Date: 7/7/2020 8:19:22 PM ******/
+IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[attendance].[spInsertGeneratedAttendance]') AND type in (N'P', N'PC'))
+DROP PROCEDURE [attendance].[spInsertGeneratedAttendance]
+GO
+IF  EXISTS (SELECT * FROM sys.foreign_keys WHERE object_id = OBJECT_ID(N'[attendance].[FK_TimeEntryProcessQueueFile_TimeEntryProcessQueue]') AND parent_object_id = OBJECT_ID(N'[attendance].[TimeEntryProcessQueueFile]'))
+ALTER TABLE [attendance].[TimeEntryProcessQueueFile] DROP CONSTRAINT [FK_TimeEntryProcessQueueFile_TimeEntryProcessQueue]
+GO
+IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[attendance].[DF_TimeEntryProcessQueue_OfficeId]') AND type = 'D')
+BEGIN
+ALTER TABLE [attendance].[TimeEntryProcessQueue] DROP CONSTRAINT [DF_TimeEntryProcessQueue_OfficeId]
+END
+GO
+/****** Object:  Table [attendance].[TimeEntryProcessQueueFile]    Script Date: 7/7/2020 8:19:22 PM ******/
+IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[attendance].[TimeEntryProcessQueueFile]') AND type in (N'U'))
+DROP TABLE [attendance].[TimeEntryProcessQueueFile]
+GO
+/****** Object:  Table [attendance].[TimeEntryProcessQueue]    Script Date: 7/7/2020 8:19:22 PM ******/
+IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[attendance].[TimeEntryProcessQueue]') AND type in (N'U'))
+DROP TABLE [attendance].[TimeEntryProcessQueue]
+GO
+/****** Object:  UserDefinedTableType [dbo].[TVP_TimeEntryLeaveDetail]    Script Date: 7/7/2020 8:19:22 PM ******/
+IF  EXISTS (SELECT * FROM sys.types st JOIN sys.schemas ss ON st.schema_id = ss.schema_id WHERE st.name = N'TVP_TimeEntryLeaveDetail' AND ss.name = N'dbo')
+DROP TYPE [dbo].[TVP_TimeEntryLeaveDetail]
+GO
+/****** Object:  UserDefinedTableType [dbo].[TVP_TimeEntryHeaderDetailBreakdown]    Script Date: 7/7/2020 8:19:22 PM ******/
+IF  EXISTS (SELECT * FROM sys.types st JOIN sys.schemas ss ON st.schema_id = ss.schema_id WHERE st.name = N'TVP_TimeEntryHeaderDetailBreakdown' AND ss.name = N'dbo')
+DROP TYPE [dbo].[TVP_TimeEntryHeaderDetailBreakdown]
+GO
+/****** Object:  UserDefinedTableType [dbo].[TVP_TimeEntryHeaderDetail]    Script Date: 7/7/2020 8:19:22 PM ******/
+IF  EXISTS (SELECT * FROM sys.types st JOIN sys.schemas ss ON st.schema_id = ss.schema_id WHERE st.name = N'TVP_TimeEntryHeaderDetail' AND ss.name = N'dbo')
+DROP TYPE [dbo].[TVP_TimeEntryHeaderDetail]
+GO
+/****** Object:  UserDefinedTableType [dbo].[TVP_TimeEntryDetail]    Script Date: 7/7/2020 8:19:22 PM ******/
+IF  EXISTS (SELECT * FROM sys.types st JOIN sys.schemas ss ON st.schema_id = ss.schema_id WHERE st.name = N'TVP_TimeEntryDetail' AND ss.name = N'dbo')
+DROP TYPE [dbo].[TVP_TimeEntryDetail]
+GO
+/****** Object:  UserDefinedTableType [dbo].[TVP_TimeEntryDetail]    Script Date: 7/7/2020 8:19:22 PM ******/
+CREATE TYPE [dbo].[TVP_TimeEntryDetail] AS TABLE(
+	[TimeEntryHeaderDetailId] [bigint] NULL,
+	[ProfileId] [bigint] NULL,
+	[WorkDate] [datetime] NULL,
+	[Type] [varchar](50) NULL,
+	[Value] [decimal](18, 4) NULL,
+	[CreateId] [bigint] NULL,
+	[CreateDate] [datetime] NULL
+)
+GO
+/****** Object:  UserDefinedTableType [dbo].[TVP_TimeEntryHeaderDetail]    Script Date: 7/7/2020 8:19:22 PM ******/
+CREATE TYPE [dbo].[TVP_TimeEntryHeaderDetail] AS TABLE(
+	[WorkingHours] [decimal](18, 4) NULL,
+	[Remarks] [varchar](max) NULL,
+	[TimeEntryHeaderId] [bigint] NULL,
+	[ProfileId] [bigint] NULL,
+	[Type] [varchar](50) NULL,
+	[WorkDate] [datetime] NULL,
+	[WeekDay] [smallint] NULL,
+	[DayOfWeek] [smallint] NULL,
+	[StartTime] [datetime] NULL,
+	[EndTime] [datetime] NULL,
+	[LunchTime] [datetime] NULL,
+	[LunchBreak] [decimal](18, 4) NULL,
+	[OTStartTime] [datetime] NULL,
+	[OTEndTime] [datetime] NULL,
+	[OTHrs] [decimal](18, 4) NULL,
+	[OTNSHrs] [decimal](18, 4) NULL,
+	[TimeOffReason] [varchar](150) NULL,
+	[TimeOffEffect] [varchar](150) NULL,
+	[TimeOffHrs] [decimal](18, 4) NULL,
+	[TimeIn] [datetime] NULL,
+	[TimeOut] [datetime] NULL,
+	[ActualTimeIn] [datetime] NULL,
+	[ActualTimeOut] [datetime] NULL,
+	[LeaveRequestId] [bigint] NULL,
+	[ShiftCodeId] [bigint] NULL,
+	[WorkScheduleId] [bigint] NULL,
+	[OvertimeId] [bigint] NULL,
+	[OfficialBussinessId] [bigint] NULL,
+	[RegularStatusId] [bigint] NULL,
+	[NightShiftStatusId] [bigint] NULL,
+	[NightShiftStatusId2] [bigint] NULL,
+	[RegularOTStatusId] [bigint] NULL,
+	[NightShiftOTStatusId] [bigint] NULL,
+	[PreOTStatusId] [bigint] NULL,
+	[CompanyNonWorkingStatusId] [bigint] NULL,
+	[BranchId] [bigint] NULL,
+	[DepartmentId] [bigint] NULL,
+	[OfficeId] [bigint] NULL,
+	[UnitId] [bigint] NULL,
+	[DivisionId] [bigint] NULL,
+	[GroupId] [bigint] NULL,
+	[DistrictId] [bigint] NULL,
+	[LocationId] [bigint] NULL,
+	[ProjectProfileId] [bigint] NULL,
+	[CostCenterId] [bigint] NULL,
+	[LineId] [bigint] NULL,
+	[TeamId] [bigint] NULL,
+	[EmployeeTypeId] [bigint] NULL,
+	[JobRankId] [bigint] NULL,
+	[JobGradeId] [bigint] NULL,
+	[JobLevelId] [bigint] NULL,
+	[PositionId] [bigint] NULL,
+	[LogTimeIn] [datetime] NULL,
+	[LogTimeOut] [datetime] NULL,
+	[LogRemarks] [varchar](150) NULL,
+	[TimeEntryHeaderDetailId] [bigint] NOT NULL,
+	[LunchEndTime] [datetime] NULL,
+	[LeaveCode] [varchar](50) NULL,
+	[LeaveHrs] [decimal](18, 4) NULL,
+	[ShiftCode] [varchar](50) NULL,
+	[DayTypeSequence] [varchar](50) NULL,
+	[AccessId] [bigint] NULL,
+	[Break1StartTime] [datetime] NULL,
+	[Break1EndTime] [datetime] NULL,
+	[Break2StartTime] [datetime] NULL,
+	[Break2EndTime] [datetime] NULL,
+	[Break3StartTime] [datetime] NULL,
+	[Break3EndTime] [datetime] NULL,
+	[UndertimeReason] [varchar](250) NULL,
+	[ManpowerClassificationId] [bigint] NULL,
+	[CreateId] [bigint] NULL,
+	[CreateDate] [datetime] NULL,
+	[LastUpdateId] [bigint] NULL,
+	[LastUpdateDate] [datetime] NULL
+)
+GO
+/****** Object:  UserDefinedTableType [dbo].[TVP_TimeEntryHeaderDetailBreakdown]    Script Date: 7/7/2020 8:19:22 PM ******/
+CREATE TYPE [dbo].[TVP_TimeEntryHeaderDetailBreakdown] AS TABLE(
+	[TimeEntryHeaderDetailId] [bigint] NULL,
+	[ProfileId] [bigint] NULL,
+	[WorkDate] [datetime] NULL,
+	[TimeIn] [datetime] NULL,
+	[TimeOut] [datetime] NULL,
+	[BranchId] [bigint] NULL,
+	[DepartmentId] [bigint] NULL,
+	[OfficeId] [bigint] NULL,
+	[UnitId] [bigint] NULL,
+	[DivisionId] [bigint] NULL,
+	[GroupId] [bigint] NULL,
+	[DistrictId] [bigint] NULL,
+	[LocationId] [bigint] NULL,
+	[ProjectProfileId] [bigint] NULL,
+	[CostCenterId] [bigint] NULL,
+	[LineId] [bigint] NULL,
+	[TeamId] [bigint] NULL,
+	[EmployeeTypeId] [bigint] NULL,
+	[JobRankId] [bigint] NULL,
+	[JobGradeId] [bigint] NULL,
+	[JobLevelId] [bigint] NULL,
+	[PositionId] [bigint] NULL,
+	[AccessId] [bigint] NULL,
+	[ManpowerClassificationId] [bigint] NULL,
+	[Type] [varchar](50) NULL,
+	[Value] [decimal](18, 4) NULL
+)
+GO
+/****** Object:  UserDefinedTableType [dbo].[TVP_TimeEntryLeaveDetail]    Script Date: 7/7/2020 8:19:22 PM ******/
+CREATE TYPE [dbo].[TVP_TimeEntryLeaveDetail] AS TABLE(
+	[TimeEntryHeaderDetailId] [bigint] NULL,
+	[WorkDate] [datetime] NULL,
+	[LeaveHours] [decimal](18, 4) NULL,
+	[LeaveType] [varchar](50) NULL,
+	[LeaveTypeId] [bigint] NULL,
+	[LeaveRequestId] [bigint] NULL,
+	[PartialDayLeave] [smallint] NULL,
+	[ProfileId] [bigint] NULL
+)
+GO
+/****** Object:  Table [attendance].[TimeEntryProcessQueue]    Script Date: 7/7/2020 8:19:22 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [attendance].[TimeEntryProcessQueue](
+	[TimeEntryProcessQueueId] [bigint] IDENTITY(1,1) NOT NULL,
+	[TimeEntryHeaderId] [bigint] NOT NULL,
+	[ProfileId] [varchar](max) NULL,
+	[StartDate] [datetime] NOT NULL,
+	[EndDate] [datetime] NOT NULL,
+	[IsAssumeLogs] [bit] NULL,
+	[AssumeStartDate] [datetime] NULL,
+	[AssumeEndDate] [datetime] NULL,
+	[AdjustmentAttendance] [bit] NULL,
+	[CompanyId] [bigint] NULL,
+	[BranchId] [bigint] NULL,
+	[DepartmentId] [bigint] NULL,
+	[PositionId] [bigint] NULL,
+	[UnitId] [bigint] NULL,
+	[ProjectId] [bigint] NULL,
+	[LocationId] [bigint] NULL,
+	[OfficeId] [bigint] NULL,
+	[JobRankId] [bigint] NULL,
+	[DivisionId] [bigint] NULL,
+	[LineId] [bigint] NULL,
+	[StatusId] [int] NOT NULL,
+	[IsSaved] [bit] NULL,
+	[JsonPath] [varchar](255) NULL,
+	[ChunkCount] [int] NULL,
+	[CreateId] [bigint] NULL,
+	[CreateDate] [datetime] NULL,
+	[LastUpdateId] [bigint] NULL,
+	[LastUpdateDate] [datetime] NULL,
+ CONSTRAINT [PK_TimeEntryProcessQueue] PRIMARY KEY CLUSTERED 
+(
+	[TimeEntryProcessQueueId] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+GO
+/****** Object:  Table [attendance].[TimeEntryProcessQueueFile]    Script Date: 7/7/2020 8:19:22 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [attendance].[TimeEntryProcessQueueFile](
+	[TimeEntryProcessQueueFileId] [bigint] IDENTITY(1,1) NOT NULL,
+	[TimeEntryProcessQueueId] [bigint] NULL,
+	[JsonPath] [varchar](255) NULL,
+	[StatusId] [int] NULL,
+	[StartTime] [datetime] NULL,
+	[CompletionTime] [datetime] NULL,
+ CONSTRAINT [PK_TimeEntryProcessQueueFile] PRIMARY KEY CLUSTERED 
+(
+	[TimeEntryProcessQueueFileId] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+ALTER TABLE [attendance].[TimeEntryProcessQueue] ADD  CONSTRAINT [DF_TimeEntryProcessQueue_OfficeId]  DEFAULT ('0') FOR [OfficeId]
+GO
+ALTER TABLE [attendance].[TimeEntryProcessQueueFile]  WITH CHECK ADD  CONSTRAINT [FK_TimeEntryProcessQueueFile_TimeEntryProcessQueue] FOREIGN KEY([TimeEntryProcessQueueId])
+REFERENCES [attendance].[TimeEntryProcessQueue] ([TimeEntryProcessQueueId])
+ON DELETE CASCADE
+GO
+ALTER TABLE [attendance].[TimeEntryProcessQueueFile] CHECK CONSTRAINT [FK_TimeEntryProcessQueueFile_TimeEntryProcessQueue]
+GO
+/****** Object:  StoredProcedure [attendance].[spInsertGeneratedAttendance]    Script Date: 7/7/2020 8:19:22 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+--DROP PROCEDURE attendance.spInsertGeneratedAttendance
+--DROP TYPE TVP_TimeEntryHeaderDetail
+--SELECT * FROM attendance.TimeEntryHeaderDetail
+
+CREATE PROCEDURE [attendance].[spInsertGeneratedAttendance]
+	@HeaderId BIGINT,
+	@ProcessId BIGINT,
+    @HeaderDetails TVP_TimeEntryHeaderDetail READONLY,
+	@Details TVP_TimeEntryDetail READONLY,
+	@Breakdowns TVP_TimeEntryHeaderDetailBreakdown READONLY,
+	@LeaveDetails TVP_TimeEntryLeaveDetail READONLY
+AS
+BEGIN
+	DECLARE @TempHeader TABLE (
+		TimeEntryHeaderDetailId BIGINT NOT NULL,
+		TempHeaderId BIGINT NOT NULL
+	)
+
+	MERGE INTO attendance.TimeEntryHeaderDetail AS TRGT USING (
+		SELECT * FROM @HeaderDetails
+	) AS SRC
+	ON 1 = 0 /*NO CONDITION MEANS INSERT ALL*/
+	WHEN NOT MATCHED THEN
+	INSERT (
+		TimeEntryHeaderId,
+		[ProfileId],
+		[Type],
+		[WorkDate],
+		[StartTime],
+		[EndTime],
+		[TimeIn],
+		[TimeOut],
+		[ActualTimeIn],
+		[ActualTimeOut],
+		[LunchTime],
+		[LunchEndTime],
+		[LunchBreak],
+		[WeekDay],
+		[DayOfWeek],
+		[OTStartTime],
+		[OTEndTime],
+		[OTHrs],
+		[OTNSHrs],
+		[TimeOffReason],
+		[TimeOffEffect],
+		[TimeOffHrs],
+		[WorkingHours],
+		[Remarks],
+		[LeaveRequestId],
+		[LeaveCode],
+		[LeaveHrs],
+		[ShiftCodeId],
+		[ShiftCode],
+		[WorkScheduleId],
+		[OvertimeId],
+		[OfficialBussinessId],
+		[DayTypeSequence],
+		[BranchId],
+		[DepartmentId],
+		[OfficeId],
+		[UnitId],
+		[DivisionId],
+		[GroupId],
+		[DistrictId],
+		[LocationId],
+		[ProjectProfileId],
+		[CostCenterId],
+		[LineId],
+		[TeamId],
+		[EmployeeTypeId],
+		[JobRankId],
+		[JobGradeId],
+		[JobLevelId],
+		[PositionId],
+		[AccessId],
+		[Break1StartTime],
+		[Break1EndTime],
+		[Break2StartTime],
+		[Break2EndTime],
+		[Break3StartTime],
+		[Break3EndTime],
+		[RegularStatusId],
+		[NightShiftStatusId],
+		[RegularOTStatusId],
+		[NightShiftOTStatusId],
+		[PreOTStatusId],
+		[UndertimeReason],
+		[ManpowerClassificationId],
+		[LogTimeIn],
+		[LogTimeOut],
+		[LogRemarks],
+		[CompanyNonWorkingStatusId],
+		[CreateId],
+		[CreateDate],
+		[LastUpdateId],
+		[LastUpdateDate],
+		[NightShiftStatusId2])
+		VALUES (
+		SRC.TimeEntryHeaderId,
+		SRC.[ProfileId],
+		SRC.[Type],
+		SRC.[WorkDate],
+		SRC.[StartTime],
+		SRC.[EndTime],
+		SRC.[TimeIn],
+		SRC.[TimeOut],
+		SRC.[ActualTimeIn],
+		SRC.[ActualTimeOut],
+		SRC.[LunchTime],
+		SRC.[LunchEndTime],
+		SRC.[LunchBreak],
+		SRC.[WeekDay],
+		SRC.[DayOfWeek],
+		SRC.[OTStartTime],
+		SRC.[OTEndTime],
+		SRC.[OTHrs],
+		SRC.[OTNSHrs],
+		SRC.[TimeOffReason],
+		SRC.[TimeOffEffect],
+		SRC.[TimeOffHrs],
+		SRC.[WorkingHours],
+		SRC.[Remarks],
+		SRC.[LeaveRequestId],
+		SRC.[LeaveCode],
+		SRC.[LeaveHrs],
+		SRC.[ShiftCodeId],
+		SRC.[ShiftCode],
+		SRC.[WorkScheduleId],
+		SRC.[OvertimeId],
+		SRC.[OfficialBussinessId],
+		SRC.[DayTypeSequence],
+		SRC.[BranchId],
+		SRC.[DepartmentId],
+		SRC.[OfficeId],
+		SRC.[UnitId],
+		SRC.[DivisionId],
+		SRC.[GroupId],
+		SRC.[DistrictId],
+		SRC.[LocationId],
+		SRC.[ProjectProfileId],
+		SRC.[CostCenterId],
+		SRC.[LineId],
+		SRC.[TeamId],
+		SRC.[EmployeeTypeId],
+		SRC.[JobRankId],
+		SRC.[JobGradeId],
+		SRC.[JobLevelId],
+		SRC.[PositionId],
+		SRC.[AccessId],
+		SRC.[Break1StartTime],
+		SRC.[Break1EndTime],
+		SRC.[Break2StartTime],
+		SRC.[Break2EndTime],
+		SRC.[Break3StartTime],
+		SRC.[Break3EndTime],
+		SRC.[RegularStatusId],
+		SRC.[NightShiftStatusId],
+		SRC.[RegularOTStatusId],
+		SRC.[NightShiftOTStatusId],
+		SRC.[PreOTStatusId],
+		SRC.[UndertimeReason],
+		SRC.[ManpowerClassificationId],
+		SRC.[LogTimeIn],
+		SRC.[LogTimeOut],
+		SRC.[LogRemarks],
+		SRC.[CompanyNonWorkingStatusId],
+		SRC.[CreateId],
+		SRC.[CreateDate],
+		SRC.[LastUpdateId],
+		SRC.[LastUpdateDate],
+		SRC.[NightShiftStatusId2])
+	OUTPUT INSERTED.TimeEntryHeaderDetailId, SRC.TimeEntryHeaderDetailId 
+	INTO @TempHeader(TimeEntryHeaderDetailId, TempHeaderId);
+
+	-- TimeEntryDetail
+
+    INSERT INTO attendance.TimeEntryDetail(
+		[TimeEntryHeaderDetailId],
+		[ProfileId],
+		[WorkDate],
+		[Type],
+		[Value],
+		[CreateId],
+		[CreateDate])
+	SELECT
+		TH.[TimeEntryHeaderDetailId],
+		[ProfileId],
+		[WorkDate],
+		[Type],
+		[Value],
+		[CreateId],
+		[CreateDate]
+	FROM @Details D
+	INNER JOIN @TempHeader TH
+		ON TH.TempHeaderId = D.TimeEntryHeaderDetailId
+
+	INSERT INTO attendance.TimeEntryHeaderDetailBreakdown(
+		[TimeEntryHeaderDetailId],
+		[ProfileId],
+		[WorkDate],
+		[TimeIn],
+		[TimeOut],
+		[BranchId],
+		[DepartmentId],
+		[OfficeId],
+		[UnitId],
+		[DivisionId],
+		[GroupId],
+		[DistrictId],
+		[LocationId],
+		[ProjectProfileId],
+		[CostCenterId],
+		[LineId],
+		[TeamId],
+		[EmployeeTypeId],
+		[JobRankId],
+		[JobGradeId],
+		[JobLevelId],
+		[PositionId],
+		[AccessId],
+		[ManpowerClassificationId],
+		[Type],
+		[Value])
+	SELECT 
+		TH.[TimeEntryHeaderDetailId],
+		[ProfileId],
+		[WorkDate],
+		[TimeIn],
+		[TimeOut],
+		[BranchId],
+		[DepartmentId],
+		[OfficeId],
+		[UnitId],
+		[DivisionId],
+		[GroupId],
+		[DistrictId],
+		[LocationId],
+		[ProjectProfileId],
+		[CostCenterId],
+		[LineId],
+		[TeamId],
+		[EmployeeTypeId],
+		[JobRankId],
+		[JobGradeId],
+		[JobLevelId],
+		[PositionId],
+		[AccessId],
+		[ManpowerClassificationId],
+		[Type],
+		[Value]
+	FROM @Breakdowns D
+	INNER JOIN @TempHeader TH
+		ON TH.TempHeaderId = D.TimeEntryHeaderDetailId
+
+
+	INSERT INTO attendance.TimeEntryLeaveDetail(
+		[TimeEntryHeaderDetailId],
+		[WorkDate],
+		[LeaveHours],
+		[LeaveType],
+		[LeaveTypeId],
+		[LeaveRequestId],
+		[PartialDayLeave],
+		[ProfileId])
+	SELECT 
+		TH.[TimeEntryHeaderDetailId],
+		[WorkDate],
+		[LeaveHours],
+		[LeaveType],
+		[LeaveTypeId],
+		[LeaveRequestId],
+		[PartialDayLeave],
+		[ProfileId]
+	FROM @LeaveDetails D
+	INNER JOIN @TempHeader TH
+		ON TH.TempHeaderId = D.TimeEntryHeaderDetailId
+
+END
+GO

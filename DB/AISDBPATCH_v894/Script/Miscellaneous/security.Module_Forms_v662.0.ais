@@ -1,0 +1,6 @@
+SET NOCOUNT ON
+DELETE FROM security.Module_Forms WHERE ModuleFormId = 10598
+SET IDENTITY_INSERT [security].[Module_Forms] ON
+INSERT [security].[Module_Forms] ([ModuleFormId],[ModuleId],[Name],[Form],[AccessTypeId],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES(10598,3,'Employee Profile - Salary Information','Employee Profile - Salary Information','2,3,4',NULL,NULL,NULL,NULL)
+SET IDENTITY_INSERT [security].[Module_Forms] OFF
+SET NOCOUNT OFF

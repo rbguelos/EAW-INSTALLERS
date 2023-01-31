@@ -1,0 +1,169 @@
+IF NOT OBJECT_ID('[compben].[spEarningDeductionList]') IS NULL
+DROP PROCEDURE [compben].[spEarningDeductionList]
+GO
+
+/*===========================================*\
+**	   Last Update Date: 03/11/2019
+**	   Last Update By: Kris
+**	   Last DBVersion executed: v667
+\*===========================================*/
+
+CREATE PROCEDURE [compben].[spEarningDeductionList]
+AS
+BEGIN
+SET NOCOUNT ON;
+--==============================
+--Other Setup Temp Table
+--==============================
+DECLARE @OtherSetupTABLE TABLE
+(
+    OtherSetupId smallint  NULL,
+    OtherSetupLabelName varchar(100)  NULL
+)
+
+INSERT INTO @OtherSetupTABLE
+    SELECT
+	   OtherSetupId = 1
+	  ,OtherSetupLabelName = 'Include in 13th Month Pay'
+
+INSERT INTO @OtherSetupTABLE
+    SELECT
+	   OtherSetupId = 2
+	  ,OtherSetupLabelName = 'Do not add to gross pay'
+
+INSERT INTO @OtherSetupTABLE
+    SELECT
+	   OtherSetupId = 3
+	  ,OtherSetupLabelName = 'Include in gross pay'
+
+INSERT INTO @OtherSetupTABLE
+    SELECT
+	   OtherSetupId = 4
+	  ,OtherSetupLabelName = 'Include in net pay'
+--==================================================
+
+--==============================
+--Affects Temp Table
+--==============================
+DECLARE @AffectTABLE TABLE (
+    AffectId SMALLINT NULL
+   ,AffectLabelName VARCHAR(100) NULL
+)
+
+INSERT INTO @AffectTABLE
+    SELECT
+	   AffectId = 1
+	  ,AffectLabelName = 'SSS'
+
+INSERT INTO @AffectTABLE
+    SELECT
+	   AffectId = 2
+	  ,AffectLabelName = 'PhilHealth'
+
+INSERT INTO @AffectTABLE
+    SELECT
+	   AffectId = 3
+	  ,AffectLabelName = 'Pagibig'
+--==================================================
+
+SELECT
+    --EarningDeductionId
+    EarningDeductionId = EarningDeduction.EarningDeductionId
+
+    --TypeId
+   ,EarningDeduction.TypeId
+
+    --Code
+   ,Code = EarningDeduction.Code
+
+    --Description
+   ,Description = EarningDeduction.Description
+
+    --TypeDesc
+   ,TypeDesc = EarningsDeductionType.DisplayText
+
+    --MappedToId
+   ,MappedToId = COALESCE(EarningDeduction.MappedToId, 0)
+
+    --TaxCategory
+   ,TaxCategory = COALESCE(EarningsDeductionTaxCategory.DisplayText, '')
+
+    --BIRFormIds
+   ,BIRFormIds=  EarningDeduction.BIRFormIds
+
+    --BIRFormFieldGrpDescription
+   ,BIRFormFieldGrpDescription = ''
+
+    --RateTable
+   ,RateTable =
+    (
+    CASE
+	   WHEN (IsRateTable = 0) THEN 'No'
+	   ELSE 'Yes'
+    END
+    )
+
+    --Affects
+   ,Affects =
+    (
+    COALESCE((SELECT
+		  STUFF((SELECT
+				', ' + Affect.AffectLabelName
+			 FROM @AffectTABLE Affect
+			 WHERE Affect.AffectId IN (SELECT
+				    T.value
+				FROM dbo.FN_SPLITWITHID(COALESCE(EarningDeduction.Affects, ''), ',') T)
+			 FOR XML PATH (''))
+		  , 1, 1, ''))
+    , '')
+    )
+
+    --OtherSetUp
+   ,OtherSetUp =
+    (
+    COALESCE((SELECT
+		  STUFF((SELECT
+				', ' + OtherSetup.OtherSetupLabelName
+			 FROM @OtherSetupTABLE OtherSetup
+			 WHERE OtherSetup.OtherSetupId
+			 IN (SELECT
+				    T.value
+				FROM dbo.FN_SPLITWITHID(
+				CASE
+				    WHEN COALESCE(EarningDeduction.IncludeIn13thMonthPay, 0) = 1 THEN '1,'
+				    ELSE ''
+				END
+				+
+				CASE
+				    WHEN COALESCE(EarningDeduction.DonotAddToGrossPay, 0) = 1 THEN '2,'
+				    ELSE ''
+				END
+				+
+				CASE
+				    WHEN COALESCE(EarningDeduction.IncludeInGrossPay, 0) = 1 THEN '3,'
+				    ELSE ''
+				END
+				+
+				CASE
+				    WHEN COALESCE(EarningDeduction.IncludeInNetPay, 0) = 1 THEN '4,'
+				    ELSE ''
+				END
+				, ',') T)
+			 FOR XML PATH (''))
+		  , 1, 1, ''))
+    , '')
+    )
+FROM compben.EarningDeduction
+
+
+--EarningsDeductionType
+LEFT JOIN maintenance.EnumValues EarningsDeductionType
+    ON EarningDeduction.TypeId = CAST(EarningsDeductionType.value AS BIGINT)
+	   AND EarningsDeductionType.SourceName = 'EarningsDeductionType'
+
+--EarningsDeductionTaxCategory
+LEFT JOIN maintenance.EnumValues EarningsDeductionTaxCategory
+    ON EarningDeduction.TaxCategoryId = CAST(EarningsDeductionTaxCategory.value AS BIGINT)
+	   AND EarningsDeductionTaxCategory.SourceName = 'EarningsDeductionTaxCategory'
+
+END

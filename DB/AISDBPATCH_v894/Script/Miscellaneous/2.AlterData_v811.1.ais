@@ -1,0 +1,23 @@
+UPDATE maintenance.ColorCoding SET CssStyle = '{background-color:#fff958;}' WHERE Identifier = '.ob-post-filing'
+
+UPDATE maintenance.ColorCoding SET CssStyle = '{background-color:#51a6fb;}' WHERE Identifier = '.ob-no-schedule'
+
+UPDATE maintenance.ColorCoding SET CssStyle = '{background-color:#f7c171;}' WHERE Identifier = '.ob-duplicate'
+
+INSERT INTO maintenance.ColorCoding
+SELECT 201, '.ob-is-holiday', '{background-color:#61ce63;}', 'Is Holiday',
+'The employee has holiday schedule on the specified date.', NULL, NULL, NULL, NULL
+
+INSERT INTO maintenance.ColorCoding
+SELECT 201, '.ob-is-restday', '{background-color:#ba5cc5;}', 'Is Restday',
+'The employee has rest day schedule on the specified date.', NULL, NULL, NULL, NULL
+
+INSERT INTO [security].FieldLookUp
+SELECT 'Official Business', 'OfficialBusiness', 'IncludeHolidays', 'chkIncludeHolidays', 0, 0, NULL, NULL, NULL, NULL
+
+INSERT INTO [security].FieldLookUp
+SELECT 'Official Business', 'OfficialBusiness', 'IncludeRestdays', 'chkIncludeRestdays', 0, 0, NULL, NULL, NULL, NULL
+
+UPDATE schedule.OfficialBusiness SET IncludeHolidays = 0 WHERE IncludeHolidays IS NULL
+
+UPDATE schedule.OfficialBusiness SET IncludeRestdays = 0 WHERE IncludeRestdays IS NULL

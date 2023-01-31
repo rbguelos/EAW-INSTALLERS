@@ -1,0 +1,55 @@
+IF EXISTS(SELECT TOP 1 1 FROM security.Module WHERE ModuleId = 9)
+BEGIN
+
+SET NOCOUNT ON
+/*start deleting existing menu configs*/
+DELETE FROM admin.MenuMenu WHERE MenuMenuId = 10145
+DELETE FROM admin.SecurityMapping WHERE MenuMenuId = 10145
+DELETE FROM security.Module_Forms WHERE ModuleFormId = 10514
+/*end deleting existing menu configs*/
+
+/* start insert data to admin.MenuMenu */
+SET IDENTITY_INSERT [admin].[MenuMenu] ON
+INSERT [admin].[MenuMenu] ([MenuMenuId],[MenuModuleId],[MenuName],[MenuIcon],[MenuLink],[SortOrder],[Hidden],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES(10145,10,'Special Work Schedule Request','','/WorkScheduleRequest/List',14,0,NULL,NULL,NULL,NULL)
+SET IDENTITY_INSERT [admin].[MenuMenu] OFF
+/* end insert data to admin.MenuMenu */
+
+/* start insert data to admin.SecurityMapping */
+INSERT [admin].[SecurityMapping] ([MenuMenuId],[MenuSubMenuId],[SecurityFormId],[AccessTypeId],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES(10145,0,10514,'1',NULL,NULL,NULL,NULL)
+/* end insert data to admin.SecurityMapping */
+
+/* start insert data to security.Module_Forms */
+SET IDENTITY_INSERT [security].[Module_Forms] ON
+INSERT [security].[Module_Forms] ([ModuleFormId],[ModuleId],[Name],[Form],[AccessTypeId],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES(10514,9,'Special Work Schedule Request List','Special Work Schedule Request List','1,2,3,4',NULL,NULL,NULL,NULL)
+SET IDENTITY_INSERT [security].[Module_Forms] OFF
+/* end insert data to security.Module_Forms */
+/*start insert data to security.Role_FormAccess*/
+INSERT INTO security.Role_FormAccess([RoleId],[ModuleId],[ModuleFormId],[AccessTypeId]) 
+				SELECT 
+				[RoleId] = 1,
+				[ModuleId] = F.ModuleId,
+				[ModuleFormId] = F.ModuleFormId,
+				[AccessTypeId] = F.AccessTypeId
+				FROM security.Module_Forms F
+				
+				WHERE F.ModuleFormId = 10514
+				
+/*end insert data to security.Role_FormAccess*/
+
+/*start insert data to security.UserSecurity_Detail*/
+INSERT INTO security.UserSecurity_Detail([UserSecurityId],[ModuleFormId],[AccessTypeId],[ModuleId])
+				SELECT
+				[UserSecurityId] = US.UserSecurityId
+				,[ModuleFormId] = F.ModuleFormId
+				,[AccessTypeId] = F.AccessTypeId
+				,[ModuleId] = F.ModuleId
+				FROM security.Module_Forms F
+				
+				CROSS APPLY (SELECT DISTINCT USD.UserSecurityId FROM security.UserSecurity_Detail USD JOIN security.UserSecurity US ON US.UserSecurityId = USD.UserSecurityId WHERE US.RoleId = 1	AND US.UserSecurityId IS NOT NULL) US
+				WHERE F.ModuleFormId = 10514
+				AND US.UserSecurityId NOT IN (SELECT UserSecurityId FROM security.UserSecurity_Detail WHERE ModuleFormId = 10514 AND UserSecurityId IS NOT NULL)
+/*end insert data to security.UserSecurity_Detail*/
+
+SET NOCOUNT OFF
+
+END

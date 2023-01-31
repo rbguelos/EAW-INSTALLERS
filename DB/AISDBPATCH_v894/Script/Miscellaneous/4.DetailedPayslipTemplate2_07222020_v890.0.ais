@@ -1,0 +1,797 @@
+SET NOCOUNT ON
+/*start deleting existing report configs*/
+DELETE FROM report.Report WHERE ReportId IN (496)
+DELETE FROM report.ReportData WHERE ReportId IN (496)
+DELETE FROM report.ReportParameter WHERE ReportCode IN ('DetailedPayslipTemplate2')
+DELETE FROM report.ReportSubReport WHERE ReportCode  IN ('DetailedPayslipTemplate2')
+/*end deleting existing report configs*/
+
+/*start insert data to report.Report*/
+SET IDENTITY_INSERT [report].[Report] ON
+INSERT [report].[Report] ([ReportId],[ReportCode],[ReportName],[ReportFile],[ReportExcelFile],[EmploymentStatus],[TableSPUsed],[SPUsed],[NoOrderBy],[QueryType],[InsertToReportTempTable],[Description],[ImageFile],[SortFields],[Event],[ExportFormat],[CreateId],[Createdate],[LastUpdateId],[LastUpdateDate],[UseExportToExcelAPI],[DetailColStartPos],[DetailRowStartPos],[HeaderRowStartPos],[IncludeColHeader],[InsertNewRowAtRowPos],[Template],[SourceName],[ShowGrandTotals],[RepeatColumnHeaderOnHeaderGroup],[RepeatColumnHeaderOnGroupLevel],[AutoSizeColumn],[MaxRowPerPage],[DisplayReportHeader])VALUES(496,'DetailedPayslipTemplate2','Detailed Payslip Template 2','\Reports\Payslip\DetailedPayslipTemplate2.rpt',NULL,3,'SELECT      
+    E.EmployeeNo
+    ,E.LastName
+    ,E.FirstName
+    ,E.MiddleName
+    ,E.Appellation
+    ,E.LastFirstMIName
+    ,E.FirstMILastName
+    ,E.HireDate
+    ,CompanyName = C.Name
+    ,CompanyCode = C.Code
+    ,BranchCode = B.Code
+    ,BranchName = B.Name
+    ,E.DepartmentName
+    ,E.DepartmentCode
+    ,E.OfficeName
+    ,E.OfficeCode
+    ,E.UnitCode
+    ,E.DivisionCode
+    ,E.GroupsCode
+    ,E.DistrictCode
+    ,E.Location
+    ,E.ProjectCode
+    ,E.ProjectName
+    ,E.CostCenterCode
+    ,E.LineCode
+    ,E.TeamCode
+    ,E.EmployeeTypeCode
+    ,E.JobRank
+    ,E.JobGrade
+    ,E.JobLevel
+    ,E.PositionCode
+    ,E.Position
+    ,E.TaxExemptionStatus
+    ,RP.[PaygroupId]
+    ,RP.[PayGroupCode]
+    ,RP.[PayGroupDescription]
+    ,RP.[PaySheetHeaderId]
+    ,RP.[PaySheetHeaderDetailId]
+    ,RP.[ProfileId] AS EmployeeId
+    ,RP.[CompanyId]
+    ,RP.[BranchId]
+    ,RP.[DepartmentId]
+    ,RP.[OfficeId]
+    ,RP.[UnitId]
+    ,RP.[DivisionId]
+    ,RP.[GroupId]
+    ,RP.[DistrictId]
+    ,RP.[LocationId]
+    ,RP.[ProjectProfileId]
+    ,RP.[CostCenterId]
+    ,RP.[LineId]
+    ,RP.[TeamId]
+    ,RP.[EmployeeTypeId]
+    ,RP.[JobRankId]
+    ,RP.[JobGradeId]
+    ,RP.[JobLevelId]
+    ,RP.[PositionId]
+    ,RP.[PayrollTypeId]
+    ,RP.[PayrollType]
+    ,RP.[ReferenceNo]
+    ,RP.[StatusId]
+    ,RP.[Status]
+    ,RP.[MonthYear]
+    ,RP.[PeriodStartDate]
+    ,RP.[PeriodEndDate]
+    ,RP.[IssuedDate]
+    ,RP.[CutOffStartDate]
+    ,RP.[CutOffEndDate]
+    ,RP.[PayrollPeriod]
+    ,RP.[EndOfMonth]
+    ,RP.[SalaryRate]
+    ,RP.[SalaryType]
+    ,RP.[HourlyRate]
+    ,RP.[DailyRate]
+    ,RP.[MonthlyRate]
+    ,[LateHrs] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''LateHrs'',RP.[LateHrs])
+    ,[UndertimeHrs] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''UndertimeHrs'',RP.[UndertimeHrs])
+    ,[AbsentHrs] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''AbsentHrs'',RP.[AbsentHrs])
+    ,[LeaveHrs] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''LeaveHrs'',RP.[LeaveHrs])
+    ,[OR] = COLS.[OR]
+    ,[RE] = COLS.[RE]
+    ,[HO] = COLS.[HO]
+    ,[SP] = COLS.[SP]
+    ,[HR] = COLS.[HR]
+    ,[SR] = COLS.[SR]
+    ,[ORNS] = COLS.[ORNS]
+    ,[RENS] = COLS.[RENS]
+    ,[HONS] = COLS.[HONS]
+    ,[SPNS] = COLS.[SPNS]
+    ,[HRNS] = COLS.[HRNS]
+    ,[SRNS] = COLS.[SRNS]
+    ,[OROT] = COLS.[OROT]
+    ,[REOT] = COLS.[REOT]
+    ,[HOOT] = COLS.[HOOT]
+    ,[SPOT] = COLS.[SPOT]
+    ,[HROT] = COLS.[HROT]
+    ,[SROT] = COLS.[SROT]
+    ,[ORNSOT] = COLS.[ORNSOT]
+    ,[RENSOT] = COLS.[RENSOT]
+    ,[HONSOT] = COLS.[HONSOT]
+    ,[SPNSOT] = COLS.[SPNSOT]
+    ,[HRNSOT] = COLS.[HRNSOT]
+    ,[SRNSOT] = COLS.[SRNSOT]
+    ,[AbsentAmount] =		report.fnGetValuePerPayrollType(RP.PayrollTypeId,''AbsentHrs'',RP.[AbsentAmount])
+    ,[LateAmount]	=		report.fnGetValuePerPayrollType(RP.PayrollTypeId,''LateHrs'',RP.[LateAmount])
+    ,[UndertimeAmount] =	report.fnGetValuePerPayrollType(RP.PayrollTypeId,''UndertimeHrs'',RP.[UndertimeAmount])
+	,[DoubleHolidayHrs] = ISNULL(RP.[DoubleHolidayHrs],0)
+	,[DoubleHolidayOTHrs] = ISNULL(RP.[DoubleHolidayOTHrs],0)
+	,[DoubleHolidayNSHrs] = ISNULL(RP.[DoubleHolidayNSHrs],0)
+	,[DoubleHolidayNSOTHrs] = ISNULL(RP.[DoubleHolidayNSOTHrs],0)
+	,[DoubleHolidayRestdayHrs] = ISNULL(RP.[DoubleHolidayRestdayHrs],0)
+	,[DoubleHolidayRestdayOTHrs] = ISNULL(RP.[DoubleHolidayRestdayOTHrs],0)
+	,[DoubleHolidayRestdayNSHrs] = ISNULL(RP.[DoubleHolidayRestdayNSHrs],0)
+	,[DoubleHolidayRestdayNSOTHrs] = ISNULL(RP.[DoubleHolidayRestdayNSOTHrs],0)
+	,[DoubleHolidayNS2Hrs] = ISNULL(RP.[DoubleHolidayNS2Hrs],0)
+	,[DoubleHolidayNSOT2Hrs] = ISNULL(RP.[DoubleHolidayNSOT2Hrs],0)
+	,[DoubleHolidayRestdayNS2Hrs] = ISNULL(RP.[DoubleHolidayRestdayNS2Hrs],0)
+	,[DoubleHolidayRestdayNSOT2Hrs] = ISNULL(RP.[DoubleHolidayRestdayNSOT2Hrs],0)
+	,[DoubleHolidayPay] = ISNULL(RP.[DoubleHolidayPay],0)
+	,[DoubleHolidayOTPay] = ISNULL(RP.[DoubleHolidayOTPay],0)
+	,[DoubleHolidayNSPay] = ISNULL(RP.[DoubleHolidayNSPay],0)
+	,[DoubleHolidayNSOTPay] = ISNULL(RP.[DoubleHolidayNSOTPay],0)
+	,[DoubleHolidayRestdayPay] = ISNULL(RP.[DoubleHolidayRestdayPay],0)
+	,[DoubleHolidayRestdayOTPay] = ISNULL(RP.[DoubleHolidayRestdayOTPay],0)
+	,[DoubleHolidayRestdayNSPay] = ISNULL(RP.[DoubleHolidayRestdayNSPay],0)
+	,[DoubleHolidayRestdayNSOTPay] = ISNULL(RP.[DoubleHolidayRestdayNSOTPay],0)
+	,[PrevNTDoubleHolidayPay] = ISNULL(RP.[PrevNTDoubleHolidayPay],0)
+	,[PrevNTDoubleHolidayRestdayPay] = ISNULL(RP.[PrevNTDoubleHolidayRestdayPay],0)
+	,[DoubleHolidayNS2Pay] = ISNULL(RP.[DoubleHolidayNS2Pay],0)
+	,[DoubleHolidayNSOT2Pay] = ISNULL(RP.[DoubleHolidayNSOT2Pay],0)
+	,[DoubleHolidayRestdayNS2Pay] = ISNULL(RP.[DoubleHolidayRestdayNS2Pay],0)
+	,[DoubleHolidayRestdayNSOT2Pay] = ISNULL(RP.[DoubleHolidayRestdayNSOT2Pay],0)
+    ,TotalHolidayHrs = 
+	(	
+		CASE WHEN 
+		(
+			COLS.[HO] + 
+			COLS.[SP] + 
+			COLS.[HR] + 
+			COLS.[SR] 
+		) > 0
+		THEN RP.TotalHolidayHrs ELSE 0 END
+	)
+	,OvertimeHrs = 
+	(
+		CASE WHEN 
+		(
+			COLS.[OROT] + 
+			COLS.[REOT] + 
+			COLS.[HOOT] + 
+			COLS.[SPOT] +  
+			COLS.[HROT] +  
+			COLS.[SROT] +  
+			COLS.[ORNSOT] +  
+			COLS.[RENSOT] +  
+			COLS.[HONSOT] +  
+			COLS.[SPNSOT] +  
+			COLS.[HRNSOT] +  
+			COLS.[SRNSOT]  
+		) > 0
+		THEN RP.OvertimeHrs ELSE 0 END
+	)
+    ,NightDiffHrs = 
+	(
+		CASE WHEN 
+		(
+			COLS.[ORNS] + 
+			COLS.[RENS] + 
+			COLS.[HONS] + 
+			COLS.[SPNS] +  
+			COLS.[HRNS] +  
+			COLS.[SRNS]  
+		) > 0
+		THEN RP.NightDiffHrs ELSE 0 END
+	)
+    ,RP.[TotalOTHrs]
+    ,[ORPay] = COLS.[ORPay]
+    ,[REPay] = COLS.[REPay]
+    ,[HOPay] = COLS.[HOPay]
+    ,[SPPay] = COLS.[SPPay]
+    ,[HRPay] = COLS.[HRPay]
+    ,[SRPay] = COLS.[SRPay]
+    ,[ORNSPay] = COLS.[ORNSPay]
+    ,[RENSPay] = COLS.[RENSPay]
+    ,[HONSPay] = COLS.[HONSPay]
+    ,[SPNSPay] = COLS.[SPNSPay]
+    ,[HRNSPay] = COLS.[HRNSPay]
+    ,[SRNSPay] = COLS.[SRNSPay]
+    ,[OROTPay] = COLS.[OROTPay]
+    ,[REOTPay] = COLS.[REOTPay]
+    ,[HOOTPay] = COLS.[HOOTPay]
+    ,[SPOTPay] = COLS.[SPOTPay]
+    ,[HROTPay] = COLS.[HROTPay]
+    ,[SROTPay] = COLS.[SROTPay]
+    ,[ORNSOTPay] = COLS.[ORNSOTPay]
+    ,[RENSOTPay] = COLS.[RENSOTPay]
+    ,[HONSOTPay] = COLS.[HONSOTPay]
+    ,[SPNSOTPay] = COLS.[SPNSOTPay]
+    ,[HRNSOTPay] = COLS.[HRNSOTPay]
+    ,[SRNSOTPay] = COLS.[SRNSOTPay]
+    ,TotalHolidayPay = 
+	(	
+		CASE WHEN 
+		(
+			COLS.[HOPay] + 
+			COLS.[SPPay] + 
+			COLS.[HRPay] + 
+			COLS.[SRPay] 
+		) > 0
+		THEN RP.TotalHolidayPay ELSE 0 END
+	)
+    ,OvertimePay = 
+	(
+		CASE WHEN 
+		(
+			COLS.[OROTPay] + 
+			COLS.[REOTPay] + 
+			COLS.[HOOTPay] + 
+			COLS.[SPOTPay] +  
+			COLS.[HROTPay] +  
+			COLS.[SROTPay] +  
+			COLS.[ORNSOTPay] +  
+			COLS.[RENSOTPay] +  
+			COLS.[HONSOTPay] +  
+			COLS.[SPNSOTPay] +  
+			COLS.[HRNSOTPay] +  
+			COLS.[SRNSOTPay]  
+		) > 0
+		THEN RP.OvertimePay ELSE 0 END
+	)
+    ,NightDiffPay = 
+	(
+		CASE WHEN 
+		(
+			COLS.[ORNSPay] + 
+			COLS.[RENSPay] + 
+			COLS.[HONSPay] + 
+			COLS.[SPNSPay] +  
+			COLS.[HRNSPay] +  
+			COLS.[SRNSPay]  
+		) > 0
+		THEN RP.NightDiffPay ELSE 0 END
+	)
+    ,[TotalOTPay] = 
+	(
+		CASE WHEN 
+		(
+			COLS.[OROTPay] + 
+			COLS.[REOTPay] + 
+			COLS.[HOOTPay] + 
+			COLS.[SPOTPay] +  
+			COLS.[HROTPay] +  
+			COLS.[SROTPay] +  
+			COLS.[ORNSOTPay] +  
+			COLS.[RENSOTPay] +  
+			COLS.[HONSOTPay] +  
+			COLS.[SPNSOTPay] +  
+			COLS.[HRNSOTPay] +  
+			COLS.[SRNSOTPay]  
+		) > 0
+		THEN RP.[TotalOTPay] ELSE 0 END
+	)
+    ,[SSS] =			COLS.[SSS] 			
+    ,[SSSES] =			COLS.[SSSES] 			
+    ,[SSSEC] =			COLS.[SSSEC] 			
+    ,[PhilHealth] =		COLS.[PhilHealth] 		
+    ,[PhilHealthES] =	COLS.[PhilHealthES] 	 
+    ,[PAGIBIG] =		COLS.[PAGIBIG]		
+    ,[PAGIBIGES] =		COLS.[PAGIBIGES]		
+    ,[WHT] =			COLS.[WHT]			
+    ,[CompanyWHT] =		COLS.[CompanyWHT]	
+    ,[LeavePay] =		COLS.[LeavePay]		
+
+    ,RP.[Allowance]
+    ,RP.[Loan]
+    ,RP.[Deduction]
+    ,RP.[OtherIncome]
+    ,RP.[OtherDeduction]
+    ,RP.[BasicPay]
+    ,RP.[GrossPay]
+    ,RP.[TotalDeduction]
+    ,RP.[NetPay]
+    ,RP.[OthersContribution]
+    ,RP.[OtherBenefits]
+    ,RP.[DC]
+    ,RP.[COLA]
+    ,RP.[OtherAllowance]
+    ,RP.[EMPSC]
+    ,RP.[PIRAA]
+    ,RP.[PIRAAEC]
+    ,RP.[FieldworkUnits]
+    ,RP.[FieldworkPay]
+    ,RP.[OthersWHT]
+    ,RP.[UnionDues]
+    ,RP.[Representation]
+    ,RP.[Transportation]
+    ,RP.[FixedHousingAllowance]
+    ,RP.[Commission]
+    ,RP.[ProfitSharing]
+    ,RP.[Fees]
+    ,RP.[HazardPay]
+    ,RP.[Month13Pay]
+    ,RP.[TaxableIncome]
+    ,RP.[OriginalWHT]
+    ,RP.[CompanyOtherAmounts]
+    ,RP.[SIL]
+    ,RP.[ProRated13thMonth]
+    ,RP.[TaxRefund]
+    ,RP.[CompanyOther]
+    ,RP.[PagibigBracketId]
+    ,RP.[SSSBracketId]
+    ,RP.[PhilhealthBracketId]
+    ,RP.[WHTBracketId]
+    ,RP.[WorkingHrsPerDay]
+    ,RP.[TotalHoursWorked]
+    ,CompanyAddress = C.Address
+    ,RP.LateDays
+    ,RP.UndertimeDays
+    ,RP.AbsentDays
+    ,YTDWHT = ISNULL(ytd.YTDWHT, 0)
+    ,YTDGrossPay = ISNULL(ytd.YTDGrossPay, 0)
+    ,YTDNetPay = ISNULL(ytd.YTDNetPay, 0)
+	,YTDLeavePay = ISNULL(ytd.YTDLeavePay, 0)
+	,YTDBasicPay = ISNULL(ytd.YTDBasicPay, 0)
+    ,YTDMonth13Pay = ISNULL(YTD13.YTDMonth13Pay,0)
+	,YTDTaxableIncome = ISNULL(ytd.YTDTaxableIncome,0)
+	,YTDTaxExempt = ISNULL(ytd.YTDTaxExempt,0)
+	,YTDSSS = ISNULL(ytd.YTDSSS,0)
+	,YTDPhilHealth = ISNULL(ytd.YTDPhilHealth,0)
+	,YTDPAGIBIG = ISNULL(ytd.YTDPAGIBIG,0)
+	,YTDNonTaxableOther = ISNULL(ytd.YTDNonTaxableOther,0)
+	,YTDNonTaxable = ISNULL(ytd.YTDNonTaxable,0)
+    ,RP.TaxExempt
+    ,RP.NumberOfPayPeriods
+    ,RP.ShowPayslipCompanyLogo
+    ,RP.CoNonWorking
+    ,RP.CoNonWorkingPay
+    ,RP.CoNonWorkingNSPay
+    ,RP.CoNonWorkingOT
+    ,RP.CoNonWorkingOTPay
+    ,RP.CoNonWorkingNSOT
+    ,RP.CoNonWorkingNSOTPay
+    ,RP.CoNonWorkingNS
+    ,RP.SalaryTypeName
+	,BankFileHeaderId = (CASE WHEN CAST(ISNULL(@BankFileHdrId,'''') AS BIGINT) = '''' THEN 0 ELSE @BankFileHdrId END)
+/*FROM [dbo].[vwPaysheetDetail] RP*/
+FROM report.fnPayslipDetail((REPLACE(@PaySheetHeaderId,'''''''','''')),@ProfileId) RP
+CROSS APPLY
+(
+	SELECT
+	[OR] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''BasicHrs'',RP.[OR])
+    ,[RE] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''RestdayHrs'',RP.[RE])
+    ,[HO] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''HolidayHrs'',RP.[HO])
+    ,[SP] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''SpecialHrs'',RP.[SP])
+    ,[HR] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''HRHrs'',RP.[HR])
+    ,[SR] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''SRHrs'',RP.[SR])
+    ,[ORNS] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''BasicNSHrs'',RP.[ORNS]) 
+    ,[RENS] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''RestdayNSHrs'',RP.[RENS]) 
+    ,[HONS] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''HolidayNSHrs'',RP.[HONS]) 
+    ,[SPNS] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''SpecialNSHrs'',RP.[SPNS]) 
+    ,[HRNS] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''HRNSHrs'',RP.[HRNS]) 
+    ,[SRNS] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''SRNSHrs'',RP.[SRNS]) 
+    ,[OROT] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''BasicOTHrs'',RP.[OROT]) 
+    ,[REOT] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''RestdayOTHrs'',RP.[REOT]) 
+    ,[HOOT] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''HolidayOTHrs'',RP.[HOOT]) 
+    ,[SPOT] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''SpecialOTHrs'',RP.[SPOT]) 
+    ,[HROT] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''HROTHrs'',RP.[HROT]) 
+    ,[SROT] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''SROTHrs'',RP.[SROT]) 
+    ,[ORNSOT] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''BasicNSOTHrs'',RP.[ORNSOT])
+    ,[RENSOT] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''RestdayNSOTHrs'',RP.[RENSOT])
+    ,[HONSOT] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''HolidayNSOTHrs'',RP.[HONSOT])
+    ,[SPNSOT] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''SpecialNSOTHrs'',RP.[SPNSOT])
+    ,[HRNSOT] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''HRNSOTHrs'',RP.[HRNSOT])
+    ,[SRNSOT] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''SRNSOTHrs'',RP.[SRNSOT])
+	,[ORPay] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''BasicPay'',RP.BasicPay)
+    ,[REPay] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''RestdayPay'',RP.[REPay])
+    ,[HOPay] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''HolidayPay'',RP.[HOPay])
+    ,[SPPay] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''SpecialPay'',RP.[SPPay])
+    ,[HRPay] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''HRPay'',RP.[HRPay])
+    ,[SRPay] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''SRPay'',RP.[SRPay])
+    ,[ORNSPay] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''BasicNSPay'',RP.[ORNSPay]) 
+    ,[RENSPay] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''RestdayNSPay'',RP.[RENSPay]) 
+    ,[HONSPay] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''HolidayNSPay'',RP.[HONSPay]) 
+    ,[SPNSPay] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''SpecialNSPay'',RP.[SPNSPay]) 
+    ,[HRNSPay] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''HRNSPay'',RP.[HRNSPay]) 
+    ,[SRNSPay] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''SRNSPay'',RP.[SRNSPay]) 
+    ,[OROTPay] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''BasicOTPay'',RP.[OROTPay]) 
+    ,[REOTPay] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''RestdayOTPay'',RP.[REOTPay]) 
+    ,[HOOTPay] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''HolidayOTPay'',RP.[HOOTPay]) 
+    ,[SPOTPay] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''SpecialOTPay'',RP.[SPOTPay]) 
+    ,[HROTPay] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''HROTPay'',RP.[HROTPay]) 
+    ,[SROTPay] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''SROTPay'',RP.[SROTPay]) 
+    ,[ORNSOTPay] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''BasicNSOTPay'',RP.[ORNSOTPay]) 
+    ,[RENSOTPay] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''RestdayNSOTPay'',RP.[RENSOTPay]) 
+    ,[HONSOTPay] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''HolidayNSOTPay'',RP.[HONSOTPay]) 
+    ,[SPNSOTPay] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''SpecialNSOTPay'',RP.[SPNSOTPay]) 
+    ,[HRNSOTPay] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''HRNSOTPay'',RP.[HRNSOTPay]) 
+    ,[SRNSOTPay] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''SRNSOTPay'',RP.[SRNSOTPay]) 
+	,[SSS] =			report.fnGetValuePerPayrollType(RP.PayrollTypeId,''SSS'',RP.[SSS]) 
+	,[SSSES] =			report.fnGetValuePerPayrollType(RP.PayrollTypeId,''SSSES'',RP.[SSSES]) 
+	,[SSSEC] =			report.fnGetValuePerPayrollType(RP.PayrollTypeId,''SSSEC'',RP.[SSSEC]) 
+	,[PhilHealth] =		report.fnGetValuePerPayrollType(RP.PayrollTypeId,''PhilHealth'',RP.[PhilHealth]) 
+	,[PhilHealthES] =	report.fnGetValuePerPayrollType(RP.PayrollTypeId,''PhilHealthES'',RP.[PhilHealthES]) 
+	,[PAGIBIG] =		report.fnGetValuePerPayrollType(RP.PayrollTypeId,''PagIbig'',RP.[PAGIBIG]) 
+	,[PAGIBIGES] =		report.fnGetValuePerPayrollType(RP.PayrollTypeId,''PagIbigES'',RP.[PAGIBIGES]) 
+	,[WHT] =			report.fnGetValuePerPayrollType(RP.PayrollTypeId,''WHT'',RP.[WHT]) 
+	,[CompanyWHT] =		report.fnGetValuePerPayrollType(RP.PayrollTypeId,''CompanyTax'',RP.[CompanyWHT]) 
+	,[LeavePay] =		report.fnGetValuePerPayrollType(RP.PayrollTypeId,''LeavePay'',RP.[LeavePay]) 
+	,[BasicPay] =		report.fnGetValuePerPayrollType(RP.PayrollTypeId,''BasicPay'',RP.[BasicPay]) 
+	,[GrossPay] =		report.fnGetValuePerPayrollType(RP.PayrollTypeId,''GrossPay'',RP.[GrossPay]) 
+	,[NetPay] =			report.fnGetValuePerPayrollType(RP.PayrollTypeId,''NetPay'',RP.[NetPay]) 
+	
+)COLS
+CROSS APPLY 
+(
+    SELECT TOP 1
+	   EmployeeNo
+	   ,LastName
+	   ,FirstName
+	   ,MiddleName
+	   ,Appellation
+	   ,LastFirstMIName
+	   ,FirstMILastName
+	   ,HireDate
+	   ,CompanyName
+	   ,CompanyCode
+	   ,BranchCode
+	   ,BranchName
+	   ,DepartmentName
+	   ,DepartmentCode
+	   ,OfficeName
+	   ,OfficeCode
+	   ,UnitCode
+	   ,DivisionCode
+	   ,GroupsCode
+	   ,DistrictCode
+	   ,Location
+	   ,ProjectCode
+	   ,ProjectName
+	   ,CostCenterCode
+	   ,LineCode
+	   ,TeamCode
+	   ,EmployeeTypeCode
+	   ,JobRank
+	   ,JobGrade
+	   ,JobLevel
+	   ,PositionCode
+	   ,Position
+	   ,TaxExemptionStatus
+	   ,CompanyAddress
+    FROM dbo.fnProfileInfo(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, RP.[PaySheetHeaderDetailId])
+    WHERE ProfileId = RP.ProfileId
+) E
+OUTER APPLY 
+(
+    SELECT
+	   SUM(COALESCE(vpd.WHT,0)) YTDWHT
+	   ,SUM(COALESCE(vpd.GrossPay,0)) YTDGrossPay
+	   ,SUM(COALESCE(vpd.NetPay,0)) YTDNetPay
+	   ,SUM(COALESCE(vpd.LeavePay,0)) YTDLeavePay
+	   ,SUM(COALESCE(vpd.BasicPay,0)) YTDBasicPay
+
+	   ,SUM(COALESCE(vpd.TaxableIncome,0)) YTDTaxableIncome
+	   ,SUM(COALESCE(vpd.TaxExempt,0)) YTDTaxExempt
+	   ,SUM(COALESCE(vpd.SSS,0)) YTDSSS
+	   ,SUM(COALESCE(vpd.PhilHealth,0)) YTDPhilHealth
+	   ,SUM(COALESCE(vpd.PAGIBIG,0)) YTDPAGIBIG
+	   ,SUM(COALESCE(vpd.NonTaxableOther,0)) YTDNonTaxableOther
+	   ,SUM(COALESCE(vpd.NonTaxable,0)) YTDNonTaxable
+    FROM dbo.vwPaysheetDetail vpd
+    WHERE vpd.ProfileId = RP.ProfileId
+    AND vpd.PeriodEndDate <= RP.PeriodEndDate
+    AND YEAR(vpd.MonthYear) =  YEAR(RP.MonthYear)
+    AND vpd.PayrollType NOT IN (''13th-Month-Pay'', ''Separation-Pay'',''Prev-Employer'',''Bonus'')
+	AND vpd.StatusId = 2
+) ytd
+OUTER APPLY
+(
+    SELECT 
+	   YTDMonth13Pay = SUM(ISNULL(PD.Month13Pay,0)) 
+    FROM dbo.vwPaysheetDetail PD
+    WHERE PD.ProfileId = RP.ProfileId
+    AND PD.PeriodEndDate <= RP.PeriodEndDate
+    AND YEAR(PD.MonthYear) =  YEAR(RP.MonthYear)
+    AND PD.PayrollType IN (''13th-Month-Pay'')
+	AND PD.StatusId = 2
+)YTD13
+
+OUTER APPLY
+(
+    SELECT TOP 1
+	   c.Name
+	   ,a.Address
+	   ,c.Code
+    FROM maintenance.Company c 
+    JOIN maintenance.Address a ON a.AddressId = c.AddressId
+    WHERE c.CompanyId = RP.CompanyId
+) C
+OUTER APPLY
+(
+    SELECT TOP 1
+	   b.Code
+	   ,b.Name
+	   ,aa.Address
+    FROM maintenance.Branch b 
+    JOIN maintenance.Address aa ON aa.AddressId = b.AddressId
+    WHERE b.BranchId = RP.BranchId
+) B
+
+
+WHERE 1=1
+/*AND (CHARINDEX('''''''' + CAST(RP.PaySheetHeaderId AS VARCHAR) + '''''''', (CASE WHEN CHARINDEX('''''''',@PaySheetHeaderId) > 0 THEN @PaySheetHeaderId ELSE '''''''' + CAST(@PaySheetHeaderId AS VARCHAR) + '''''''' END) ) > 0)
+AND 
+(
+    COALESCE(@ProfileId, 0) = 0 OR 
+    (CAST(RP.ProfileId AS BIGINT) = CAST(@ProfileId AS BIGINT))
+)
+*/',NULL,NULL,'QUERY',0,'',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+SET IDENTITY_INSERT [report].[Report] OFF
+/*end insert data to report.Report*/
+
+/*start insert data to report.ReportData*/
+/*end insert data to report.ReportData*/
+
+/*start insert data to report.ReportParameter*/
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('DetailedPayslipTemplate2','PayrollTypeId','Payroll Type','dropdownList','$table:payroll.PayrollType,PayrollTypeId,PayrollTypeName','',1,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('DetailedPayslipTemplate2','CompanyId','Company','dropdownList','$table:maintenance.Company,CompanyId,Name','$table:maintenance.Branch WHERE CompanyId =  ,BranchId,Name|BranchId,',2,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('DetailedPayslipTemplate2','BranchId','Branch','dropdownList','$table:maintenance.Branch,BranchId,Name','',3,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('DetailedPayslipTemplate2','DepartmentId','Department','dropdownList','$table:maintenance.Department,DepartmentId,DepartmentName','',4,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('DetailedPayslipTemplate2','PositionId','Job Position','dropdownList','$table:maintenance.Department,DepartmentId,DepartmentName','',5,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('DetailedPayslipTemplate2','IssuedDate','Issued Date','date','','',6,'','Param1','Stored','=','date',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('DetailedPayslipTemplate2','PeriodEndDate','End Date','date','','',8,'','Param1','Stored','=','date',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('DetailedPayslipTemplate2','EmployeeId','Employee Name','checkboxList','$table:dbo.fnProfileInfo,ProfileId,[LastFirstMIName]','',9,'','Param1','Stored','IN','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('DetailedPayslipTemplate2','@PaySheetHeaderId','Record ID','textbox','','',10,'','Param1','Stored','IN','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('DetailedPayslipTemplate2','@ProfileId','Profile ID','textbox','','',11,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('DetailedPayslipTemplate2','@BankFileHdrId','Bank File ID','textbox','','',12,'','Param1','Stored','=','bigint',NULL,NULL,NULL,'0',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+/*end insert data to report.ReportParameter*/
+
+/*start insert data to report.ReportSubReport*/
+INSERT [report].[ReportSubReport] ([ReportCode],[SubReportName],[CmdQuery],[CmdType],[ReportParamNames],[CreateId],[Createdate],[LastUpdateId],[LastUpdateDate])VALUES('DetailedPayslipTemplate2','LoanDetails','SELECT 
+    EAD.* 
+FROM report.vwEaningAndDeductionDetails EAD
+INNER JOIN payroll.PaySheetHeaderDetail PHD ON PHD.PaySheetHeaderDetailId = EAD.PaySheetHeaderDetailId
+WHERE (TypeId = 6)
+AND (CHARINDEX('','' + CAST(PHD.PaySheetHeaderId AS VARCHAR) + '','','',''+ @PaySheetHeaderId +'','') > 0)',1,'PaySheetHeaderId',NULL,NULL,NULL,NULL)
+INSERT [report].[ReportSubReport] ([ReportCode],[SubReportName],[CmdQuery],[CmdType],[ReportParamNames],[CreateId],[Createdate],[LastUpdateId],[LastUpdateDate])VALUES('DetailedPayslipTemplate2','DeductionOtherDeductionDetails','SELECT 
+    EAD.* 
+FROM report.vwEaningAndDeductionDetails EAD
+INNER JOIN payroll.PaySheetHeaderDetail PHD ON PHD.PaySheetHeaderDetailId = EAD.PaySheetHeaderDetailId
+WHERE (TypeId = 8 OR TypeId = 2)
+AND (CHARINDEX('','' + CAST(PHD.PaySheetHeaderId AS VARCHAR) + '','','',''+ @PaySheetHeaderId +'','') > 0)',1,'PaySheetHeaderId',NULL,NULL,NULL,NULL)
+INSERT [report].[ReportSubReport] ([ReportCode],[SubReportName],[CmdQuery],[CmdType],[ReportParamNames],[CreateId],[Createdate],[LastUpdateId],[LastUpdateDate])VALUES('DetailedPayslipTemplate2','AllAllowanceDetails','SELECT 
+    EAD.* 
+FROM report.vwEaningAndDeductionDetails EAD
+INNER JOIN payroll.PaySheetHeaderDetail PHD ON PHD.PaySheetHeaderDetailId = EAD.PaySheetHeaderDetailId
+WHERE (TypeId = 3 OR EAD.TypeId = 1 OR EAD.TypeId = 7) 
+AND (CHARINDEX('','' + CAST(PHD.PaySheetHeaderId AS VARCHAR) + '','','',''+ @PaySheetHeaderId +'','') > 0)
+AND NOT EAD.TypeDescription LIKE ''%tk adj%''',1,'PaySheetHeaderId',NULL,NULL,NULL,NULL)
+INSERT [report].[ReportSubReport] ([ReportCode],[SubReportName],[CmdQuery],[CmdType],[ReportParamNames],[CreateId],[Createdate],[LastUpdateId],[LastUpdateDate])VALUES('DetailedPayslipTemplate2','LoanBalance','SELECT 
+    EAD.* 
+FROM report.vwEaningAndDeductionDetails EAD
+INNER JOIN payroll.PaySheetHeaderDetail PHD ON PHD.PaySheetHeaderDetailId = EAD.PaySheetHeaderDetailId
+WHERE ((TypeId = 6) OR (TypeId IN (2,8) AND TypeCode LIKE ''%MP2%''))
+AND (CHARINDEX('','' + CAST(PHD.PaySheetHeaderId AS VARCHAR) + '','','',''+ @PaySheetHeaderId +'','') > 0)',1,'PaySheetHeaderId',NULL,NULL,NULL,NULL)
+INSERT [report].[ReportSubReport] ([ReportCode],[SubReportName],[CmdQuery],[CmdType],[ReportParamNames],[CreateId],[Createdate],[LastUpdateId],[LastUpdateDate])VALUES('DetailedPayslipTemplate2','PaySheetDetails','SELECT 
+     COLS.[RE] 
+    , COLS.[HO] 
+    , COLS.[SP] 
+    , COLS.[HR] 
+    , COLS.[SR] 
+    , COLS.[ORNS] 
+    , COLS.[RENS] 
+    , COLS.[HONS] 
+    , COLS.[SPNS] 
+	,COLS.[REPay] 
+    ,COLS.[HOPay] 
+    ,COLS.[SPPay] 
+    ,COLS.[HRPay] 
+    ,COLS.[SRPay]
+    ,COLS.[ORNSPay]
+    ,COLS.[RENSPay] 
+    ,COLS.[HONSPay] 
+    ,COLS.[SPNSPay] 
+    ,COLS.[HRNSPay] 
+    ,COLS.[SRNSPay] 
+	,[OROT] = COLS.[OROT]
+	,[REOT] = COLS.[REOT]
+	,[HOOT] = COLS.[HOOT]
+	,[SPOT] = COLS.[SPOT]
+	,[HROT] = COLS.[HROT]
+	,[SROT] = COLS.[SROT]
+	,[ORNSOT] = COLS.[ORNSOT]
+	,[RENSOT] = COLS.[RENSOT]
+	,[HONSOT] = COLS.[HONSOT]
+	,[SPNSOT] = COLS.[SPNSOT]
+	,[HRNSOT] = COLS.[HRNSOT]
+	,[SRNSOT] = COLS.[SRNSOT]
+	,[OROTPay] = COLS.[OROTPay]
+	,[REOTPay] = COLS.[REOTPay]
+	,[HOOTPay] = COLS.[HOOTPay]
+	,[SPOTPay] = COLS.[SPOTPay]
+	,[HROTPay] = COLS.[HROTPay]
+	,[SROTPay] = COLS.[SROTPay]
+	,[ORNSOTPay] = COLS.[ORNSOTPay]
+	,[RENSOTPay] = COLS.[RENSOTPay]
+	,[HONSOTPay] = COLS.[HONSOTPay]
+	,[SPNSOTPay] = COLS.[SPNSOTPay]
+	,[HRNSOTPay] = COLS.[HRNSOTPay]
+	,[SRNSOTPay] = COLS.[SRNSOTPay]
+	,RP.PaysheetHeaderDetailId
+	,RP.PaysheetHeaderId
+	,RP.ProfileId
+/*FROM vwPaysheetDetail RP*/
+FROM report.fnPayslipDetail((REPLACE(@PaySheetHeaderId,'''''''','''')),'''') RP
+CROSS APPLY
+(
+	SELECT
+	[OR] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''BasicHrs'',RP.[OR])
+    ,[RE] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''RestdayHrs'',RP.[RE])
+    ,[HO] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''HolidayHrs'',RP.[HO])
+    ,[SP] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''SpecialHrs'',RP.[SP])
+    ,[HR] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''HRHrs'',RP.[HR])
+    ,[SR] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''SRHrs'',RP.[SR])
+    ,[ORNS] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''BasicNSHrs'',RP.[ORNS]) 
+    ,[RENS] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''RestdayNSHrs'',RP.[RENS]) 
+    ,[HONS] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''HolidayNSHrs'',RP.[HONS]) 
+    ,[SPNS] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''SpecialNSHrs'',RP.[SPNS]) 
+    ,[HRNS] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''HRNSHrs'',RP.[HRNS]) 
+    ,[SRNS] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''SRNSHrs'',RP.[SRNS]) 
+    ,[OROT] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''BasicOTHrs'',RP.[OROT]) 
+    ,[REOT] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''RestdayOTHrs'',RP.[REOT]) 
+    ,[HOOT] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''HolidayOTHrs'',RP.[HOOT]) 
+    ,[SPOT] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''SpecialOTHrs'',RP.[SPOT]) 
+    ,[HROT] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''HROTHrs'',RP.[HROT]) 
+    ,[SROT] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''SROTHrs'',RP.[SROT]) 
+    ,[ORNSOT] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''BasicNSOTHrs'',RP.[ORNSOT])
+    ,[RENSOT] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''RestdayNSOTHrs'',RP.[RENSOT])
+    ,[HONSOT] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''HolidayNSOTHrs'',RP.[HONSOT])
+    ,[SPNSOT] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''SpecialNSOTHrs'',RP.[SPNSOT])
+    ,[HRNSOT] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''HRNSOTHrs'',RP.[HRNSOT])
+    ,[SRNSOT] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''SRNSOTHrs'',RP.[SRNSOT])
+	,[ORPay] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''BasicPay'',RP.BasicPay)
+    ,[REPay] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''RestdayPay'',RP.[REPay])
+    ,[HOPay] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''HolidayPay'',RP.[HOPay])
+    ,[SPPay] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''SpecialPay'',RP.[SPPay])
+    ,[HRPay] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''HRPay'',RP.[HRPay])
+    ,[SRPay] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''SRPay'',RP.[SRPay])
+    ,[ORNSPay] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''BasicNSPay'',RP.[ORNSPay]) 
+    ,[RENSPay] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''RestdayNSPay'',RP.[RENSPay]) 
+    ,[HONSPay] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''HolidayNSPay'',RP.[HONSPay]) 
+    ,[SPNSPay] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''SpecialNSPay'',RP.[SPNSPay]) 
+    ,[HRNSPay] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''HRNSPay'',RP.[HRNSPay]) 
+    ,[SRNSPay] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''SRNSPay'',RP.[SRNSPay]) 
+    ,[OROTPay] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''BasicOTPay'',RP.[OROTPay]) 
+    ,[REOTPay] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''RestdayOTPay'',RP.[REOTPay]) 
+    ,[HOOTPay] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''HolidayOTPay'',RP.[HOOTPay]) 
+    ,[SPOTPay] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''SpecialOTPay'',RP.[SPOTPay]) 
+    ,[HROTPay] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''HROTPay'',RP.[HROTPay]) 
+    ,[SROTPay] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''SROTPay'',RP.[SROTPay]) 
+    ,[ORNSOTPay] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''BasicNSOTPay'',RP.[ORNSOTPay]) 
+    ,[RENSOTPay] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''RestdayNSOTPay'',RP.[RENSOTPay]) 
+    ,[HONSOTPay] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''HolidayNSOTPay'',RP.[HONSOTPay]) 
+    ,[SPNSOTPay] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''SpecialNSOTPay'',RP.[SPNSOTPay]) 
+    ,[HRNSOTPay] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''HRNSOTPay'',RP.[HRNSOTPay]) 
+    ,[SRNSOTPay] = report.fnGetValuePerPayrollType(RP.PayrollTypeId,''SRNSOTPay'',RP.[SRNSOTPay]) 
+	,[SSS] =			report.fnGetValuePerPayrollType(RP.PayrollTypeId,''SSS'',RP.[SSS]) 
+	,[SSSES] =			report.fnGetValuePerPayrollType(RP.PayrollTypeId,''SSSES'',RP.[SSSES]) 
+	,[SSSEC] =			report.fnGetValuePerPayrollType(RP.PayrollTypeId,''SSSEC'',RP.[SSSEC]) 
+	,[PhilHealth] =		report.fnGetValuePerPayrollType(RP.PayrollTypeId,''PhilHealth'',RP.[PhilHealth]) 
+	,[PhilHealthES] =	report.fnGetValuePerPayrollType(RP.PayrollTypeId,''PhilHealthES'',RP.[PhilHealthES]) 
+	,[PAGIBIG] =		report.fnGetValuePerPayrollType(RP.PayrollTypeId,''PagIbig'',RP.[PAGIBIG]) 
+	,[PAGIBIGES] =		report.fnGetValuePerPayrollType(RP.PayrollTypeId,''PagIbigES'',RP.[PAGIBIGES]) 
+	,[WHT] =			report.fnGetValuePerPayrollType(RP.PayrollTypeId,''WHT'',RP.[WHT]) 
+	,[CompanyWHT] =		report.fnGetValuePerPayrollType(RP.PayrollTypeId,''CompanyTax'',RP.[CompanyWHT]) 
+	,[LeavePay] =		report.fnGetValuePerPayrollType(RP.PayrollTypeId,''LeavePay'',RP.[LeavePay]) 
+	,[BasicPay] =		report.fnGetValuePerPayrollType(RP.PayrollTypeId,''BasicPay'',RP.[BasicPay]) 
+	,[GrossPay] =		report.fnGetValuePerPayrollType(RP.PayrollTypeId,''GrossPay'',RP.[GrossPay]) 
+	,[NetPay] =			report.fnGetValuePerPayrollType(RP.PayrollTypeId,''NetPay'',RP.[NetPay]) 
+)COLS
+ WHERE 1=1 /*AND (CHARINDEX('','' + CAST(RP.PaySheetHeaderId AS VARCHAR) + '','','',''+ @PaySheetHeaderId +'','') > 0)*/',1,'PaySheetHeaderId',NULL,NULL,NULL,NULL)
+INSERT [report].[ReportSubReport] ([ReportCode],[SubReportName],[CmdQuery],[CmdType],[ReportParamNames],[CreateId],[Createdate],[LastUpdateId],[LastUpdateDate])VALUES('DetailedPayslipTemplate2','LeaveDetails','	SELECT 
+	LeaveHrs = SUM(ISNULL(LeaveHours,0))
+	,LeaveType = ISNULL(LPD.LeaveType,'''')
+	,LPD.PaySheetHeaderDetailId
+	,PHD.PaySheetHeaderId
+	,LeavePay = CAST(SUM(ISNULL(COLS.LeavePay,0)) AS DECIMAL(18,4))
+	FROM payroll.PaysheetLeaveDetail LPD
+	INNER JOIN  payroll.PaySheetHeaderDetail PHD ON  PHD.PaySheetHeaderDetailId = LPD.PaySheetHeaderDetailId
+	CROSS APPLY
+	(
+		SELECT
+		LeavePay = ROUND((CASE WHEN ISNULL(LPD.LeavePay,0) = 0 THEN (LPD.LeaveHours * PHD.HourlyRate) ELSE LPD.LeavePay END),4)
+	)COLS
+	WHERE (CHARINDEX('','' + CAST(PHD.PaySheetHeaderId AS VARCHAR) + '','','',''+ @PaySheetHeaderId +'','') > 0)
+	GROUP BY LPD.PaySheetHeaderDetailId, LPD.LeaveType,PHD.PaySheetHeaderId',1,'PaySheetHeaderId',NULL,NULL,NULL,NULL)
+INSERT [report].[ReportSubReport] ([ReportCode],[SubReportName],[CmdQuery],[CmdType],[ReportParamNames],[CreateId],[Createdate],[LastUpdateId],[LastUpdateDate])VALUES('DetailedPayslipTemplate2','TKAdjustment','SELECT 
+    EAD.* 
+FROM report.vwEaningAndDeductionDetails EAD
+INNER JOIN payroll.PaySheetHeaderDetail PHD ON PHD.PaySheetHeaderDetailId = EAD.PaySheetHeaderDetailId
+WHERE  EAD.TypeDescription LIKE ''%tk adj%''
+AND (CHARINDEX('','' + CAST(PHD.PaySheetHeaderId AS VARCHAR) + '','','',''+ @PaySheetHeaderId +'','') > 0)',1,'PaySheetHeaderId',NULL,NULL,NULL,NULL)
+INSERT [report].[ReportSubReport] ([ReportCode],[SubReportName],[CmdQuery],[CmdType],[ReportParamNames],[CreateId],[Createdate],[LastUpdateId],[LastUpdateDate])VALUES('DetailedPayslipTemplate2','PaySheetDetails2','SELECT PHAaWL.* FROM report.vwPaysheetHoursAndAmountswithLabel PHAaWL
+ WHERE (CHARINDEX('','' + CAST(PHAaWL.PaySheetHeaderId AS VARCHAR) + '','','',''+ @PaySheetHeaderId +'','') > 0)',1,'PaySheetHeaderId',NULL,NULL,NULL,NULL)
+INSERT [report].[ReportSubReport] ([ReportCode],[SubReportName],[CmdQuery],[CmdType],[ReportParamNames],[CreateId],[Createdate],[LastUpdateId],[LastUpdateDate])VALUES('DetailedPayslipTemplate2','BasicPay','SELECT 
+	PD.PaySheetHeaderId
+   ,PD.PaySheetHeaderDetailId
+   ,ETE.ProfileId
+   ,PD.[OR]
+   ,PD.BasicPay
+   ,PD.SalaryType
+   ,PD.MonthlyRate
+   ,PD.NumberOfPayPeriods
+   ,NoOfWorkingDays = COUNT(ETE.WorkDate)
+   ,NoOfWorkingDays2 = COUNT(ETE.WorkDate)
+   ,PD.SalaryTypeName
+/*FROM vwPaysheetDetail PD*/
+FROM report.fnPayslipDetail((REPLACE(@PaySheetHeaderId,'''''''','''')),'''') PD
+CROSS APPLY
+(
+	SELECT 
+	ETE.WorkDate
+	,ETE.[OR]
+	,ETE.RE
+	,ETE.Absent
+	,ETE.LeaveHrs
+	,ETE.WorkDateRemarks 
+	,ETE.ProfileId
+	,ETE.TimeEntryHeaderDetailId
+	FROM report.fnEmployeeTimeEtnry(0,0,PD.PeriodStartDate,PD.PeriodEndDate,PD.ProfileId) ETE
+	WHERE ETE.ProfileId = PD.ProfileId
+)ETE
+WHERE 1=1
+AND (ISNULL(ETE.WorkDateRemarks,'''') /*IN (''Holiday'',''Special'','''') */ NOT IN (''Restday''))
+AND ((ETE.Absent = 0) OR (ETE.Absent > 0 AND ETE.LeaveHrs > 0))
+/*AND   (CHARINDEX('','' + CAST(PD.PaySheetHeaderId AS VARCHAR) + '','','',''+ @PaySheetHeaderId +'','') > 0)*/
+GROUP BY PD.PaySheetHeaderId
+		,PD.PaySheetHeaderDetailId
+		,PD.BasicPay
+		,PD.SalaryType
+		,PD.MonthlyRate
+		,PD.NumberOfPayPeriods
+		,ETE.ProfileId
+		,PD.[OR]
+		,PD.SalaryTypeName
+
+
+
+/*SELECT PD.PaySheetHeaderId,PD.PaySheetHeaderDetailId,ETE.ProfileId,PD.[OR],PD.BasicPay,PD.SalaryType,PD.MonthlyRate,PD.NumberOfPayPeriods,NoOfWorkingDays = COUNT(ETE.WorkDate),PD.SalaryTypeName
+FROM dbo.vwEmployeeTimeEntry ETE
+INNER JOIN dbo.vwPaysheetDetail PD ON ETE.WorkDate BETWEEN PD.PeriodStartDate AND PD.PeriodEndDate AND ETE.ProfileId = PD.ProfileId
+
+WHERE ISNULL(ETE.WorkDateRemarks2,'''') 
+/*IN (''Holiday'',''Special'','''') */ NOT IN (''Restday'')
+
+GROUP BY 
+PD.PaySheetHeaderId,PD.PaySheetHeaderDetailId,PD.BasicPay,PD.SalaryType,PD.MonthlyRate,PD.NumberOfPayPeriods,ETE.ProfileId,PD.[OR],PD.SalaryTypeName */
+
+
+
+
+/*
+SELECT PD.PaySheetHeaderId,PD.PaySheetHeaderDetailId,ETE.ProfileId,PD.[OR],PD.BasicPay,PD.SalaryType,PD.MonthlyRate,PD.NumberOfPayPeriods,NoOfWorkingDays = COUNT(ETE.WorkDate),PD.SalaryTypeName
+FROM dbo.vwEmployeeTimeEntry ETE
+INNER JOIN dbo.vwPaysheetDetail PD ON ETE.WorkDate BETWEEN PD.PeriodStartDate AND PD.PeriodEndDate AND ETE.ProfileId = PD.ProfileId
+
+WHERE ISNULL(ETE.WorkDateRemarks2,'''')  /*IN (''Holiday'',''Special'','''') */ NOT IN (''Restday'')
+AND   (CHARINDEX('','' + CAST(PD.PaySheetHeaderId AS VARCHAR) + '','','',''+ @PaySheetHeaderId +'','') > 0)
+GROUP BY 
+PD.PaySheetHeaderId,PD.PaySheetHeaderDetailId,PD.BasicPay,PD.SalaryType,PD.MonthlyRate,PD.NumberOfPayPeriods,ETE.ProfileId,PD.[OR],PD.SalaryTypeName
+
+*/',1,'PaySheetHeaderId',NULL,NULL,NULL,NULL)
+INSERT [report].[ReportSubReport] ([ReportCode],[SubReportName],[CmdQuery],[CmdType],[ReportParamNames],[CreateId],[Createdate],[LastUpdateId],[LastUpdateDate])VALUES('DetailedPayslipTemplate2','DeductionOtherDeductionDetailsAndLoans','SELECT 
+    EAD.* 
+FROM report.vwEaningAndDeductionDetails EAD
+INNER JOIN payroll.PaySheetHeaderDetail PHD ON PHD.PaySheetHeaderDetailId = EAD.PaySheetHeaderDetailId
+WHERE (TypeId = 8 OR TypeId = 2 OR TypeId = 6)
+AND (CHARINDEX('','' + CAST(PHD.PaySheetHeaderId AS VARCHAR) + '','','',''+ @PaySheetHeaderId +'','') > 0)',1,'PaySheetHeaderId',NULL,NULL,NULL,NULL)
+/*end insert data to report.ReportSubReport*/
+
+IF(SELECT COUNT(CompanyId) FROM maintenance.Company WHERE CHARINDEX('IBIDEN',[Name]) > 0) > 0
+		BEGIN
+		UPDATE report.ReportParameter SET [Source] = '$table:maintenance.Unit,UnitId,Code' WHERE LabelName = 'Unit'
+		END
+		
+SET NOCOUNT OFF
+

@@ -1,0 +1,57 @@
+GO
+/****** Object:  StoredProcedure [performanceappraisal].[spRetrievePerformanceObjectiveDetailList]    Script Date: 6/25/2020 10:20:49 AM ******/
+IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[performanceappraisal].[spRetrievePerformanceObjectiveDetailList]') AND type in (N'P', N'PC'))
+DROP PROCEDURE [performanceappraisal].[spRetrievePerformanceObjectiveDetailList]
+GO
+/****** Object:  StoredProcedure [performanceappraisal].[spRetrievePerformanceObjectiveDetailList]    Script Date: 6/25/2020 10:20:49 AM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+-- =============================================
+-- Author:		Bryan Avellana
+-- Create date: November 23, 2018
+-- =============================================
+CREATE PROCEDURE [performanceappraisal].[spRetrievePerformanceObjectiveDetailList]
+@PerformanceObjectiveHeaderId BIGINT = NULL
+AS
+BEGIN
+	-- SET NOCOUNT ON added to prevent extra result sets from
+	-- interfering with SELECT statements.
+	SET NOCOUNT ON;
+
+    -- Insert statements for procedure here
+	SELECT
+		D.PerformanceObjectiveDetailId AS TempRowId,
+		D.PerformanceObjectiveDetailId,
+		D.PerformanceObjectiveHeaderId,
+		CASE WHEN ISNULL(D.OrganizationGoalId, 0) = 0
+			THEN 'No Organizational Goal'
+			ELSE ISNULL(P.OrgGoal, 'Organizational Goals')
+		END AS txtParentGoal,
+		D.OrganizationGoalId,
+		ISNULL(O.OrgGoal, '') AS txtOrganizationGoal,
+		ISNULL(O.[Description], '') AS txtOrgGoalDescription,
+		D.Objectives AS txtObjectives,
+		D.KeyPerformanceIndicatorId AS cmbKeyPerformanceIndicatorId,
+		K.KeyPerformanceIndicatorCode AS KPI,
+		ISNULL(V.DisplayText, '') AS Measure,
+		ISNULL(K.UnitOfMeasure, '') AS UnitOfMeasure,
+		CAST(ISNULL(D.TargetGoal, 0) AS DECIMAL(18, 4)) AS txtTargetGoal,
+		ISNULL(D.EmployeeReview, '') AS txtEmployeeReview,
+		ISNULL(D.ManagerReview, '') AS txtManagerReview,
+		CAST(ISNULL(D.[Weight], 0) AS DECIMAL(18, 4)) AS txtWeight,
+		CAST(ISNULL(D.Rating, 0) AS DECIMAL(18, 4)) AS txtRating,
+		CAST(ISNULL(D.EmployeeRating, 0) AS DECIMAL(18, 4)) AS txtEmployeeRating
+	FROM performanceappraisal.PerformanceObjectiveDetail D
+	/* Child Organization Goal */
+	LEFT JOIN performanceappraisal.OrganizationGoal O ON O.OrganizationGoalId = D.OrganizationGoalId
+	/* Parent Organization Goal */
+	LEFT JOIN performanceappraisal.OrganizationGoal P ON P.OrganizationGoalId = O.ParentGoalId
+	/* Key Performance Indicator */
+	LEFT JOIN performanceappraisal.KeyPerformanceIndicator K ON K.KeyPerformanceIndicatorId = D.KeyPerformanceIndicatorId
+	/* Measure */
+	LEFT JOIN maintenance.EnumValues V ON CAST(V.[Value] AS BIGINT) = K.MeasureId AND V.SourceName = 'Measure'
+	WHERE D.PerformanceObjectiveHeaderId = @PerformanceObjectiveHeaderId
+END
+GO

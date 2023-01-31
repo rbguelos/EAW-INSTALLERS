@@ -1,0 +1,13 @@
+
+IF NOT EXISTS(SELECT h.FileImportHeaderId FROM admin.FileImportHeader h join admin.FileImportDtl d on d.FileImportHeaderId = h.FileImportHeaderId where h.FileConfigurationCode = 'BasicRestDaySchedule' and d.TableFieldName = 'RestDayDate')
+RETURN
+
+DECLARE @IMPORTID1 BIGINT,@IMPORTID2 BIGINT
+
+SELECT @IMPORTID1 = FileImportHeaderId FROM admin.FileImportHeader WHERE FileConfigurationCode = 'RestDaySchedule'
+SELECT @IMPORTID2 = FileImportHeaderId FROM admin.FileImportHeader WHERE FileConfigurationCode = 'BasicRestDaySchedule'
+
+UPDATE admin.FileImportHeader SET FileConfigurationCode = 'BasicRestDaySchedule' OUTPUT DELETED.FileConfigurationCode,INSERTED.FileConfigurationCode WHERE FileImportHeaderId = @IMPORTID1
+UPDATE admin.FileImportHeader SET FileConfigurationCode = 'RestDaySchedule' OUTPUT DELETED.FileConfigurationCode,INSERTED.FileConfigurationCode WHERE FileImportHeaderId = @IMPORTID2
+
+UPDATE admin.FileImportDtl SET IsRequired = 1, IsKeyField = 1 WHERE FileImportHeaderId = @IMPORTID2 AND TableFieldName = 'RestDayDate'

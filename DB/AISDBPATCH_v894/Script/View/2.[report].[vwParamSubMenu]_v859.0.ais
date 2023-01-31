@@ -1,0 +1,37 @@
+IF  EXISTS (SELECT * FROM sys.views WHERE object_id = OBJECT_ID(N'[report].[vwParamSubMenu]'))
+DROP VIEW [report].[vwParamSubMenu]
+GO
+
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+/*===========================================*
+--Author:      JPR
+--Update date: 04/23/2020
+--Description: Param SubMenu For Audit Trail Reports
+\*===========================================*/
+CREATE VIEW [report].[vwParamSubMenu]
+AS
+SELECT * FROM
+(SELECT
+[PortalId] = 1
+,[MenuId] = HR.MenuMenuId
+,[MenuSubMenuId]= HR.MenuSubMenuId
+,[Name] = HR.SubMenuName
+,HR.Hidden
+FROM admin.MenuSubMenu HR
+
+UNION ALL SELECT
+[PortalId] = 2
+,[MenuId] = admin.MenuMenuId
+,[MenuSubMenuId]= admin.MenuSubMenuId
+,[Name] = admin.SubMenuName
+,admin.Hidden
+FROM admin.MenuSubMenuAdmin [admin]
+)T
+WHERE T.Hidden <> 1
+GO
+
+

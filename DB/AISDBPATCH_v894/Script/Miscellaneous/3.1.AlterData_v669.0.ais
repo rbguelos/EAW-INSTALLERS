@@ -1,0 +1,3 @@
+EXEC [admin].[UpdateListColumns]
+	@ListName = 'Conditioned Hours List', @ListType = 'ConditionedHoursColumnList',
+	@DefaultColumn = 'Company|PeriodType|JobGrade|JobPositions|Employees|CondHrs'

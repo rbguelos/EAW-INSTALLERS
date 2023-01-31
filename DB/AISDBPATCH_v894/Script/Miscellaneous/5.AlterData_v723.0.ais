@@ -1,0 +1,2 @@
+DELETE FROM SECURITY.FieldLookUp WHERE FormName = 'Shift Schedule' AND [Table] = 'Shift' AND TableFieldName = 'SpecialNSRates'
+DELETE FROM SECURITY.FieldLookUp WHERE FormName = 'Work Schedule' AND [Table] = 'WorkSchedule' AND TableFieldName = 'SpecialNSRates'

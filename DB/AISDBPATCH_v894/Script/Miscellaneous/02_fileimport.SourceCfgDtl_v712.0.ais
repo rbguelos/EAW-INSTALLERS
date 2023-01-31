@@ -1,0 +1,24 @@
+IF NOT OBJECT_ID('[fileimport].[spGenerateBulkInsertCmd]') IS NULL
+DROP PROCEDURE [fileimport].[spGenerateBulkInsertCmd]
+GO
+
+IF NOT TYPE_ID('[fileimport].[SourceCfgDtl]') IS NULL
+DROP TYPE [fileimport].[SourceCfgDtl]
+GO
+
+CREATE type [fileimport].[SourceCfgDtl] AS TABLE(
+	[FileImportCfgDetailId] [bigint] NOT NULL,	
+	[SourceColumn] [varchar](100) NULL,						
+	[DestinationColumnField] [varchar](100) NULL,		
+	[SourceColNum] [smallint] NULL,		
+	[CheckDuplicate] [bit] NULL,
+	[DataType] [varchar](20) NULL,
+	[GetValueField] [varchar](150) NULL,
+	[SourceLinkTable] [varchar](max) NULL,
+	[LinkTableFields] [varchar](1000) NULL,
+	[FieldSourceList] [varchar](max) NULL,
+	[DefaultValue] [varchar](max)
+	--[Update] [bit] NULL		
+  )
+GO
+

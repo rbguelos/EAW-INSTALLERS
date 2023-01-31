@@ -1,0 +1,773 @@
+IF  EXISTS (SELECT * FROM sys.views WHERE object_id = OBJECT_ID(N'[report].[vwAuditTrailSystemTable]'))
+DROP VIEW [report].[vwAuditTrailSystemTable]
+GO
+
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+/*===========================================*
+--Author:      JPR
+--Update date: 04/27/2020
+--Description: Audit Trail System  with SubMenu Id
+\*===========================================*/
+CREATE VIEW [report].[vwAuditTrailSystemTable]
+AS
+SELECT * FROM 
+(SELECT  
+	ATS.AuditTrailSystemTableId
+   ,ATS.PortalId
+   ,ATS.TableSchema
+   ,ATS.TableName
+   ,ATS.TableDisplayName
+   ,MenuMenuId = CASE 
+				 WHEN ATS.TableSchema = 'perdev' AND ATS.TableName = 'RatingScale' 
+				 THEN 24
+				 WHEN ATS.TableSchema = 'perdev' AND ATS.TableName = 'RatingScaleGroup' 
+				 THEN 24
+				 WHEN ATS.TableSchema = 'attendance' AND ATS.TableName = 'TimeEntryHeader' 
+				 THEN 72
+				 WHEN ATS.TableSchema = 'attendance' AND ATS.TableName = 'TimeEntryDetail' 
+				 THEN 72
+				 ELSE ATS.MenuMenuId
+				 END
+   ,MenuSubMenuId  = CASE 
+				 WHEN ATS.TableSchema = 'recruitment' AND ATS.TableName = 'Location'
+				 THEN 2 
+				 WHEN ATS.TableSchema = 'maintenance' AND ATS.TableName = 'FormType' 
+				 THEN 110 
+				 WHEN ATS.TableSchema = 'perdev' AND ATS.TableName = 'RatingScaleGroup' 
+				 THEN 11
+				 WHEN ATS.TableSchema = 'perdev' AND ATS.TableName = 'RatingScale' 
+				 THEN 10
+				 WHEN ATS.TableSchema = 'performanceappraisal' AND ATS.TableName = 'PATemplate' 
+				 THEN 18
+				 WHEN ATS.TableSchema = 'performanceappraisal' AND ATS.TableName = 'PerformanceAppraisalConfiguration' 
+				 THEN 17
+				 WHEN ATS.TableSchema = 'performanceappraisal' AND ATS.TableName = 'PAConfiguration_Frequency' 
+				 THEN 17
+				 WHEN ATS.TableSchema = 'performanceappraisal' AND ATS.TableName = 'PAConfiguration_Evaluator' 
+				 THEN 17
+				 WHEN ATS.TableSchema = 'performanceappraisal' AND ATS.TableName = 'PAConfiguration_Method' 
+				 THEN 17
+				 WHEN ATS.TableSchema = 'performanceappraisal' AND ATS.TableName = 'PAScoreRanking' 
+				 THEN 96
+				 WHEN ATS.TableSchema = 'performanceappraisal' AND ATS.TableName = 'KPI_Criteria' 
+				 THEN 20
+				 WHEN ATS.TableSchema = 'employeerelation' AND ATS.TableName = 'ViolationType' 
+				 THEN 23
+				 WHEN ATS.TableSchema = 'employeerelation' AND ATS.TableName = 'ViolationTypeDetail' 
+				 THEN 23
+				 WHEN ATS.TableSchema = 'safetyandhealth' AND ATS.TableName = 'Diagnosis' 
+				 THEN 27
+				 WHEN ATS.TableSchema = 'projecttracking' AND ATS.TableName = 'ProjectConfiguration'
+				 THEN 31
+				 WHEN ATS.TableSchema = 'projecttracking' AND ATS.TableName = 'JobCode' 
+				 THEN 32
+				 WHEN ATS.TableSchema = 'attendance' AND ATS.TableName = 'RoundingRules' 
+				 THEN 36
+				 WHEN ATS.TableSchema = 'attendance' AND ATS.TableName = 'RoundingRulesAssignment' 
+				 THEN 36
+				 WHEN ATS.TableSchema = 'payroll' AND ATS.TableName = 'HolidayRule'
+				 THEN 42
+				 WHEN ATS.TableSchema = 'maintenance' AND ATS.TableName = 'MBankAccount'
+				 THEN 46
+				 WHEN ATS.TableSchema = 'payroll' AND ATS.TableName = 'AccountingEntryGenerationGroupingFieldDetail'
+				 THEN 51
+				 WHEN ATS.TableSchema = 'payroll' AND ATS.TableName = 'AccountingEntryGenerationGroupingFieldHeader'
+				 THEN 51
+				 WHEN ATS.TableSchema = 'accountability' AND ATS.TableName = 'Vendor'
+				 THEN 59
+				 WHEN ATS.TableSchema = 'accountability' AND ATS.TableName = 'ExpenseSetup'
+				 THEN 60
+				 WHEN ATS.TableSchema = 'accountability' AND ATS.TableName = 'ItemReturnDetail'
+				 THEN 65
+				 WHEN ATS.TableSchema = 'accountability' AND ATS.TableName = 'ItemReturn'
+				 THEN 65
+				 WHEN ATS.TableSchema = 'accountability' AND ATS.TableName = 'ItemDetailSpecification'
+				 THEN 61
+				 WHEN ATS.TableSchema = 'accountability' AND ATS.TableName = 'ItemDetailCondition'
+				 THEN 61
+				 WHEN ATS.TableSchema = 'accountability' AND ATS.TableName = 'CashAdvance'
+				 THEN 66
+				 WHEN ATS.TableSchema = 'accountability' AND ATS.TableName = 'CashIssuance'
+				 THEN 67
+				 WHEN ATS.TableSchema = 'maintenance' AND ATS.TableName = 'Groups'
+				 THEN 75
+				 WHEN ATS.TableSchema = 'maintenance' AND ATS.TableName = 'EmploymentTypeGroup'
+				 THEN 83
+				 WHEN ATS.TableSchema = 'maintenance' AND ATS.TableName = 'EmploymentType'
+				 THEN 84
+				 WHEN ATS.TableSchema = 'maintenance' AND ATS.TableName = 'MHClass'
+				 THEN 89
+				 WHEN ATS.TableSchema = 'maintenance' AND ATS.TableName = 'SSSTable'
+				 THEN 90
+				 WHEN ATS.TableSchema = 'maintenance' AND ATS.TableName = 'PhilHealthTable'
+				 THEN 91
+				 WHEN ATS.TableSchema = 'maintenance' AND ATS.TableName = 'PagibigTable'
+				 THEN 92
+				 WHEN ATS.TableSchema = 'maintenance' AND ATS.TableName = 'WHTTable'
+				 THEN 93
+				 WHEN ATS.TableSchema = 'maintenance' AND ATS.TableName = 'AnnualExemption'
+				 THEN 94
+				 WHEN ATS.TableSchema = 'maintenance' AND ATS.TableName = 'ExpandedWHT'
+				 THEN 95 
+				 WHEN ATS.TableSchema = 'maintenance' AND ATS.TableName = 'ReasonPurpose'
+				 THEN 107
+				 WHEN ATS.TableSchema = 'maintenance' AND ATS.TableName = 'CompanyDocument'
+				 THEN 112
+				 ELSE MS.MenuSubMenuId
+				 END
+    
+   ,SubMenuName =CASE 
+				 WHEN ATS.TableSchema = 'recruitment' AND ATS.TableName = 'Location' 
+				 THEN 'Location' 
+				 WHEN ATS.TableSchema = 'maintenance' AND ATS.TableName = 'FormType' 
+				 THEN 'Applicant Form Questionnaire'
+				 WHEN ATS.TableSchema = 'perdev' AND ATS.TableName = 'RatingScaleGroup' 
+				 THEN 'Rating Scale Group'
+				 WHEN ATS.TableSchema = 'perdev' AND ATS.TableName = 'RatingScale' 
+				 THEN 'Rating Scale'
+				 WHEN ATS.TableSchema = 'performanceappraisal' AND ATS.TableName = 'PATemplate' 
+				 THEN 'Evaluation Template'
+				 WHEN ATS.TableSchema = 'performanceappraisal' AND ATS.TableName = 'PerformanceAppraisalConfiguration' 
+				 THEN 'Evaluation Configuration'
+				 WHEN ATS.TableSchema = 'performanceappraisal' AND ATS.TableName = 'PAScoreRanking' 
+				 THEN 'Evaluation Score Ranking'
+				 WHEN ATS.TableSchema = 'performanceappraisal' AND ATS.TableName = 'KPI_Criteria' 
+				 THEN 'Key Performance Indicator'
+				 WHEN ATS.TableSchema = 'performanceappraisal' AND ATS.TableName = 'PAConfiguration_Frequency' 
+				 THEN 'Evaluation Configuration'
+				 WHEN ATS.TableSchema = 'performanceappraisal' AND ATS.TableName = 'PAConfiguration_Evaluator' 
+				 THEN 'Evaluation Configuration'
+				 WHEN ATS.TableSchema = 'performanceappraisal' AND ATS.TableName = 'PAConfiguration_Method' 
+				 THEN 'Evaluation Configuration'
+				 WHEN ATS.TableSchema = 'employeerelation' AND ATS.TableName = 'ViolationType' 
+				 THEN 'Violation Types'
+				 WHEN ATS.TableSchema = 'employeerelation' AND ATS.TableName = 'ViolationTypeDetail' 
+				 THEN 'Violation Types'
+				 WHEN ATS.TableSchema = 'safetyandhealth' AND ATS.TableName = 'Diagnosis' 
+				 THEN 'Diagnosis'
+				 WHEN ATS.TableSchema = 'projecttracking' AND ATS.TableName = 'ProjectConfiguration' 
+				 THEN 'Project Tracking Configuration'
+				 WHEN ATS.TableSchema = 'projecttracking' AND ATS.TableName = 'JobCode' 
+				 THEN 'Job Code'
+				 WHEN ATS.TableSchema = 'attendance' AND ATS.TableName = 'RoundingRules' 
+				 THEN 'Rounding Rules'
+				 WHEN ATS.TableSchema = 'attendance' AND ATS.TableName = 'RoundingRulesAssignment' 
+				 THEN 'Rounding Rules'
+				 WHEN ATS.TableSchema = 'payroll' AND ATS.TableName = 'HolidayRule'
+				 THEN 'Holiday Pay Rule'
+				 WHEN ATS.TableSchema = 'maintenance' AND ATS.TableName = 'MBankAccount'
+				 THEN 'Bank Account'
+				 WHEN ATS.TableSchema = 'payroll' AND ATS.TableName = 'AccountingEntryGenerationGroupingFieldDetail'
+				 THEN 'Account Mapping'
+				 WHEN ATS.TableSchema = 'payroll' AND ATS.TableName = 'AccountingEntryGenerationGroupingFieldHeader'
+				 THEN 'Account Mapping'
+				 WHEN ATS.TableSchema = 'accountability' AND ATS.TableName = 'Vendor'
+				 THEN 'Item Type'
+				 WHEN ATS.TableSchema = 'accountability' AND ATS.TableName = 'ExpenseSetup'
+				 THEN 'Expense Set Up'
+				 WHEN ATS.TableSchema = 'accountability' AND ATS.TableName = 'ItemReturnDetail'
+				 THEN 'Item Returns'
+				 WHEN ATS.TableSchema = 'accountability' AND ATS.TableName = 'ItemReturn'
+				 THEN 'Item Returns'
+				 WHEN ATS.TableSchema = 'accountability' AND ATS.TableName = 'ItemDetailSpecification'
+				 THEN 'Item Detail'
+				 WHEN ATS.TableSchema = 'accountability' AND ATS.TableName = 'ItemDetailCondition'
+				 THEN 'Item Detail'
+				 WHEN ATS.TableSchema = 'accountability' AND ATS.TableName = 'CashAdvance'
+				 THEN 'Cash Advance Request'
+				 WHEN ATS.TableSchema = 'accountability' AND ATS.TableName = 'CashIssuance'
+				 THEN 'Cash Advance Issuance'
+				 WHEN ATS.TableSchema = 'maintenance' AND ATS.TableName = 'Groups'
+				 THEN 'Group'
+				 WHEN ATS.TableSchema = 'maintenance' AND ATS.TableName = 'EmploymentType'
+				 THEN 'Employee Type'
+				 WHEN ATS.TableSchema = 'maintenance' AND ATS.TableName = 'EmploymentTypeGroup'
+				 THEN 'Employee Type Group'
+				 WHEN ATS.TableSchema = 'maintenance' AND ATS.TableName = 'MHClass'
+				 THEN 'Man Hour Classification'
+				 WHEN ATS.TableSchema = 'maintenance' AND ATS.TableName = 'SSSTable'
+				 THEN 'SSS'
+				 WHEN ATS.TableSchema = 'maintenance' AND ATS.TableName = 'WHTTable'
+				 THEN 'Withholding Tax on Compensation'
+				 WHEN ATS.TableSchema = 'maintenance' AND ATS.TableName = 'PagibigTable'
+				 THEN 'Pagibig'
+				 WHEN ATS.TableSchema = 'maintenance' AND ATS.TableName = 'PhilHealthTable'
+				 THEN 'PhilHealth'
+				 WHEN ATS.TableSchema = 'maintenance' AND ATS.TableName = 'ExpandedWHT'
+				 THEN 'Expanded Withholding Tax'
+				 WHEN ATS.TableSchema = 'maintenance' AND ATS.TableName = 'AnnualExemption'
+				 THEN 'Annual Exemption'
+				 WHEN ATS.TableSchema = 'maintenance' AND ATS.TableName = 'CompanyDocument'
+				 THEN 'Company Document'
+				 WHEN ATS.TableSchema = 'maintenance' AND ATS.TableName = 'ReasonPurpose'
+				 THEN 'Document Request Reason/Purpose'
+				 ELSE MS.SubMenuName
+				 END
+FROM maintenance.AuditTrailSystemTable ATS
+LEFT JOIN admin.MenuSubMenu MS ON ATS.MenuMenuId = MS.MenuMenuId
+
+
+AND ATS.TableDisplayName = MS.SubMenuName 
+
+
+	UNION ALL
+SELECT  
+	AuditTrailSystemTableId = 451
+   ,PortalId = 1
+   ,TableSchema = 'recruitment'
+   ,TableName = 'HiringProcess'
+   ,TableDisplayName = 'Hiring Process'
+   ,MenuMenuId = 1
+   ,MenuSubMenuId  = 130
+   ,SubMenuName = 'Hiring Process'
+
+	UNION ALL
+SELECT  
+	AuditTrailSystemTableId = 452
+   ,PortalId = 1
+   ,TableSchema = 'attendance'
+   ,TableName = 'RoundingRulesHeader'
+   ,TableDisplayName = 'Rounding Rules'
+   ,MenuMenuId =  70
+   ,MenuSubMenuId  = 36
+   ,SubMenuName = 'Rounding Rules'
+	UNION ALL
+SELECT  
+	AuditTrailSystemTableId = 453
+   ,PortalId = 1
+   ,TableSchema = 'maintenance'
+   ,TableName = 'PaymentMethod'
+   ,TableDisplayName = 'Payment Method'
+   ,MenuMenuId =  132
+   ,MenuSubMenuId  = 139
+   ,SubMenuName = 'Payment Method'
+	UNION ALL
+SELECT  
+	AuditTrailSystemTableId = 454
+   ,PortalId = 1
+   ,TableSchema = 'maintenance'
+   ,TableName = 'ConditionedHours'
+   ,TableDisplayName = 'Conditioned Hours'
+   ,MenuMenuId =  132
+   ,MenuSubMenuId  = 137
+   ,SubMenuName = 'Conditioned Hours'
+
+	UNION ALL
+SELECT  
+	AuditTrailSystemTableId = 455
+   ,PortalId = 1
+   ,TableSchema = 'schedule'
+   ,TableName = 'WorkScheduleRequest'
+   ,TableDisplayName = 'Special Work Schedule Request'
+   ,MenuMenuId =  10145
+   ,MenuSubMenuId  = NULL
+   ,SubMenuName = 'Special Work Schedule Request'
+	UNION ALL
+SELECT  
+	AuditTrailSystemTableId = 456
+   ,PortalId = 1
+   ,TableSchema = 'maintenance'
+   ,TableName = 'COA'
+   ,TableDisplayName = 'Chart Of Accounts'
+   ,MenuMenuId = 104
+   ,MenuSubMenuId  = NULL
+   ,SubMenuName = NULL
+
+	 UNION ALL
+SELECT  
+	AuditTrailSystemTableId = 457
+   ,PortalId = 1
+   ,TableSchema = 'compben'
+   ,TableName = 'Package'
+   ,TableDisplayName = 'Compensation/Benefit Package'
+   ,MenuMenuId = 10146
+   ,MenuSubMenuId  = NULL
+   ,SubMenuName = NULL
+
+	UNION ALL
+SELECT  
+	AuditTrailSystemTableId = 458
+   ,PortalId = 1
+   ,TableSchema = 'compben'
+   ,TableName = 'SalaryGradeHeader'
+   ,TableDisplayName = 'Salary Grade'
+   ,MenuMenuId = 10150
+   ,MenuSubMenuId  = NULL
+   ,SubMenuName = NULL
+
+	UNION ALL
+SELECT  
+	AuditTrailSystemTableId = 458
+   ,PortalId = 1
+   ,TableSchema = 'compben'
+   ,TableName = 'SalaryGradeDetail'
+   ,TableDisplayName = 'Salary Grade'
+   ,MenuMenuId = 10150
+   ,MenuSubMenuId  = NULL
+   ,SubMenuName = NULL
+
+	UNION ALL
+SELECT  
+	AuditTrailSystemTableId = 459
+   ,PortalId = 1
+   ,TableSchema = 'payroll'
+   ,TableName = 'EmpOnHold'
+   ,TableDisplayName = 'Employee Payroll On hold'
+   ,MenuMenuId = 10157
+   ,MenuSubMenuId  = NULL
+   ,SubMenuName = NULL
+
+
+	UNION ALL
+SELECT  
+	AuditTrailSystemTableId = 460
+   ,PortalId = 1
+   ,TableSchema = 'payroll'
+   ,TableName = 'NetPayBrkdownDtl'
+   ,TableDisplayName = 'Net Pay Breakdown'
+   ,MenuMenuId = 10154
+   ,MenuSubMenuId  = NULL
+   ,SubMenuName = NULL
+	
+	UNION ALL
+SELECT  
+	AuditTrailSystemTableId = 461
+   ,PortalId = 1
+   ,TableSchema = 'payroll'
+   ,TableName = 'NetPayBrkdownHdr'
+   ,TableDisplayName = 'Net Pay Breakdown'
+   ,MenuMenuId = 10154
+   ,MenuSubMenuId  = NULL
+   ,SubMenuName = NULL
+ 
+ 	UNION ALL
+SELECT  
+	AuditTrailSystemTableId = 461
+   ,PortalId = 1
+   ,TableSchema = 'payroll'
+   ,TableName = 'AllowanceOtherPaymen'
+   ,TableDisplayName = 'Allowance Other Payment'
+   ,MenuMenuId = 10154
+   ,MenuSubMenuId  = NULL
+   ,SubMenuName = NULL
+
+ 	UNION ALL
+SELECT  
+	AuditTrailSystemTableId = 462
+   ,PortalId = 1
+   ,TableSchema = 'recruitment'
+   ,TableName = 'ApplicantEducational'
+   ,TableDisplayName = 'Applicant Educational Background'
+   ,MenuMenuId = 3
+   ,MenuSubMenuId  = NULL
+   ,SubMenuName = NULL
+
+ 	UNION ALL
+SELECT  
+	AuditTrailSystemTableId = 463
+   ,PortalId = 1
+   ,TableSchema = 'recruitment'
+   ,TableName = 'ApplicantFamilyBackg'
+   ,TableDisplayName = 'Applicant Family Background'
+   ,MenuMenuId = 3
+   ,MenuSubMenuId  = NULL
+   ,SubMenuName = NULL 
+ 	UNION ALL
+SELECT  
+	AuditTrailSystemTableId = 464
+   ,PortalId = 1
+   ,TableSchema = 'recruitment'
+   ,TableName = 'ApplicantPastEmploym'
+   ,TableDisplayName = 'Applicant Past Employment'
+   ,MenuMenuId = 3
+   ,MenuSubMenuId  = NULL
+   ,SubMenuName = NULL  
+ 	UNION ALL
+SELECT  
+	AuditTrailSystemTableId = 465
+   ,PortalId = 1
+   ,TableSchema = 'recruitment'
+   ,TableName = 'ApplicantScreeningRe'
+   ,TableDisplayName = 'Applicant Screening Result'
+   ,MenuMenuId = 5
+   ,MenuSubMenuId  = NULL
+   ,SubMenuName = NULL  
+ 	UNION ALL
+SELECT  
+	AuditTrailSystemTableId = 466
+   ,PortalId = 1
+   ,TableSchema = 'recruitment'
+   ,TableName = 'ApplicantTrainingAtt'
+   ,TableDisplayName = 'Applicant Trainings Attended'
+   ,MenuMenuId = 3
+   ,MenuSubMenuId  = NULL
+   ,SubMenuName = NULL
+ 	UNION ALL
+SELECT  
+	AuditTrailSystemTableId = 467
+   ,PortalId = 1
+   ,TableSchema = 'recruitment'
+   ,TableName = 'ApplicationGeneralIn'
+   ,TableDisplayName = 'Applicant General Information'
+   ,MenuMenuId = 4
+   ,MenuSubMenuId  = NULL
+   ,SubMenuName = NULL
+ 	UNION ALL
+SELECT  
+	AuditTrailSystemTableId = 468
+   ,PortalId = 1
+   ,TableSchema = 'maintenance'
+   ,TableName = 'ConditionedHour'
+   ,TableDisplayName = 'Conditioned Hours'
+   ,MenuMenuId = 132
+   ,MenuSubMenuId  = 137
+   ,SubMenuName = 'Conditioned Hours'
+ 	UNION ALL
+SELECT  
+	AuditTrailSystemTableId = 469
+   ,PortalId = 1
+   ,TableSchema = 'safetyandhealth'
+   ,TableName = 'Diagnosi'
+   ,TableDisplayName = 'Conditioned Hours'
+   ,MenuMenuId = 38
+   ,MenuSubMenuId  = 27
+   ,SubMenuName = 'Safety and Health Diagnosis'
+ 	UNION ALL
+SELECT  
+	AuditTrailSystemTableId = 470
+   ,PortalId = 1
+   ,TableSchema = 'employee'
+   ,TableName = 'EducationalBackground'
+   ,TableDisplayName = 'Employee Educational Background'
+   ,MenuMenuId = 9
+   ,MenuSubMenuId  = NULL
+   ,SubMenuName = NULL
+ 	UNION ALL
+SELECT  
+	AuditTrailSystemTableId = 471
+   ,PortalId = 1
+   ,TableSchema = 'workflows'
+   ,TableName = 'EmailBodyTemplate'
+   ,TableDisplayName = 'Workflow Email Body Template'
+   ,MenuMenuId = 8
+   ,MenuSubMenuId  = NULL
+   ,SubMenuName = NULL
+ 	UNION ALL
+SELECT  
+	AuditTrailSystemTableId = 472
+   ,PortalId = 2
+   ,TableSchema = 'workflows'
+   ,TableName = 'EmailBodyTemplate'
+   ,TableDisplayName = 'Workflow Email Body Template'
+   ,MenuMenuId = 8
+   ,MenuSubMenuId  = NULL
+   ,SubMenuName = NULL
+ 	UNION ALL
+SELECT  
+	AuditTrailSystemTableId = 473
+   ,PortalId = 1
+   ,TableSchema = 'employee'
+   ,TableName = 'EmployeeBeneficiary'
+   ,TableDisplayName = 'Employee Beneficiaries'
+   ,MenuMenuId = 9
+   ,MenuSubMenuId  = NULL
+   ,SubMenuName = NULL
+ 	UNION ALL
+SELECT  
+	AuditTrailSystemTableId = 474
+   ,PortalId = 1
+   ,TableSchema = 'employee'
+   ,TableName = 'EmployeeOnboardingDe'
+   ,TableDisplayName = 'Employee Onboarding'
+   ,MenuMenuId = 8
+   ,MenuSubMenuId  = NULL
+   ,SubMenuName = NULL
+ 	UNION ALL
+SELECT  
+	AuditTrailSystemTableId = 475
+   ,PortalId = 1
+   ,TableSchema = 'employee'
+   ,TableName = 'EmploymentInformatio'
+   ,TableDisplayName = 'Employee Employment Information'
+   ,MenuMenuId = 9
+   ,MenuSubMenuId  = NULL
+   ,SubMenuName = NULL
+ 	UNION ALL
+SELECT  
+	AuditTrailSystemTableId = 476
+   ,PortalId = 1
+   ,TableSchema = 'payroll'
+   ,TableName = 'etPayBrkdownHd'
+   ,TableDisplayName = 'Net Pay Breakdown'
+   ,MenuMenuId = 10154
+   ,MenuSubMenuId  = NULL
+   ,SubMenuName = NULL
+ 	UNION ALL
+SELECT  
+	AuditTrailSystemTableId = 477
+   ,PortalId = 1
+   ,TableSchema = 'schedule'
+   ,TableName = 'ExtendedTimeAndOffse'
+   ,TableDisplayName = 'Extended Time and Offset'
+   ,MenuMenuId = 54
+   ,MenuSubMenuId  = NULL
+   ,SubMenuName = NULL
+ 	UNION ALL
+SELECT  
+	AuditTrailSystemTableId = 478
+   ,PortalId = 1
+   ,TableSchema = 'maintenance'
+   ,TableName = 'Group'
+   ,TableDisplayName = 'Groups'
+   ,MenuMenuId = 97
+   ,MenuSubMenuId  = 75
+   ,SubMenuName = NULL
+ 	UNION ALL
+SELECT  
+	AuditTrailSystemTableId = 479
+   ,PortalId = 1
+   ,TableSchema = 'performanceappraisal'
+   ,TableName = 'IndividualDevelopmen'
+   ,TableDisplayName = 'Individual Development Plan'
+   ,MenuMenuId = 31
+   ,MenuSubMenuId  = NULL
+   ,SubMenuName = NULL
+ 	UNION ALL
+SELECT  
+	AuditTrailSystemTableId = 480
+   ,PortalId = 1
+   ,TableSchema = 'recruitment'
+   ,TableName = 'InterviewQuestionnai'
+   ,TableDisplayName = 'Interview Questionnaire'
+   ,MenuMenuId = 1
+   ,MenuSubMenuId  = 3
+   ,SubMenuName = NULL
+ 	UNION ALL
+SELECT  
+	AuditTrailSystemTableId = 481
+   ,PortalId = 1
+   ,TableSchema = 'employeerelation'
+   ,TableName = 'InvestigationStatu'
+   ,TableDisplayName = 'Investigation Status'
+   ,MenuMenuId = 34
+   ,MenuSubMenuId  = 24
+   ,SubMenuName = 'Investigation Status'
+ 	UNION ALL
+SELECT  
+	AuditTrailSystemTableId = 482
+   ,PortalId = 1
+   ,TableSchema = 'employeerelation'
+   ,TableName = 'ItemDetailSpecificat'
+   ,TableDisplayName = 'Item Detail Specification'
+   ,MenuMenuId = 94
+   ,MenuSubMenuId  = 61
+   ,SubMenuName = 'Item Detail'
+ 	UNION ALL
+SELECT  
+	AuditTrailSystemTableId = 483
+   ,PortalId = 1
+   ,TableSchema = 'performanceappraisal'
+   ,TableName = 'KeyPerformanceIndica'
+   ,TableDisplayName = 'Key Performance indicator'
+   ,MenuMenuId = 25
+   ,MenuSubMenuId  = 20
+   ,SubMenuName = 'Key Performance Indicator'
+
+	UNION ALL
+SELECT  
+	AuditTrailSystemTableId = 484
+   ,PortalId = 1
+   ,TableSchema = 'performanceappraisal'
+   ,TableName = 'KPI_Criteria'
+   ,TableDisplayName = 'KPI'
+   ,MenuMenuId = 25
+   ,MenuSubMenuId  = 20
+   ,SubMenuName = 'Key Performance Indicator'
+
+	UNION ALL
+SELECT  
+	AuditTrailSystemTableId = 485
+   ,PortalId = 1
+   ,TableSchema = 'payroll'
+   ,TableName = 'LoanRemittancePaymen'
+   ,TableDisplayName = 'Loan Remittance Payment'
+   ,MenuMenuId = 89
+   ,MenuSubMenuId  = NULL
+   ,SubMenuName = NULL
+
+	UNION ALL
+SELECT  
+	AuditTrailSystemTableId = 486
+   ,PortalId = 1
+   ,TableSchema = 'recruitment'
+   ,TableName = 'ManpowerRequestJobPo'
+   ,TableDisplayName = 'Manpower Request Job Post Channel'
+   ,MenuMenuId = 2
+   ,MenuSubMenuId  = NULL
+   ,SubMenuName = NULL
+	UNION ALL
+SELECT  
+	AuditTrailSystemTableId = 486
+   ,PortalId = 1
+   ,TableSchema = 'recruitment'
+   ,TableName = 'ManpowerRequestQuali'
+   ,TableDisplayName = 'Manpower Request Qualification'
+   ,MenuMenuId = 2
+   ,MenuSubMenuId  = NULL
+   ,SubMenuName = NULL
+	UNION ALL
+SELECT  
+	AuditTrailSystemTableId = 487
+   ,PortalId = 1
+   ,TableSchema = 'recruitment'
+   ,TableName = 'ManpowerRequestQuali'
+   ,TableDisplayName = 'Manpower Request Qualification'
+   ,MenuMenuId = 2
+   ,MenuSubMenuId  = NULL
+   ,SubMenuName = NULL
+	UNION ALL
+SELECT  
+	AuditTrailSystemTableId = 488
+   ,PortalId = 1
+   ,TableSchema = 'safetyandhealth'
+   ,TableName = 'MedicalExaminationRe'
+   ,TableDisplayName = 'Medical Examination Report'
+   ,MenuMenuId = 40
+   ,MenuSubMenuId  = NULL
+   ,SubMenuName = NULL
+	UNION ALL
+SELECT  
+	AuditTrailSystemTableId = 489
+   ,PortalId = 1
+   ,TableSchema = 'safetyandhealth'
+   ,TableName = 'MedicalExaminationRe'
+   ,TableDisplayName = 'Medical Examination Report'
+   ,MenuMenuId = 40
+   ,MenuSubMenuId  = NULL
+   ,SubMenuName = NULL
+	UNION ALL
+SELECT  
+	AuditTrailSystemTableId = 490
+   ,PortalId = 1
+   ,TableSchema = 'safetyandhealth'
+   ,TableName = 'MedicalServiceSchedu'
+   ,TableDisplayName = 'Medical Service Schedule'
+   ,MenuMenuId = 42
+   ,MenuSubMenuId  = NULL
+   ,SubMenuName = NULL
+	UNION ALL
+SELECT  
+	AuditTrailSystemTableId = 491
+   ,PortalId = 1
+   ,TableSchema = 'attendance'
+   ,TableName = 'MHClassDetailDuratio'
+   ,TableDisplayName = 'MH Class Detail Duration'
+   ,MenuMenuId = 123
+   ,MenuSubMenuId  = NULL
+   ,SubMenuName = NULL
+	UNION ALL
+SELECT  
+	AuditTrailSystemTableId = 492
+   ,PortalId = 2
+   ,TableSchema = 'admin'
+   ,TableName = 'NotificationSetupDetail'
+   ,TableDisplayName = 'Notification Setup'
+   ,MenuMenuId = 0
+   ,MenuSubMenuId  = NULL
+   ,SubMenuName = NULL
+   	UNION ALL
+SELECT  
+	AuditTrailSystemTableId = 493
+   ,PortalId = 2
+   ,TableSchema = 'admin'
+   ,TableName = 'NotificationSetupDetail'
+   ,TableDisplayName = 'Notification Setup'
+   ,MenuMenuId = 0
+   ,MenuSubMenuId  = NULL
+   ,SubMenuName = NULL
+   	UNION ALL
+SELECT  
+	AuditTrailSystemTableId = 494
+   ,PortalId = 2
+   ,TableSchema = 'workflows'
+   ,TableName = 'OnlineNotificationTe'
+   ,TableDisplayName = 'Workflow Online Notification Template'
+   ,MenuMenuId = 7
+   ,MenuSubMenuId  = NULL
+   ,SubMenuName = NULL
+   	UNION ALL
+SELECT  
+	AuditTrailSystemTableId = 495
+   ,PortalId = 2
+   ,TableSchema = 'workflows'
+   ,TableName = 'OnlineNotificationTemplate'
+   ,TableDisplayName = 'Workflow Online Notification Template'
+   ,MenuMenuId = 7
+   ,MenuSubMenuId  = NULL
+   ,SubMenuName = NULL
+   	UNION ALL
+SELECT  
+	AuditTrailSystemTableId = 496
+   ,PortalId = 1
+   ,TableSchema = 'payroll'
+   ,TableName = 'OvertimeAllowanceDet'
+   ,TableDisplayName = 'Overtime Allowance'
+   ,MenuMenuId = 120
+   ,MenuSubMenuId  = NULL
+   ,SubMenuName = NULL
+   	UNION ALL
+SELECT  
+	AuditTrailSystemTableId = 497
+   ,PortalId = 1
+   ,TableSchema = 'performanceappraisal'
+   ,TableName = 'PATemplateCriteriaSo'
+   ,TableDisplayName = 'Performance Appraisal Criteria Source'
+   ,MenuMenuId = 120
+   ,MenuSubMenuId  = NULL
+   ,SubMenuName = NULL
+   	UNION ALL
+SELECT  
+	AuditTrailSystemTableId = 498
+   ,PortalId = 1
+   ,TableSchema = 'attendance'
+   ,TableName = 'RoundingRule'
+   ,TableDisplayName = 'Rounding Rules Assignment'
+   ,MenuMenuId = 70
+   ,MenuSubMenuId  = 36
+   ,SubMenuName = 'Rounding Rules'
+	UNION ALL
+SELECT
+     AuditTrailSystemTableId = 498 +  row_number() over (order by (SELECT NULL     )) 
+	,AM.PortalId
+	,AM.TableSchema
+	,TableName = R.ReportCode
+	,TableDisplayName = R.ReportName
+	,AM.MenuMenuId
+	,MenuSubMenuId = NULL
+	,SubMenuName = NULL
+	FROM
+ Report.ReportMenu RM
+CROSS APPLY
+(SELECT PortalId = 1,TableSchema = 'report',* FROM 
+	admin.MenuMenu MM  WHERE  RM.MenuModuleId = MM.MenuModuleId AND 
+	MM.MenuName = 'Reports'
+	UNION ALL
+	SELECT PortalId = 2,TableSchema = 'report',* FROM 
+	admin.MenuMenuAdmin MM  WHERE  RM.AdminMenuModuleId = MM.MenuModuleId AND 
+	MM.MenuName = 'Reports'
+)AM
+INNER JOIN report.Report  R ON R.ReportId = RM.ReportId
+
+
+
+)T
+
+GO
+
+
+
+

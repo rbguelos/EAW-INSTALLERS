@@ -1,0 +1,9 @@
+UPDATE payroll.Paygroup
+SET GlobalFilterParams = ISNULL(
+	STUFF((
+		SELECT
+			'$' + X.[VALUE]
+		FROM dbo.SplitStrings_XML(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(FilterEmployeeParams, ':', '|'), ',', '$'), 'CompanyId', 1), 'BranchId', 2), 'DepartmentId', 3), 'OfficeId', 4), 'UnitId', 5), 'ProjectProfileId', 6), 'JobLevelId', 7), 'PositionId', 8), 'GroupId', 9), 'TeamId', 10), 'DistrictId', 11), 'JobRankId', 12), 'DivisionId', 13), 'LineId', 14), 'JobGradeId', 15), 'CostCenterId', 16), 'LocationId', 17), 'ManHourClassificationId', 997), 'EmploymentTypeId', 998), 'MinimumWageEarnerId', 999), '$') X
+		WHERE RIGHT(X.[VALUE], 2) <> '|0'
+	FOR XML PATH ('')),1,1,'')
+, '')

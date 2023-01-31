@@ -1,0 +1,71 @@
+﻿  ----------------------------------------------
+  -- Remove 'Accrued 13th month' option from the 13th Month Basis combobox
+  ----------------------------------------------
+  
+  UPDATE maintenance.ConfigSetupDetail 
+  SET Source = ' :0,Actual Income:1,Pro-rate Actual Rate:5,Pro-rate Current Rate:2,Fixed current rate:3,Current Rate less Absences and LWOP (Leave Without Pay):6'
+  WHERE PropertyName = 'Opt13thMonthPayOptions'
+
+  ----------------------------------------------
+  -- Include Saturdays in # of Work Days
+  ----------------------------------------------
+
+  DELETE FROM maintenance.ConfigSetupDetail 
+  WHERE PropertyName = 'IncludeSaturdaysinNumberofWorkDays'
+
+  INSERT INTO maintenance.ConfigSetupDetail (ConfigSetupHeaderId, PropertyName, LabelName, 
+    PropertyValue, Type, Source, [Group], SubGroup, SortOrder, Alignment)
+  VALUES (4, 'IncludeSaturdaysinNumberofWorkDays', 'Include Saturdays in # of Work Days',
+    '', 'checkbox', '', 4, 0, 4, '')
+
+  ----------------------------------------------
+  -- Include Sundays in # Work Days
+  ----------------------------------------------
+
+  DELETE FROM maintenance.ConfigSetupDetail 
+  WHERE PropertyName = 'IncludeSundaysinNumberWorkDays'
+
+  INSERT INTO maintenance.ConfigSetupDetail (ConfigSetupHeaderId, PropertyName, LabelName, 
+    PropertyValue, Type, Source, [Group], SubGroup, SortOrder, Alignment)
+  VALUES (4, 'IncludeSundaysinNumberWorkDays', 'Include Sundays in # Work Days',
+    '', 'checkbox', '', 4, 0, 5, '')
+
+  ----------------------------------------------
+  -- Compute from the beginning of the year
+  ----------------------------------------------
+
+  DELETE FROM maintenance.ConfigSetupDetail 
+  WHERE PropertyName = 'Computefromthebeginningoftheyear'
+
+  INSERT INTO maintenance.ConfigSetupDetail (ConfigSetupHeaderId, PropertyName, LabelName, 
+    PropertyValue, Type, Source, [Group], SubGroup, SortOrder, Alignment)
+  VALUES (4, 'Computefromthebeginningoftheyear', 'Compute from the beginning of the year',
+    '', 'checkbox', '', 4, 0, 6, '')
+
+  ----------------------------------------------
+  -- Skip months with complete absence
+  ----------------------------------------------
+
+  DELETE FROM maintenance.ConfigSetupDetail 
+  WHERE PropertyName = 'Skipmonthswithcompleteabsence'
+
+  INSERT INTO maintenance.ConfigSetupDetail (ConfigSetupHeaderId, PropertyName, LabelName, 
+    PropertyValue, Type, Source, [Group], SubGroup, SortOrder, Alignment)
+  VALUES (4, 'Skipmonthswithcompleteabsence', 'Skip months with complete absence',
+    '', 'checkbox', '', 4, 0, 7, '')
+
+  -- Rearrange sort order
+
+  UPDATE maintenance.ConfigSetupDetail SET SortOrder = 8 WHERE PropertyName = 'WorkingDaysPerYear'
+  UPDATE maintenance.ConfigSetupDetail SET SortOrder = 9 WHERE PropertyName = 'MultiplierFactor'
+  UPDATE maintenance.ConfigSetupDetail SET SortOrder = 10 WHERE PropertyName = 'Accrue13thMonthEveryPeriod'
+  UPDATE maintenance.ConfigSetupDetail SET SortOrder = 11 WHERE PropertyName = 'Issue13thMonthEveryPeriod'
+  UPDATE maintenance.ConfigSetupDetail SET SortOrder = 12 WHERE PropertyName = 'PredictIncome'
+  UPDATE maintenance.ConfigSetupDetail SET SortOrder = 13 WHERE PropertyName = 'Consolidate13thMonthPay'
+  UPDATE maintenance.ConfigSetupDetail SET SortOrder = 14 WHERE PropertyName = 'IncludeLeavePayIn13thMonthPayComputation'
+  UPDATE maintenance.ConfigSetupDetail SET SortOrder = 15 WHERE PropertyName = 'IncludeNonWorkedHolidayPayIn13thMonthPayComputation_REGULAR'
+  UPDATE maintenance.ConfigSetupDetail SET SortOrder = 16 WHERE PropertyName = 'IncludeNonWorkedHolidayPayIn13thMonthPayComputation_CONTRACTUAL_PROBATIONARY'
+
+  -- Adjust division of controls
+
+  UPDATE maintenance.ConfigSetupHeader SET Panel4 = '13th Month Options;17;2' WHERE ConfigSetupHeaderId = 4

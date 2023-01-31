@@ -1,0 +1,4 @@
+UPDATE leave.LeaveTypeSetup SET
+	AutomaticFillupReason = 1,
+	WorkDaysOnly = 0,
+	RequireAllDocument = 0

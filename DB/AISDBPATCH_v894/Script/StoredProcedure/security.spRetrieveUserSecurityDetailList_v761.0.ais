@@ -1,0 +1,42 @@
+﻿/*===========================================*\
+**	   Last Update Date: 09/26/2019
+**	   Last Update By: Michael
+**	   Last DBVersion executed: 
+\*===========================================*/
+
+ALTER PROC security.spRetrieveUserSecurityDetailList 
+(
+	@UserSecurityId BIGINT = 0,
+	@Portal BIGINT = 0
+)
+AS
+BEGIN
+
+	SELECT
+		UserSecurity_Detail.UserSecurityDetailId
+	   ,UserSecurity_Detail.UserSecurityId
+	   ,UserSecurity_Detail.ModuleFormId cmbModuleFormId
+	   ,Module_Forms.ModuleId cmbModuleId
+	   ,Module.Name Module
+	   ,Module_Forms.Name
+	   ,COALESCE((SELECT
+				STUFF((SELECT
+						', ' + AccessType.AccessType
+					FROM [dbo].[FN_SPLITWITHID](UserSecurity_Detail.AccessTypeId, ',') T
+					JOIN security.AccessType
+						ON T.value= AccessType.value
+          ORDER BY AccessType.AccessType
+					FOR XML PATH (''))
+				, 1, 1, ''))
+		, '') lblAccessType_Desc
+	   ,UserSecurity_Detail.AccessTypeId txtAccessTypeId
+	FROM security.UserSecurity_Detail
+	JOIN security.Module_Forms
+		ON Module_Forms.ModuleFormId = UserSecurity_Detail.ModuleFormId
+	JOIN security.Module
+		ON Module.ModuleId = Module_Forms.ModuleId
+	WHERE UserSecurity_Detail.UserSecurityId = @UserSecurityId
+	AND Module.Portal = @Portal
+	ORDER BY Module, Module_Forms.Name
+END
+GO

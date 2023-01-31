@@ -1,0 +1,21 @@
+IF NOT EXISTS (SELECT TOP 1 1 FROM sys.objects WHERE object_id = OBJECT_ID(N'[payroll].[PaysheetNegativeLeaveBalance]') AND type in (N'U'))
+BEGIN
+
+CREATE TABLE [payroll].[PaysheetNegativeLeaveBalance](
+    [PaysheetNegativeLeaveBalanceId] [bigint] IDENTITY(1,1) NOT NULL,
+    [PaySheetHeaderDetailId] [bigint] NULL,
+    [LeaveTypeSetupId] [bigint] NULL,
+    [Code] [varchar](30) NULL,
+    [Balance] [decimal](18, 4) NULL,
+    [LeaveBalanceDetailId] [bigint] NULL,
+    [StatusId] [bigint] NULL,
+    [CreateId] [bigint] NULL,
+    [CreateDate] [datetime] NULL,
+    [LastUpdateId] [bigint] NULL,
+    [LastUpdateDate] [datetime] NULL,
+ CONSTRAINT [PK_PaysheetNegativeLeaveBalance] PRIMARY KEY CLUSTERED
+(
+    [PaysheetNegativeLeaveBalanceId] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY]
+END

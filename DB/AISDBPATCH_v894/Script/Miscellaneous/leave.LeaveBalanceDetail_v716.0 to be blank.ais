@@ -1,0 +1,81 @@
+
+DECLARE @tmp_tbl_AdjustmentLeaveBalanceDetail  TABLE
+(
+	RowNo [bigint] NULL,
+	[LeaveBalanceDetailId] [bigint] NULL
+)
+--===============================================================================
+--001 - INSERT all Adjustment Leave balance where source is like 'TimeEntryHeaderId'
+--===============================================================================
+INSERT @tmp_tbl_AdjustmentLeaveBalanceDetail (RowNo, LeaveBalanceDetailId)
+	SELECT
+		--RowNo
+		RowNo = ROW_NUMBER() OVER (ORDER BY LeaveBalanceDetailId ASC)
+
+		--LeaveBalanceDetailId
+	   ,LeaveBalanceDetailId
+
+	FROM leave.LeaveBalanceDetail
+	WHERE StatusId = 14 /*adjustment*/
+	AND [Source] LIKE 'TimeEntryHeaderId%'
+
+--===============================================================================
+--002 - Set @TotalCountOfAdjustmentLeave
+--===============================================================================
+DECLARE @TotalCountOfAdjustmentLeave bigint  = ( SELECT
+		COUNT(LeaveBalanceDetailId)
+	FROM @tmp_tbl_AdjustmentLeaveBalanceDetail)
+--===============================================================================
+--003 - Set @ctr
+--===============================================================================
+DECLARE @ctr bigint = 1
+	
+
+--===============================================================================
+--004 - Loop each @tmp_tbl_AdjustmentLeaveBalanceDetail
+--===============================================================================
+
+WHILE (@ctr <= @TotalCountOfAdjustmentLeave)
+BEGIN
+
+UPDATE leave.LeaveBalanceDetail
+--Set AdjustmentId
+SET AdjustmentId = (SELECT TOP 1
+		--Get LeaveBalanceDetailId
+		Posted.LeaveBalanceDetailId
+	FROM leave.LeaveBalanceDetail Posted
+	WHERE
+	--01 All Posted Leave
+	    Posted.StatusId = 10 
+	--02 - Same PostedDate
+	AND Posted.PostedDate = LeaveBalanceDetail.IssuedDate
+	--03 - Same Source
+	AND Posted.Source = LeaveBalanceDetail.Source
+	--04 - But Not in other Adjusment Record
+	AND Posted.LeaveBalanceDetailId NOT IN (SELECT
+			b.AdjustmentId
+		FROM leave.LeaveBalanceDetail b
+		WHERE b.StatusId = 14 /*adjustment*/
+		AND b.Source LIKE 'TimeEntryHeaderId%'))
+WHERE leave.LeaveBalanceDetail.LeaveBalanceDetailId = (SELECT
+		LeaveBalanceDetailId
+	FROM @tmp_tbl_AdjustmentLeaveBalanceDetail
+	WHERE RowNo = @ctr)
+
+--Update counter
+SET @ctr += 1
+
+END
+
+
+UPDATE leave.LeaveBalanceDetail
+	SET AvailableHours = 0
+FROM leave.LeaveBalanceDetail
+WHERE LeaveBalanceDetailId IN (SELECT
+		leave.LeaveBalanceDetail.AdjustmentId
+	FROM leave.LeaveBalanceDetail
+	WHERE StatusId = 14 /*ADJUSTMENT*/
+	AND Source LIKE 'TimeEntryHeaderId%')
+
+
+

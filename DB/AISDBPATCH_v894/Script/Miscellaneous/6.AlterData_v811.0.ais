@@ -1,0 +1,7 @@
+INSERT INTO maintenance.ColorCoding
+SELECT 72, '.cw-workschedule', '{background-color:#1a911c;color:white;}', 'Change Work Schedule Request',
+'Work Schedule with approved Change Work Schedule Request.', NULL, NULL, NULL, NULL
+
+INSERT INTO maintenance.ColorCoding
+SELECT 72, '.swcw-workschedule', '{background-color:#218073;color:white;}', 'Special and Change Work Schedule Request',
+'Work Schedule with approved Special and Change Work Schedule Request.', NULL, NULL, NULL, NULL

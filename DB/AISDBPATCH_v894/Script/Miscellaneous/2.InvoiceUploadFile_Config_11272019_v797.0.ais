@@ -1,0 +1,3 @@
+UPDATE admin.FileGeneratorHeader SET [FileName] = '1$<Postcode>_Invoice Upload File_<CurrentDateMMddyyyy>' WHERE TemplateName = 'InvoiceUploadFile'
+UPDATE admin.FileGeneratorHeader SET [FileName] = '' WHERE TemplateName = 'InvoiceUploadFilePaymentSummary'
+UPDATE admin.FileGeneratorHeader SET [FileName] = '' WHERE TemplateName = 'InvoiceUploadFilePayrollImport'

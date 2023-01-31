@@ -1,0 +1,50 @@
+IF  EXISTS (SELECT * FROM sys.views WHERE object_id = OBJECT_ID(N'[report].[vwEmployeeSalaryFromProfile]'))
+DROP VIEW [report].[vwEmployeeSalaryFromProfile]
+GO
+
+--=============================================
+--Author:      AGC
+--Create date: 11/20/2019
+--Description: For Employee Salary Display (LATEST)
+--=============================================
+
+CREATE VIEW [report].[vwEmployeeSalaryFromProfile]
+AS
+
+
+SELECT 
+	ProfileSalaryRate = ISNULL(SALARY.SalaryRate,0)
+	,ProfileSalaryRateInWordsUpperCase = UPPER(dbo.Currency_ToWords(ISNULL(SALARY.SalaryRate,0)))
+	,ProfileSalaryRateInWords = (dbo.Currency_ToWords(ISNULL(SALARY.SalaryRate,0)))
+	,ProfileSalaryFactor = ISNULL((SELECT TOP 1 EV.DisplayText FROM maintenance.EnumValues EV WHERE EV.SourceName = 'SalaryFactor' AND EV.Value = SALARY.SalaryFactor),'')
+	,EffectiveDate = (CASE WHEN ISNULL(SALARY.EffectiveDate,'1/1/1900') > '1/1/1900' THEN FORMAT(SALARY.EffectiveDate,N'MM/dd/yyyy') ELSE '' END)
+	,CurrencyCode = ISNULL(CURRENCY.Code,'')
+	,CurrencyName = ISNULL(CURRENCY.Name,'')
+	,MinimumWageEarner = (CASE WHEN ISNULL(SALARY.MinimumWageEarner,0) = 1 THEN 'MWE' ELSE '' END)
+	,MinimumTakeHomePayType = ISNULL((SELECT TOP 1 EV.DisplayText FROM maintenance.EnumValues EV WHERE EV.SourceName = 'MinimumTakeHomePayType' AND EV.Value = SALARY.MinimumTakeHomePayType),'')
+	,MinimumTakeHomePayValue = ISNULL(SALARY.MinimumTakeHomePayValue,0)
+	,ProfileId = ISNULL(EP.ProfileId,0)
+FROM employee.Profile EP
+OUTER APPLY
+(
+	SELECT TOP 1
+		SI.SalaryRate
+		,SI.EffectiveDate
+		,SI.CurrencyId
+		,SI.SalaryFactor
+		,SI.MinimumWageEarner
+		,SI.MinimumTakeHomePayType
+		,SI.MinimumTakeHomePayValue
+		,SI.Remarks
+	FROM employee.SalaryInformation SI
+	WHERE SI.ProfileId = EP.ProfileId
+	ORDER BY SI.EffectiveDate DESC
+)SALARY
+OUTER APPLY
+(
+	SELECT TOP 1 
+		C.Code
+		,C.Name
+	FROM maintenance.Currency C
+	WHERE C.CurrencyId = SALARY.CurrencyId
+)CURRENCY

@@ -1,0 +1,222 @@
+/*===========================================*\
+**       Last Update Date: 02/10/2020
+**       Last Update By: Jomari Rimbao
+**       Last DBVersion executed: v
+\*===========================================*/
+
+ --=============================================
+ --Author:	 AGC
+ --Update date: 07/13/2017
+ --Description: For Payroll Deduction Schedule Report
+ --=============================================
+
+ALTER PROCEDURE [report].[spPayrollDeductionScheduleReport]
+--    --parameters
+--DECLARE 
+@CompanyId bigint = 0
+,@BranchId bigint = 0
+,@DepartmentId bigint = 0
+,@JobLevelId bigint = 0
+,@PositionId bigint = 0
+,@DivisionId bigint = 1
+,@UnitId bigint = 0
+,@IssueStartDate datetime = '01/01/2018'
+,@IssueEndDate datetime = '12/31/2020'
+,@DeductionIds varchar(max) = ''
+,@SortBy varchar = '1'
+,@UserSecurityId bigint = 0
+AS 
+BEGIN
+
+SET NOCOUNT ON; --PAMPA-OPTIMIZE NG QUERY SABE NI UNCLE
+
+IF EXISTS(SELECT * FROM SYS.tables WHERE name = 'TMPPAYROLLDEDUCTIONSCHED' AND schema_id = SCHEMA_ID('report'))
+DROP TABLE report.TMPPAYROLLDEDUCTIONSCHED
+
+DECLARE @ReportId BIGINT = 297
+DECLARE @TMPTABLENAME VARCHAR(200) = 'report.TMPPAYROLLDEDUCTIONSCHED'
+
+/*DROP TEMP TABLE IF EXISTS*/
+IF EXISTS(SELECT * FROM sys.tables WHERE object_id = object_id(@TMPTABLENAME))
+EXEC('DROP TABLE ' + @TMPTABLENAME) 
+
+DECLARE @pivotquery VARCHAR(max)
+,@pivotcols VARCHAR(max)
+,@pivotcolumns VARCHAR(max)
+,@coltotals VARCHAR(max)
+
+DECLARE @pivotcol TABLE (EarningDeductionId BIGINT, TypeCode VARCHAR(50), TypeDesc VARCHAR(250))
+
+INSERT INTO @pivotcol(EarningDeductionId,TypeCode,TypeDesc)
+
+SELECT 
+    EAD.EarningDeductionId
+    ,EAD.TypeCode
+    ,EAD.TypeDescription
+FROM compben.EarningDeduction EA
+INNER JOIN report.vwEaningAndDeductionDetails EAD 
+    ON EAD.EarningDeductionId = EA.EarningDeductionId
+WHERE 
+(EAD.TypeId IN (2,6,8)) --deduction, loans, other deductions
+AND
+(
+    @DeductionIds = '' 
+    OR CHARINDEX('''' + CAST(EAD.EarningDeductionId as VARCHAR) + '''',@DeductionIds) > 0
+
+)
+
+
+
+GROUP BY EAD.TypeId,EAD.TypeCode,EAD.TypeDescription,EAD.EarningDeductionId
+
+
+/*SELECT 
+
+	 EarningDeductionId =  EA.EarningDeductionId
+    ,TypeCode = EA.Code
+    ,TypeDesc = EA.Description
+	
+FROM compben.EarningDeduction EA
+LEFT JOIN report.vwEaningAndDeductionDetails EAD 
+    ON EAD.EarningDeductionId = EA.EarningDeductionId
+WHERE 
+(EA.TypeId IN (2,6,8)) --deduction, loans, other deductions 
+AND
+(
+    @DeductionIds = '' 
+    OR CHARINDEX('''' + CAST(EA.EarningDeductionId as VARCHAR) + '''',@DeductionIds) > 0
+)
+GROUP BY EA.EarningDeductionId,EA.Code,EA.Description,EA.TypeId
+*/
+
+
+SET @pivotcols = STUFF((SELECT ',[' + TypeCode + ']' FROM @pivotcol GROUP BY TypeCode FOR XML PATH('')),1,1,'')
+SET @pivotcolumns = STUFF((SELECT ',[' + TypeCode + '] = ' + 'SUM(ISNULL([' + TypeCode + '],0))' FROM @pivotcol GROUP BY TypeCode FOR XML PATH('')),1,1,'')
+SET @coltotals = STUFF((SELECT '+' + 'SUM(ISNULL([' + TypeCode + '],0))' FROM @pivotcol GROUP BY TypeCode FOR XML PATH('')),1,1,'')
+
+SET @pivotquery = 
+'
+    SELECT 
+		DetailId = ROW_NUMBER() over (ORDER BY
+	 '
+	   +
+	   CASE CAST(@SortBy AS VARCHAR)
+	   WHEN  '1' THEN 'Name'  
+	   WHEN  '2' THEN 'EmployeeNo'  
+	   WHEN  '3' THEN 'Department'  
+	   WHEN  '4' THEN 'Position'  
+	   ELSE 'Name' END
+	   + '),
+	   PaySheetHeaderDetailId
+	   ,CompanyId 
+	   ,ProfileId
+	   ,[Employee No] = EmployeeNo
+	   ,Department
+	   ,Name
+	   ,Position
+	   ,'+ @pivotcolumns + ',[Allotment Amount] = SUM(ISNULL(t.AllotmentAmount,0))
+	   ,Totals = ' + @coltotals +'+SUM(ISNULL([t].[AllotmentAmount],0))  
+	   INTO '+@TMPTABLENAME+' /*report.TMPPAYROLLDEDUCTIONSCHED*/
+	   FROM
+	   (
+		  SELECT  
+			 ead.PaySheetHeaderDetailId
+			 ,CompanyId
+			 ,ead.ProfileId
+			 ,E.EmployeeNo
+			 ,Department = E.DepartmentName
+			 ,Name = E.LastFirstMIName
+			 ,Position = E.Position
+			 ,ead.TypeCode
+			 ,ead.TypeDescription
+			 ,Amount = ead.Payment
+			 ,BANKFILE.AllotmentAmount
+		  FROM compben.EarningDeduction ea
+		  LEFT JOIN report.vwEaningAndDeductionDetails ead on ead.EarningDeductionId = ea.EarningDeductionId
+		  CROSS APPLY
+		  (
+			 SELECT TOP 1 
+				e.EmployeeNo
+				,e.DepartmentName
+				,e.LastFirstMIName
+				,e.Position
+				,e.CompanyId
+				,e.BranchId 
+				,e.DepartmentId
+				,e.JobLevelId
+				,e.PositionId
+				,e.DivisionId
+				,e.UnitId
+			 FROM dbo.fnProfileInfoWithScope('+CAST(@UserSecurityId AS VARCHAR(MAX))+',0,'+CAST(@CompanyId AS VARCHAR(MAX))+','+CAST(@BranchId AS VARCHAR(MAX))+','+CAST(@DepartmentId AS VARCHAR(MAX))+',0,'+CAST(@JobLevelId AS VARCHAR(MAX))+',0,0,0,0,0,'+CAST(@PositionId AS VARCHAR(MAX))+',0,''1,2'',0,0,0,0,0,0,2,ead.PaySheetHeaderDetailId) e 
+			 WHERE e.ProfileId = ead.ProfileId
+		  ) E
+		  OUTER APPLY
+		  (
+			 SELECT TOP 1 
+				PH.StatusId
+			   ,PH.PaySheetHeaderId
+			   ,PHD.PaySheetHeaderDetailId
+			 FROM payroll.PaySheetHeaderDetail PHD 
+			 INNER JOIN payroll.PaySheetHeader PH ON PH.PaySheetHeaderId = PHD.PaySheetHeaderId
+			 WHERE PHD.PaySheetHeaderDetailId = ead.PaySheetHeaderDetailId
+		  )PD
+
+OUTER APPLY
+(
+	SELECT 
+		NetPayBefore = SUM(ISNULL(DTL.NetPay,0))
+		,ActualNetPay = SUM(ISNULL(DTL.NetPayPortion,0))
+		,AllotmentAmount = SUM(ISNULL(ALLOTMENT.Allotment,0))
+	FROM payroll.BankFileDtl DTL
+	INNER JOIN payroll.BankFileHdr HDR ON HDR.BankFileHdrId = DTL.BankFileHdrId
+	OUTER APPLY
+	(
+		SELECT 
+			Allotment = SUM(ISNULL(PAY.PaymentAmount,0))
+		FROM payroll.NetPayBrkdownPaymentDtl PAY 
+		WHERE PAY.BankFileHdrId = HDR.BankFileHdrId	
+		AND PAY.BankFileDtlId = DTL.BankFileDtlId
+	)ALLOTMENT
+
+
+	WHERE HDR.StatusId = 2 /*APPROVED BANK FILE*/
+	AND DTL.PayrollDtlId = PD.PaySheetHeaderDetailId
+	AND DTL.PayrollHdrId = PD.PaySheetHeaderId
+)BANKFILE 
+
+		  WHERE 
+		  (
+			 (ead.TypeId IN (2,7,6))
+			 AND
+			 (
+				CAST(ISNULL('''+CAST(@IssueStartDate AS VARCHAR(MAX))+''',''1/1/1900'') AS DATETIME) <= CAST(''1/1/1900'' AS DATETIME) OR
+				ead.PaymentDt >= CAST('''+CAST(@IssueStartDate AS VARCHAR(MAX))+''' AS DATETIME)
+			 )
+			 AND
+			 (
+				ISNULL('''+CAST(@IssueEndDate AS VARCHAR(MAX))+''',''1/1/1900'') <= CAST(''1/1/1900'' AS DATETIME) OR
+				ead.PaymentDt <= CAST('''+CAST(@IssueEndDate AS VARCHAR(MAX))+''' AS DATETIME)
+			 )
+			 AND (PD.StatusId = 2)
+			 '+CASE WHEN ISNULL(@DivisionId,0) = 0 THEN ' AND (E.DivisionId = '+CAST(@DivisionId AS VARCHAR(MAX))+')' ELSE '' END+'
+			 '+CASE WHEN ISNULL(@UnitId,0) = 0 THEN ' AND (E.UnitId = '+CAST(@UnitId AS VARCHAR(MAX))+')' ELSE '' END+'
+
+		
+		  )
+		 
+		 
+	   )AS PVT
+    PIVOT (SUM(Amount) FOR TypeCode in ('+@pivotcols+')) AS t
+    GROUP BY PaySheetHeaderDetailId,ProfileId,EmployeeNo,Department,Name,Position,CompanyId,t.AllotmentAmount'
+
+/*SELECT @pivotquery;RETURN; */
+
+EXEC (@pivotquery);
+
+EXEC [report].[spCreateReportColumn] @TMPTABLENAME, @ReportId, 'Totals,DetailId'
+
+/*EXEC('SELECT * FROM ' + @TMPTABLENAME)
+SELECT * FROM report.ReportData WHERE ReportId = 297 */
+RETURN; 
+
+END

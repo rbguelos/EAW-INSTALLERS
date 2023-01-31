@@ -1,0 +1,29 @@
+IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[compben].[spRetrievePackageId]') AND type in (N'P', N'PC'))
+DROP PROCEDURE [compben].[spRetrievePackageId]
+GO
+-- =============================================
+-- Author:		Bryan Avellana
+-- Create date:	August 17, 2017
+-- Last Db Execute:	v469
+-- =============================================
+CREATE PROCEDURE [compben].[spRetrievePackageId]
+@CompanyId BIGINT = NULL,
+@EmploymentTypeId BIGINT = NULL,
+@JobPositionId BIGINT = NULL,
+@ServerDate DATETIME = NULL
+AS
+BEGIN
+	-- SET NOCOUNT ON added to prevent extra result sets from
+	-- interfering with SELECT statements.
+	SET NOCOUNT ON;
+
+    -- Insert statements for procedure here
+	SELECT TOP 1 PCK.PackageId
+	FROM compben.Package PCK
+	WHERE PCK.CompanyId = @CompanyId
+	AND CHARINDEX(',' + CAST(@EmploymentTypeId AS VARCHAR(MAX)) + ',', ',' + PCK.EmployeeTypeIds + ',') > 0
+	AND CHARINDEX(',' + CAST(@JobPositionId AS VARCHAR(MAX)) + ',', ',' + PCK.JobPositionIds + ',') > 0
+	AND PCK.[Status] = 1
+	AND PCK.EffectiveDate <= @ServerDate
+	ORDER BY PCK.EffectiveDate DESC
+END

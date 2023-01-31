@@ -1,0 +1,10 @@
+
+EXEC spInsertTableData 
+@SCHEMA = 'maintenance'
+,@TABLENAME = 'EnumValues'
+,@COLUMNS = '[SourceName],[DisplayText],[Value],[OrderNumber],[Status]'
+,@VALUETOINSERT = 'MedicalExamType|Inhouse Clinic|3|3|1
+MedicalExamType|Outpatient|4|4|1'
+,@COLUMNSEPARATOR = '|'
+,@ROWSEPARATATOR = '
+'

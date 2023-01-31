@@ -1,0 +1,2 @@
+update admin.FileImportDtl set IsRequired = 0, AllowBlankValueIfFieldSourceEnable = 1 where FileImportHeaderId = (SELECT TOP 1 FileImportHeaderId FROM admin.FileImportHeader WHERE FileConfigurationCode = 'EmployeeProfileMainInformation')
+AND TableFieldName = 'CivilStatus'

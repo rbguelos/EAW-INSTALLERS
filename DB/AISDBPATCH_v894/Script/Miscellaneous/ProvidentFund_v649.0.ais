@@ -1,0 +1,19 @@
+EXEC [admin].[UpdateListColumns]
+	@ListName = 'Provident Fund Enrollee List',
+	@ListType = 'ProvidentFundEnrolleeListColumn',
+	@DefaultColumn = 'EmployeeNo|EmployeeName|Department|JobPosition|HireDate|YearsInService|txtPercentage|Status|EffectiveDate'
+
+EXEC [maintenance].[UpdateJQListColumns]
+	@ListType = 'ProvidentFundEnrolleeListColumn', @ColumnType = 'label',
+	@Name = 'YearsInService', @Label = 'Service Yrs', @Width = '70',
+	@Align = '', @Formatter = '', @FormatterOption = '', @Others = ''
+
+EXEC [maintenance].[UpdateJQListColumns]
+	@ListType = 'ProvidentFundEnrolleeListColumn', @ColumnType = 'label',
+	@Name = 'txtPercentage', @Label = 'Percentage', @Width = '90',
+	@Align = '', @Formatter = '', @FormatterOption = '', @Others = 'formatter: jsPFEListFunction.RemoveTrailingZeros'
+
+EXEC [maintenance].[UpdateJQListColumns]
+	@ListType = 'ProvidentFundEnrolleeListColumn', @ColumnType = 'date',
+	@Name = 'EffectiveDate', @Label = 'Effective Date', @Width = '85',
+	@Align = '', @Formatter = '', @FormatterOption = '', @Others = ''

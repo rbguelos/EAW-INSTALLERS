@@ -1,0 +1,10 @@
+/*
+Missing Index Details from SQLQuery6.sql - SQLDEVELOPER2014.EatWork_ReportProd (aisapp)
+The Query Processor estimates that implementing the following index could improve the query cost by 43.0949%.
+*/
+
+IF NOT EXISTS(SELECT index_id FROM SYS.indexes WHERE name = 'IX_WFTransactionTransactionIdTrancationTypeId' AND object_id = object_id('[workflow].[WFTransaction]'))
+CREATE NONCLUSTERED INDEX [IX_WFTransactionTransactionIdTrancationTypeId]
+ON [workflow].[WFTransaction] ([TransactionId],[TrancationTypeId])
+
+GO

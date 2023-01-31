@@ -1,0 +1,43 @@
+EXEC [admin].[UpdateListColumns]
+	@ListName = 'Organization Goal List',
+	@ListType = 'OrganizationGoalColumnList',
+	@DefaultColumn = 'Company|ParentDepartment|txtParentGoal|Department|txtOrgGoal|txtDescription|dtpYear'
+
+EXEC [maintenance].[UpdateJQListColumns]
+	@ListType = 'OrganizationGoalColumnList', @ColumnType = 'label', @Name = 'Department',
+	@Label = 'Department', @Width = '150', @Align = '', @Formatter = '', @FormatterOption = '',
+	@Others = 'sortable: false', @Clients = ''
+
+EXEC [maintenance].[UpdateJQListColumns]
+	@ListType = 'OrganizationGoalColumnList', @ColumnType = 'label', @Name = 'txtParentGoal',
+	@Label = 'Organizational Goal', @Width = '260', @Align = '', @Formatter = '', @FormatterOption = '',
+	@Others = 'search: false, formatter: OrganizationGoal.formatParentGoal', @Clients = ''
+
+EXEC [maintenance].[UpdateJQListColumns]
+	@ListType = 'OrganizationGoalColumnList', @ColumnType = 'label', @Name = 'txtOrgGoal',
+	@Label = 'Objective', @Width = '260', @Align = '', @Formatter = '', @FormatterOption = '',
+	@Others = 'sortable: false, formatter: OrganizationGoal.formatOrgGoal', @Clients = ''
+
+EXEC [maintenance].[UpdateJQListColumns]
+	@ListType = 'OrganizationGoalColumnList', @ColumnType = 'label', @Name = 'txtDescription',
+	@Label = 'Description', @Width = '300', @Align = '', @Formatter = '', @FormatterOption = '',
+	@Others = 'sortable: false', @Clients = ''
+
+EXEC [admin].[UpdateListColumns]
+	@ListName = 'Performance Objective List',
+	@ListType = 'PAObjectiveColumnList',
+	@DefaultColumn = 'DatePrepared|EmployeeNo|EmployeeName|Status|PeriodType|EffectiveYear'
+
+EXEC [maintenance].[UpdateJQListColumns]
+	@ListType = 'PAObjectiveColumnList', @ColumnType = 'label', @Name = 'EmployeeName',
+	@Label = 'Employee', @Width = '180', @Align = '', @Formatter = '', @FormatterOption = '',
+	@Others = 'formatter: PerformanceObjective.formatEmployeeName, cellattr: PerformanceObjective.formatEmployeeTooltip', @Clients = ''
+
+EXEC [maintenance].[UpdateJQListColumns]
+	@ListType = 'PAObjectiveColumnList', @ColumnType = 'label', @Name = 'EffectiveYear',
+	@Label = 'Effective Year', @Width = '100', @Align = '', @Formatter = '', @FormatterOption = '',
+	@Others = '', @Clients = ''
+
+UPDATE admin.MenuMenu SET MenuName = 'Organizational Goal' WHERE MenuModuleId = 7 AND MenuName = 'Organization Goal'
+
+UPDATE admin.MenuMenu SET MenuName = 'Individual Objectives' WHERE MenuModuleId = 7 AND MenuName = 'Individual Objective'

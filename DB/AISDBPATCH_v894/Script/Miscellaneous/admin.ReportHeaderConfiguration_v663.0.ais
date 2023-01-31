@@ -1,0 +1,6 @@
+SET NOCOUNT ON
+DELETE FROM [admin].[ReportHeaderConfiguration] WHERE [CreateDate] = '1900-01-01 06:06:06.666'
+INSERT [admin].[ReportHeaderConfiguration] ([Alignment],[Line1],[Line2],[Line3],[Line4],[LeftFooter],[LeftFooterSpecification],[CenterFooter],[CenterFooterSpecification],[RightFooter],[RightFooterSpecification],[LogoPath],[CompanyId],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate],[BranchId])VALUES(2,NULL,NULL,NULL,NULL,2,NULL,1,NULL,3,NULL,'../UploadedFiles/ReportLogo/reportlogo.jpg',1,2,'1900-01-01 06:06:06.666',NULL,NULL,NULL)
+SET NOCOUNT OFF
+
+SELECT * FROM [admin].[ReportHeaderConfiguration]

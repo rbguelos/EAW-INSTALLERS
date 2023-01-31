@@ -1,0 +1,32 @@
+IF OBJECT_ID('[payroll].[DeductionChargeCode]') IS NULL
+CREATE TABLE [payroll].[DeductionChargeCode](
+	[DeductionChargeCodeId] [bigint] IDENTITY(1,1) NOT NULL,
+	[DeductionId] [bigint] NULL,
+	[ChargeCode] [varchar](200) NULL,
+	[CreateId] [bigint] NULL,
+	[CreateDate] [datetime] NULL,
+	[LastUpdateId] [bigint] NULL,
+	[LastUpdateDate] [datetime] NULL,
+ CONSTRAINT [PK_DeductionChargeCode] PRIMARY KEY CLUSTERED 
+(
+	[DeductionChargeCodeId] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY];
+
+
+
+IF OBJECT_ID('[payroll].[AllowanceOtherChargeCode]') IS NULL
+CREATE TABLE [payroll].[AllowanceOtherChargeCode](
+	[AllowanceOtherChargeCodeId] [bigint] IDENTITY(1,1) NOT NULL,
+	[AllowanceOtherId] [bigint] NULL,
+	[ChargeCode] [varchar](200) NULL,
+	[CreateId] [bigint] NULL,
+	[CreateDate] [datetime] NULL,
+	[LastUpdateId] [bigint] NULL,
+	[LastUpdateDate] [datetime] NULL,
+ CONSTRAINT [PK_AllowanceOtherChargeCode] PRIMARY KEY CLUSTERED 
+(
+	[AllowanceOtherChargeCodeId] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY];
+

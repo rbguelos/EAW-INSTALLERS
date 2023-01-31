@@ -1,0 +1,29 @@
+EXEC [maintenance].[UpdateJQListColumns]
+	@ListType = 'ApplicationProgressScreeningScheduleListColumn', @ColumnType = 'label', @Name = 'ScreenTypeDescription',
+	@Label = 'Activity', @Width = '250', @Align = '', @Formatter = '', @FormatterOption = '',
+	@Others = 'formatter: jsFunction.FormatActivity, cellattr: jsFunction.FormatApplicantTooltip, sortable: false', @Clients = ''
+
+EXEC [maintenance].[UpdateJQListColumns]
+	@ListType = 'ApplicationProgressScreeningScheduleListColumn', @ColumnType = 'datetime', @Name = 'ActualDateTime',
+	@Label = 'Schedule Date', @Width = '150', @Align = '', @Formatter = 'jsFunction.FormatScheduleDate', @FormatterOption = '',
+	@Others = 'cellattr: jsFunction.FormatScheduleDateTooltip, sortable: false', @Clients = ''
+
+EXEC [maintenance].[UpdateJQListColumns]
+	@ListType = 'ApplicationProgressScreeningScheduleListColumn', @ColumnType = 'status', @Name = 'Status',
+	@Label = 'Status', @Width = '110', @Align = '', @Formatter = '', @FormatterOption = '',
+	@Others = 'sortable: false', @Clients = ''
+
+EXEC [maintenance].[UpdateJQListColumns]
+	@ListType = 'ApplicationProgressScreeningScheduleListColumn', @ColumnType = 'label', @Name = 'ConductedByName',
+	@Label = 'Conducted By', @Width = '200', @Align = '', @Formatter = '', @FormatterOption = '',
+	@Others = 'formatter: jsFunction.FormatConductedBy, cellattr: jsFunction.FormatConductedByTooltip, sortable: false', @Clients = ''
+
+EXEC [maintenance].[UpdateJQListColumns]
+	@ListType = 'ApplicationProgressScreeningScheduleListColumn', @ColumnType = 'label', @Name = 'QuestionnaireFormCode',
+	@Label = 'Questionnaire', @Width = '145', @Align = '', @Formatter = '', @FormatterOption = '',
+	@Others = 'sortable: false', @Clients = ''
+
+EXEC [maintenance].[UpdateJQListColumns]
+	@ListType = 'ApplicationProgressScreeningScheduleListColumn', @ColumnType = 'label', @Name = 'ScreeningResult',
+	@Label = 'Results', @Width = '120', @Align = '', @Formatter = '', @FormatterOption = '',
+	@Others = 'formatter: jsFunction.FormatScreeningResult, cellattr: jsFunction.FormatScreeningResultTooltip, sortable: false', @Clients = ''

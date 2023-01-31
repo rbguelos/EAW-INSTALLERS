@@ -1,0 +1,185 @@
+DECLARE @SQLCMD VARCHAR(MAX)
+SET @SQLCMD = 'SET NOCOUNT ON;
+  BEGIN TRY SELECT
+	s.[RowId]
+   ,s.[DataValidationRemarks_]
+   ,s.[RowNum_]
+   ,DetailNo = ROW_NUMBER() OVER (PARTITION BY [Shift Code] ORDER BY [Shift Code])
+   ,[Code] = [Shift Code]
+   ,s.[Shift Code]
+   ,[Description] = [Description]
+   ,[DaysOfWeek] = isnull(dow.[DaysOfWeek], s.[Days Of Week])
+   ,s.[Days Of Week]
+   ,[StartTime] = [Start Time]
+   ,s.[Start Time]
+   ,[EndTime] = [End Time]
+   ,s.[End Time]
+   ,[StartTimePreviousDay] = t398.[Value]
+   ,s.[Start Time is Previous Day]
+   ,[EndTimeNextDay] = t399.[Value]
+   ,s.[End Time is Next Day]
+   ,[Break1StartTime] = [Break1 Start Time]
+   ,s.[Break1 Start Time]
+   ,[Break1EndTime] = [Break1 End Time]
+   ,s.[Break1 End Time]
+   ,[Break1Duration] = [Break1 Duration]
+   ,s.[Break1 Duration]
+   ,[Break2StartTime] = [Break2 Start Time]
+   ,s.[Break2 Start Time]
+   ,[Break2EndTime] = [Break2 End Time]
+   ,s.[Break2 End Time]
+   ,[Break2Duration] = [Break2 Duration]
+   ,s.[Break2 Duration]
+   ,[Break3StartTime] = [Break3 StartTime]
+   ,s.[Break3 StartTime]
+   ,[Break3EndTime] = [Break3 End Time]
+   ,s.[Break3 End Time]
+   ,[Break3Duration] = [Break3 Duration]
+   ,s.[Break3 Duration]
+   ,[LunchBreakStartTime] = [Lunch Break Start Time]
+   ,s.[Lunch Break Start Time]
+   ,[LunchBreakEndTime] = [Lunch Break End Time]
+   ,s.[Lunch Break End Time]
+   ,[LunchDuration] = [Lunch Duration]
+   ,s.[Lunch Duration]
+   ,[WorkingHours] = [Working Hours]
+   ,s.[Working Hours]
+   ,[ShiftGroup] = [Shift Group]
+   ,s.[Shift Group] INTO #tmpTVP
+FROM @tmpTVP s
+OUTER APPLY (SELECT TOP 1
+		[Value]
+	FROM [maintenance].[EnumValues]
+	WHERE 1 = 1
+	AND SourceName = ''YesNo''
+	AND DisplayText = s.[Start Time is Previous Day]) AS T398
+OUTER APPLY (SELECT TOP 1
+		[Value]
+	FROM [maintenance].[EnumValues]
+	WHERE 1 = 1
+	AND SourceName = ''YesNo''
+	AND DisplayText = s.[End Time is Next Day]) AS T399
+CROSS APPLY(
+SELECT a.[Days Of Week],[DaysOfWeek] = STUFF(( 
+	ISNULL(CASE WHEN CHARINDEX ('',sun,'',a.[Days Of Week]) > 0 THEN '',1'' ELSE '''' END,'''')
+	+ ISNULL(CASE WHEN CHARINDEX (''mon,'',a.[Days Of Week]) > 0 THEN '',2'' END,'''')
+	+ ISNULL(CASE WHEN CHARINDEX (''tue,'',a.[Days Of Week]) > 0 THEN '',3'' END,'''')
+	+ ISNULL(CASE WHEN CHARINDEX (''wed,'',a.[Days Of Week]) > 0 THEN '',4'' END,'''')
+	+ ISNULL(CASE WHEN CHARINDEX (''thu,'',a.[Days Of Week]) > 0 THEN '',5'' END,'''')
+	+ ISNULL(CASE WHEN CHARINDEX (''fri,'',a.[Days Of Week]) > 0 THEN '',6'' END,'''')
+	+ ISNULL(CASE WHEN CHARINDEX (''sat,'',a.[Days Of Week]) > 0 THEN '',7'' END,'''')
+	+ ISNULL(CASE WHEN CHARINDEX (''sunday,'',a.[Days Of Week]) > 0 THEN '',1'' ELSE '''' END,'''')
+	+ ISNULL(CASE WHEN CHARINDEX (''monday,'',a.[Days Of Week]) > 0 THEN '',2'' END,'''')
+	+ ISNULL(CASE WHEN CHARINDEX (''tuesday,'',a.[Days Of Week]) > 0 THEN '',3'' END,'''')
+	+ ISNULL(CASE WHEN CHARINDEX (''wednesday,'',a.[Days Of Week]) > 0 THEN '',4'' END,'''')
+	+ ISNULL(CASE WHEN CHARINDEX (''thursday,'',a.[Days Of Week]) > 0 THEN '',5'' END,'''')
+	+ ISNULL(CASE WHEN CHARINDEX (''friday,'',a.[Days Of Week]) > 0 THEN '',6'' END,'''')
+	+ ISNULL(CASE WHEN CHARINDEX (''saturday,'',a.[Days Of Week]) > 0 THEN '',7'' END,'''')
+	+ ISNULL(CASE WHEN CHARINDEX (''su,'',a.[Days Of Week]) > 0 THEN '',1'' ELSE '''' END,'''')
+	+ ISNULL(CASE WHEN CHARINDEX (''m,'',a.[Days Of Week]) > 0 THEN '',2'' END,'''')
+	+ ISNULL(CASE WHEN CHARINDEX (''t,'',a.[Days Of Week]) > 0 THEN '',3'' END,'''')
+	+ ISNULL(CASE WHEN CHARINDEX (''w,'',a.[Days Of Week]) > 0 THEN '',4'' END,'''')
+	+ ISNULL(CASE WHEN CHARINDEX (''th,'',a.[Days Of Week]) > 0 THEN '',5'' END,'''')
+	+ ISNULL(CASE WHEN CHARINDEX (''f,'',a.[Days Of Week]) > 0 THEN '',6'' END,'''')
+	+ ISNULL(CASE WHEN CHARINDEX (''s,'',a.[Days Of Week]) > 0 THEN '',7'' END,'''')
+	),1,1,'''')
+FROM (SELECT [Days Of Week] = CONCAT(lower(replace(s.[Days Of Week],'' '','''')),'',''))a
+)dow
+
+
+DECLARE @ValidationLog VARCHAR(MAX) = ''''; ;
+SELECT
+	@ValidationLog = (SELECT
+			'''' +
+			CASE
+				WHEN NOT d.[Code] IS NULL THEN CONCAT(''Shift'', '' on row '', s.RowNum_, '' already exist.'', CHAR(10))
+				ELSE ''''
+			END +
+			CASE
+				WHEN s.DetailNo > 1 THEN CONCAT(''Shift'', '' on row '', s.RowNum_, '' was duplicated from the source sheet.'', CHAR(10))
+				ELSE ''''
+			END +
+			CASE
+				WHEN s.[StartTimePreviousDay] IS NULL THEN CONCAT(''The '', ''[Start Time is Previous Day]:'', ''"'', s.[Start Time is Previous Day], ''"'', '' on row '', s.[RowNum_], '' is not valid or do not exist on source table '', ''[maintenance].[EnumValues].'', CHAR(10))
+				ELSE ''''
+			END +
+			CASE
+				WHEN s.[EndTimeNextDay] IS NULL THEN CONCAT(''The '', ''[End Time is Next Day]:'', ''"'', s.[End Time is Next Day], ''"'', '' on row '', s.[RowNum_], '' is not valid or do not exist on source table '', ''[maintenance].[EnumValues].'', CHAR(10))
+				ELSE ''''
+			END +
+			CASE
+				WHEN ISNULL(s.[DataValidationRemarks_], '''') <> '''' THEN s.[DataValidationRemarks_]
+				ELSE ''''
+			END
+		FROM #tmpTVP s
+		LEFT JOIN [schedule].[Shift] d
+			ON 1 = 1
+			AND d.[Code] = s.[Code]
+		ORDER BY s.[RowId]
+		FOR XML PATH (''''), ROOT (''MyString''), TYPE)
+	.value(''/MyString[1]'', ''varchar(max)'');
+INSERT INTO [schedule].[Shift] ([Break1Duration], [Break1EndTime], [Break1StartTime], [Break2Duration], [Break2EndTime], [Break2StartTime], [Break3Duration], [Break3EndTime], [Break3StartTime], [Code], [DaysOfWeek], [Description], [EndTime], [EndTimeNextDay], [LunchBreakEndTime], [LunchBreakStartTime], [LunchDuration], [ShiftGroup], [StartTime], [StartTimePreviousDay], [WorkingHours], [CreateDate], [CreateId], FlexiBreakTime, [SpecialNSRates])
+	SELECT
+		s.[Break1Duration]
+	   ,[Break1EndTime] =
+		CASE
+			WHEN s.[Break1StartTime] > s.[Break1EndTime] THEN DATEADD(DAY, 1, s.[Break1EndTime])
+			ELSE s.[Break1EndTime]
+		END
+	   ,s.[Break1StartTime]
+	   ,s.[Break2Duration]
+	   ,[Break2EndTime] =
+		CASE
+			WHEN s.[Break2StartTime] > s.[Break2EndTime] THEN DATEADD(DAY, 1, s.[Break2EndTime])
+			ELSE s.[Break2EndTime]
+		END
+	   ,s.[Break2StartTime]
+	   ,s.[Break3Duration]
+	   ,[Break3EndTime] =
+		CASE
+			WHEN s.[Break3StartTime] > s.[Break3EndTime] THEN DATEADD(DAY, 1, s.[Break3EndTime])
+			ELSE s.[Break3EndTime]
+		END
+	   ,s.[Break3StartTime]
+	   ,s.[Code]
+	   ,s.[DaysOfWeek]
+	   ,s.[Description]
+	   ,[EndTime] =
+		CASE
+			WHEN s.[StartTime] > s.[EndTime] THEN DATEADD(DAY, 1, s.[EndTime])
+			ELSE s.[EndTime]
+		END
+	   ,s.[EndTimeNextDay]
+	   ,s.[LunchBreakEndTime]
+	   ,s.[LunchBreakStartTime]
+	   ,s.[LunchDuration]
+	   ,s.[ShiftGroup]
+	   ,s.[StartTime]
+	   ,s.[StartTimePreviousDay]
+	   ,s.[WorkingHours]
+	   ,[CreateDate] = GETDATE()
+	   ,[CreateId] = 0
+	   ,FlexiBreakTime = 0
+	   ,[SpecialNSRates] = 0
+	FROM #tmpTVP s
+	LEFT JOIN [schedule].[Shift] d
+		ON 1 = 1
+			AND d.[Code] = s.[Code]
+	WHERE DetailNo = 1
+	AND ISNULL(s.[DataValidationRemarks_], '''') = ''''
+	AND d.[Code] IS NULL;
+DECLARE @INSERTEDROWS INT;
+SET @INSERTEDROWS = @@rowcount;
+SELECT
+	ImportedRecord = @INSERTEDROWS
+   ,[Log] = @ValidationLog;
+DROP TABLE #tmpTVP;
+END TRY
+BEGIN CATCH
+SELECT
+	ImportedRecord = 0
+   ,[Log] = ERROR_MESSAGE()
+END CATCH; ';
+
+UPDATE fileimport.FileImportCfgHdr SET BulkInsertCmd = @SQLCMD WHERE FileImportCode = 'Shift';
+

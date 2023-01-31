@@ -1,0 +1,9 @@
+SET NOCOUNT ON
+ 
+DELETE FROM report.ReportParameter WHERE ReportCode = 'NoticeOfTransferPrintoutReport'
+DELETE FROM report.ReportMenu WHERE ReportId = 177
+
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat])VALUES('NoticeOfTransferPrintoutReport','@EmployeeAssignmentId','@EmployeeAssignmentId','textbox','','',1,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportMenu] ([ReportId],[AdminMenuModuleId],[MenuModuleId],[ReportGroupId],[ModuleFormId],[FileGeneratorHdrId],[XMLReportId],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES(177,0,0,NULL,187,0,0,NULL,NULL,NULL,NULL) 
+ 
+SET NOCOUNT OFF

@@ -1,0 +1,1 @@
+UPDATE report.ReportParameter SET ConditionalOperator = 'IN' WHERE [Type] = 'checkboxList' AND ConditionalOperator = '='

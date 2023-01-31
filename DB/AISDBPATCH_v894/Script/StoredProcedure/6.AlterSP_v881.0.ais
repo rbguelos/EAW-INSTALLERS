@@ -1,0 +1,107 @@
+GO
+/****** Object:  StoredProcedure [leave].[spGenerateLeaveProcessEntitledEmployeeList]    Script Date: 6/16/2020 6:29:45 PM ******/
+IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[leave].[spGenerateLeaveProcessEntitledEmployeeList]') AND type in (N'P', N'PC'))
+DROP PROCEDURE [leave].[spGenerateLeaveProcessEntitledEmployeeList]
+GO
+/****** Object:  StoredProcedure [leave].[spGenerateLeaveProcessEntitledEmployeeList]    Script Date: 6/16/2020 6:29:45 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+/*===========================================*\
+**	   Last Update Date: 04/25/2017
+**	   Last Update By: Kris
+**	   Last DBVersion executed: v332
+\*===========================================*/
+CREATE PROCEDURE [leave].[spGenerateLeaveProcessEntitledEmployeeList] 
+@LeaveTypeId BIGINT = NULL,
+@CompanyId  BIGINT = NULL,
+@BranchId BIGINT = NULL,
+@DepartmentId  BIGINT = NULL,
+@PeriodStartDate DATETIME = NULL,
+@PeriodEndDate DATETIME = NULL
+AS
+BEGIN
+	-- SET NOCOUNT ON added to prevent extra result sets from
+	-- interfering with SELECT statements.
+	SET NOCOUNT ON;
+    
+	-- Insert statements for procedure here
+	DECLARE @NullDate DATETIME = '1900-01-01'
+
+	SELECT 
+		B.LeaveBenefitId,
+		B.LeaveTypeSetupId,
+		B.ProfileId,
+		E.FullName,
+		E.CompanyId,
+		E.BranchId,
+		E.DepartmentId,
+		E.Company,
+		E.Branch,
+		E.Department,
+		E.HireDate,
+		R.RehireDate
+	FROM leave.LeaveBenefit B
+	/* Employee */
+	JOIN (
+		SELECT
+			X.*,
+			CASE
+				WHEN NULLIF(ISNULL(R.RehireDate, @NullDate), @NullDate) IS NULL
+				THEN X.HireDate
+				ELSE CASE WHEN R.RehireDate > X.HireDate THEN R.RehireDate ELSE X.HireDate END
+			END AS ConditionHireDate,
+			CASE
+				WHEN NULLIF(ISNULL(S.SeparationDate, @NullDate), @NullDate) IS NULL
+				THEN X.SeparationDate
+				ELSE CASE WHEN S.SeparationDate > X.SeparationDate THEN S.SeparationDate ELSE X.SeparationDate END
+			END AS ConditionSeparationDate
+		FROM employee.FN_GETEmployeeInformation() X
+		/* Rehire/Renewal Dates */
+		OUTER APPLY (
+			SELECT TOP 1
+				T.RRDate AS RehireDate
+			FROM employee.RehireRenewalDate T
+			WHERE NULLIF(ISNULL(T.RRDate, @NullDate), @NullDate) IS NOT NULL
+			AND T.EmploymentInformationId = X.EmploymentInformationId
+			ORDER BY T.RRDate DESC
+		) R
+		/* Separation Dates */
+		OUTER APPLY (
+			SELECT TOP 1
+				T.SeparationDate AS SeparationDate
+			FROM employee.RehireRenewalDate T
+			WHERE NULLIF(ISNULL(T.SeparationDate, @NullDate), @NullDate) IS NOT NULL
+			AND T.EmploymentInformationId = X.EmploymentInformationId
+			ORDER BY T.SeparationDate DESC
+		) S
+	) E ON E.ProfileId = B.ProfileId
+	/* Relevant Hire Dates */
+	OUTER APPLY (
+		SELECT TOP 1
+			T.RRDate AS RehireDate
+		FROM employee.RehireRenewalDate T
+		WHERE T.EmploymentInformationId = E.EmploymentInformationId
+		ORDER BY T.RRDate DESC
+	) R
+	/* Leave Balance Header */
+	CROSS APPLY (
+		SELECT * FROM leave.LeaveBalanceHeader X
+		WHERE X.LeaveTypeSetupId = B.LeaveTypeSetupId
+		AND X.ProfileId = B.ProfileId
+	) H
+	WHERE (ISNULL(@CompanyId, 0) = 0 OR E.CompanyId = ISNULL(@CompanyId, 0))
+	AND (ISNULL(@BranchId, 0) = 0 OR E.BranchId = ISNULL(@BranchId, 0))
+	AND (ISNULL(@DepartmentId, 0) = 0 OR E.DepartmentId = ISNULL(@DepartmentId, 0))
+	AND (ISNULL(@LeaveTypeId, 0) = 0 OR B.LeaveTypeSetupId = ISNULL(@LeaveTypeId, 0))
+	AND E.EmploymentStatusId = 1
+	AND (ISNULL(NULLIF(@PeriodEndDate, @NullDate), @NullDate) = @NullDate OR E.ConditionHireDate <= @PeriodEndDate)
+	AND (
+		ISNULL(NULLIF(E.ConditionSeparationDate, @NullDate), @NullDate) = @NullDate
+		OR
+		(ISNULL(NULLIF(@PeriodEndDate, @NullDate), @NullDate) = @NullDate OR E.ConditionSeparationDate > @PeriodEndDate)
+	)
+	ORDER BY E.FullName
+END
+GO

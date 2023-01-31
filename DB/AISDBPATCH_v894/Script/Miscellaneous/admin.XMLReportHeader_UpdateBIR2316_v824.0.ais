@@ -1,0 +1,1 @@
+UPDATE admin.XMLReportHeader SET TemplateName = '~/TemplateFiles/BIR2316/BIR_2316_2018.xls' WHERE TemplateName = 'BIR2316_v2018'

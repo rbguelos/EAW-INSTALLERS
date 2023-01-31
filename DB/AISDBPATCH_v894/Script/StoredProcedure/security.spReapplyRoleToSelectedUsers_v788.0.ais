@@ -1,0 +1,63 @@
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+-- =============================================
+-- Author:		JMBG
+-- Create date: 10/23/2019
+-- Description:	Reapply role to selected users
+-- =============================================
+CREATE PROCEDURE security.spReapplyRoleToSelectedUsers
+	@UserSecurityIds VARCHAR(MAX),
+	@RoleId BIGINT
+AS
+BEGIN
+	DECLARE @TempTable TABLE  ( [ModuleId] BIGINT );
+	
+	DELETE FROM security.UserSecurity_Detail 
+	SELECT * FROM security.UserSecurity_Detail  
+	WHERE CHARINDEX(',' + CAST(UserSecurityId AS VARCHAR(MAX)) + ',', @UserSecurityIds) > 0
+
+	INSERT INTO security.UserSecurity_Detail([UserSecurityId], [ModuleFormId], [ModuleId], [AccessTypeId]) 
+	OUTPUT INSERTED.ModuleId INTO @TempTable
+	SELECT DISTINCT
+		[UserSecurityId] = CAST(U.VALUE AS BIGINT)
+		,[ModuleFormId] = R.ModuleFormId
+		,[ModuleId] = R.ModuleId
+		,[AccessTypeId] = R.AccessTypeId
+	FROM dbo.SplitStrings_XML(@UserSecurityIds, ',') U
+	CROSS APPLY (
+		SELECT * FROM security.Role_FormAccess R
+		WHERE R.RoleId = @RoleId
+	) R
+	WHERE ISNULL(U.VALUE, '') != ''
+
+	;WITH TempResult AS (
+		SELECT DISTINCT M.Portal FROM security.Role_FormAccess R
+		INNER JOIN security.Module M
+			ON M.ModuleId = R.ModuleId
+		WHERE R.RoleId = @RoleId
+	), HasHR AS (
+		SELECT 
+		HR = CASE WHEN COUNT(1) > 0 THEN 1 ELSE 0 END
+		FROM TempResult T WHERE T.Portal = 1
+	), HasAdmin AS (
+		SELECT 
+		Admin = CASE WHEN COUNT(1) > 0 THEN 1 ELSE 0 END
+		FROM TempResult T WHERE T.Portal = 2
+	), HasEmployee AS (
+		SELECT 
+		Employee = CASE WHEN COUNT(1) > 0 THEN 1 ELSE 0 END
+		FROM TempResult T WHERE T.Portal = 3
+	)
+
+	UPDATE US SET 
+		US.HRAccess = ISNULL(A.HR, 0), 
+		US.EmployeeAccess = ISNULL(A.Employee, 0), 
+		US.AdminAccess = ISNULL(A.Admin, 0)
+	FROM security.UserSecurity US
+	OUTER APPLY ( SELECT * FROM HasHR, HasAdmin, HasEmployee ) A
+	WHERE CHARINDEX(',' + CAST(UserSecurityId AS VARCHAR(MAX)) + ',', @UserSecurityIds) > 0
+
+END
+GO

@@ -1,0 +1,129 @@
+GO
+/****** Object:  Table [security].[FieldLookUp]    Script Date: 7/28/2020 12:16:29 PM ******/
+IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[security].[FieldLookUp]') AND type in (N'U'))
+DROP TABLE [security].[FieldLookUp]
+GO
+/****** Object:  Table [security].[FieldLookUp]    Script Date: 7/28/2020 12:16:29 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [security].[FieldLookUp](
+	[FieldLookUpId] [bigint] IDENTITY(1,1) NOT NULL,
+	[ModuleId] [bigint] NULL,
+	[ConfigLabel] [varchar](100) NULL,
+	[FormLabel] [varchar](100) NULL,
+	[FormPlaceHolder] [varchar](100) NULL,
+	[FormName] [varchar](50) NULL,
+	[Table] [varchar](50) NULL,
+	[TableFieldName] [varchar](50) NULL,
+	[FormFieldName] [varchar](50) NULL,
+	[HideTag] [bit] NULL,
+	[RequiredTag] [bit] NULL,
+	[ShowInConfig] [bit] NULL,
+	[CreateId] [bigint] NULL,
+	[CreateDate] [datetime] NULL,
+	[LastUpdateId] [bigint] NULL,
+	[LastUpdateDate] [datetime] NULL,
+ CONSTRAINT [PK_FieldLookUp] PRIMARY KEY CLUSTERED 
+(
+	[FieldLookUpId] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+SET IDENTITY_INSERT [security].[FieldLookUp] ON 
+GO
+INSERT [security].[FieldLookUp] ([FieldLookUpId], [ModuleId], [ConfigLabel], [FormLabel], [FormPlaceHolder], [FormName], [Table], [TableFieldName], [FormFieldName], [HideTag], [RequiredTag], [ShowInConfig], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (1, 1, N'Position Allow Email', N'Test', N'Test', N'Screening Type', N'ScreeningType', N'PositionAllowEmail', N'optPositionAllowEmail', 0, 1, 0, NULL, NULL, 2, CAST(N'2020-07-24T11:34:55.570' AS DateTime))
+GO
+INSERT [security].[FieldLookUp] ([FieldLookUpId], [ModuleId], [ConfigLabel], [FormLabel], [FormPlaceHolder], [FormName], [Table], [TableFieldName], [FormFieldName], [HideTag], [RequiredTag], [ShowInConfig], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (2, 1, N'Position Allow SMS', N'Position Allow SMS', N'', N'Screening Type', N'ScreeningType', N'PositionAllowSMS', N'optPositionAllowSMS', 1, 0, 1, NULL, NULL, 2, CAST(N'2020-07-24T11:33:07.333' AS DateTime))
+GO
+INSERT [security].[FieldLookUp] ([FieldLookUpId], [ModuleId], [ConfigLabel], [FormLabel], [FormPlaceHolder], [FormName], [Table], [TableFieldName], [FormFieldName], [HideTag], [RequiredTag], [ShowInConfig], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (3, 1, N'PIC Allow Email', N'PIC Allow Email', N'', N'Screening Type', N'ScreeningType', N'PICAllowEmail', N'optPICAllowEmail', 1, 0, 1, NULL, NULL, NULL, NULL)
+GO
+INSERT [security].[FieldLookUp] ([FieldLookUpId], [ModuleId], [ConfigLabel], [FormLabel], [FormPlaceHolder], [FormName], [Table], [TableFieldName], [FormFieldName], [HideTag], [RequiredTag], [ShowInConfig], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (4, 1, N'PIC Allow SMS', N'PIC Allow SMS', N'', N'Screening Type', N'ScreeningType', N'PICAllowSMS', N'optPICAllowSMS', 1, 0, 1, NULL, NULL, NULL, NULL)
+GO
+INSERT [security].[FieldLookUp] ([FieldLookUpId], [ModuleId], [ConfigLabel], [FormLabel], [FormPlaceHolder], [FormName], [Table], [TableFieldName], [FormFieldName], [HideTag], [RequiredTag], [ShowInConfig], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (5, 1, N'Cost Center', N'Cost Center', N'', N'Manpower Request', N'ManpowerRequest', N'CostCenterId', N'cmbCostCenterId', 1, 0, 0, NULL, NULL, NULL, NULL)
+GO
+INSERT [security].[FieldLookUp] ([FieldLookUpId], [ModuleId], [ConfigLabel], [FormLabel], [FormPlaceHolder], [FormName], [Table], [TableFieldName], [FormFieldName], [HideTag], [RequiredTag], [ShowInConfig], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (6, 7, N'Domain', N'Domain', N'', N'Competency', N'Competency', N'DomainId', N'cmbDomainId', 1, 0, 0, NULL, NULL, NULL, NULL)
+GO
+INSERT [security].[FieldLookUp] ([FieldLookUpId], [ModuleId], [ConfigLabel], [FormLabel], [FormPlaceHolder], [FormName], [Table], [TableFieldName], [FormFieldName], [HideTag], [RequiredTag], [ShowInConfig], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (7, 7, N'Domain', N'Domain', N'', N'Key Performance Indicator', N'KeyPerformanceIndicator', N'DomainId', N'cmbDomainId', 1, 0, 0, NULL, NULL, NULL, NULL)
+GO
+INSERT [security].[FieldLookUp] ([FieldLookUpId], [ModuleId], [ConfigLabel], [FormLabel], [FormPlaceHolder], [FormName], [Table], [TableFieldName], [FormFieldName], [HideTag], [RequiredTag], [ShowInConfig], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (8, 10, N'Start Time', N'Start Time', N'', N'Overtime', N'Overtime', N'StartTime', N'dtpStartTime', 0, 0, 0, NULL, NULL, NULL, NULL)
+GO
+INSERT [security].[FieldLookUp] ([FieldLookUpId], [ModuleId], [ConfigLabel], [FormLabel], [FormPlaceHolder], [FormName], [Table], [TableFieldName], [FormFieldName], [HideTag], [RequiredTag], [ShowInConfig], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (9, 10, N'End Time', N'End Time', N'', N'Overtime', N'Overtime', N'EndTime', N'dtpEndTime', 0, 0, 0, NULL, NULL, NULL, NULL)
+GO
+INSERT [security].[FieldLookUp] ([FieldLookUpId], [ModuleId], [ConfigLabel], [FormLabel], [FormPlaceHolder], [FormName], [Table], [TableFieldName], [FormFieldName], [HideTag], [RequiredTag], [ShowInConfig], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (10, 7, N'Domain', N'Domain', N'', N'Appraisal Template', N'PATemplate', N'DomainId', N'cmbDomainId', 1, 0, 0, NULL, NULL, NULL, NULL)
+GO
+INSERT [security].[FieldLookUp] ([FieldLookUpId], [ModuleId], [ConfigLabel], [FormLabel], [FormPlaceHolder], [FormName], [Table], [TableFieldName], [FormFieldName], [HideTag], [RequiredTag], [ShowInConfig], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (11, 7, N'Domain', N'Domain', N'', N'Appraisal Schedule', N'PerformanceAppraisalSchedule', N'DomainId', N'cmbDomainId', 1, 0, 0, NULL, NULL, NULL, NULL)
+GO
+INSERT [security].[FieldLookUp] ([FieldLookUpId], [ModuleId], [ConfigLabel], [FormLabel], [FormPlaceHolder], [FormName], [Table], [TableFieldName], [FormFieldName], [HideTag], [RequiredTag], [ShowInConfig], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (12, 7, N'Suggested Trainings', N'Suggested Trainings', N'', N'Appraisal Questionnaire', N'CompetencyAnswer', N'SuggestedTrainings', N'SuggestedTrainings', 1, 0, 0, NULL, NULL, NULL, NULL)
+GO
+INSERT [security].[FieldLookUp] ([FieldLookUpId], [ModuleId], [ConfigLabel], [FormLabel], [FormPlaceHolder], [FormName], [Table], [TableFieldName], [FormFieldName], [HideTag], [RequiredTag], [ShowInConfig], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (13, 10, N'For Offsetting', N'For Offsetting', N'', N'Overtime', N'Overtime', N'ForOffsetting', N'chkForOffsetting', 0, 0, 0, NULL, NULL, NULL, NULL)
+GO
+INSERT [security].[FieldLookUp] ([FieldLookUpId], [ModuleId], [ConfigLabel], [FormLabel], [FormPlaceHolder], [FormName], [Table], [TableFieldName], [FormFieldName], [HideTag], [RequiredTag], [ShowInConfig], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (14, 10, N'Offsetting Expiration Date', N'Offsetting Expiration Date', N'', N'Overtime', N'Overtime', N'OffsettingExpirationDate', N'dtpOffsettingExpirationDate', 0, 0, 0, NULL, NULL, NULL, NULL)
+GO
+INSERT [security].[FieldLookUp] ([FieldLookUpId], [ModuleId], [ConfigLabel], [FormLabel], [FormPlaceHolder], [FormName], [Table], [TableFieldName], [FormFieldName], [HideTag], [RequiredTag], [ShowInConfig], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (15, 10, N'For Offsetting', N'For Offsetting', N'', N'Special Work Schedule', N'WorkScheduleRequest', N'ForOffsetting', N'chkForOffsetting', 0, 0, 0, NULL, NULL, NULL, NULL)
+GO
+INSERT [security].[FieldLookUp] ([FieldLookUpId], [ModuleId], [ConfigLabel], [FormLabel], [FormPlaceHolder], [FormName], [Table], [TableFieldName], [FormFieldName], [HideTag], [RequiredTag], [ShowInConfig], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (16, 10, N'Offsetting Expiration Date', N'Offsetting Expiration Date', N'', N'Special Work Schedule', N'WorkScheduleRequest', N'OffsettingExpirationDate', N'dtpOffsettingExpirationDate', 0, 0, 0, NULL, NULL, NULL, NULL)
+GO
+INSERT [security].[FieldLookUp] ([FieldLookUpId], [ModuleId], [ConfigLabel], [FormLabel], [FormPlaceHolder], [FormName], [Table], [TableFieldName], [FormFieldName], [HideTag], [RequiredTag], [ShowInConfig], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (17, 10, N'For Offsetting', N'For Offsetting', N'', N'Overtime', N'Overtime', N'ForOffsetting', N'chkForOffsetting', 0, 0, 0, NULL, NULL, NULL, NULL)
+GO
+INSERT [security].[FieldLookUp] ([FieldLookUpId], [ModuleId], [ConfigLabel], [FormLabel], [FormPlaceHolder], [FormName], [Table], [TableFieldName], [FormFieldName], [HideTag], [RequiredTag], [ShowInConfig], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (18, 10, N'Offsetting Expiration Date', N'Offsetting Expiration Date', N'', N'Overtime', N'Overtime', N'OffsettingExpirationDate', N'dtpOffsettingExpirationDate', 0, 0, 0, NULL, NULL, NULL, NULL)
+GO
+INSERT [security].[FieldLookUp] ([FieldLookUpId], [ModuleId], [ConfigLabel], [FormLabel], [FormPlaceHolder], [FormName], [Table], [TableFieldName], [FormFieldName], [HideTag], [RequiredTag], [ShowInConfig], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (19, 15, N'Special NS Rates', N'Special NS Rates', N'', N'Payroll Policy Form', N'PayrollPolicyForm', N'SpecialNSRates', N'n/a', 1, 0, 0, NULL, NULL, NULL, NULL)
+GO
+INSERT [security].[FieldLookUp] ([FieldLookUpId], [ModuleId], [ConfigLabel], [FormLabel], [FormPlaceHolder], [FormName], [Table], [TableFieldName], [FormFieldName], [HideTag], [RequiredTag], [ShowInConfig], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (20, 10, N'Special NS Rates', N'Special NS Rates', N'', N'Shift Schedule Form', N'Shift', N'SpecialNSRates', N'chkSpecialNSRates', 1, 0, 0, NULL, NULL, NULL, NULL)
+GO
+INSERT [security].[FieldLookUp] ([FieldLookUpId], [ModuleId], [ConfigLabel], [FormLabel], [FormPlaceHolder], [FormName], [Table], [TableFieldName], [FormFieldName], [HideTag], [RequiredTag], [ShowInConfig], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (21, 10, N'Special NS Rates', N'Special NS Rates', N'', N'Employee Work Schedule Form', N'WorkSchedule', N'SpecialNSRates', N'chkSpecialNSRates', 1, 0, 0, NULL, NULL, NULL, NULL)
+GO
+INSERT [security].[FieldLookUp] ([FieldLookUpId], [ModuleId], [ConfigLabel], [FormLabel], [FormPlaceHolder], [FormName], [Table], [TableFieldName], [FormFieldName], [HideTag], [RequiredTag], [ShowInConfig], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (22, 13, N'Special NS Rates', N'Special NS Rates', N'', N'Attendance Sheet Form', N'AttendanceSheetForm', N'SpecialNSRates', N'n/a', 1, 0, 0, NULL, NULL, NULL, NULL)
+GO
+INSERT [security].[FieldLookUp] ([FieldLookUpId], [ModuleId], [ConfigLabel], [FormLabel], [FormPlaceHolder], [FormName], [Table], [TableFieldName], [FormFieldName], [HideTag], [RequiredTag], [ShowInConfig], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (23, 15, N'Special NS Rates', N'Special NS Rates', N'', N'Payroll Type Form', N'PayrollTypeForm', N'SpecialNSRates', N'n/a', 1, 0, 0, NULL, NULL, NULL, NULL)
+GO
+INSERT [security].[FieldLookUp] ([FieldLookUpId], [ModuleId], [ConfigLabel], [FormLabel], [FormPlaceHolder], [FormName], [Table], [TableFieldName], [FormFieldName], [HideTag], [RequiredTag], [ShowInConfig], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (24, 15, N'Special NS Rates', N'Special NS Rates', N'', N'Paysheet Form', N'PaysheetForm', N'SpecialNSRates', N'n/a', 1, 0, 0, NULL, NULL, NULL, NULL)
+GO
+INSERT [security].[FieldLookUp] ([FieldLookUpId], [ModuleId], [ConfigLabel], [FormLabel], [FormPlaceHolder], [FormName], [Table], [TableFieldName], [FormFieldName], [HideTag], [RequiredTag], [ShowInConfig], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (25, 4, N'Union Member', N'Union Member', N'', N'Employe 201', N'EmploymentInformation', N'UnionMember', N'UnionMember', 0, 0, 0, NULL, NULL, NULL, NULL)
+GO
+INSERT [security].[FieldLookUp] ([FieldLookUpId], [ModuleId], [ConfigLabel], [FormLabel], [FormPlaceHolder], [FormName], [Table], [TableFieldName], [FormFieldName], [HideTag], [RequiredTag], [ShowInConfig], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (26, 4, N'Manpower Classification', N'Manpower Classification', N'', N'Employe 201', N'EmploymentInformation', N'CJI_ManpowerClassification', N'cmbCJI_ManpowerClassification', 0, 0, 0, NULL, NULL, NULL, NULL)
+GO
+INSERT [security].[FieldLookUp] ([FieldLookUpId], [ModuleId], [ConfigLabel], [FormLabel], [FormPlaceHolder], [FormName], [Table], [TableFieldName], [FormFieldName], [HideTag], [RequiredTag], [ShowInConfig], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (27, 4, N'Manpower Classification', N'Manpower Classification', N'', N'Employe 201', N'EmploymentInformation', N'CJI_ManHourClassification', N'cmbCJI_ManHourClassification', 0, 0, 0, NULL, NULL, NULL, NULL)
+GO
+INSERT [security].[FieldLookUp] ([FieldLookUpId], [ModuleId], [ConfigLabel], [FormLabel], [FormPlaceHolder], [FormName], [Table], [TableFieldName], [FormFieldName], [HideTag], [RequiredTag], [ShowInConfig], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (28, 10, N'Special NS Rates', N'Special NS Rates', N'', N'Special Work Schedule Request', N'WorkScheduleRequest', N'SpecialNSRates', N'chkSpecialNSRates', 1, 0, 0, NULL, NULL, NULL, NULL)
+GO
+INSERT [security].[FieldLookUp] ([FieldLookUpId], [ModuleId], [ConfigLabel], [FormLabel], [FormPlaceHolder], [FormName], [Table], [TableFieldName], [FormFieldName], [HideTag], [RequiredTag], [ShowInConfig], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (29, 10, N'Special NS Rates', N'Special NS Rates', N'', N'Change Work Schedule Request', N'ChangeWorkSchedule', N'SpecialNSRates', N'chkSpecialNSRates', 1, 0, 0, NULL, NULL, NULL, NULL)
+GO
+INSERT [security].[FieldLookUp] ([FieldLookUpId], [ModuleId], [ConfigLabel], [FormLabel], [FormPlaceHolder], [FormName], [Table], [TableFieldName], [FormFieldName], [HideTag], [RequiredTag], [ShowInConfig], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (30, 7, N'Effective Year', N'Effective Year', N'', N'Key Performance Indicator', N'KeyPerformanceIndicator', N'EffectiveYear', N'dtpEffectiveYear', 1, 1, 0, NULL, NULL, NULL, NULL)
+GO
+INSERT [security].[FieldLookUp] ([FieldLookUpId], [ModuleId], [ConfigLabel], [FormLabel], [FormPlaceHolder], [FormName], [Table], [TableFieldName], [FormFieldName], [HideTag], [RequiredTag], [ShowInConfig], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (31, 10, N'Include Holidays', N'Include Holidays', N'', N'Official Business', N'OfficialBusiness', N'IncludeHolidays', N'chkIncludeHolidays', 0, 0, 0, NULL, NULL, NULL, NULL)
+GO
+INSERT [security].[FieldLookUp] ([FieldLookUpId], [ModuleId], [ConfigLabel], [FormLabel], [FormPlaceHolder], [FormName], [Table], [TableFieldName], [FormFieldName], [HideTag], [RequiredTag], [ShowInConfig], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (32, 10, N'Include Restdays', N'Include Restdays', N'', N'Official Business', N'OfficialBusiness', N'IncludeRestdays', N'chkIncludeRestdays', 0, 0, 0, NULL, NULL, NULL, NULL)
+GO
+INSERT [security].[FieldLookUp] ([FieldLookUpId], [ModuleId], [ConfigLabel], [FormLabel], [FormPlaceHolder], [FormName], [Table], [TableFieldName], [FormFieldName], [HideTag], [RequiredTag], [ShowInConfig], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (33, 7, N'Organization Unit', N'Organization Unit', N'', N'Evaluation Configuration', N'PerformanceAppraisalConfiguration', N'OrganizationUnitIds', N'cmbOrganizationUnitIds', 0, 0, 0, NULL, NULL, NULL, NULL)
+GO
+INSERT [security].[FieldLookUp] ([FieldLookUpId], [ModuleId], [ConfigLabel], [FormLabel], [FormPlaceHolder], [FormName], [Table], [TableFieldName], [FormFieldName], [HideTag], [RequiredTag], [ShowInConfig], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (34, 1, N'Expected Date on Board', N'Expected Date on Board', N'', N'Manpower Request', N'ManpowerRequest', N'OnBoardDate', N'dtpOnBoardDate', 1, 0, 0, NULL, NULL, NULL, NULL)
+GO
+INSERT [security].[FieldLookUp] ([FieldLookUpId], [ModuleId], [ConfigLabel], [FormLabel], [FormPlaceHolder], [FormName], [Table], [TableFieldName], [FormFieldName], [HideTag], [RequiredTag], [ShowInConfig], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (35, 1, N'Job Salary Description', N'Job Salary Description', N'', N'Manpower Request', N'ManpowerRequest', N'JobSalaryDescription', N'txtJobSalaryDescription', 1, 0, 0, NULL, NULL, NULL, NULL)
+GO
+INSERT [security].[FieldLookUp] ([FieldLookUpId], [ModuleId], [ConfigLabel], [FormLabel], [FormPlaceHolder], [FormName], [Table], [TableFieldName], [FormFieldName], [HideTag], [RequiredTag], [ShowInConfig], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (36, 1, N'Currency', N'Currency', N'', N'Manpower Request', N'ManpowerRequest', N'CurrencyId', N'cmbCurrencyId', 1, 0, 0, NULL, NULL, NULL, NULL)
+GO
+INSERT [security].[FieldLookUp] ([FieldLookUpId], [ModuleId], [ConfigLabel], [FormLabel], [FormPlaceHolder], [FormName], [Table], [TableFieldName], [FormFieldName], [HideTag], [RequiredTag], [ShowInConfig], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (37, 1, N'Minimum Salary', N'Minimum Salary', N'', N'Manpower Request', N'ManpowerRequest', N'MinSalary', N'txtMinSalary', 1, 0, 0, NULL, NULL, NULL, NULL)
+GO
+INSERT [security].[FieldLookUp] ([FieldLookUpId], [ModuleId], [ConfigLabel], [FormLabel], [FormPlaceHolder], [FormName], [Table], [TableFieldName], [FormFieldName], [HideTag], [RequiredTag], [ShowInConfig], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (38, 1, N'Maximum Salary', N'Maximum Salary', N'', N'Manpower Request', N'ManpowerRequest', N'MaxSalary', N'txtMaxSalary', 1, 0, 0, NULL, NULL, NULL, NULL)
+GO
+INSERT [security].[FieldLookUp] ([FieldLookUpId], [ModuleId], [ConfigLabel], [FormLabel], [FormPlaceHolder], [FormName], [Table], [TableFieldName], [FormFieldName], [HideTag], [RequiredTag], [ShowInConfig], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (39, 1, N'Source', N'Source', N'', N'Manpower Request', N'ManpowerRequest', N'SourceType', N'optSourceType', 1, 0, 0, NULL, NULL, NULL, NULL)
+GO
+INSERT [security].[FieldLookUp] ([FieldLookUpId], [ModuleId], [ConfigLabel], [FormLabel], [FormPlaceHolder], [FormName], [Table], [TableFieldName], [FormFieldName], [HideTag], [RequiredTag], [ShowInConfig], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (40, 1, N'Questionnaire', N'Questionnaire', N'', N'Manpower Request', N'ManpowerRequest', N'QuestionnaireId', N'cmbQuestionnaireId', 1, 0, 0, NULL, NULL, NULL, NULL)
+GO
+INSERT [security].[FieldLookUp] ([FieldLookUpId], [ModuleId], [ConfigLabel], [FormLabel], [FormPlaceHolder], [FormName], [Table], [TableFieldName], [FormFieldName], [HideTag], [RequiredTag], [ShowInConfig], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (41, 1, N'District', N'Assignment', N'', N'Manpower Request', N'ManpowerRequest', N'DistrictId', N'cmbDistrictId', 0, 0, 0, NULL, NULL, NULL, NULL)
+GO
+INSERT [security].[FieldLookUp] ([FieldLookUpId], [ModuleId], [ConfigLabel], [FormLabel], [FormPlaceHolder], [FormName], [Table], [TableFieldName], [FormFieldName], [HideTag], [RequiredTag], [ShowInConfig], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (42, 1, N'Other Qualifications', N'Other Qualifications', N'', N'Manpower Request', N'ManpowerRequest', N'OtherRequirements', N'txtOtherRequirements', 1, 0, 0, NULL, NULL, NULL, NULL)
+GO
+INSERT [security].[FieldLookUp] ([FieldLookUpId], [ModuleId], [ConfigLabel], [FormLabel], [FormPlaceHolder], [FormName], [Table], [TableFieldName], [FormFieldName], [HideTag], [RequiredTag], [ShowInConfig], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (43, 1, N'Job Post Channels', N'Job Post Channels', N'', N'Manpower Request', N'ManpowerRequest', N'', N'JobPostChannelTab', 1, 0, 0, NULL, NULL, NULL, NULL)
+GO
+INSERT [security].[FieldLookUp] ([FieldLookUpId], [ModuleId], [ConfigLabel], [FormLabel], [FormPlaceHolder], [FormName], [Table], [TableFieldName], [FormFieldName], [HideTag], [RequiredTag], [ShowInConfig], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (44, 1, N'Recommended Applicants', N'Recommended Applicants', N'', N'Manpower Request', N'ManpowerRequest', N'', N'RecommendedApplicantTab', 1, 0, 0, NULL, NULL, NULL, NULL)
+GO
+INSERT [security].[FieldLookUp] ([FieldLookUpId], [ModuleId], [ConfigLabel], [FormLabel], [FormPlaceHolder], [FormName], [Table], [TableFieldName], [FormFieldName], [HideTag], [RequiredTag], [ShowInConfig], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (45, 1, N'Primary Address', N'', N'', N'Applicant Profile', N'ApplicantProfile', N'CityAddress1', N'txtApplicantCityAddress1', 0, 0, 0, NULL, NULL, NULL, NULL)
+GO
+INSERT [security].[FieldLookUp] ([FieldLookUpId], [ModuleId], [ConfigLabel], [FormLabel], [FormPlaceHolder], [FormName], [Table], [TableFieldName], [FormFieldName], [HideTag], [RequiredTag], [ShowInConfig], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (46, 1, N'Subdivision', N'', N'', N'Applicant Profile', N'ApplicantProfile', N'CityAddress2', N'txtApplicantCityAddress2', 0, 0, 0, NULL, NULL, NULL, NULL)
+GO
+SET IDENTITY_INSERT [security].[FieldLookUp] OFF
+GO

@@ -1,0 +1,110 @@
+﻿
+/*===========================================*\
+**	   Last Update Date: 09/05/2019
+**	   Last Update By: Michael
+**	   Last TestDBVersion executed: 
+**	   Last ReleaseDBVersion executed: v629
+\*===========================================*/
+-- =============================================
+-- Author:		John Michael B. Gela
+-- Update date: 07/21/2017
+-- Description:	Retrieve notification list
+-- =============================================
+ALTER PROCEDURE workflow.spRetrieveNotificationList 
+    @UserType BIGINT = 0,
+    @UserId BIGINT = 0,
+    @IsClicked BIT = 0
+AS
+BEGIN
+
+	DECLARE @Notification BIGINT = 1,
+			@New BIGINT = 1,
+			@Loaded BIGINT = 2,
+			@Seen BIGINT = 3
+
+	DECLARE @TempTable TABLE (
+		[TransactionId] BIGINT,
+		[TransactionName] VARCHAR(150), 
+		[ActionDateTime] DATETIME, 
+		[Message] VARCHAR(MAX),
+		[Name] VARCHAR(150),
+		[Image] VARCHAR(MAX),
+		[NotificationState] BIGINT,
+		[TransactionType] BIGINT,
+		[WorkflowNotificationTaskId] BIGINT,
+		[MenuType] BIGINT,
+		[Url] VARCHAR(200)
+	)
+
+	IF (@IsClicked = 1) 
+	BEGIN
+		-- Insert into temp table all notfications of logged in user
+		INSERT INTO @TempTable
+		SELECT 
+			[TransactionId] = [GN].[TransactionId],
+			[TransactionName] = '', 
+			[ActionDateTime] = [GN].[CreateDate], 
+			[Message] = [GN].[Message],
+			[Name] = '',
+			[Image] = '',
+			[NotificationState] = [GN].[StatusId],
+			[TransactionType] = [GN].[TransactionType_Value],
+			[WorkflowNotificationTaskId] = [GN].[GenericNotificationId],
+			[MenuType] = 2,
+			[Url] = CASE WHEN COALESCE([GN].[UrlLink], '') = ''
+					THEN 
+					   CASE WHEN COALESCE([GN].[TransactionType_Value], 0) = 0
+						  THEN ''
+						  ELSE 'none'
+					   END
+					ELSE [GN].[UrlLink]
+					END
+		FROM workflows.GenericNotification GN
+		WHERE GN.ProfileId = 
+			CASE WHEN (GN.UserType = 1)
+				THEN (SELECT TOP 1 CASE WHEN (GN.TransactionType_Value = 0) THEN UserAccountId ELSE P.ProfileId END FROM employee.Profile P WHERE P.ProfileId = @UserId)
+				ELSE (SELECT TOP 1 UserSecurityId FROM [security].[NonEmployeeUser] WHERE NonEmployeeUserId = @UserId)
+			END
+      AND GN.UserType = @UserType
+			AND GN.NotificationType = CAST(@Notification AS SMALLINT)
+
+		-- Then retrieve all notifications from temp table
+		SELECT 
+		[TransactionId],
+		[TransactionName], 
+		[ActionDateTime], 
+		[Message],
+		[Name],
+		[Image],
+		[NotificationState],
+		[TransactionType],
+		[WorkflowNotificationTaskId],
+		[Total] = CAST(0 AS BIGINT),
+		[MenuType],
+		[Url]
+		FROM @TempTable N
+		ORDER BY N.ActionDateTime DESC
+
+		-- Update notifications with StatusId = New AND StatusId = Loaded to Seen
+		UPDATE workflows.GenericNotification 
+		SET workflows.GenericNotification.StatusId = @Seen
+		WHERE (
+			GenericNotification.StatusId = @New OR GenericNotification.StatusId = @Loaded)
+		AND GenericNotification.GenericNotificationId IN (
+			SELECT WorkflowNotificationTaskId FROM @TempTable)
+	END
+	ELSE 
+	BEGIN
+		SELECT CAST(COUNT(GenericNotificationId) AS BIGINT) AS Total
+		FROM workflows.GenericNotification GN
+		WHERE GN.ProfileId = 
+			CASE WHEN (GN.UserType = 1)
+				THEN (SELECT TOP 1 CASE WHEN (GN.TransactionType_Value = 0) THEN UserAccountId ELSE P.ProfileId END FROM employee.Profile P WHERE P.ProfileId = @UserId)
+				ELSE (SELECT TOP 1 UserSecurityId FROM security.NonEmployeeUser WHERE NonEmployeeUserId = @UserId)
+			END
+      AND GN.UserType = @UserType
+			AND (GN.StatusId = @New OR GN.StatusId = @Loaded)
+			AND GN.NotificationType = @Notification
+	END
+END
+GO

@@ -1,0 +1,2 @@
+INSERT INTO maintenance.ColorCoding (ModuleFormId, Identifier, CssStyle, [Name], [Description]) VALUES
+(72, '.sw-workschedule', '{background-color:#2c90e6;color:white;}', 'Special Work Schedule Request', 'Work Schedule generated from Special Work Schedule Request.')

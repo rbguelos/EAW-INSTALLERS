@@ -1,0 +1,9 @@
+EXEC [maintenance].[UpdateJQListColumns]
+	@ListType = 'ApplicationProgressScreeningScheduleListColumn', @ColumnType = 'datetime', @Name = 'ActualDateTime',
+	@Label = 'Schedule Date', @Width = '150', @Align = '', @Formatter = 'jsFunction.FormatScheduleDate', @FormatterOption = '',
+	@Others = 'cellattr: jsFunction.FormatScheduleDateTooltip'
+
+EXEC [maintenance].[UpdateJQListColumns]
+	@ListType = 'ApplicantScreeningScheduleListColumn', @ColumnType = 'datetime', @Name = 'ActualDateTime',
+	@Label = 'Schedule Date', @Width = '150', @Align = '', @Formatter = 'applicantScreeningSchedule.formatScheduleDate',
+	@FormatterOption = '', @Others = 'cellattr: applicantScreeningSchedule.formatScheduleDateTooltip'

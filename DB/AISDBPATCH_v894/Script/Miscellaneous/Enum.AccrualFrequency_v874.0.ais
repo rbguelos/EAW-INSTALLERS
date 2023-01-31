@@ -1,0 +1,8 @@
+EXEC spInsertTableData 
+@SCHEMA = 'maintenance'
+,@TABLENAME = 'EnumValues'
+,@COLUMNS = '[SourceName],[DisplayText],[Value],[OrderNumber],[Status]'
+,@VALUETOINSERT = 'AccrualFrequency|Pro-Rated Daily|9|7|1'
+,@COLUMNSEPARATOR = '|'
+,@ROWSEPARATATOR = '
+'

@@ -1,0 +1,378 @@
+/****** Object:  Table [maintenance].[PaySheetColumns]    Script Date: 4/14/2020 3:43:14 PM ******/
+IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[maintenance].[PaySheetColumns]') AND type in (N'U'))
+DROP TABLE [maintenance].[PaySheetColumns]
+GO
+/****** Object:  Table [maintenance].[PaySheetColumns]    Script Date: 4/14/2020 3:43:14 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [maintenance].[PaySheetColumns](
+	[PaySheetColumnsId] [bigint] IDENTITY(1,1) NOT NULL,
+	[ColumnType] [varchar](50) NULL,
+	[Name] [varchar](150) NULL,
+	[Label] [varchar](150) NULL,
+	[Width] [varchar](10) NULL,
+	[Align] [varchar](10) NULL,
+	[Editable] [varchar](10) NULL,
+	[EditType] [varchar](20) NULL,
+	[Formatter] [varchar](20) NULL,
+	[FormatterOption] [nvarchar](max) NULL,
+	[Others] [nvarchar](max) NULL,
+	[Type] [varchar](50) NULL,
+	[SortOrder] [smallint] NULL,
+	[DecimalPlaces] [smallint] NULL,
+	[CreateId] [bigint] NULL,
+	[CreateDate] [datetime] NULL,
+	[LastUpdateId] [bigint] NULL,
+	[LastUpdateDate] [datetime] NULL,
+ CONSTRAINT [PK_PaySheetColumns] PRIMARY KEY CLUSTERED 
+(
+	[PaySheetColumnsId] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+GO
+SET IDENTITY_INSERT [maintenance].[PaySheetColumns] ON 
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (1, N'hidden', N'JQGridId', N'JQGridId', N'200', N'left', N'FALSE', N'', N'', N'', N'key: true', N'H', 1, 0, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (2, N'hidden', N'PaySheetHeaderDetailId', N'PaySheetHeaderDetailId', N'200', N'left', N'FALSE', N'', N'', N'', N'', N'H', 2, 0, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (3, N'hidden', N'ProfileId', N'ProfileId', N'200', N'left', N'FALSE', N'', N'', N'', N'', N'H', 3, 0, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (4, N'label', N'Employee', N'Employee', N'200', N'left', N'FALSE', N'', N'', N'', N'', N'H', 4, 0, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (5, N'label', N'DepartmentName', N'Department', N'200', N'left', N'FALSE', N'', N'', N'', N'', N'H', 5, 0, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (6, N'label', N'PositionName', N'Position', N'200', N'left', N'FALSE', N'', N'', N'', N'', N'H', 6, 0, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (7, N'label', N'SalaryTypeDesc', N'Salary Type', N'100', N'left', N'FALSE', N'', N'', N'', N'', N'H', 7, 0, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (8, N'amount', N'SalaryRate', N'Salary Rate', N'120', N'left', N'FALSE', N'', N'', N'', N'', N'H', 8, 2, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (9, N'amount', N'LateHrs', N'LateHrs', N'75', N'left', N'TRUE', N'', N'', N'', N'', N'D', 10, 4, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (10, N'amount', N'UndertimeHrs', N'UndertimeHrs', N'85', N'left', N'TRUE', N'', N'', N'', N'', N'D', 11, 4, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (11, N'amount', N'AbsentHrs', N'AbsentHrs', N'85', N'left', N'TRUE', N'', N'', N'', N'', N'D', 12, 4, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (12, N'amount', N'BasicHrs', N'BasicHrs', N'75', N'left', N'TRUE', N'', N'', N'', N'', N'D', 13, 4, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (13, N'amount', N'BasicPay', N'BasicPay', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 14, 2, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (14, N'amount', N'BasicOTHrs', N'BasicOTHrs', N'85', N'left', N'TRUE', N'', N'', N'', N'', N'D', 15, 4, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (15, N'amount', N'BasicOTPay', N'BasicOTPay', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 16, 2, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (16, N'amount', N'BasicNSHrs', N'BasicNSHrs', N'85', N'left', N'TRUE', N'', N'', N'', N'', N'D', 17, 4, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (17, N'amount', N'BasicNSPay', N'BasicNSPay', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 18, 2, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (18, N'amount', N'BasicNSOTHrs', N'BasicNSOTHrs', N'85', N'left', N'TRUE', N'', N'', N'', N'', N'D', 19, 4, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (19, N'amount', N'BasicNSOTPay', N'BasicNSOTPay', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 20, 2, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (20, N'amount', N'RestdayHrs', N'RestdayHrs', N'85', N'left', N'TRUE', N'', N'', N'', N'', N'D', 21, 4, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (21, N'amount', N'RestdayPay', N'RestdayPay', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 22, 2, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (22, N'amount', N'RestdayOTHrs', N'RestdayOTHrs', N'85', N'left', N'TRUE', N'', N'', N'', N'', N'D', 23, 4, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (23, N'amount', N'RestdayOTPay', N'RestdayOTPay', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 24, 2, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (24, N'amount', N'RestdayNSHrs', N'RestdayNSHrs', N'85', N'left', N'TRUE', N'', N'', N'', N'', N'D', 25, 4, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (25, N'amount', N'RestdayNSPay', N'RestdayNSPay', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 26, 2, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (26, N'amount', N'RestdayNSOTHrs', N'RestdayNSOTHrs', N'98', N'left', N'TRUE', N'', N'', N'', N'', N'D', 27, 4, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (27, N'amount', N'RestdayNSOTPay', N'RestdayNSOTPay', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 28, 2, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (28, N'amount', N'HolidayHrs', N'HolidayHrs', N'85', N'left', N'TRUE', N'', N'', N'', N'', N'D', 29, 4, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (29, N'amount', N'HolidayPay', N'HolidayPay', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 30, 2, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (30, N'amount', N'HolidayOTHrs', N'HolidayOTHrs', N'85', N'left', N'TRUE', N'', N'', N'', N'', N'D', 31, 4, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (31, N'amount', N'HolidayOTPay', N'HolidayOTPay', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 32, 2, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (32, N'amount', N'HolidayNSHrs', N'HolidayNSHrs', N'85', N'left', N'TRUE', N'', N'', N'', N'', N'D', 33, 4, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (33, N'amount', N'HolidayNSPay', N'HolidayNSPay', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 34, 2, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (34, N'amount', N'HolidayNSOTHrs', N'HolidayNSOTHrs', N'98', N'left', N'TRUE', N'', N'', N'', N'', N'D', 35, 4, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (35, N'amount', N'HolidayNSOTPay', N'HolidayNSOTPay', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 36, 2, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (36, N'amount', N'SpecialHrs', N'SpecialHrs', N'85', N'left', N'TRUE', N'', N'', N'', N'', N'D', 37, 4, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (37, N'amount', N'SpecialPay', N'SpecialPay', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 38, 2, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (38, N'amount', N'SpecialOTHrs', N'SpecialOTHrs', N'85', N'left', N'TRUE', N'', N'', N'', N'', N'D', 39, 4, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (39, N'amount', N'SpecialOTPay', N'SpecialOTPay', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 40, 2, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (40, N'amount', N'SpecialNSHrs', N'SpecialNSHrs', N'85', N'left', N'TRUE', N'', N'', N'', N'', N'D', 41, 4, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (41, N'amount', N'SpecialNSPay', N'SpecialNSPay', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 42, 2, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (42, N'amount', N'SpecialNSOTHrs', N'SpecialNSOTHrs', N'98', N'left', N'TRUE', N'', N'', N'', N'', N'D', 43, 4, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (43, N'amount', N'SpecialNSOTPay', N'SpecialNSOTPay', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 44, 2, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (44, N'amount', N'HRHrs', N'HRHrs', N'75', N'left', N'TRUE', N'', N'', N'', N'', N'D', 45, 4, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (45, N'amount', N'HRPay', N'HRPay', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 46, 2, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (46, N'amount', N'HROTHrs', N'HROTHrs', N'75', N'left', N'TRUE', N'', N'', N'', N'', N'D', 47, 4, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (47, N'amount', N'HROTPay', N'HROTPay', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 48, 2, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (48, N'amount', N'HRNSHrs', N'HRNSHrs', N'75', N'left', N'TRUE', N'', N'', N'', N'', N'D', 49, 4, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (49, N'amount', N'HRNSPay', N'HRNSPay', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 50, 2, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (50, N'amount', N'HRNSOTHrs', N'HRNSOTHrs', N'85', N'left', N'TRUE', N'', N'', N'', N'', N'D', 51, 4, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (51, N'amount', N'HRNSOTPay', N'HRNSOTPay', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 52, 2, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (52, N'amount', N'SRHrs', N'SRHrs', N'75', N'left', N'TRUE', N'', N'', N'', N'', N'D', 53, 4, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (53, N'amount', N'SRPay', N'SRPay', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 54, 2, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (54, N'amount', N'SROTHrs', N'SROTHrs', N'75', N'left', N'TRUE', N'', N'', N'', N'', N'D', 55, 4, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (55, N'amount', N'SROTPay', N'SROTPay', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 56, 2, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (56, N'amount', N'SRNSHrs', N'SRNSHrs', N'75', N'left', N'TRUE', N'', N'', N'', N'', N'D', 57, 4, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (57, N'amount', N'SRNSPay', N'SRNSPay', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 58, 2, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (58, N'amount', N'SRNSOTHrs', N'SRNSOTHrs', N'85', N'left', N'TRUE', N'', N'', N'', N'', N'D', 59, 4, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (59, N'amount', N'SRNSOTPay', N'SRNSOTPay', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 60, 2, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (60, N'amount', N'CompanyNonWorkingDayHrs', N'Co. Non-working Hrs', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 61, 4, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (61, N'amount', N'CompanyNonWorkingDayHrsPay', N'Co. Non-working Pay', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 62, 2, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (62, N'amount', N'CompanyNonWorkingDayNightShiftHrs', N'Co. Non-working NS Hrs', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 63, 4, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (63, N'amount', N'CompanyNonWorkingDayNightShiftHrsPay', N'Co. Non-working NS Pay', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 64, 2, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (64, N'amount', N'CompanyNonWorkingDayOvertimeHrs', N'Co. Non-working OT Hrs', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 65, 4, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (65, N'amount', N'CompanyNonWorkingDayOvertimeHrsPay', N'Co. Non-working OTPay', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 66, 2, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (66, N'amount', N'CompanyNonWorkingDayNightShiftOvertimeHrs', N'Co. Non-working NS OT Hrs', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 67, 4, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (67, N'amount', N'CompanyNonWorkingDayNightShiftOvertimeHrsPay', N'Co. Non-working NS OT Pay', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 68, 2, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (68, N'amount', N'LeaveHrs', N'LeaveHrs', N'75', N'left', N'TRUE', N'', N'', N'', N'', N'D', 95, 4, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (69, N'amount', N'LeavePay', N'LeavePay', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 96, 2, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (70, N'amount', N'OtherIncome', N'OtherIncome', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 97, 2, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (71, N'amount', N'GrossPay', N'GrossPay', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 98, 2, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (72, N'amount', N'OtherDeduction', N'OtherDeduction', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 99, 2, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (73, N'amount', N'Loan', N'Loan', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 100, 2, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (74, N'amount', N'Deduction', N'Deduction', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 101, 2, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (75, N'amount', N'SSS', N'SSSEE', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 102, 2, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (76, N'amount', N'SSSEC', N'SSSEC', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 103, 2, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (77, N'amount', N'SSSES', N'SSSER', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 104, 2, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (78, N'amount', N'PhilHealth', N'PHICEE', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 105, 2, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (79, N'amount', N'PhilHealthES', N'PHICER', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 106, 2, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (80, N'amount', N'PagIbig', N'HDMFEE', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 107, 2, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (81, N'amount', N'PagIbigES', N'HDMFER', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 108, 2, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (82, N'amount', N'WHT', N'WHT', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 109, 2, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (83, N'amount', N'TaxableIncome', N'TaxableIncome', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 110, 2, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (84, N'amount', N'NetPay', N'NetPay', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 111, 2, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (85, N'amount', N'Benefit', N'Benefit', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 112, 2, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (86, N'amount', N'CompanyTax', N'CompanyTax', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 113, 2, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (87, N'amount', N'Other', N'Other', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 114, 2, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (88, N'amount', N'NonTaxable', N'NonTaxable', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 115, 2, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (89, N'amount', N'TaxExempt', N'TaxExempt', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 116, 2, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (90, N'amount', N'ThirteenthMonthPay', N'ThirteenthMonthPay', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 117, 2, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (91, N'amount', N'SSSBasis', N'SSSBasis', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 118, 2, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (92, N'amount', N'PhilHealthBasis', N'PhilHealthBasis', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 119, 2, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (93, N'amount', N'PagibigBasis', N'PagibigBasis', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 120, 2, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (94, N'amount', N'TaxableBenefit', N'TaxableBenefit', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 121, 2, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (95, N'amount', N'AccruedThirteenthMonthPay', N'AccruedThirteenthMonthPay', N'0', N'left', N'TRUE', N'', N'', N'', N'', N'D', 122, 2, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (96, N'amount', N'AmtIncludeInThirteenthMonthPayCalc', N'AmtIncludeInThirteenthMonthPayCalc', N'0', N'left', N'TRUE', N'', N'', N'', N'', N'D', 123, 2, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (97, N'amount', N'CompanyNonWorkingDayHrsPay_NoWork', N'CompanyNonWorkingDayHrsPay_NoWork', N'0', N'left', N'TRUE', N'', N'', N'', N'', N'D', 124, 2, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (98, N'hidden', N'PagIbigTaxLimitExcess', N'PagIbigTaxLimitExcess', N'0', N'left', N'TRUE', N'', N'', N'', N'', N'D', 125, 0, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (99, N'amount', N'PrevEmployerTCompensationIncome', N'Previous Employer (T) Compensation Income ', N'85', N'left', N'TRUE', N'', N'', N'', N'', N'D', 126, 4, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (100, N'amount', N'PrevEmployerT13thMonthPayAndOtherBenefits', N'Previous Employer (T) - 13th Month Pay & Other Benefits', N'85', N'left', N'TRUE', N'', N'', N'', N'', N'D', 127, 4, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (101, N'amount', N'PrevEmployerTSalariesandOtherFormsofCompensation', N'Previous Employer (T) Salaries and Other Forms of Compensation', N'85', N'left', N'TRUE', N'', N'', N'', N'', N'D', 128, 4, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (102, N'amount', N'ExemptPremiumPaidonHealthandorHospitalInsurance', N'Exemption - Premium Paid on Health and/or Hospital Insurance', N'85', N'left', N'TRUE', N'', N'', N'', N'', N'D', 129, 4, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (103, N'amount', N'PrevNT13thMonthPayAndOtherBenefits', N'Previous - NT - 13th Month Pay & Other Benefits', N'85', N'left', N'TRUE', N'', N'', N'', N'', N'D', 130, 4, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (104, N'amount', N'PrevNTDeMinimisBenefits', N'Previous - NT - De Minimis Benefits', N'85', N'left', N'TRUE', N'', N'', N'', N'', N'D', 131, 4, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (105, N'amount', N'PrevNTSSSGSISPHICPagibigContributionsandUnionDues', N'Previous - NT - SSS, GSIS, PHIC & Pagibig Contributions, and Union Dues', N'85', N'left', N'TRUE', N'', N'', N'', N'', N'D', 132, 4, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (106, N'amount', N'PrevNTSalariesandOtherFormsofCompensation', N'Previous - NT - Salaries and Other Forms of Compensation', N'85', N'left', N'TRUE', N'', N'', N'', N'', N'D', 133, 4, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (107, N'amount', N'PrevNTBasicSMW', N'Previous - NT - Basic/SMW', N'85', N'left', N'TRUE', N'', N'', N'', N'', N'D', 134, 4, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (108, N'amount', N'PrevNTHolidayPay', N'Previous - NT - Holiday Pay', N'85', N'left', N'TRUE', N'', N'', N'', N'', N'D', 135, 4, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (109, N'amount', N'PrevNTOvertimePay', N'Previous - NT - Overtime Pay', N'85', N'left', N'TRUE', N'', N'', N'', N'', N'D', 136, 4, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (110, N'amount', N'PrevNTNightShiftDifferential', N'Previous - NT - Night Shift Differential', N'85', N'left', N'TRUE', N'', N'', N'', N'', N'D', 137, 4, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (111, N'amount', N'PrevNTHazardPay', N'Previous - NT - Hazard Pay', N'85', N'left', N'TRUE', N'', N'', N'', N'', N'D', 138, 4, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (112, N'amount', N'PrevEmployerTaxWithheld', N'Previous Employer - Tax Withheld', N'85', N'left', N'TRUE', N'', N'', N'', N'', N'D', 139, 4, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (113, N'amount', N'TaxAdjustment', N'Tax Adjustment', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 140, 2, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (114, N'amount', N'CompanyTaxable', N'CompanyTaxable', N'0', N'left', N'TRUE', N'', N'', N'', N'', N'D', 141, 0, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (115, N'label', N'SalaryRemarks', N'Remarks', N'120', N'left', N'FALSE', N'', N'', N'', N'', N'H', 9, 0, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (116, N'amount', N'BasicNS2Hrs', N'BasicNS2Hrs', N'85', N'left', N'TRUE', N'', N'', N'', N'', N'D', 142, 4, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (117, N'amount', N'BasicNS2Pay', N'BasicNS2Pay', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 143, 2, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (118, N'amount', N'BasicNSOT2Hrs', N'BasicNSOT2Hrs', N'85', N'left', N'TRUE', N'', N'', N'', N'', N'D', 144, 4, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (119, N'amount', N'BasicNSOT2Pay', N'BasicNSOT2Pay', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 145, 2, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (120, N'amount', N'RestdayNS2Hrs', N'RestdayNS2Hrs', N'85', N'left', N'TRUE', N'', N'', N'', N'', N'D', 146, 4, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (121, N'amount', N'RestdayNS2Pay', N'RestdayNS2Pay', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 147, 2, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (122, N'amount', N'RestdayNSOT2Hrs', N'RestdayNSOT2Hrs', N'98', N'left', N'TRUE', N'', N'', N'', N'', N'D', 148, 4, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (123, N'amount', N'RestdayNSOT2Pay', N'RestdayNSOT2Pay', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 149, 2, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (124, N'amount', N'HolidayNS2Hrs', N'HolidayNS2Hrs', N'85', N'left', N'TRUE', N'', N'', N'', N'', N'D', 150, 4, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (125, N'amount', N'HolidayNS2Pay', N'HolidayNS2Pay', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 151, 2, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (126, N'amount', N'HolidayNSOT2Hrs', N'HolidayNSOT2Hrs', N'98', N'left', N'TRUE', N'', N'', N'', N'', N'D', 152, 4, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (127, N'amount', N'HolidayNSOT2Pay', N'HolidayNSOT2Pay', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 153, 2, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (128, N'amount', N'SpecialNS2Hrs', N'SpecialNS2Hrs', N'85', N'left', N'TRUE', N'', N'', N'', N'', N'D', 154, 4, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (129, N'amount', N'SpecialNS2Pay', N'SpecialNS2Pay', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 155, 2, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (130, N'amount', N'SpecialNSOT2Hrs', N'SpecialNSOT2Hrs', N'98', N'left', N'TRUE', N'', N'', N'', N'', N'D', 156, 4, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (131, N'amount', N'SpecialNSOT2Pay', N'SpecialNSOT2Pay', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 157, 2, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (132, N'amount', N'HRNS2Hrs', N'HRNS2Hrs', N'75', N'left', N'TRUE', N'', N'', N'', N'', N'D', 158, 4, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (133, N'amount', N'HRNS2Pay', N'HRNS2Pay', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 159, 2, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (134, N'amount', N'HRNSOT2Hrs', N'HRNSOT2Hrs', N'85', N'left', N'TRUE', N'', N'', N'', N'', N'D', 160, 4, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (135, N'amount', N'HRNSOT2Pay', N'HRNSOT2Pay', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 161, 2, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (136, N'amount', N'SRNS2Hrs', N'SRNS2Hrs', N'75', N'left', N'TRUE', N'', N'', N'', N'', N'D', 162, 4, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (137, N'amount', N'SRNS2Pay', N'SRNS2Pay', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 163, 2, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (138, N'amount', N'SRNSOT2Hrs', N'SRNSOT2Hrs', N'85', N'left', N'TRUE', N'', N'', N'', N'', N'D', 164, 4, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (139, N'amount', N'SRNSOT2Pay', N'SRNSOT2Pay', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 165, 2, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (140, N'amount', N'PremiumPaidonHealthandorHospitalInsurance', N'Premium Paid on Health and/or Hospital Insurance', N'85', N'left', N'TRUE', N'', N'', N'', N'', N'D', 166, 4, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (141, N'amount', N'DoubleHolidayHrs', N'Double Holiday Hrs', N'75', N'left', N'TRUE', N'', N'', N'', N'', N'D', 69, 4, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (142, N'amount', N'DoubleHolidayOTHrs', N'Double Holiday OT Hrs', N'75', N'left', N'TRUE', N'', N'', N'', N'', N'D', 71, 4, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (143, N'amount', N'DoubleHolidayNSHrs', N'Double Holiday NS Hrs', N'75', N'left', N'TRUE', N'', N'', N'', N'', N'D', 73, 4, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (144, N'amount', N'DoubleHolidayNSOTHrs', N'Double Holiday NSOT Hrs', N'75', N'left', N'TRUE', N'', N'', N'', N'', N'D', 75, 4, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (145, N'amount', N'DoubleHolidayRestdayHrs', N'Double Holiday Restday Hrs', N'75', N'left', N'TRUE', N'', N'', N'', N'', N'D', 77, 4, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (146, N'amount', N'DoubleHolidayRestdayOTHrs', N'Double Holiday Restday OT Hrs', N'75', N'left', N'TRUE', N'', N'', N'', N'', N'D', 79, 4, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (147, N'amount', N'DoubleHolidayRestdayNSHrs', N'Double Holiday Restday NS Hrs', N'75', N'left', N'TRUE', N'', N'', N'', N'', N'D', 81, 4, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (148, N'amount', N'DoubleHolidayRestdayNSOTHrs', N'Double Holiday Restday NSOT Hrs', N'75', N'left', N'TRUE', N'', N'', N'', N'', N'D', 83, 4, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (149, N'amount', N'DoubleHolidayNS2Hrs', N'Double Holiday NS2 Hrs', N'75', N'left', N'TRUE', N'', N'', N'', N'', N'D', 85, 4, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (150, N'amount', N'DoubleHolidayNSOT2Hrs', N'Double Holiday NSOT2 Hrs', N'75', N'left', N'TRUE', N'', N'', N'', N'', N'D', 87, 4, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (151, N'amount', N'DoubleHolidayRestdayNS2Hrs', N'Double Holiday Restday NS2 Hrs', N'75', N'left', N'TRUE', N'', N'', N'', N'', N'D', 89, 4, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (152, N'amount', N'DoubleHolidayRestdayNSOT2Hrs', N'Double Holiday Restday NSOT2 Hrs', N'75', N'left', N'TRUE', N'', N'', N'', N'', N'D', 91, 4, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (153, N'amount', N'DoubleHolidayPay', N'Double Holiday Pay', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 70, 2, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (154, N'amount', N'DoubleHolidayOTPay', N'Double Holiday OT Pay', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 72, 2, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (155, N'amount', N'DoubleHolidayNSPay', N'Double Holiday NS Pay', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 74, 2, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (156, N'amount', N'DoubleHolidayNSOTPay', N'Double Holiday NSOT Pay', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 76, 2, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (157, N'amount', N'DoubleHolidayRestdayPay', N'Double Holiday Restday Pay', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 78, 2, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (158, N'amount', N'DoubleHolidayRestdayOTPay', N'Double Holiday Restday OT Pay', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 80, 2, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (159, N'amount', N'DoubleHolidayRestdayNSPay', N'Double Holiday Restday NS Pay', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 82, 2, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (160, N'amount', N'DoubleHolidayRestdayNSOTPay', N'Double Holiday Restday NSOT Pay', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 84, 2, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (161, N'amount', N'PrevNTDoubleHolidayPay', N'Previous - NT - Double Holiday Pay', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 93, 2, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (162, N'amount', N'PrevNTDoubleHolidayRestdayPay', N'Previous - NT - Double Holiday Restday Pay', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 94, 2, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (163, N'amount', N'DoubleHolidayNS2Pay', N'Double Holiday NS2 Pay', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 86, 2, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (164, N'amount', N'DoubleHolidayNSOT2Pay', N'Double Holiday NSOT2 Pay', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 88, 2, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (165, N'amount', N'DoubleHolidayRestdayNS2Pay', N'Double Holiday Restday NS2 Pay', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 90, 2, NULL, NULL, NULL, NULL)
+GO
+INSERT [maintenance].[PaySheetColumns] ([PaySheetColumnsId], [ColumnType], [Name], [Label], [Width], [Align], [Editable], [EditType], [Formatter], [FormatterOption], [Others], [Type], [SortOrder], [DecimalPlaces], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (166, N'amount', N'DoubleHolidayRestdayNSOT2Pay', N'Double Holiday Restday NSOT2 Pay', N'120', N'left', N'TRUE', N'', N'', N'', N'', N'D', 92, 2, NULL, NULL, NULL, NULL)
+GO
+SET IDENTITY_INSERT [maintenance].[PaySheetColumns] OFF
+GO
+
+UPDATE PTD SET SortOrder = PSC.SortOrder
+--SELECT PTD.Name, PTD.SortOrder
+FROM payroll.PayrollTypeDetail PTD
+INNER JOIN maintenance.PaySheetColumns PSC
+       ON PSC.Name = PTD.Name
+WHERE PTD.Name LIKE '%DoubleHoliday%'
+GO

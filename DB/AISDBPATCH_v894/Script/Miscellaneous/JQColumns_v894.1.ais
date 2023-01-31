@@ -1,0 +1,11 @@
+INSERT INTO maintenance.JQListColumns (ListType, ColumnType, [Name], [Label], Width, Align, Formatter, FormatterOption, Others)
+VALUES
+('WorkScheduleColumnList','label','LastUpdateUser','Updated By','180','','','','')
+
+INSERT INTO maintenance.JQListColumns (ListType, ColumnType, [Name], [Label], Width, Align, Formatter, FormatterOption, Others)
+VALUES
+('WorkScheduleColumnList','datetime','LastUpdateDate','Updated On ','130','','','','')
+
+UPDATE admin.ListColumns SET DefaultColumns = 'WorkDate|EmployeeNo|EmployeeName|Department|Position|Remarks|FixedSchedule|Days|Shiftcode|WorkSchedule|WorkingHours|LunchSchedule|FirstBreakSchedule|SecondBreakSchedule|ThirdBreakSchedule|CreateUser|CreateDate|LastUpdateUser|LastUpdateDate',
+MasterColumns = 'WorkDate|EmployeeNo|EmployeeName|Department|Position|Remarks|FixedSchedule|Days|Shiftcode|WorkSchedule|WorkingHours|LunchSchedule|FirstBreakSchedule|SecondBreakSchedule|ThirdBreakSchedule|CreateUser|CreateDate|LastUpdateUser|LastUpdateDate'
+WHERE ListType = 'WorkScheduleColumnList'

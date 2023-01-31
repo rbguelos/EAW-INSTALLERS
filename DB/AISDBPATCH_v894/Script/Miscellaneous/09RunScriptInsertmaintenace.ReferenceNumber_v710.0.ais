@@ -1,0 +1,16 @@
+
+IF NOT EXISTS (SELECT
+			*
+		FROM maintenance.ReferenceNumberLookUp
+		WHERE [Transaction] = 'BenefitIssuance')
+BEGIN
+	PRINT 'NOT EXIST'
+	INSERT INTO maintenance.ReferenceNumberLookUp ([Transaction], Prefix, Suffix, Sequence, Format, Length)
+		VALUES ('BenefitIssuance', '', '', 0, 'YYYYMM|SEQUENCE', 4)
+
+END
+ELSE
+BEGIN
+	PRINT ' EXIST'
+END
+

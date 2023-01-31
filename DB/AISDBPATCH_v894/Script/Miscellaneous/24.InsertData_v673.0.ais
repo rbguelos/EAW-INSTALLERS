@@ -1,0 +1,2 @@
+INSERT INTO security.FieldLookUp (FormName, [Table], TableFieldName, FormFieldName, HideTag, RequiredTag)
+VALUES ('Manpower Request', 'ManpowerRequest', 'CostCenterId', 'cmbCostCenterId', 0, 0)

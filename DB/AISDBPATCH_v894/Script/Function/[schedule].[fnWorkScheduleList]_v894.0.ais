@@ -1,0 +1,297 @@
+
+/****** Object:  UserDefinedFunction [schedule].[fnWorkScheduleList]    Script Date: 8/6/2020 1:58:48 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+-- =============================================
+-- Author:		Bryan Avellana
+-- Create date: August 06, 2018
+-- =============================================
+ALTER FUNCTION [schedule].[fnWorkScheduleList]
+(
+	-- Add the parameters for the function here
+	@StartDate DATE = NULL,
+    @EndDate DATE = NULL
+)
+RETURNS 
+@WorkSchedule TABLE 
+(
+	-- Add the column definitions for the TABLE variable here
+	WorkScheduleId BIGINT, ProfileId BIGINT, EmployeeName VARCHAR(150), EmployeeNo VARCHAR(50),
+	[Days] VARCHAR(50), WorkDate DATETIME, FixedSchedule VARCHAR(5), WorkSchedule VARCHAR(35),
+	WorkingHours DECIMAL(18,4), LunchSchedule VARCHAR(35), FirstBreakSchedule VARCHAR(35),
+	SecondBreakSchedule VARCHAR(35), ThirdBreakSchedule VARCHAR(35), Department VARCHAR(100),
+	Position VARCHAR(100), Shiftcode VARCHAR(50), Remarks VARCHAR(500), CreateUser VARCHAR(150),
+	CreateDate DATETIME, FromSWS BIT, FromCWS BIT, FromSWSAndCWS BIT, LastUpdateUser VARCHAR(150), 
+	LastUpdateDate DATETIME
+)
+AS
+BEGIN
+	-- Fill the table variable with the rows for your result set
+	DECLARE @NullDate DATE = CAST('1900-01-01' AS DATE)
+
+	/* Holiday Setup */
+	DECLARE @HolidaySetup table
+	(
+		RowId INT IDENTITY(1, 1),
+		Remarks VARCHAR(150),
+		[Date] DATETIME,
+		EmployeeIds VARCHAR(MAX)
+		UNIQUE CLUSTERED ([Date], RowId)
+	)
+	
+	INSERT INTO @HolidaySetup
+	SELECT
+		CONCAT(HT.DisplayText, ' - ', HS.[Name]),
+		HS.[Date],
+		CASE WHEN HS.EmployeeIds <> '' THEN HS.EmployeeIds
+			WHEN HS.JobPositionIds <> '' THEN (SELECT CONCAT(',', ProfileId) FROM employee.EmploymentInformation WHERE CHARINDEX(CONCAT(',', CJI_Position, ','),CONCAT(',', HS.JobPositionIds, ',')) > 0 FOR XML PATH(''))
+			WHEN HS.JobLevelIds <> '' THEN (SELECT CONCAT(',', ProfileId) FROM employee.EmploymentInformation WHERE CHARINDEX(CONCAT(',', CJI_JobLevel, ','),CONCAT(',', HS.JobLevelIds, ',')) > 0 FOR XML PATH(''))
+			WHEN HS.DepartmentIds <> '' THEN (SELECT CONCAT(',', ProfileId) FROM employee.EmploymentInformation WHERE CHARINDEX(CONCAT(',', AOA_Department, ','),CONCAT(',', HS.DepartmentIds, ',')) > 0 FOR XML PATH(''))
+			WHEN HS.Branches <> '' THEN (SELECT CONCAT(',', ProfileId) FROM employee.EmploymentInformation WHERE CHARINDEX(CONCAT(',', AOA_Branch, ','),CONCAT(',' ,HS.Branches, ',')) > 0 FOR XML PATH(''))
+			WHEN HS.CompanyIds <> '' THEN (SELECT CONCAT(',', ProfileId) FROM employee.EmploymentInformation WHERE CHARINDEX(CONCAT(',', AOA_Company, ','),CONCAT(',', HS.CompanyIds, ',')) > 0 FOR XML PATH(''))
+		ELSE '' END AS EmployeeIds
+	FROM schedule.HolidaySetup HS
+	OUTER APPLY(
+		SELECT T.DisplayText FROM maintenance.EnumValues T
+		WHERE T.[Value] = HS.TypeId AND T.SourceName = 'HolidayType'
+	) HT
+	WHERE (@StartDate = @NullDate OR CAST(HS.[Date] AS DATE) >= @StartDate)
+	AND (@EndDate = @NullDate OR CAST(HS.[Date] AS DATE) <= @EndDate)
+
+	/* Fixed Work Schedule */
+	INSERT INTO @WorkSchedule
+
+	SELECT
+		W.WorkScheduleId,
+		W.ProfileId,
+		E.LastName + ', ' + E.FirstName + ISNULL(' ' + LEFT(E.MiddleName, 1) + '.', '') AS EmployeeName,
+		I.CJI_EmployeeNo AS EmployeeNo,
+		REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(W.DaysOfWeek, 2, 'M'), 3, ' T'), 4, ' W'), 5, ' TH'), 6, ' F'), 7, ' S'), 1, ' SU') AS [Days],
+		W.WorkDate,
+		'Yes' AS FixedSchedule,
+		CONVERT(VARCHAR(10), CAST(W.StartTime AS TIME), 100) + ' - ' + CONVERT(VARCHAR(10), CAST(W.EndTime AS TIME), 100) AS WorkSchedule,
+		W.WorkingHours,
+		CASE WHEN W.LunchBreakStartTime != W.LunchBreakEndTime
+			THEN CONVERT(VARCHAR(10), CAST(W.LunchBreakStartTime AS TIME), 100) + ' - ' + CONVERT(VARCHAR(10), CAST(W.LunchBreakEndTime AS TIME), 100)
+			ELSE ''
+		END AS LunchSchedule,
+		CASE WHEN W.Break1StartTime != W.Break1EndTime
+			THEN CONVERT(VARCHAR(10), CAST(W.Break1StartTime AS TIME), 100) + ' - ' + CONVERT(VARCHAR(10), CAST(W.Break1EndTime AS TIME), 100)
+			ELSE ''
+		END AS FirstBreakSchedule,
+		CASE WHEN W.Break2StartTime != W.Break2EndTime
+			THEN CONVERT(VARCHAR(10), CAST(W.Break2StartTime AS TIME), 100) + ' - ' + CONVERT(VARCHAR(10), CAST(W.Break2EndTime AS TIME), 100)
+			ELSE ''
+		END AS SecondBreakSchedule,
+		CASE WHEN W.Break3StartTime != W.Break3EndTime
+			THEN CONVERT(VARCHAR(10), CAST(W.Break3StartTime AS TIME), 100) + ' - ' + CONVERT(VARCHAR(10), CAST(W.Break3EndTime AS TIME), 100)
+			ELSE ''
+		END AS ThirdBreakSchedule,
+		ISNULL(D.DepartmentName, '') AS Deparment,
+		ISNULL(J.[Name], '') AS JobPosition,
+		ISNULL(S.Code, 'Others') AS Shiftcode,
+		ISNULL(R.Remarks, '') AS Remarks,
+		ISNULL(U.CreateUser, '') AS CreateUser,
+		ISNULL(W.CreateDate, @NullDate) AS CreateDate,
+		CAST(0 AS BIT) AS FromSWS,
+		CAST(0 AS BIT) AS FromCWS,
+		CAST(0 AS BIT) AS FromSWSAndCWS,
+		ISNULL(L.LastUpdateUser, ''),
+		ISNULL(W.LastUpdateDate, @NullDate) AS LastUpdateDate
+	FROM schedule.WorkSchedule W
+	JOIN employee.[Profile] E ON E.ProfileId = W.ProfileId
+	JOIN employee.EmploymentInformation I ON I.ProfileId = W.ProfileId
+	LEFT JOIN maintenance.Department D ON D.DepartmentId = I.AOA_Department
+	LEFT JOIN maintenance.JobPosition J ON J.JobPositionId = I.CJI_Position
+	LEFT JOIN schedule.[Shift] S ON S.ShiftId = W.ShiftId
+	OUTER APPLY (
+		SELECT TOP 1
+			CASE
+				WHEN US.UserType = 1 THEN (SELECT EU.LastName + ', ' + EU.FirstName FROM employee.[Profile] EU WHERE EU.UserAccountId = US.UserSecurityId)
+				WHEN US.UserType = 2 THEN (SELECT NEU.NELastName + ', ' + NEU.NEFirstName FROM security.NonEmployeeUser NEU WHERE NEU.UserSecurityId = US.UserSecurityId)
+				ELSE ''
+			END CreateUser
+		FROM [security].UserSecurity US
+		WHERE US.UserSecurityId = W.CreateId
+	) U
+
+	OUTER APPLY (
+		SELECT TOP 1
+			CASE
+				WHEN US.UserType = 1 THEN (SELECT EU.LastName + ', ' + EU.FirstName FROM employee.[Profile] EU WHERE EU.UserAccountId = US.UserSecurityId)
+				WHEN US.UserType = 2 THEN (SELECT NEU.NELastName + ', ' + NEU.NEFirstName FROM security.NonEmployeeUser NEU WHERE NEU.UserSecurityId = US.UserSecurityId)
+				ELSE ''
+			END LastUpdateUser
+		FROM [security].UserSecurity US
+		WHERE US.UserSecurityId = W.LastUpdateId
+	) L
+
+	OUTER APPLY 
+	(
+		SELECT TOP 1
+			'Restday' AS Remarks
+		FROM dbo.SplitStrings_XML((
+			SELECT TOP 1 RD.[Days]
+			FROM schedule.RestDay RD
+			WHERE RD.ProfileId = W.ProfileId
+			AND RD.IsFix = 1
+		), ',') SD
+		WHERE CHARINDEX(',' + SD.[VALUE] + ',', ',' + W.DaysOfWeek + ',') > 0
+	) R
+
+	WHERE W.FixedSchedule = 1
+
+	/* Not Fixed Work Schedule */
+	INSERT INTO @WorkSchedule
+
+	SELECT
+		W.WorkScheduleId,
+		W.ProfileId,
+		E.LastName + ', ' + E.FirstName + ISNULL(' ' + LEFT(E.MiddleName, 1) + '.', '') AS EmployeeName,
+		I.CJI_EmployeeNo AS EmployeeNo,
+		LEFT(DATENAME(DW, W.WorkDate), 3) AS [Days],
+		W.WorkDate,
+		'No' AS FixedSchedule,
+		CONVERT(VARCHAR(10), CAST(W.StartTime AS TIME), 100) + ' - ' + CONVERT(VARCHAR(10), CAST(W.EndTime AS TIME), 100) AS WorkSchedule,
+		W.WorkingHours,
+		CASE WHEN W.LunchBreakStartTime != W.LunchBreakEndTime
+			THEN CONVERT(VARCHAR(10), CAST(W.LunchBreakStartTime AS TIME), 100) + ' - ' + CONVERT(VARCHAR(10), CAST(W.LunchBreakEndTime AS TIME), 100)
+			ELSE ''
+		END AS LunchSchedule,
+		CASE WHEN W.Break1StartTime != W.Break1EndTime
+			THEN CONVERT(VARCHAR(10), CAST(W.Break1StartTime AS TIME), 100) + ' - ' + CONVERT(VARCHAR(10), CAST(W.Break1EndTime AS TIME), 100)
+			ELSE ''
+		END FirstBreakSchedule,
+		CASE WHEN W.Break2StartTime != W.Break2EndTime
+			THEN CONVERT(VARCHAR(10), CAST(W.Break2StartTime AS TIME), 100) + ' - ' + CONVERT(VARCHAR(10), CAST(W.Break2EndTime AS TIME), 100)
+			ELSE ''
+		END SecondBreakSchedule,
+		CASE WHEN W.Break3StartTime != W.Break3EndTime
+			THEN CONVERT(VARCHAR(10), CAST(W.Break3StartTime AS TIME), 100) + ' - ' + CONVERT(VARCHAR(10), CAST(W.Break3EndTime AS TIME), 100)
+			ELSE ''
+		END ThirdBreakSchedule,
+		ISNULL(D.DepartmentName, '') AS Department,
+		ISNULL(J.[Name], '') AS JobPosition,
+		ISNULL(S.Code, 'Others') AS Shiftcode,
+		COALESCE(
+			(SELECT TOP 1 H.Remarks FROM @HolidaySetup H WHERE CHARINDEX(CONCAT(',', W.ProfileId, ','), CONCAT(',', H.EmployeeIds, ',')) > 0 AND H.[Date] = W.WorkDate),
+			R.Remarks, L.Remarks, O.Remarks, N.Remarks
+		, '') AS Remarks,
+		ISNULL(U.CreateUser, '') AS CreateUser,
+		ISNULL(W.CreateDate, @NullDate) AS CreateDate,
+		CAST(CASE WHEN SWS.TotalSWS > 0 THEN 1 ELSE 0 END AS BIT) AS FromSWS,
+		CAST(CASE WHEN CWS.TotalCWS > 0 THEN 1 ELSE 0 END AS BIT) AS FromCWS,
+		CAST(CASE WHEN CWS.TotalCWS > 0 AND SWS.TotalSWS > 0 THEN 1 ELSE 0 END AS BIT) AS FromSWSAndCWS,
+		ISNULL(LUser.LastUpdateUser, '') AS LastUpdateUser,
+		ISNULL(W.LastUpdateDate, @NullDate) AS LastUpdateDate
+	FROM schedule.WorkSchedule W
+	JOIN employee.[Profile] E ON E.ProfileId = W.ProfileId
+	JOIN employee.EmploymentInformation I ON I.ProfileId = W.ProfileId
+	LEFT JOIN maintenance.Department D ON D.DepartmentId = I.AOA_Department
+	LEFT JOIN maintenance.JobPosition J ON J.JobPositionId = I.CJI_Position
+	LEFT JOIN schedule.[Shift] S ON S.ShiftId = W.ShiftId
+	OUTER APPLY (
+		SELECT TOP 1
+			CASE
+				WHEN US.UserType = 1 THEN (SELECT EU.LastName + ', ' + EU.FirstName FROM employee.[Profile] EU WHERE EU.UserAccountId = US.UserSecurityId)
+				WHEN US.UserType = 2 THEN (SELECT NEU.NELastName + ', ' + NEU.NEFirstName FROM security.NonEmployeeUser NEU WHERE NEU.UserSecurityId = US.UserSecurityId)
+				ELSE ''
+			END CreateUser
+		FROM [security].UserSecurity US
+		WHERE US.UserSecurityId = W.CreateId
+	) U
+
+	OUTER APPLY (
+		SELECT TOP 1
+			CASE
+				WHEN US.UserType = 1 THEN (SELECT EU.LastName + ', ' + EU.FirstName FROM employee.[Profile] EU WHERE EU.UserAccountId = US.UserSecurityId)
+				WHEN US.UserType = 2 THEN (SELECT NEU.NELastName + ', ' + NEU.NEFirstName FROM security.NonEmployeeUser NEU WHERE NEU.UserSecurityId = US.UserSecurityId)
+				ELSE ''
+			END LastUpdateUser
+		FROM [security].UserSecurity US
+		WHERE US.UserSecurityId = W.LastUpdateId
+	) LUser
+	OUTER APPLY 
+	(
+		SELECT TOP 1
+			T.Remarks
+		FROM (
+			SELECT TOP 1
+				'Restday' + CASE WHEN RD.[Type] = 1 THEN ' - ' + RT.DisplayText ELSE '' END AS Remarks
+			FROM schedule.RestDay RD
+			LEFT JOIN maintenance.EnumValues RT ON CAST(RT.[Value] AS SMALLINT) = RD.[Type] AND RT.SourceName = 'RestDayType'
+			WHERE RD.ProfileId = W.ProfileId AND RD.IsFix = 0
+			AND CAST(RD.RestDayDate AS DATE) = CAST(W.WorkDate AS DATE)
+	
+			UNION ALL
+	
+			SELECT TOP 1
+				'Restday' AS Remarks
+			FROM schedule.RestDay RD
+			WHERE RD.ProfileId = W.ProfileId AND RD.IsFix = 1
+			AND CHARINDEX(CONCAT(',', DATEPART(DW, W.WorkDate), ','), CONCAT(',', RD.[Days], ',')) > 0
+		) T
+	) R
+	OUTER APPLY 
+	(
+		SELECT TOP 1
+			LTS.[Description] AS Remarks
+		FROM leave.LeaveRequest L
+		JOIN leave.LeaveTypeSetup LTS ON LTS.LeaveTypeSetupId = L.LeaveTypeId
+		WHERE CAST(L.InclusiveStartDate AS DATE) = CAST(W.WorkDate AS DATE)
+		AND L.ProfileId = W.ProfileId AND L.StatusId = 2
+	) L
+	OUTER APPLY 
+	(
+		SELECT
+			X.Remarks
+		FROM (
+			SELECT TOP 1
+				'OB - ' + OB.Remarks AS Remarks
+			FROM schedule.OfficialBusiness OB
+			WHERE CAST(OB.OfficialBusinessDate AS DATE) = CAST(W.WorkDate AS DATE)
+			AND OB.TypeId = 1 /* Official Business */
+			AND OB.ProfileId = W.ProfileId AND OB.StatusId = 2
+	
+			UNION ALL
+	
+			SELECT TOP 1
+				'TO - ' + [TO].Remarks AS Remarks
+			FROM schedule.OfficialBusiness [TO]
+			WHERE CAST([TO].OfficialBusinessDate AS DATE) = CAST(W.WorkDate AS DATE)
+			AND [TO].TypeId = 2 /* Time Off */
+			AND [TO].ProfileId = W.ProfileId AND [TO].StatusId = 2
+		) X
+	) O
+	OUTER APPLY 
+	(
+		SELECT TOP 1
+			'UT - ' + CONVERT(VARCHAR(10), CAST(UT.DepartureTime AS TIME), 100) AS Remarks
+		FROM schedule.Undertime UT
+		WHERE CAST(UT.UndertimeDate AS DATE) = CAST(W.WorkDate AS DATE)
+		AND UT.ProfileId =  W.ProfileId AND UT.StatusId =  2
+	) N
+	OUTER APPLY (
+		SELECT
+			COUNT(WR.WorkScheduleRequestId) AS TotalSWS
+		FROM schedule.WorkScheduleRequest WR
+		WHERE WR.WorkScheduleId = W.WorkScheduleId
+	) SWS
+	OUTER APPLY (
+		SELECT
+			COUNT(WT.WorkScheduleTrailId) AS TotalCWS
+		FROM schedule.WorkScheduleTrail WT
+		JOIN schedule.ChangeWorkSchedule CW ON CW.ChangeWorkScheduleId = WT.ChangeWorkScheduleId
+		WHERE WT.WorkScheduleId = W.WorkScheduleId
+		--OR (
+		--	CHARINDEX(CONCAT(',', W.WorkScheduleId, ','),CONCAT(',', CW.WorkScheduleId, ',')) > 0
+		--)
+	) CWS
+	WHERE W.FixedSchedule = 0
+	AND (@StartDate = @NullDate OR CAST(W.WorkDate AS DATE) >= @StartDate)
+	AND (@EndDate = @NullDate OR CAST(W.WorkDate AS DATE) <= @EndDate)
+
+	RETURN 
+END

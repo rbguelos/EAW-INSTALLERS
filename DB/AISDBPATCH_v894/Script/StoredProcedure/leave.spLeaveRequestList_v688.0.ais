@@ -1,0 +1,118 @@
+ALTER PROCEDURE [leave].[spLeaveRequestList] 
+(
+    @ProfileId BIGINT = 0
+)
+AS BEGIN
+    DECLARE @CompanyConfigType VARCHAR(100) = 'LVEConfiguration'
+
+SELECT
+	--LeaveRequestId
+	LeaveRequestId = LeaveRequestHeader.LeaveRequestHeaderId
+
+	--EmployeeName
+	,EmployeeName = EMP.FullName
+
+	--Division
+	,Division = COALESCE(D.[Description], '')
+
+	--EmployeeNo
+	,EmployeeNo = COALESCE(EMP.EmployeeNo,'')
+
+	--LeaveTypeSetup
+	,LeaveTypeSetup = LeaveTypeSetup.Code
+
+	--DateFiled
+	,DateFiled = LeaveRequestHeader.DateFiled
+
+	--ProfileId
+	,ProfileId = LeaveRequestHeader.ProfileId
+
+	--NoOfHours
+	,NoOfHours = LeaveRequestHeader.TotalNoOfHours
+
+	--[Status]
+	,[Status] = COALESCE([Status].Name, '')
+
+	--Statusid
+	,Statusid = COALESCE([Status].Value, 0)
+
+	--Reason
+	,Reason = LeaveRequestHeader.Reason
+
+	--InclusiveDate
+	,InclusiveDate =
+	(
+	    CASE
+		    WHEN LeaveRequestHeader.InclusiveStartDate = LeaveRequestHeader.InclusiveEndDate
+		    --Display Single Date ex: 03/14/2018
+		    THEN CONVERT(VARCHAR(10), CAST(LeaveRequestHeader.InclusiveStartDate AS DATETIME), 101)
+		    --Display Range Date ex: 03/14/2018 -  03/15/2018
+		    ELSE CONVERT(VARCHAR(10), CAST(LeaveRequestHeader.InclusiveStartDate AS DATETIME), 101) + ' - ' + CONVERT(VARCHAR(10), CAST(LeaveRequestHeader.InclusiveEndDate AS DATETIME), 101)
+	    END
+	)
+
+	--DisplayInDays
+	,DisplayInDays = CAST(COALESCE(LVEConfig.DisplayInDays, 0) AS BIT)
+
+	--NoOfHoursPerDay
+	,NoOfHoursPerDay = COALESCE(LVEConfig.NoOfDays, 0.0)
+
+	--NoOfDays
+	,NoOfDays = COALESCE(leave.LeaveRequestHeader.NoOfDays, 0.0)
+
+	--InclusiveStartDate
+	,InclusiveStartDate = LeaveRequestHeader.InclusiveStartDate
+
+	--Department
+	,Department = Dep.DepartmentName
+
+FROM leave.LeaveRequestHeader
+--FN_GETEmployeeInformation
+JOIN employee.FN_GETEmployeeInformation() EMP
+	ON EMP.ProfileId = LeaveRequestHeader.ProfileId
+--Division
+LEFT JOIN maintenance.Division D
+	ON D.DivisionId = EMP.DivisionId
+--Department
+LEFT JOIN maintenance.Department Dep
+	ON Dep.DepartmentId = EMP.DepartmentId
+--LeaveTypeSetup
+LEFT JOIN leave.LeaveTypeSetup
+	ON LeaveRequestHeader.LeaveTypeId = LeaveTypeSetup.LeaveTypeSetupId
+--[Status]
+LEFT JOIN maintenance.[Status]
+	ON LeaveRequestHeader.StatusId = [Status].Value
+--LVEConfig
+LEFT JOIN (SELECT
+		LVEConfigurationId = CompanyConfig.CompanyConfigId
+		,Company = COALESCE(Company.Name, '')
+		,CompanyConfig.CompanyId
+		,DisplayInDays.Value DisplayInDays
+		,CAST(COALESCE(NoOfDays.Value, 0) AS INT) NoOfDays
+
+	FROM maintenance.CompanyConfig
+	-- Company
+	INNER JOIN maintenance.Company
+		ON Company.CompanyId = CompanyConfig.CompanyId
+
+	-- Get the value of selected type
+	OUTER APPLY (SELECT
+			REPLACE(value, '1:', '') Value
+		FROM dbo.FN_SPLITWITHID(CompanyConfig.Value, '|') T
+
+		WHERE T.ROWID = 1) DisplayInDays
+
+	-- Get the value of selected type
+	OUTER APPLY (SELECT
+			REPLACE(value, '2:', '') Value
+		FROM dbo.FN_SPLITWITHID(CompanyConfig.Value, '|') T
+
+		WHERE T.ROWID = 2) NoOfDays
+
+	WHERE CompanyConfig.Type = @CompanyConfigType) LVEConfig
+	ON LVEConfig.CompanyId = EMP.CompanyId
+
+WHERE 
+    ISNULL(@ProfileId,0) = 0 OR emp.ProfileId =  ISNULL(@ProfileId,0)
+
+END

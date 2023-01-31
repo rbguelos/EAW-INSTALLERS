@@ -1,0 +1,10 @@
+
+mode:databasepatch
+server:
+user:
+password:
+title:E@Work Database Patch
+systemversion:v1.0.0.16
+useace:true
+fromversion:461
+message:Update the selected database(s)?

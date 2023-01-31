@@ -1,0 +1,33 @@
+UPDATE performanceappraisal.KeyPerformanceIndicator SET EffectiveYear = YEAR(GETDATE())
+
+UPDATE perdev.RatingScale SET MinValue = [Value]
+
+UPDATE perdev.Competency_Criteria SET MinValue = [Value]
+
+INSERT INTO security.FieldLookUp (FormName, [Table], TableFieldName, FormFieldName, HideTag, RequiredTag)
+VALUES ('Key Performance Indicator', 'KeyPerformanceIndicator', 'EffectiveYear', 'dtpEffectiveYear', 1, 1)
+
+EXEC [admin].[UpdateListColumns]
+	@ListName = 'Rating Scale Column List',
+	@ListType = 'RatingScaleColumnList',
+	@DefaultColumn = 'RatingScaleGroup|txtRateCode|txtRating|txtMinValue|txtValue|txtRemarks'
+
+EXEC [maintenance].[UpdateJQListColumns]
+	@ListType = 'RatingScaleColumnList', @ColumnType = 'label', @Name = 'txtRateCode',
+	@Label = 'Rate Code', @Width = '150', @Align = '', @Formatter = '', @FormatterOption = '',
+	@Others = '', @Clients = ''
+
+EXEC [maintenance].[UpdateJQListColumns]
+	@ListType = 'RatingScaleColumnList', @ColumnType = 'label', @Name = 'txtRating',
+	@Label = 'Rating', @Width = '200', @Align = '', @Formatter = '', @FormatterOption = '',
+	@Others = '', @Clients = ''
+
+EXEC [maintenance].[UpdateJQListColumns]
+	@ListType = 'RatingScaleColumnList', @ColumnType = 'label', @Name = 'txtMinValue',
+	@Label = 'Min Value', @Width = '100', @Align = '', @Formatter = '', @FormatterOption = '',
+	@Others = 'formatter: jsFunction.ValueFormatter', @Clients = ''
+
+EXEC [maintenance].[UpdateJQListColumns]
+	@ListType = 'RatingScaleColumnList', @ColumnType = 'label', @Name = 'txtValue',
+	@Label = 'Max Value', @Width = '100', @Align = '', @Formatter = '', @FormatterOption = '',
+	@Others = 'formatter: jsFunction.ValueFormatter', @Clients = ''

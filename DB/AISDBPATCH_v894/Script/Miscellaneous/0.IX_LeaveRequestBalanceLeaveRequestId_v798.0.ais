@@ -1,0 +1,16 @@
+/*
+Missing Index Details from report.fnPayrollRunningLeaveBalanceV2.sql - DATABASE-SERVER\SQLDEVELOPER2017.EatWork_CDCProd (sa)
+The Query Processor estimates that implementing the following index could improve the query cost by 6.86756%.
+*/
+
+
+IF NOT EXISTS(SELECT index_id FROM SYS.indexes WHERE name = 'IX_LeaveRequestBalanceLeaveRequestId' AND object_id = object_id('[leave].[LeaveRequestBalance]'))
+	CREATE NONCLUSTERED INDEX [IX_LeaveRequestBalanceLeaveRequestId]
+	ON [leave].[LeaveRequestBalance] ([LeaveRequestId])
+
+GO
+
+IF NOT EXISTS(SELECT index_id FROM SYS.indexes WHERE name = 'IX_LeaveRequestProfileIdInclusiveStartDate' AND object_id = object_id('[leave].[LeaveRequest]'))
+	CREATE NONCLUSTERED INDEX [IX_LeaveRequestProfileIdInclusiveStartDate]
+	ON [leave].[LeaveRequest] ([ProfileId],[InclusiveStartDate],[StatusId])
+GO

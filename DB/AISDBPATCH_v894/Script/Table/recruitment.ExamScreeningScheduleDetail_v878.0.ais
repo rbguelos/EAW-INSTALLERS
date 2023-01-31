@@ -1,0 +1,28 @@
+IF NOT EXISTS(SELECT TOP 1 1 FROM sys.objects WHERE object_id = object_id('[recruitment].[ExamScreeningScheduleDetail]'))
+BEGIN
+CREATE TABLE [recruitment].[ExamScreeningScheduleDetail](
+	[ExamScreeningScheduleDetailId] [bigint] IDENTITY(1,1) NOT NULL,
+	[ApplicantScreeningScheduleId] [bigint] NULL,
+	[ScreeningDate] [datetime] NULL,
+	[OverallRating] [varchar](50) NULL,
+	[Percentage] [decimal](18, 4) NULL,
+	[HighestPossibleScore] [bigint] NULL,
+	[Remarks] [varchar](max) NULL,
+	[Section] [varchar](max) NULL,
+	[CreateId] [bigint] NULL,
+	[CreateDate] [datetime] NULL,
+	[LastUpdateId] [bigint] NULL,
+	[LastUpdateDate] [datetime] NULL,
+ CONSTRAINT [PK_ExamScreeningScheduleDetail] PRIMARY KEY CLUSTERED 
+(
+	[ExamScreeningScheduleDetailId] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+
+SET IDENTITY_INSERT [recruitment].[ExamScreeningScheduleDetail] ON 
+INSERT [recruitment].[ExamScreeningScheduleDetail] ([ExamScreeningScheduleDetailId], [ApplicantScreeningScheduleId], [ScreeningDate], [OverallRating], [Percentage], [HighestPossibleScore], [Remarks], [Section], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (69, 9, CAST(N'2020-06-09T00:00:00.000' AS DateTime), N'10', CAST(30.0000 AS Decimal(18, 4)), 20, N'TEST remarks', N'zxadasdasd', 1, CAST(N'2020-06-08T15:28:24.473' AS DateTime), 1, CAST(N'2020-06-09T16:52:35.557' AS DateTime))
+INSERT [recruitment].[ExamScreeningScheduleDetail] ([ExamScreeningScheduleDetailId], [ApplicantScreeningScheduleId], [ScreeningDate], [OverallRating], [Percentage], [HighestPossibleScore], [Remarks], [Section], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (70, 9, CAST(N'2020-06-09T00:00:00.000' AS DateTime), N'1', CAST(60.0000 AS Decimal(18, 4)), 10, N'TEST remarks', N' ASD', 1, CAST(N'2020-06-08T15:28:33.567' AS DateTime), 1, CAST(N'2020-06-09T16:52:37.930' AS DateTime))
+INSERT [recruitment].[ExamScreeningScheduleDetail] ([ExamScreeningScheduleDetailId], [ApplicantScreeningScheduleId], [ScreeningDate], [OverallRating], [Percentage], [HighestPossibleScore], [Remarks], [Section], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (71, 9, CAST(N'2020-06-09T00:00:00.000' AS DateTime), N'123', CAST(90.0000 AS Decimal(18, 4)), 2, N'TEST remarks', N' asdasd', 1, CAST(N'2020-06-08T15:28:36.277' AS DateTime), 1, CAST(N'2020-06-09T16:52:38.973' AS DateTime))
+INSERT [recruitment].[ExamScreeningScheduleDetail] ([ExamScreeningScheduleDetailId], [ApplicantScreeningScheduleId], [ScreeningDate], [OverallRating], [Percentage], [HighestPossibleScore], [Remarks], [Section], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (72, 12, CAST(N'1899-12-31T00:00:00.000' AS DateTime), N'10', CAST(13.0000 AS Decimal(18, 4)), 12, N'25626266', N'zxadasdasd', 1, CAST(N'2020-06-08T17:16:03.560' AS DateTime), 1, CAST(N'2020-06-09T17:39:12.397' AS DateTime))
+SET IDENTITY_INSERT [recruitment].[ExamScreeningScheduleDetail] OFF
+END

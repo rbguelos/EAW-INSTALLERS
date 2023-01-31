@@ -1,0 +1,1472 @@
+SET NOCOUNT ON
+/*start deleting existing report configs*/
+DELETE FROM report.Report WHERE ReportId IN (397,476,89,92)
+DELETE FROM report.ReportData WHERE ReportId IN (397,476,89,92)
+DELETE FROM report.ReportParameter WHERE ReportCode IN ('PayslipTimeSummaryWithDetailedLeaveBalance','PaySlipTimeSummarywithGrosstoDate','PayslipWithOTBreakdown','PayslipWithOTBreakdown2')
+DELETE FROM report.ReportSubReport WHERE ReportCode  IN ('PayslipTimeSummaryWithDetailedLeaveBalance','PaySlipTimeSummarywithGrosstoDate','PayslipWithOTBreakdown','PayslipWithOTBreakdown2')
+/*end deleting existing report configs*/
+
+/*start insert data to report.Report*/
+SET IDENTITY_INSERT [report].[Report] ON
+INSERT [report].[Report] ([ReportId],[ReportCode],[ReportName],[ReportFile],[ReportExcelFile],[EmploymentStatus],[TableSPUsed],[SPUsed],[NoOrderBy],[QueryType],[InsertToReportTempTable],[Description],[ImageFile],[SortFields],[Event],[ExportFormat],[CreateId],[Createdate],[LastUpdateId],[LastUpdateDate],[UseExportToExcelAPI],[DetailColStartPos],[DetailRowStartPos],[HeaderRowStartPos],[IncludeColHeader],[InsertNewRowAtRowPos],[Template],[SourceName],[ShowGrandTotals],[RepeatColumnHeaderOnHeaderGroup],[RepeatColumnHeaderOnGroupLevel],[AutoSizeColumn],[MaxRowPerPage],[DisplayReportHeader])VALUES(89,'PayslipWithOTBreakdown','Payslip with OT Breakdown','\Reports\Payslip\PayslipWithOTBreakdown.rpt',NULL,3,'SELECT 
+    E.EmployeeNo
+    ,E.LastName
+    ,E.FirstName
+    ,E.MiddleName
+    ,E.Appellation
+    ,E.LastFirstMIName
+    ,E.FirstMILastName
+    ,E.HireDate
+    ,CompanyName = C.Name
+    ,CompanyCode = C.Code
+    ,BranchCode = B.Code
+    ,BranchName = B.Name
+    ,E.DepartmentName
+    ,E.DepartmentCode
+    ,E.OfficeName
+    ,E.OfficeCode
+    ,E.UnitCode
+    ,E.DivisionCode
+    ,E.GroupsCode
+    ,E.DistrictCode
+    ,E.Location
+    ,E.ProjectCode
+    ,E.ProjectName
+    ,E.CostCenterCode
+    ,E.LineCode
+    ,E.TeamCode
+    ,E.EmployeeTypeCode
+    ,E.JobRank
+    ,E.JobGrade
+    ,E.JobLevel
+    ,E.PositionCode
+    ,E.Position
+    ,E.TaxExemptionStatus
+    ,RP.[PaygroupId]
+    ,RP.[PaySheetHeaderId]
+    ,RP.[PaySheetHeaderDetailId]
+    ,RP.[ProfileId] AS EmployeeId
+    ,RP.[CompanyId]
+    ,RP.[BranchId]
+    ,RP.[DepartmentId]
+    ,RP.[OfficeId]
+    ,RP.[UnitId]
+    ,RP.[DivisionId]
+    ,RP.[GroupId]
+    ,RP.[DistrictId]
+    ,RP.[LocationId]
+    ,RP.[ProjectProfileId]
+    ,RP.[CostCenterId]
+    ,RP.[LineId]
+    ,RP.[TeamId]
+    ,RP.[EmployeeTypeId]
+    ,RP.[JobRankId]
+    ,RP.[JobGradeId]
+    ,RP.[JobLevelId]
+    ,RP.[PositionId]
+    ,RP.[PayrollTypeId]
+    ,RP.[PayrollType]
+    ,RP.[ReferenceNo]
+    ,RP.[StatusId]
+    ,RP.[Status]
+    ,RP.[MonthYear]
+    ,RP.[PeriodStartDate]
+    ,RP.[PeriodEndDate]
+    ,RP.[IssuedDate]
+    ,RP.[CutOffStartDate]
+    ,RP.[CutOffEndDate]
+    ,RP.[PayrollPeriod]
+    ,RP.[EndOfMonth]
+    ,RP.[SalaryRate]
+    ,RP.[SalaryType]
+    ,RP.[HourlyRate]
+    ,RP.[DailyRate]
+    ,RP.[MonthlyRate]
+    ,RP.[LateHrs]
+    ,RP.[UndertimeHrs]
+    ,RP.[AbsentHrs]
+    ,RP.[LeaveHrs]
+    ,RP.[OR]
+    ,RP.[RE]
+    ,RP.[HO]
+    ,RP.[SP]
+    ,RP.[HR]
+    ,RP.[SR]
+    ,RP.[ORNS]
+    ,RP.[RENS]
+    ,RP.[HONS]
+    ,RP.[SPNS]
+    ,RP.[HRNS]
+    ,RP.[SRNS]
+    ,RP.[OROT]
+    ,RP.[REOT]
+    ,RP.[HOOT]
+    ,RP.[SPOT]
+    ,RP.[HROT]
+    ,RP.[SROT]
+    ,RP.[ORNSOT]
+    ,RP.[RENSOT]
+    ,RP.[HONSOT]
+    ,RP.[SPNSOT]
+    ,RP.[HRNSOT]
+    ,RP.[SRNSOT]
+    ,RP.[AbsentAmount]
+    ,RP.[LateAmount]
+    ,RP.[UndertimeAmount]
+    ,RP.TotalHolidayHrs
+    ,RP.OvertimeHrs
+    ,RP.NightDiffHrs
+    ,RP.[TotalOTHrs]
+    ,[ORPay] = RP.BasicPay
+    ,RP.[REPay]
+    ,RP.[HOPay]
+    ,RP.[SPPay]
+    ,RP.[HRPay]
+    ,RP.[SRPay]
+    ,RP.[ORNSPay]
+    ,RP.[RENSPay]
+    ,RP.[HONSPay]
+    ,RP.[SPNSPay]
+    ,RP.[HRNSPay]
+    ,RP.[SRNSPay]
+    ,RP.[OROTPay]
+    ,RP.[REOTPay]
+    ,RP.[HOOTPay]
+    ,RP.[SPOTPay]
+    ,RP.[HROTPay]
+    ,RP.[SROTPay]
+    ,RP.[ORNSOTPay]
+    ,RP.[RENSOTPay]
+    ,RP.[HONSOTPay]
+    ,RP.[SPNSOTPay]
+    ,RP.[HRNSOTPay]
+    ,RP.[SRNSOTPay]
+    ,RP.TotalHolidayPay
+    ,RP.OvertimePay
+    ,RP.NightDiffPay
+    ,RP.[TotalOTPay]
+    ,RP.[SSS]
+    ,RP.[SSSES]
+    ,RP.[SSSEC]
+    ,RP.[PhilHealth]
+    ,RP.[PhilHealthES]
+    ,RP.[PAGIBIG]
+    ,RP.[PAGIBIGES]
+    ,RP.[WHT]
+    ,RP.[CompanyWHT]
+    ,RP.[LeavePay]
+    ,RP.[Allowance]
+    ,RP.[Loan]
+    ,RP.[Deduction]
+    ,RP.[OtherIncome]
+    ,RP.[OtherDeduction]
+    ,RP.[BasicPay]
+    ,RP.[GrossPay]
+    ,RP.[TotalDeduction]
+    ,RP.[NetPay]
+    ,RP.[OthersContribution]
+    ,RP.[OtherBenefits]
+    ,RP.[DC]
+    ,RP.[COLA]
+    ,RP.[OtherAllowance]
+    ,RP.[EMPSC]
+    ,RP.[PIRAA]
+    ,RP.[PIRAAEC]
+    ,RP.[FieldworkUnits]
+    ,RP.[FieldworkPay]
+    ,RP.[OthersWHT]
+    ,RP.[UnionDues]
+    ,RP.[Representation]
+    ,RP.[Transportation]
+    ,RP.[FixedHousingAllowance]
+    ,RP.[Commission]
+    ,RP.[ProfitSharing]
+    ,RP.[Fees]
+    ,RP.[HazardPay]
+    ,RP.[Month13Pay]
+    ,RP.[TaxableIncome]
+    ,RP.[OriginalWHT]
+    ,RP.[CompanyOtherAmounts]
+    ,RP.[SIL]
+    ,RP.[ProRated13thMonth]
+    ,RP.[TaxRefund]
+    ,RP.[CompanyOther]
+    ,RP.[PagibigBracketId]
+    ,RP.[SSSBracketId]
+    ,RP.[PhilhealthBracketId]
+    ,RP.[WHTBracketId]
+    ,RP.[WorkingHrsPerDay]
+    ,RP.[TotalHoursWorked]
+    ,RP.[LateDays]
+    ,RP.[UndertimeDays]
+    ,RP.[AbsentDays]
+    ,RP.TaxExempt
+    ,RP.NumberOfPayPeriods
+    ,RP.ShowPayslipCompanyLogo
+    ,RP.SalaryTypeName
+    ,RP.CoNonWorking
+    ,RP.CoNonWorkingPay
+    ,RP.CoNonWorkingNSPay
+    ,RP.CoNonWorkingOT
+    ,RP.CoNonWorkingOTPay
+    ,RP.CoNonWorkingNSOT
+    ,RP.CoNonWorkingNSOTPay
+    ,RP.CoNonWorkingNS
+	,[DoubleHolidayHrs] = ISNULL(RP.[DoubleHolidayHrs],0)
+	,[DoubleHolidayOTHrs] = ISNULL(RP.[DoubleHolidayOTHrs],0)
+	,[DoubleHolidayNSHrs] = ISNULL(RP.[DoubleHolidayNSHrs],0)
+	,[DoubleHolidayNSOTHrs] = ISNULL(RP.[DoubleHolidayNSOTHrs],0)
+	,[DoubleHolidayRestdayHrs] = ISNULL(RP.[DoubleHolidayRestdayHrs],0)
+	,[DoubleHolidayRestdayOTHrs] = ISNULL(RP.[DoubleHolidayRestdayOTHrs],0)
+	,[DoubleHolidayRestdayNSHrs] = ISNULL(RP.[DoubleHolidayRestdayNSHrs],0)
+	,[DoubleHolidayRestdayNSOTHrs] = ISNULL(RP.[DoubleHolidayRestdayNSOTHrs],0)
+	,[DoubleHolidayNS2Hrs] = ISNULL(RP.[DoubleHolidayNS2Hrs],0)
+	,[DoubleHolidayNSOT2Hrs] = ISNULL(RP.[DoubleHolidayNSOT2Hrs],0)
+	,[DoubleHolidayRestdayNS2Hrs] = ISNULL(RP.[DoubleHolidayRestdayNS2Hrs],0)
+	,[DoubleHolidayRestdayNSOT2Hrs] = ISNULL(RP.[DoubleHolidayRestdayNSOT2Hrs],0)
+	,[DoubleHolidayPay] = ISNULL(RP.[DoubleHolidayPay],0)
+	,[DoubleHolidayOTPay] = ISNULL(RP.[DoubleHolidayOTPay],0)
+	,[DoubleHolidayNSPay] = ISNULL(RP.[DoubleHolidayNSPay],0)
+	,[DoubleHolidayNSOTPay] = ISNULL(RP.[DoubleHolidayNSOTPay],0)
+	,[DoubleHolidayRestdayPay] = ISNULL(RP.[DoubleHolidayRestdayPay],0)
+	,[DoubleHolidayRestdayOTPay] = ISNULL(RP.[DoubleHolidayRestdayOTPay],0)
+	,[DoubleHolidayRestdayNSPay] = ISNULL(RP.[DoubleHolidayRestdayNSPay],0)
+	,[DoubleHolidayRestdayNSOTPay] = ISNULL(RP.[DoubleHolidayRestdayNSOTPay],0)
+	,[PrevNTDoubleHolidayPay] = ISNULL(RP.[PrevNTDoubleHolidayPay],0)
+	,[PrevNTDoubleHolidayRestdayPay] = ISNULL(RP.[PrevNTDoubleHolidayRestdayPay],0)
+	,[DoubleHolidayNS2Pay] = ISNULL(RP.[DoubleHolidayNS2Pay],0)
+	,[DoubleHolidayNSOT2Pay] = ISNULL(RP.[DoubleHolidayNSOT2Pay],0)
+	,[DoubleHolidayRestdayNS2Pay] = ISNULL(RP.[DoubleHolidayRestdayNS2Pay],0)
+	,[DoubleHolidayRestdayNSOT2Pay] = ISNULL(RP.[DoubleHolidayRestdayNSOT2Pay],0)
+	,BankFileHeaderId = (CASE WHEN CAST(ISNULL(@BankFileHdrId,'''') AS BIGINT) = '''' THEN 0 ELSE @BankFileHdrId END)
+FROM [dbo].[vwPaysheetDetail] RP
+CROSS APPLY 
+(
+    SELECT TOP 1
+	   EmployeeNo
+	   ,LastName
+	   ,FirstName
+	   ,MiddleName
+	   ,Appellation
+	   ,LastFirstMIName
+	   ,FirstMILastName
+	   ,HireDate
+	   ,CompanyName
+	   ,CompanyCode
+	   ,BranchCode
+	   ,BranchName
+	   ,DepartmentName
+	   ,DepartmentCode
+	   ,OfficeName
+	   ,OfficeCode
+	   ,UnitCode
+	   ,DivisionCode
+	   ,GroupsCode
+	   ,DistrictCode
+	   ,Location
+	   ,ProjectCode
+	   ,ProjectName
+	   ,CostCenterCode
+	   ,LineCode
+	   ,TeamCode
+	   ,EmployeeTypeCode
+	   ,JobRank
+	   ,JobGrade
+	   ,JobLevel
+	   ,PositionCode
+	   ,Position
+	   ,TaxExemptionStatus
+    FROM dbo.fnProfileInfo(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, RP.[PaySheetHeaderDetailId]) e
+    WHERE e.ProfileId = RP.ProfileId
+) E
+OUTER APPLY
+(
+    SELECT TOP 1
+	   c.Name
+	   ,a.Address
+	   ,c.Code
+    FROM maintenance.Company c 
+    JOIN maintenance.Address a ON a.AddressId = c.AddressId
+    WHERE c.CompanyId = RP.CompanyId
+) C
+OUTER APPLY
+(
+    SELECT TOP 1
+	   b.Code
+	   ,b.Name
+	   ,aa.Address
+    FROM maintenance.Branch b 
+    JOIN maintenance.Address aa ON aa.AddressId = b.AddressId
+    WHERE b.BranchId = RP.BranchId
+) B
+WHERE 
+(CHARINDEX('''''''' + CAST(RP.PaySheetHeaderId AS VARCHAR) + '''''''', (CASE WHEN CHARINDEX('''''''',@PaySheetHeaderId) > 0 THEN @PaySheetHeaderId ELSE '''''''' + CAST(@PaySheetHeaderId AS VARCHAR) + '''''''' END) ) > 0)
+AND
+(
+    ISNULL(@ProfileId,0) = 0 OR
+    (CAST(RP.ProfileId AS BIGINT) = CAST(@ProfileId as BIGINT))
+)',NULL,NULL,'QUERY',0,'',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[Report] ([ReportId],[ReportCode],[ReportName],[ReportFile],[ReportExcelFile],[EmploymentStatus],[TableSPUsed],[SPUsed],[NoOrderBy],[QueryType],[InsertToReportTempTable],[Description],[ImageFile],[SortFields],[Event],[ExportFormat],[CreateId],[Createdate],[LastUpdateId],[LastUpdateDate],[UseExportToExcelAPI],[DetailColStartPos],[DetailRowStartPos],[HeaderRowStartPos],[IncludeColHeader],[InsertNewRowAtRowPos],[Template],[SourceName],[ShowGrandTotals],[RepeatColumnHeaderOnHeaderGroup],[RepeatColumnHeaderOnGroupLevel],[AutoSizeColumn],[MaxRowPerPage],[DisplayReportHeader])VALUES(92,'PayslipWithOTBreakdown2','Payslip with OT Breakdown 2','\Reports\Payslip\PayslipWithOTBreakdown2.rpt',NULL,3,'SELECT   
+    E.EmployeeNo
+    ,E.LastName
+    ,E.FirstName
+    ,E.MiddleName
+    ,E.Appellation
+    ,E.LastFirstMIName
+    ,E.FirstMILastName
+    ,E.HireDate
+    ,CompanyName = C.Name
+    ,CompanyCode = C.Code
+    ,BranchCode = B.Code
+    ,BranchName = B.Name
+    ,E.DepartmentName
+    ,E.DepartmentCode
+    ,E.OfficeName
+    ,E.OfficeCode
+    ,E.UnitCode
+    ,E.DivisionCode
+    ,E.GroupsCode
+    ,E.DistrictCode
+    ,E.Location
+    ,E.ProjectCode
+    ,E.ProjectName
+    ,E.CostCenterCode
+    ,E.LineCode
+    ,E.TeamCode
+    ,E.EmployeeTypeCode
+    ,E.JobRank
+    ,E.JobGrade
+    ,E.JobLevel
+    ,E.PositionCode
+    ,E.Position
+    ,E.TaxExemptionStatus
+    ,RP.[PaygroupId]
+    ,RP.[PayGroupCode]
+    ,RP.[PayGroupDescription]
+    ,RP.[PaySheetHeaderId]
+    ,RP.[PaySheetHeaderDetailId]
+    ,RP.[ProfileId] AS EmployeeId
+    ,RP.[CompanyId]
+    ,RP.[BranchId]
+    ,RP.[DepartmentId]
+    ,RP.[OfficeId]
+    ,RP.[UnitId]
+    ,RP.[DivisionId]
+    ,RP.[GroupId]
+    ,RP.[DistrictId]
+    ,RP.[LocationId]
+    ,RP.[ProjectProfileId]
+    ,RP.[CostCenterId]
+    ,RP.[LineId]
+    ,RP.[TeamId]
+    ,RP.[EmployeeTypeId]
+    ,RP.[JobRankId]
+    ,RP.[JobGradeId]
+    ,RP.[JobLevelId]
+    ,RP.[PositionId]
+    ,RP.[PayrollTypeId]
+    ,RP.[PayrollType]
+    ,RP.[ReferenceNo]
+    ,RP.[StatusId]
+    ,RP.[Status]
+    ,RP.[MonthYear]
+    ,RP.[PeriodStartDate]
+    ,RP.[PeriodEndDate]
+    ,RP.[IssuedDate]
+    ,RP.[CutOffStartDate]
+    ,RP.[CutOffEndDate]
+    ,RP.[PayrollPeriod]
+    ,RP.[EndOfMonth]
+    ,RP.[SalaryRate]
+    ,RP.[SalaryType]
+    ,RP.[HourlyRate]
+    ,RP.[DailyRate]
+    ,RP.[MonthlyRate]
+    ,RP.[LateHrs]
+    ,RP.[UndertimeHrs]
+    ,RP.[AbsentHrs]
+    ,RP.[LeaveHrs]
+    ,RP.[OR]
+    ,RP.[RE]
+    ,RP.[HO]
+    ,RP.[SP]
+    ,RP.[HR]
+    ,RP.[SR]
+    ,RP.[ORNS]
+    ,RP.[RENS]
+    ,RP.[HONS]
+    ,RP.[SPNS]
+    ,RP.[HRNS]
+    ,RP.[SRNS]
+    ,RP.[OROT]
+    ,RP.[REOT]
+    ,RP.[HOOT]
+    ,RP.[SPOT]
+    ,RP.[HROT]
+    ,RP.[SROT]
+    ,RP.[ORNSOT]
+    ,RP.[RENSOT]
+    ,RP.[HONSOT]
+    ,RP.[SPNSOT]
+    ,RP.[HRNSOT]
+    ,RP.[SRNSOT]
+    ,RP.[AbsentAmount]
+    ,RP.[LateAmount]
+    ,RP.[UndertimeAmount]
+    ,RP.TotalHolidayHrs
+    ,RP.OvertimeHrs
+    ,RP.NightDiffHrs
+    ,RP.[TotalOTHrs]
+    ,[ORPay] = RP.BasicPay
+    ,RP.[REPay]
+    ,RP.[HOPay]
+    ,RP.[SPPay]
+    ,RP.[HRPay]
+    ,RP.[SRPay]
+    ,RP.[ORNSPay]
+    ,RP.[RENSPay]
+    ,RP.[HONSPay]
+    ,RP.[SPNSPay]
+    ,RP.[HRNSPay]
+    ,RP.[SRNSPay]
+    ,RP.[OROTPay]
+    ,RP.[REOTPay]
+    ,RP.[HOOTPay]
+    ,RP.[SPOTPay]
+    ,RP.[HROTPay]
+    ,RP.[SROTPay]
+    ,RP.[ORNSOTPay]
+    ,RP.[RENSOTPay]
+    ,RP.[HONSOTPay]
+    ,RP.[SPNSOTPay]
+    ,RP.[HRNSOTPay]
+    ,RP.[SRNSOTPay]
+    ,RP.TotalHolidayPay
+    ,RP.OvertimePay
+    ,RP.NightDiffPay
+    ,RP.[TotalOTPay]
+    ,RP.[SSS]
+    ,RP.[SSSES]
+    ,RP.[SSSEC]
+    ,RP.[PhilHealth]
+    ,RP.[PhilHealthES]
+    ,RP.[PAGIBIG]
+    ,RP.[PAGIBIGES]
+    ,RP.[WHT]
+    ,RP.[CompanyWHT]
+    ,RP.[LeavePay]
+    ,RP.[Allowance]
+    ,RP.[Loan]
+    ,RP.[Deduction]
+    ,RP.[OtherIncome]
+    ,RP.[OtherDeduction]
+    ,RP.[BasicPay]
+    ,RP.[GrossPay]
+    ,RP.[TotalDeduction]
+    ,RP.[NetPay]
+    ,RP.[OthersContribution]
+    ,RP.[OtherBenefits]
+    ,RP.[DC]
+    ,RP.[COLA]
+    ,RP.[OtherAllowance]
+    ,RP.[EMPSC]
+    ,RP.[PIRAA]
+    ,RP.[PIRAAEC]
+    ,RP.[FieldworkUnits]
+    ,RP.[FieldworkPay]
+    ,RP.[OthersWHT]
+    ,RP.[UnionDues]
+    ,RP.[Representation]
+    ,RP.[Transportation]
+    ,RP.[FixedHousingAllowance]
+    ,RP.[Commission]
+    ,RP.[ProfitSharing]
+    ,RP.[Fees]
+    ,RP.[HazardPay]
+    ,RP.[Month13Pay]
+    ,RP.[TaxableIncome]
+    ,RP.[OriginalWHT]
+    ,RP.[CompanyOtherAmounts]
+    ,RP.[SIL]
+    ,RP.[ProRated13thMonth]
+    ,RP.[TaxRefund]
+    ,RP.[CompanyOther]
+    ,RP.[PagibigBracketId]
+    ,RP.[SSSBracketId]
+    ,RP.[PhilhealthBracketId]
+    ,RP.[WHTBracketId]
+    ,RP.[WorkingHrsPerDay]
+    ,RP.[TotalHoursWorked]
+    ,CompanyAddress = C.Address
+    ,RP.LateDays
+    ,RP.UndertimeDays
+    ,RP.AbsentDays
+    ,YTDWHT = ISNULL(ytd.YTDWHT, 0)
+    ,YTDGrossPay = ISNULL(ytd.YTDGrossPay, 0)
+    ,YTDNetPay = ISNULL(ytd.YTDNetPay, 0)
+    ,RP.TaxExempt
+    ,RP.NumberOfPayPeriods
+    ,RP.ShowPayslipCompanyLogo
+    ,RP.CoNonWorking
+    ,RP.CoNonWorkingPay
+    ,RP.CoNonWorkingNSPay
+    ,RP.CoNonWorkingOT
+    ,RP.CoNonWorkingOTPay
+    ,RP.CoNonWorkingNSOT
+    ,RP.CoNonWorkingNSOTPay
+    ,RP.CoNonWorkingNS
+    ,RP.SalaryTypeName
+	,BankFileHeaderId = (CASE WHEN CAST(ISNULL(@BankFileHdrId,'''') AS BIGINT) = '''' THEN 0 ELSE @BankFileHdrId END)
+FROM [dbo].[vwPaysheetDetail] RP
+CROSS APPLY 
+(
+    SELECT TOP 1
+	   EmployeeNo
+	   ,LastName
+	   ,FirstName
+	   ,MiddleName
+	   ,Appellation
+	   ,LastFirstMIName
+	   ,FirstMILastName
+	   ,HireDate
+	   ,CompanyName
+	   ,CompanyCode
+	   ,BranchCode
+	   ,BranchName
+	   ,DepartmentName
+	   ,DepartmentCode
+	   ,OfficeName
+	   ,OfficeCode
+	   ,UnitCode
+	   ,DivisionCode
+	   ,GroupsCode
+	   ,DistrictCode
+	   ,Location
+	   ,ProjectCode
+	   ,ProjectName
+	   ,CostCenterCode
+	   ,LineCode
+	   ,TeamCode
+	   ,EmployeeTypeCode
+	   ,JobRank
+	   ,JobGrade
+	   ,JobLevel
+	   ,PositionCode
+	   ,Position
+	   ,TaxExemptionStatus
+	   ,CompanyAddress
+    FROM dbo.fnProfileInfo(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, RP.[PaySheetHeaderDetailId])
+    WHERE ProfileId = RP.ProfileId
+) E
+OUTER APPLY 
+(
+    SELECT
+	   SUM(COALESCE(vpd.WHT,0)) YTDWHT
+	   ,SUM(COALESCE(vpd.GrossPay,0)) YTDGrossPay
+	   ,SUM(COALESCE(vpd.NetPay,0)) YTDNetPay
+    FROM dbo.vwPaysheetDetail vpd
+    WHERE vpd.ProfileId = RP.ProfileId
+    AND vpd.PeriodEndDate <= RP.PeriodEndDate
+    AND YEAR(vpd.MonthYear) =  YEAR(RP.MonthYear)
+    AND vpd.PayrollType NOT IN (''13th-Month-Pay'', ''Separation-Pay'',''Prev-Employer'',''Bonus'')
+    AND (vpd.StatusId = 2 /*APPROVED ONLY*/)
+) ytd
+OUTER APPLY
+(
+    SELECT TOP 1
+	   c.Name
+	   ,a.Address
+	   ,c.Code
+    FROM maintenance.Company c 
+    JOIN maintenance.Address a ON a.AddressId = c.AddressId
+    WHERE c.CompanyId = RP.CompanyId
+) C
+OUTER APPLY
+(
+    SELECT TOP 1
+	   b.Code
+	   ,b.Name
+	   ,aa.Address
+    FROM maintenance.Branch b 
+    JOIN maintenance.Address aa ON aa.AddressId = b.AddressId
+    WHERE b.BranchId = RP.BranchId
+) B
+WHERE 
+(CHARINDEX('''''''' + CAST(RP.PaySheetHeaderId AS VARCHAR) + '''''''', (CASE WHEN CHARINDEX('''''''',@PaySheetHeaderId) > 0 THEN @PaySheetHeaderId ELSE '''''''' + CAST(@PaySheetHeaderId AS VARCHAR) + '''''''' END) ) > 0)
+AND 
+(
+    COALESCE(@ProfileId, 0) = 0 OR 
+    (CAST(RP.ProfileId AS BIGINT) = CAST(@ProfileId AS BIGINT))
+)',NULL,NULL,'QUERY',0,'',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[Report] ([ReportId],[ReportCode],[ReportName],[ReportFile],[ReportExcelFile],[EmploymentStatus],[TableSPUsed],[SPUsed],[NoOrderBy],[QueryType],[InsertToReportTempTable],[Description],[ImageFile],[SortFields],[Event],[ExportFormat],[CreateId],[Createdate],[LastUpdateId],[LastUpdateDate],[UseExportToExcelAPI],[DetailColStartPos],[DetailRowStartPos],[HeaderRowStartPos],[IncludeColHeader],[InsertNewRowAtRowPos],[Template],[SourceName],[ShowGrandTotals],[RepeatColumnHeaderOnHeaderGroup],[RepeatColumnHeaderOnGroupLevel],[AutoSizeColumn],[MaxRowPerPage],[DisplayReportHeader])VALUES(397,'PayslipTimeSummaryWithDetailedLeaveBalance','Payslip Time Summary with Detailed Leave Balance','\Reports\Payslip\PayslipTimeSummaryWithDetailedLeaveBalance.rpt',NULL,3,'SELECT                               
+	E.EmployeeNo
+	,E.LastName
+	,E.FirstName
+	,E.MiddleName
+	,E.Appellation
+	,E.LastFirstMIName
+	,E.FirstMILastName
+	,E.HireDate
+	,CompanyName = C.Name
+	,CompanyCode = C.Code
+	,BranchCode = B.Code
+	,BranchName = B.Name
+	,E.DepartmentName
+	,E.DepartmentCode
+	,E.OfficeName
+	,E.OfficeCode
+	,E.UnitCode
+	,E.DivisionCode
+	,E.GroupsCode
+	,E.DistrictCode
+	,E.Location
+	,E.ProjectCode
+	,E.ProjectName
+	,E.CostCenterCode
+	,E.LineCode
+	,E.TeamCode
+	,E.EmployeeTypeCode
+	,E.JobRank
+	,E.JobGrade
+	,E.JobLevel
+	,E.PositionCode
+	,E.Position
+	,E.TaxExemptionStatus
+	,RP.[PaygroupId]
+	,RP.[PaySheetHeaderId]
+	,RP.[PaySheetHeaderDetailId]
+	,RP.[ProfileId] AS EmployeeId
+	,RP.[CompanyId]
+	,RP.[BranchId]
+	,RP.[DepartmentId]
+	,RP.[OfficeId]
+	,RP.[UnitId]
+	,RP.[DivisionId]
+	,RP.[GroupId]
+	,RP.[DistrictId]
+	,RP.[LocationId]
+	,RP.[ProjectProfileId]
+	,RP.[CostCenterId]
+	,RP.[LineId]
+	,RP.[TeamId]
+	,RP.[EmployeeTypeId]
+	,RP.[JobRankId]
+	,RP.[JobGradeId]
+	,RP.[JobLevelId]
+	,RP.[PositionId]
+	,RP.[PayrollTypeId]
+	,RP.[PayrollType]
+	,RP.[ReferenceNo]
+	,RP.[StatusId]
+	,RP.[Status]
+	,RP.[MonthYear]
+	,RP.[PeriodStartDate]
+	,RP.[PeriodEndDate]
+	,RP.[IssuedDate]
+	,RP.[CutOffStartDate]
+	,RP.[CutOffEndDate]
+	,RP.[PayrollPeriod]
+	,RP.[EndOfMonth]
+	,RP.[SalaryRate]
+	,RP.[SalaryType]
+	,RP.[SalaryTypeName]
+	,RP.[ShowPayslipCompanyLogo]
+	,RP.[HourlyRate]
+	,RP.[DailyRate]
+	,RP.[MonthlyRate]
+	,RP.[LateHrs]
+	,RP.[UndertimeHrs]
+	,RP.[AbsentHrs]
+	,RP.[LeaveHrs]
+	,RP.[OR]
+	,RP.[RE]
+	,RP.[HO]
+	,RP.[SP]
+	,RP.[HR]
+	,RP.[SR]
+	,RP.[ORNS]
+	,RP.[RENS]
+	,RP.[HONS]
+	,RP.[SPNS]
+	,RP.[HRNS]
+	,RP.[SRNS]
+	,RP.[OROT]
+	,RP.[REOT]
+	,RP.[HOOT]
+	,RP.[SPOT]
+	,RP.[HROT]
+	,RP.[SROT]
+	,RP.[ORNSOT]
+	,RP.[RENSOT]
+	,RP.[HONSOT]
+	,RP.[SPNSOT]
+	,RP.[HRNSOT]
+	,RP.[SRNSOT]
+	,RP.[AbsentAmount]
+	,RP.[LateAmount]
+	,RP.[UndertimeAmount]
+	,RP.TotalHolidayHrs
+	,RP.OvertimeHrs
+	,RP.NightDiffHrs
+	,RP.[TotalOTHrs]
+	,[ORPay] = RP.BasicPay
+	,RP.[REPay]
+	,RP.[HOPay]
+	,RP.[SPPay]
+	,RP.[HRPay]
+	,RP.[SRPay]
+	,RP.[ORNSPay]
+	,RP.[RENSPay]
+	,RP.[HONSPay]
+	,RP.[SPNSPay]
+	,RP.[HRNSPay]
+	,RP.[SRNSPay]
+	,RP.[OROTPay]
+	,RP.[REOTPay]
+	,RP.[HOOTPay]
+	,RP.[SPOTPay]
+	,RP.[HROTPay]
+	,RP.[SROTPay]
+	,RP.[ORNSOTPay]
+	,RP.[RENSOTPay]
+	,RP.[HONSOTPay]
+	,RP.[SPNSOTPay]
+	,RP.[HRNSOTPay]
+	,RP.[SRNSOTPay]
+	,RP.TotalHolidayPay
+	,RP.OvertimePay
+	,RP.NightDiffPay
+	,RP.[TotalOTPay]
+	,RP.[SSS]
+	,RP.[SSSES]
+	,RP.[SSSEC]
+	,RP.[PhilHealth]
+	,RP.[PhilHealthES]
+	,RP.[PAGIBIG]
+	,RP.[PAGIBIGES]
+	,RP.[WHT]
+	,RP.[CompanyWHT]
+	,RP.[LeavePay]
+	,RP.[Allowance]
+	,RP.[Loan]
+	,RP.[Deduction]
+	,RP.[OtherIncome]
+	,RP.[OtherDeduction]
+	,RP.[BasicPay]
+	,RP.[GrossPay]
+	,RP.[TotalDeduction]
+	,RP.[NetPay]
+	,RP.[OthersContribution]
+	,RP.[OtherBenefits]
+	,RP.[DC]
+	,RP.[COLA]
+	,RP.[OtherAllowance]
+	,RP.[EMPSC]
+	,RP.[PIRAA]
+	,RP.[PIRAAEC]
+	,RP.[FieldworkUnits]
+	,RP.[FieldworkPay]
+	,RP.[OthersWHT]
+	,RP.[UnionDues]
+	,RP.[Representation]
+	,RP.[Transportation]
+	,RP.[FixedHousingAllowance]
+	,RP.[Commission]
+	,RP.[ProfitSharing]
+	,RP.[Fees]
+	,RP.[HazardPay]
+	,RP.[Month13Pay]
+	,RP.[TaxableIncome]
+	,RP.[OriginalWHT]
+	,RP.[CompanyOtherAmounts]
+	,RP.[SIL]
+	,RP.[ProRated13thMonth]
+	,RP.[TaxRefund]
+	,RP.[CompanyOther]
+	,RP.[PagibigBracketId]
+	,RP.[SSSBracketId]
+	,RP.[PhilhealthBracketId]
+	,RP.[WHTBracketId]
+	,RP.[WorkingHrsPerDay]
+	,RP.[TotalHoursWorked]
+	,RP.[LateDays]
+	,RP.[UndertimeDays]
+	,RP.[AbsentDays]
+	,RP.TaxExempt
+	,RP.NumberOfPayPeriods
+	,BankFileHeaderId = (CASE WHEN CAST(ISNULL(@BankFileHdrId,'''') AS BIGINT) = '''' THEN 0 ELSE @BankFileHdrId END)
+	,E.SSSNo
+	,E.PhilHealthNo
+	,E.PagibigNo
+	,E.EmployeeTin
+FROM [dbo].[vwPaysheetDetail] RP
+CROSS APPLY (SELECT TOP 1
+		EmployeeNo
+		,LastName
+		,FirstName
+		,MiddleName
+		,Appellation
+		,LastFirstMIName
+		,FirstMILastName
+		,HireDate
+		,CompanyName
+		,CompanyCode
+		,BranchCode
+		,BranchName
+		,DepartmentName
+		,DepartmentCode
+		,OfficeName
+		,OfficeCode
+		,UnitCode
+		,DivisionCode
+		,GroupsCode
+		,DistrictCode
+		,Location
+		,ProjectCode
+		,ProjectName
+		,CostCenterCode
+		,LineCode
+		,TeamCode
+		,EmployeeTypeCode
+		,JobRank
+		,JobGrade
+		,JobLevel
+		,PositionCode
+		,Position
+		,TaxExemptionStatus
+		,SSSNo = E.SSS 
+	    ,PhilHealthNo = E.PhilHealth
+	    ,PagibigNo = E.Pagibig
+	    ,EmployeeTin = E.TIN
+	    ,CompanyTIN = E.CompanyTIN 
+	FROM dbo.fnProfileInfo(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, RP.[PaySheetHeaderDetailId]) e
+	WHERE e.ProfileId = RP.ProfileId) E
+OUTER APPLY(SELECT TOP 1
+			  c.Name
+			  ,a.Address
+			  ,c.Code
+		  FROM maintenance.Company c 
+		  JOIN maintenance.Address a ON a.AddressId = c.AddressId
+		  WHERE c.CompanyId = RP.CompanyId) C
+OUTER APPLY(SELECT TOP 1
+			 b.Code
+			,b.Name
+			,aa.Address
+		  FROM maintenance.Branch b 
+		  JOIN maintenance.Address aa 
+			 ON aa.AddressId = b.AddressId
+		  WHERE b.BranchId = RP.BranchId) B
+WHERE 
+(CHARINDEX('''''''' + CAST(RP.PaySheetHeaderId AS VARCHAR) + '''''''', (CASE WHEN CHARINDEX('''''''',@PaySheetHeaderId) > 0 THEN @PaySheetHeaderId ELSE '''''''' + CAST(@PaySheetHeaderId AS VARCHAR) + '''''''' END)) > 0)
+AND
+(
+    ISNULL(@ProfileId,0) = 0 OR (CAST(RP.ProfileId AS BIGINT) = CAST(@ProfileId as BIGINT))
+)
+',NULL,NULL,'QUERY',0,'',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[Report] ([ReportId],[ReportCode],[ReportName],[ReportFile],[ReportExcelFile],[EmploymentStatus],[TableSPUsed],[SPUsed],[NoOrderBy],[QueryType],[InsertToReportTempTable],[Description],[ImageFile],[SortFields],[Event],[ExportFormat],[CreateId],[Createdate],[LastUpdateId],[LastUpdateDate],[UseExportToExcelAPI],[DetailColStartPos],[DetailRowStartPos],[HeaderRowStartPos],[IncludeColHeader],[InsertNewRowAtRowPos],[Template],[SourceName],[ShowGrandTotals],[RepeatColumnHeaderOnHeaderGroup],[RepeatColumnHeaderOnGroupLevel],[AutoSizeColumn],[MaxRowPerPage],[DisplayReportHeader])VALUES(476,'PaySlipTimeSummarywithGrosstoDate','Pay Slip Time Summary with Gross to Date','\Reports\Payslip\PaySlipTimeSummarywithGrosstoDate.rpt',NULL,NULL,'SELECT 
+	E.EmployeeNo
+	,E.LastName
+	,E.FirstName
+	,E.MiddleName
+	,E.Appellation
+	,E.LastFirstMIName
+	,E.FirstMILastName
+	,E.HireDate
+	,CompanyName = C.Name
+	,CompanyCode = C.Code
+	,BranchCode = B.Code
+	,BranchName = B.Name
+	,E.DepartmentName
+	,E.DepartmentCode
+	,E.OfficeName
+	,E.OfficeCode
+	,E.UnitCode
+	,E.DivisionCode
+	,E.GroupsCode
+	,E.DistrictCode
+	,E.Location
+	,E.ProjectCode
+	,E.ProjectName
+	,E.CostCenterCode
+	,E.LineCode
+	,E.TeamCode
+	,E.EmployeeTypeCode
+	,E.JobRank
+	,E.JobGrade
+	,E.JobLevel
+	,E.PositionCode
+	,E.Position
+	,E.TaxExemptionStatus
+	,RP.[PaygroupId]
+	,RP.[PaySheetHeaderId]
+	,RP.[PaySheetHeaderDetailId]
+	,RP.[ProfileId] AS EmployeeId
+	,RP.[CompanyId]
+	,RP.[BranchId]
+	,RP.[DepartmentId]
+	,RP.[OfficeId]
+	,RP.[UnitId]
+	,RP.[DivisionId]
+	,RP.[GroupId]
+	,RP.[DistrictId]
+	,RP.[LocationId]
+	,RP.[ProjectProfileId]
+	,RP.[CostCenterId]
+	,RP.[LineId]
+	,RP.[TeamId]
+	,RP.[EmployeeTypeId]
+	,RP.[JobRankId]
+	,RP.[JobGradeId]
+	,RP.[JobLevelId]
+	,RP.[PositionId]
+	,RP.[PayrollTypeId]
+	,RP.[PayrollType]
+	,RP.[ReferenceNo]
+	,RP.[StatusId]
+	,RP.[Status]
+	,RP.[MonthYear]
+	,RP.[PeriodStartDate]
+	,RP.[PeriodEndDate]
+	,RP.[IssuedDate]
+	,RP.[CutOffStartDate]
+	,RP.[CutOffEndDate]
+	,RP.[PayrollPeriod]
+	,RP.[EndOfMonth]
+	,RP.[SalaryRate]
+	,RP.[SalaryType]
+	,RP.[HourlyRate]
+	,RP.[DailyRate]
+	,RP.[MonthlyRate]
+	,RP.[LateHrs]
+	,RP.[UndertimeHrs]
+	,RP.[AbsentHrs]
+	,RP.[LeaveHrs]
+	,RP.[OR]
+	,RP.[RE]
+	,RP.[HO]
+	,RP.[SP]
+	,RP.[HR]
+	,RP.[SR]
+	,RP.[ORNS]
+	,RP.[RENS]
+	,RP.[HONS]
+	,RP.[SPNS]
+	,RP.[HRNS]
+	,RP.[SRNS]
+	,RP.[OROT]
+	,RP.[REOT]
+	,RP.[HOOT]
+	,RP.[SPOT]
+	,RP.[HROT]
+	,RP.[SROT]
+	,RP.[ORNSOT]
+	,RP.[RENSOT]
+	,RP.[HONSOT]
+	,RP.[SPNSOT]
+	,RP.[HRNSOT]
+	,RP.[SRNSOT]
+	,RP.[AbsentAmount]
+	,RP.[LateAmount]
+	,RP.[UndertimeAmount]
+	,RP.TotalHolidayHrs
+	,RP.OvertimeHrs
+	,RP.NightDiffHrs
+	,RP.[TotalOTHrs]
+	,[ORPay] = RP.BasicPay
+	,RP.[REPay]
+	,RP.[HOPay]
+	,RP.[SPPay]
+	,RP.[HRPay]
+	,RP.[SRPay]
+	,RP.[ORNSPay]
+	,RP.[RENSPay]
+	,RP.[HONSPay]
+	,RP.[SPNSPay]
+	,RP.[HRNSPay]
+	,RP.[SRNSPay]
+	,RP.[OROTPay]
+	,RP.[REOTPay]
+	,RP.[HOOTPay]
+	,RP.[SPOTPay]
+	,RP.[HROTPay]
+	,RP.[SROTPay]
+	,RP.[ORNSOTPay]
+	,RP.[RENSOTPay]
+	,RP.[HONSOTPay]
+	,RP.[SPNSOTPay]
+	,RP.[HRNSOTPay]
+	,RP.[SRNSOTPay]
+	,RP.TotalHolidayPay
+	,RP.OvertimePay
+	,RP.NightDiffPay
+	,RP.[TotalOTPay]
+	,RP.[SSS]
+	,RP.[SSSES]
+	,RP.[SSSEC]
+	,RP.[PhilHealth]
+	,RP.[PhilHealthES]
+	,RP.[PAGIBIG]
+	,RP.[PAGIBIGES]
+	,RP.[WHT]
+	,RP.[CompanyWHT]
+	,RP.[LeavePay]
+	,RP.[Allowance]
+	,RP.[Loan]
+	,RP.[Deduction]
+	,RP.[OtherIncome]
+	,RP.[OtherDeduction]
+	,RP.[BasicPay]
+	,RP.[GrossPay]
+	,RP.[TotalDeduction]
+	,RP.[NetPay]
+	,RP.[OthersContribution]
+	,RP.[OtherBenefits]
+	,RP.[DC]
+	,RP.[COLA]
+	,RP.[OtherAllowance]
+	,RP.[EMPSC]
+	,RP.[PIRAA]
+	,RP.[PIRAAEC]
+	,RP.[FieldworkUnits]
+	,RP.[FieldworkPay]
+	,RP.[OthersWHT]
+	,RP.[UnionDues]
+	,RP.[Representation]
+	,RP.[Transportation]
+	,RP.[FixedHousingAllowance]
+	,RP.[Commission]
+	,RP.[ProfitSharing]
+	,RP.[Fees]
+	,RP.[HazardPay]
+	,RP.[Month13Pay]
+	,RP.[TaxableIncome]
+	,RP.[OriginalWHT]
+	,RP.[CompanyOtherAmounts]
+	,RP.[SIL]
+	,RP.[ProRated13thMonth]
+	,RP.[TaxRefund]
+	,RP.[CompanyOther]
+	,RP.[PagibigBracketId]
+	,RP.[SSSBracketId]
+	,RP.[PhilhealthBracketId]
+	,RP.[WHTBracketId]
+	,RP.[WorkingHrsPerDay]
+	,RP.[TotalHoursWorked]
+	,RP.[LateDays]
+	,RP.[UndertimeDays]
+	,RP.[AbsentDays]
+	,RP.TaxExempt
+	,RP.NumberOfPayPeriods
+	,ytd.YTDGrossPay
+	,ytd.YTDWHT
+	,BankFileHeaderId = (CASE WHEN CAST(ISNULL(@BankFileHdrId,'''') AS BIGINT) = '''' THEN 0 ELSE @BankFileHdrId END)
+
+FROM [dbo].[vwPaysheetDetail] RP
+CROSS APPLY (SELECT TOP 1
+		EmployeeNo
+		,LastName
+		,FirstName
+		,MiddleName
+		,Appellation
+		,LastFirstMIName
+		,FirstMILastName
+		,HireDate
+		,CompanyName
+		,CompanyCode
+		,BranchCode
+		,BranchName
+		,DepartmentName
+		,DepartmentCode
+		,OfficeName
+		,OfficeCode
+		,UnitCode
+		,DivisionCode
+		,GroupsCode
+		,DistrictCode
+		,Location
+		,ProjectCode
+		,ProjectName
+		,CostCenterCode
+		,LineCode
+		,TeamCode
+		,EmployeeTypeCode
+		,JobRank
+		,JobGrade
+		,JobLevel
+		,PositionCode
+		,Position
+		,TaxExemptionStatus
+	FROM dbo.fnProfileInfo(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 2, RP.[PaySheetHeaderDetailId]) e
+	WHERE e.ProfileId = RP.ProfileId) E
+OUTER APPLY(SELECT TOP 1
+			  c.Name
+			  ,a.Address
+			  ,c.Code
+		  FROM maintenance.Company c 
+		  JOIN maintenance.Address a ON a.AddressId = c.AddressId
+		  WHERE c.CompanyId = RP.CompanyId) C
+OUTER APPLY(SELECT TOP 1
+			 b.Code
+			,b.Name
+			,aa.Address
+		  FROM maintenance.Branch b 
+		  JOIN maintenance.Address aa 
+			 ON aa.AddressId = b.AddressId
+		  WHERE b.BranchId = RP.BranchId) B
+OUTER APPLY 
+(
+    SELECT
+	   SUM(COALESCE(vpd.WHT,0)) YTDWHT
+	   ,SUM(COALESCE(vpd.GrossPay,0)) YTDGrossPay
+	   ,SUM(COALESCE(vpd.NetPay,0)) YTDNetPay
+    FROM dbo.vwPaysheetDetail vpd
+    WHERE vpd.ProfileId = RP.ProfileId 
+    AND vpd.PeriodEndDate <= RP.PeriodEndDate
+    AND YEAR(vpd.MonthYear) =  YEAR(RP.MonthYear)
+    AND vpd.PayrollType NOT IN (''13th-Month-Pay'', ''Separation-Pay'',''Prev-Employer'',''Bonus'')
+    AND (vpd.StatusId = 2 /*APPROVED ONLY*/)
+) ytd
+
+
+WHERE 
+(CHARINDEX('''''''' + CAST(RP.PaySheetHeaderId AS VARCHAR) + '''''''', (CASE WHEN CHARINDEX('''''''',@PaySheetHeaderId) > 0 THEN @PaySheetHeaderId ELSE '''''''' + CAST(@PaySheetHeaderId AS VARCHAR) + '''''''' END) ) > 0)
+AND
+(
+    ISNULL(@ProfileId,0) = 0 OR
+    (CAST(RP.ProfileId AS BIGINT) = CAST(@ProfileId as BIGINT))
+)
+',NULL,NULL,'QUERY',0,'',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+SET IDENTITY_INSERT [report].[Report] OFF
+/*end insert data to report.Report*/
+
+/*start insert data to report.ReportData*/
+/*end insert data to report.ReportData*/
+
+/*start insert data to report.ReportParameter*/
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('PayslipTimeSummaryWithDetailedLeaveBalance','PayrollTypeId','Payroll Type','dropdownList','$table:payroll.PayrollType,PayrollTypeId,PayrollTypeName','',1,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('PayslipTimeSummaryWithDetailedLeaveBalance','CompanyId','Company','dropdownList','$table:maintenance.Company,CompanyId,Name','$table:maintenance.Branch WHERE CompanyId =  ,BranchId,Name|BranchId,',2,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('PayslipTimeSummaryWithDetailedLeaveBalance','BranchId','Branch','dropdownList','$table:maintenance.Branch,BranchId,Name','',3,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('PayslipTimeSummaryWithDetailedLeaveBalance','DepartmentId','Department','dropdownList','$table:maintenance.Department,DepartmentId,DepartmentName','',4,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('PayslipTimeSummaryWithDetailedLeaveBalance','PositionId','Job Position','dropdownList','$table:maintenance.JobPosition,JobPositionId,Name','',5,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('PayslipTimeSummaryWithDetailedLeaveBalance','IssuedDate','Issued Date','date','','',6,'','Param1','Stored','=','date',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('PayslipTimeSummaryWithDetailedLeaveBalance','PeriodStartDate','Start Date','date','','',7,'','Param1','Stored','>=','date',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('PayslipTimeSummaryWithDetailedLeaveBalance','PeriodEndDate','End Date','date','','',8,'','Param1','Stored','<=','date',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('PayslipTimeSummaryWithDetailedLeaveBalance','EmployeeId','Employee Name','checkboxList','$table:dbo.fnProfileInfo,ProfileId,[LastFirstMIName]','',9,'','Param1','Stored','IN','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('PayslipTimeSummaryWithDetailedLeaveBalance','@PaySheetHeaderId','RecordId','textbox','','',10,'','Param1','Stored','IN','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('PayslipTimeSummaryWithDetailedLeaveBalance','@ProfileId','Profile ID','textbox','','',11,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('PayslipTimeSummaryWithDetailedLeaveBalance','@BankFileHdrId','Bank File ID','textbox','','',12,'','Param1','Stored','=','bigint',NULL,NULL,NULL,'0',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('PaySlipTimeSummarywithGrosstoDate','PayrollTypeId','Payroll Type','dropdownList','$table:payroll.PayrollType,PayrollTypeId,PayrollTypeName','',1,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('PaySlipTimeSummarywithGrosstoDate','CompanyId','Company','dropdownList','$table:maintenance.Company,CompanyId,Name','$table:maintenance.Branch WHERE CompanyId = ?,BranchId,Name|BranchId,',2,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('PaySlipTimeSummarywithGrosstoDate','BranchId','Branch','dropdownList','$table:maintenance.Branch,BranchId,Name','',3,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('PaySlipTimeSummarywithGrosstoDate','DepartmentId','Department','dropdownList','$table:maintenance.Department,DepartmentId,DepartmentName','',4,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('PaySlipTimeSummarywithGrosstoDate','PositionId','Job Position','dropdownList','$table:maintenance.JobPosition,JobPositionId,Name','',5,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('PaySlipTimeSummarywithGrosstoDate','IssuedDate','Issued Date','date','','',6,'','Param1','Stored','=','date',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('PaySlipTimeSummarywithGrosstoDate','PeriodStartDate','Start Date','date','','',7,'','Param1','Stored','>=','date',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('PaySlipTimeSummarywithGrosstoDate','PeriodEndDate','End Date','date','','',8,'','Param1','Stored','<=','date',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('PaySlipTimeSummarywithGrosstoDate','EmployeeId','Employee Name','checkboxList','$table:dbo.fnProfileInfo,ProfileId,[LastFirstMIName]','',9,'','Param1','Stored','IN','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('PaySlipTimeSummarywithGrosstoDate','@PaySheetHeaderId','RecordId','textbox','','',10,'','Param1','Stored','IN','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('PaySlipTimeSummarywithGrosstoDate','@ProfileId','Profile ID','textbox','','',11,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('PaySlipTimeSummarywithGrosstoDate','@BankFileHdrId','Bank File ID','textbox','','',12,'','Param1','Stored','=','bigint',NULL,NULL,NULL,'0',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('PayslipWithOTBreakdown','PayrollTypeId','Payroll Type','dropdownList','$table:payroll.PayrollType,PayrollTypeId,PayrollTypeName','',1,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('PayslipWithOTBreakdown','CompanyId','Company','dropdownList','$table:maintenance.Company,CompanyId,Name','$table:maintenance.Branch WHERE CompanyId =  ,BranchId,Name|BranchId,',2,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('PayslipWithOTBreakdown','BranchId','Branch','dropdownList','$table:maintenance.Branch,BranchId,Name','',3,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('PayslipWithOTBreakdown','DepartmentId','Department','dropdownList','$table:maintenance.Department,DepartmentId,DepartmentName','',4,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('PayslipWithOTBreakdown','PositionId','Job Position','dropdownList','$table:maintenance.JobPosition,JobPositionId,Name','',5,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('PayslipWithOTBreakdown','IssuedDate','Issued Date','date','','',6,'','Param1','Stored','=','date',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('PayslipWithOTBreakdown','PeriodStartDate','Start Date','date','','',7,'','Param1','Stored','>=','date',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('PayslipWithOTBreakdown','PeriodEndDate','End Date','date','','',8,'','Param1','Stored','<=','date',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('PayslipWithOTBreakdown','EmployeeId','Employee Name','checkboxList','$table:dbo.fnProfileInfo,ProfileId,[LastFirstMIName]','',9,'','Param1','Stored','IN','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('PayslipWithOTBreakdown','@PaySheetHeaderId','Record ID','textbox','','',10,'','Param1','Stored','IN','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('PayslipWithOTBreakdown','@ProfileId','Profile ID','textbox','','',11,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('PayslipWithOTBreakdown','@BankFileHdrId','Bank File ID','textbox','','',12,'','Param1','Stored','=','bigint',NULL,NULL,NULL,'0',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('PayslipWithOTBreakdown2','PayrollTypeId','Payroll Type','dropdownList','$table:payroll.PayrollType,PayrollTypeId,PayrollTypeName','',1,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('PayslipWithOTBreakdown2','CompanyId','Company','dropdownList','$table:maintenance.Company,CompanyId,Name','$table:maintenance.Branch WHERE CompanyId =  ,BranchId,Name|BranchId,',2,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('PayslipWithOTBreakdown2','BranchId','Branch','dropdownList','$table:maintenance.Branch,BranchId,Name','',3,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('PayslipWithOTBreakdown2','DepartmentId','Department','dropdownList','$table:maintenance.Department,DepartmentId,DepartmentName','',4,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('PayslipWithOTBreakdown2','PositionId','Job Position','dropdownList','$table:maintenance.Department,DepartmentId,DepartmentName','',5,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('PayslipWithOTBreakdown2','IssuedDate','Issued Date','date','','',6,'','Param1','Stored','=','date',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('PayslipWithOTBreakdown2','PeriodStartDate','Start Date','date','','',7,'','Param1','Stored','=','date',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('PayslipWithOTBreakdown2','PeriodEndDate','End Date','date','','',8,'','Param1','Stored','=','date',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('PayslipWithOTBreakdown2','EmployeeId','Employee Name','checkboxList','$table:dbo.fnProfileInfo,ProfileId,[LastFirstMIName]','',9,'','Param1','Stored','IN','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('PayslipWithOTBreakdown2','@PaySheetHeaderId','Record ID','textbox','','',10,'','Param1','Stored','IN','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('PayslipWithOTBreakdown2','@ProfileId','Profile ID','textbox','','',11,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('PayslipWithOTBreakdown2','@BankFileHdrId','Bank File ID','textbox','','',12,'','Param1','Stored','=','bigint',NULL,NULL,NULL,'0',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+/*end insert data to report.ReportParameter*/
+
+/*start insert data to report.ReportSubReport*/
+INSERT [report].[ReportSubReport] ([ReportCode],[SubReportName],[CmdQuery],[CmdType],[ReportParamNames],[CreateId],[Createdate],[LastUpdateId],[LastUpdateDate])VALUES('PayslipWithOTBreakdown','AllowanceDetails','SELECT 
+    EAD.* 
+FROM report.vwEaningAndDeductionDetails EAD
+INNER JOIN payroll.PaySheetHeaderDetail PHD ON PHD.PaySheetHeaderDetailId = EAD.PaySheetHeaderDetailId
+WHERE (TypeId = 3)
+AND (PHD.PaySheetHeaderId = @PaySheetHeaderId)',1,'PaySheetHeaderId',NULL,NULL,NULL,NULL)
+INSERT [report].[ReportSubReport] ([ReportCode],[SubReportName],[CmdQuery],[CmdType],[ReportParamNames],[CreateId],[Createdate],[LastUpdateId],[LastUpdateDate])VALUES('PayslipWithOTBreakdown','OtherAmountDetails','SELECT 
+    EAD.* 
+FROM report.vwEaningAndDeductionDetails EAD
+INNER JOIN payroll.PaySheetHeaderDetail PHD ON PHD.PaySheetHeaderDetailId = EAD.PaySheetHeaderDetailId
+WHERE (TypeId = 7 OR TypeId = 1)
+AND (PHD.PaySheetHeaderId = @PaySheetHeaderId)',1,'PaySheetHeaderId',NULL,NULL,NULL,NULL)
+INSERT [report].[ReportSubReport] ([ReportCode],[SubReportName],[CmdQuery],[CmdType],[ReportParamNames],[CreateId],[Createdate],[LastUpdateId],[LastUpdateDate])VALUES('PayslipWithOTBreakdown','LoanDetails','SELECT 
+    EAD.* 
+FROM report.vwEaningAndDeductionDetails EAD
+INNER JOIN payroll.PaySheetHeaderDetail PHD ON PHD.PaySheetHeaderDetailId = EAD.PaySheetHeaderDetailId
+WHERE (TypeId = 6)
+AND (PHD.PaySheetHeaderId = @PaySheetHeaderId)',1,'PaySheetHeaderId',NULL,NULL,NULL,NULL)
+INSERT [report].[ReportSubReport] ([ReportCode],[SubReportName],[CmdQuery],[CmdType],[ReportParamNames],[CreateId],[Createdate],[LastUpdateId],[LastUpdateDate])VALUES('PayslipWithOTBreakdown','DeductionDetails','SELECT 
+    EAD.* 
+FROM report.vwEaningAndDeductionDetails EAD
+INNER JOIN payroll.PaySheetHeaderDetail PHD ON PHD.PaySheetHeaderDetailId = EAD.PaySheetHeaderDetailId
+WHERE (TypeId = 2)
+AND (PHD.PaySheetHeaderId = @PaySheetHeaderId)',1,'PaySheetHeaderId',NULL,NULL,NULL,NULL)
+INSERT [report].[ReportSubReport] ([ReportCode],[SubReportName],[CmdQuery],[CmdType],[ReportParamNames],[CreateId],[Createdate],[LastUpdateId],[LastUpdateDate])VALUES('PayslipWithOTBreakdown','OtherDeductionDetails','SELECT 
+    EAD.* 
+FROM report.vwEaningAndDeductionDetails EAD
+INNER JOIN payroll.PaySheetHeaderDetail PHD ON PHD.PaySheetHeaderDetailId = EAD.PaySheetHeaderDetailId
+WHERE (TypeId = 8)
+AND (PHD.PaySheetHeaderId = @PaySheetHeaderId)',1,'PaySheetHeaderId',NULL,NULL,NULL,NULL)
+INSERT [report].[ReportSubReport] ([ReportCode],[SubReportName],[CmdQuery],[CmdType],[ReportParamNames],[CreateId],[Createdate],[LastUpdateId],[LastUpdateDate])VALUES('PayslipWithOTBreakdown2','AllAllowanceDetails','SELECT 
+    EAD.* 
+FROM report.vwEaningAndDeductionDetails EAD
+INNER JOIN payroll.PaySheetHeaderDetail PHD ON PHD.PaySheetHeaderDetailId = EAD.PaySheetHeaderDetailId
+WHERE (TypeId = 3 OR EAD.TypeId = 1 OR EAD.TypeId = 7) 
+AND (PHD.PaySheetHeaderId = @PaySheetHeaderId)',1,'PaySheetHeaderId',NULL,NULL,NULL,NULL)
+INSERT [report].[ReportSubReport] ([ReportCode],[SubReportName],[CmdQuery],[CmdType],[ReportParamNames],[CreateId],[Createdate],[LastUpdateId],[LastUpdateDate])VALUES('PayslipWithOTBreakdown2','LoanDetails','SELECT 
+    EAD.* 
+FROM report.vwEaningAndDeductionDetails EAD
+INNER JOIN payroll.PaySheetHeaderDetail PHD ON PHD.PaySheetHeaderDetailId = EAD.PaySheetHeaderDetailId
+WHERE (TypeId = 6)
+AND (PHD.PaySheetHeaderId = @PaySheetHeaderId)',1,'PaySheetHeaderId',NULL,NULL,NULL,NULL)
+INSERT [report].[ReportSubReport] ([ReportCode],[SubReportName],[CmdQuery],[CmdType],[ReportParamNames],[CreateId],[Createdate],[LastUpdateId],[LastUpdateDate])VALUES('PayslipWithOTBreakdown2','LeaveBalanceDetail','SELECT 
+    PLB.* 
+FROM report.vwPayrollLeaveBalance PLB
+LEFT JOIN payroll.PaySheetHeaderDetail PHD 
+    ON (PHD.ProfileId = PLB.ProfileId)
+LEFT JOIN payroll.PaySheetHeader PH 
+    ON (PH.PaySheetHeaderId = PHD.PaySheetHeaderId) AND (PLB.PostedDate <= PHD.PeriodEndDate) 
+WHERE (PH.PaySheetHeaderId = @PaySheetHeaderId)',1,'PaySheetHeaderId',NULL,NULL,NULL,NULL)
+INSERT [report].[ReportSubReport] ([ReportCode],[SubReportName],[CmdQuery],[CmdType],[ReportParamNames],[CreateId],[Createdate],[LastUpdateId],[LastUpdateDate])VALUES('PayslipWithOTBreakdown2','DeductionOtherDeductionDetails','SELECT 
+    EAD.* 
+FROM report.vwEaningAndDeductionDetails EAD
+INNER JOIN payroll.PaySheetHeaderDetail PHD ON PHD.PaySheetHeaderDetailId = EAD.PaySheetHeaderDetailId
+WHERE (TypeId = 8 OR TypeId = 2)
+AND (PHD.PaySheetHeaderId = @PaySheetHeaderId)',1,'PaySheetHeaderId',NULL,NULL,NULL,NULL)
+INSERT [report].[ReportSubReport] ([ReportCode],[SubReportName],[CmdQuery],[CmdType],[ReportParamNames],[CreateId],[Createdate],[LastUpdateId],[LastUpdateDate])VALUES('PayslipWithOTBreakdown2','OvertimeHoursPayDetails','SELECT 
+    PD.*  
+FROM vwPaysheetDetail PD
+ WHERE (PD.PaySheetHeaderId = @PaySheetHeaderId)',1,'PaySheetHeaderId',NULL,NULL,NULL,NULL)
+INSERT [report].[ReportSubReport] ([ReportCode],[SubReportName],[CmdQuery],[CmdType],[ReportParamNames],[CreateId],[Createdate],[LastUpdateId],[LastUpdateDate])VALUES('PayslipTimeSummaryWithDetailedLeaveBalance','AllowanceDetails','SELECT 
+    EAD.* 
+FROM report.vwEarningAndDeductionDetailsAndBreakdown EAD
+INNER JOIN payroll.PaySheetHeaderDetail PHD ON PHD.PaySheetHeaderDetailId = EAD.PaySheetHeaderDetailId
+WHERE 1=1
+AND (PHD.PaySheetHeaderId = @PaySheetHeaderId)',1,'PaySheetHeaderId',NULL,NULL,NULL,NULL)
+INSERT [report].[ReportSubReport] ([ReportCode],[SubReportName],[CmdQuery],[CmdType],[ReportParamNames],[CreateId],[Createdate],[LastUpdateId],[LastUpdateDate])VALUES('PayslipTimeSummaryWithDetailedLeaveBalance','OtherAmountDetails','SELECT 
+    EAD.* 
+FROM report.vwEarningAndDeductionDetailsAndBreakdown EAD
+INNER JOIN payroll.PaySheetHeaderDetail PHD ON PHD.PaySheetHeaderDetailId = EAD.PaySheetHeaderDetailId
+WHERE 1=1
+AND (PHD.PaySheetHeaderId = @PaySheetHeaderId)',1,'PaySheetHeaderId',NULL,NULL,NULL,NULL)
+INSERT [report].[ReportSubReport] ([ReportCode],[SubReportName],[CmdQuery],[CmdType],[ReportParamNames],[CreateId],[Createdate],[LastUpdateId],[LastUpdateDate])VALUES('PayslipTimeSummaryWithDetailedLeaveBalance','DeductionDetails','SELECT 
+    EAD.* 
+FROM report.vwEaningAndDeductionDetails EAD
+INNER JOIN payroll.PaySheetHeaderDetail PHD ON PHD.PaySheetHeaderDetailId = EAD.PaySheetHeaderDetailId
+WHERE 1=1
+AND (CHARINDEX('','' + CAST(PHD.PaySheetHeaderId AS VARCHAR) + '','','',''+ @PaySheetHeaderId +'','') > 0)',1,'PaySheetHeaderId',NULL,NULL,NULL,NULL)
+INSERT [report].[ReportSubReport] ([ReportCode],[SubReportName],[CmdQuery],[CmdType],[ReportParamNames],[CreateId],[Createdate],[LastUpdateId],[LastUpdateDate])VALUES('PayslipTimeSummaryWithDetailedLeaveBalance','LoanDetails','SELECT 
+    EAD.* 
+FROM report.vwEaningAndDeductionDetails EAD
+INNER JOIN payroll.PaySheetHeaderDetail PHD ON PHD.PaySheetHeaderDetailId = EAD.PaySheetHeaderDetailId
+WHERE 1=1
+AND (CHARINDEX('','' + CAST(PHD.PaySheetHeaderId AS VARCHAR) + '','','',''+ @PaySheetHeaderId +'','') > 0)',1,'PaySheetHeaderId',NULL,NULL,NULL,NULL)
+INSERT [report].[ReportSubReport] ([ReportCode],[SubReportName],[CmdQuery],[CmdType],[ReportParamNames],[CreateId],[Createdate],[LastUpdateId],[LastUpdateDate])VALUES('PayslipTimeSummaryWithDetailedLeaveBalance','TimeEntrySummaryDetail','SELECT 
+    ETE.[OR]
+	,ETE.ApprovedORNS
+	,ETE.ApprovedRegularOT
+	,ETE.ApprovedNSOT
+	,ETE.ApprovePreshiftOT
+	,ETE.ApprovePreshiftNSOT
+	,ETE.CompanyNonWorkingDayOT
+	,ETE.CompanyNonWorkingNightShiftDayOT
+	,ETE.ApproveHolidayRestDay
+	,ETE.CompanyNonWorkingDay
+	,ETE.ApproveNS
+	,ETE.CompanyNonWorkingNightShiftDay
+	,ETE.WorkDate
+	,ETE.ApprovedRENS
+	,ETE.ApprovedHONS
+	,ETE.ApprovedSPNS
+	,ETE.ApprovedHRNS
+	,ETE.ApprovedSRNS
+	,ETE.Late
+	,ETE.Undertime
+	,ETE.Absent
+	,ETE.ProfileId
+	,ETE.NonWorkRegularHoliday
+	,ETE.NonWorkSpecialHoliday
+FROM payroll.PaySheetHeaderDetail PHD WITH (NOLOCK)
+INNER JOIN payroll.PaySheetHeader PH WITH (NOLOCK)  ON (PH.PaySheetHeaderId = PHD.PaySheetHeaderId)
+CROSS APPLY
+(
+	SELECT 
+		ETE.[OR]
+		,ETE.ApprovedORNS
+		,ETE.ApprovedRegularOT
+		,ETE.ApprovedNSOT
+		,ETE.ApprovePreshiftOT
+		,ETE.ApprovePreshiftNSOT
+		,ETE.CompanyNonWorkingDayOT
+		,ETE.CompanyNonWorkingNightShiftDayOT
+		,ETE.ApproveHolidayRestDay
+		,ETE.CompanyNonWorkingDay
+		,ETE.ApproveNS
+		,ETE.CompanyNonWorkingNightShiftDay
+		,ETE.WorkDate
+		,ETE.ApprovedRENS
+		,ETE.ApprovedHONS
+		,ETE.ApprovedSPNS
+		,ETE.ApprovedHRNS
+		,ETE.ApprovedSRNS
+		,ETE.Late
+		,ETE.Undertime
+		,ETE.Absent
+		,ETE.ProfileId
+		,ETE.NonWorkRegularHoliday
+		,ETE.NonWorkSpecialHoliday
+	FROM report.fnEmployeeTimeEtnry(0,0,PH.CutOffStartDate,PH.CutOffEndDate,PHD.ProfileId) ETE
+	WHERE ETE.ProfileId = PHD.ProfileId
+	AND (ETE.WorkDate >= PH.CutOffStartDate) AND (ETE.WorkDate <= PH.CutOffEndDate)
+)ETE
+
+WHERE (PH.PaySheetHeaderId = @PaySheetHeaderId)
+
+/*
+dbo.vwEmployeeTimeEntry ETE 
+INNER JOIN payroll.PaySheetHeaderDetail PHD WITH (NOLOCK)
+    ON PHD.ProfileId = ETE.ProfileId
+INNER JOIN payroll.PaySheetHeader PH WITH (NOLOCK)
+    ON (PH.PaySheetHeaderId = PHD.PaySheetHeaderId)  AND (ETE.WorkDate >= PH.CutOffStartDate) AND (ETE.WorkDate <= PH.CutOffEndDate)
+WHERE (PH.PaySheetHeaderId = @PaySheetHeaderId)
+*/',1,'PaySheetHeaderId',NULL,NULL,NULL,NULL)
+INSERT [report].[ReportSubReport] ([ReportCode],[SubReportName],[CmdQuery],[CmdType],[ReportParamNames],[CreateId],[Createdate],[LastUpdateId],[LastUpdateDate])VALUES('PayslipTimeSummaryWithDetailedLeaveBalance','LeaveBalanceDetail','SELECT 
+    PLB.* 
+FROM report.vwPayrollLeaveRunningBalance PLB
+WHERE (CHARINDEX('','' + CAST(PLB.PaySheetHeaderId AS VARCHAR) + '','','',''+ @PaySheetHeaderId +'','') > 0)',1,'PaySheetHeaderId',NULL,NULL,NULL,NULL)
+INSERT [report].[ReportSubReport] ([ReportCode],[SubReportName],[CmdQuery],[CmdType],[ReportParamNames],[CreateId],[Createdate],[LastUpdateId],[LastUpdateDate])VALUES('PayslipTimeSummaryWithDetailedLeaveBalance','AllotmentDetails','SELECT 
+	PHD.* 
+FROM report.vwNetPayBreakdownPaymentDetail PHD
+WHERE
+(CHARINDEX('','' + CAST(PHD.PaySheetHeaderId AS VARCHAR) + '','','',''+ @PaySheetHeaderId +'','') > 0)',1,'PaySheetHeaderId',NULL,NULL,NULL,NULL)
+INSERT [report].[ReportSubReport] ([ReportCode],[SubReportName],[CmdQuery],[CmdType],[ReportParamNames],[CreateId],[Createdate],[LastUpdateId],[LastUpdateDate])VALUES('PayslipTimeSummaryWithDetailedLeaveBalance','HiddenAllotmentDetails','SELECT 
+	PHD.* 
+FROM report.vwNetPayBreakdownPaymentDetail PHD
+WHERE
+(CHARINDEX('','' + CAST(PHD.PaySheetHeaderId AS VARCHAR) + '','','',''+ @PaySheetHeaderId +'','') > 0)',1,'PaySheetHeaderId',NULL,NULL,NULL,NULL)
+INSERT [report].[ReportSubReport] ([ReportCode],[SubReportName],[CmdQuery],[CmdType],[ReportParamNames],[CreateId],[Createdate],[LastUpdateId],[LastUpdateDate])VALUES('PaySlipTimeSummarywithGrosstoDate','AllowanceDetails','SELECT 
+    EAD.* 
+FROM report.vwEaningAndDeductionDetails EAD
+INNER JOIN payroll.PaySheetHeaderDetail PHD ON PHD.PaySheetHeaderDetailId = EAD.PaySheetHeaderDetailId
+WHERE (TypeId = 3)
+AND (PHD.PaySheetHeaderId = @PaySheetHeaderId)',1,'PaySheetHeaderId',NULL,NULL,NULL,NULL)
+INSERT [report].[ReportSubReport] ([ReportCode],[SubReportName],[CmdQuery],[CmdType],[ReportParamNames],[CreateId],[Createdate],[LastUpdateId],[LastUpdateDate])VALUES('PaySlipTimeSummarywithGrosstoDate','OtherAmountDetails','SELECT 
+   EAD.* 
+FROM report.vwEaningAndDeductionDetails EAD
+INNER JOIN payroll.PaySheetHeaderDetail PHD ON PHD.PaySheetHeaderDetailId = EAD.PaySheetHeaderDetailId
+WHERE (TypeId = 7 OR TypeId = 1)
+AND (PHD.PaySheetHeaderId = @PaySheetHeaderId)',1,'PaySheetHeaderId',NULL,NULL,NULL,NULL)
+INSERT [report].[ReportSubReport] ([ReportCode],[SubReportName],[CmdQuery],[CmdType],[ReportParamNames],[CreateId],[Createdate],[LastUpdateId],[LastUpdateDate])VALUES('PaySlipTimeSummarywithGrosstoDate','DeductionDetails','SELECT 
+    EAD.* 
+FROM report.vwEaningAndDeductionDetails EAD
+INNER JOIN payroll.PaySheetHeaderDetail PHD ON PHD.PaySheetHeaderDetailId = EAD.PaySheetHeaderDetailId
+WHERE (TypeId = 8 OR TypeId = 2)
+AND (PHD.PaySheetHeaderId = @PaySheetHeaderId)',1,'PaySheetHeaderId',NULL,NULL,NULL,NULL)
+INSERT [report].[ReportSubReport] ([ReportCode],[SubReportName],[CmdQuery],[CmdType],[ReportParamNames],[CreateId],[Createdate],[LastUpdateId],[LastUpdateDate])VALUES('PaySlipTimeSummarywithGrosstoDate','LoanDetails','SELECT 
+    EAD.*
+ FROM report.vwEaningAndDeductionDetails EAD
+INNER JOIN payroll.PaySheetHeaderDetail PHD ON PHD.PaySheetHeaderDetailId = EAD.PaySheetHeaderDetailId
+WHERE (TypeId = 6)
+AND (PHD.PaySheetHeaderId = @PaySheetHeaderId)',1,'PaySheetHeaderId',NULL,NULL,NULL,NULL)
+INSERT [report].[ReportSubReport] ([ReportCode],[SubReportName],[CmdQuery],[CmdType],[ReportParamNames],[CreateId],[Createdate],[LastUpdateId],[LastUpdateDate])VALUES('PaySlipTimeSummarywithGrosstoDate','TimeEntrySummaryDetail','SELECT 
+    ETE.[OR]
+	,ETE.ApprovedORNS
+	,ETE.ApprovedRegularOT
+	,ETE.ApprovedNSOT
+	,ETE.ApprovePreshiftOT
+	,ETE.ApprovePreshiftNSOT
+	,ETE.CompanyNonWorkingDayOT
+	,ETE.CompanyNonWorkingNightShiftDayOT
+	,ETE.ApproveHolidayRestDay
+	,ETE.CompanyNonWorkingDay
+	,ETE.ApproveNS
+	,ETE.CompanyNonWorkingNightShiftDay
+	,ETE.WorkDate
+	,ETE.ApprovedRENS
+	,ETE.ApprovedHONS
+	,ETE.ApprovedSPNS
+	,ETE.ApprovedHRNS
+	,ETE.ApprovedSRNS
+	,ETE.Late
+	,ETE.Undertime
+	,ETE.Absent
+	,ETE.ProfileId
+	,ETE.NonWorkRegularHoliday
+	,ETE.NonWorkSpecialHoliday
+FROM payroll.PaySheetHeaderDetail PHD WITH (NOLOCK)
+INNER JOIN payroll.PaySheetHeader PH WITH (NOLOCK)  ON (PH.PaySheetHeaderId = PHD.PaySheetHeaderId)
+CROSS APPLY
+(
+	SELECT 
+		ETE.[OR]
+		,ETE.ApprovedORNS
+		,ETE.ApprovedRegularOT
+		,ETE.ApprovedNSOT
+		,ETE.ApprovePreshiftOT
+		,ETE.ApprovePreshiftNSOT
+		,ETE.CompanyNonWorkingDayOT
+		,ETE.CompanyNonWorkingNightShiftDayOT
+		,ETE.ApproveHolidayRestDay
+		,ETE.CompanyNonWorkingDay
+		,ETE.ApproveNS
+		,ETE.CompanyNonWorkingNightShiftDay
+		,ETE.WorkDate
+		,ETE.ApprovedRENS
+		,ETE.ApprovedHONS
+		,ETE.ApprovedSPNS
+		,ETE.ApprovedHRNS
+		,ETE.ApprovedSRNS
+		,ETE.Late
+		,ETE.Undertime
+		,ETE.Absent
+		,ETE.ProfileId
+		,ETE.NonWorkRegularHoliday
+		,ETE.NonWorkSpecialHoliday
+	FROM report.fnEmployeeTimeEtnry(0,0,PH.CutOffStartDate,PH.CutOffEndDate,PHD.ProfileId) ETE
+	WHERE ETE.ProfileId = PHD.ProfileId
+	AND (ETE.WorkDate >= PH.CutOffStartDate) AND (ETE.WorkDate <= PH.CutOffEndDate)
+)ETE
+
+WHERE (PH.PaySheetHeaderId = @PaySheetHeaderId)
+
+/*
+dbo.vwEmployeeTimeEntry ETE 
+INNER JOIN payroll.PaySheetHeaderDetail PHD WITH (NOLOCK)
+    ON PHD.ProfileId = ETE.ProfileId
+INNER JOIN payroll.PaySheetHeader PH WITH (NOLOCK)
+    ON (PH.PaySheetHeaderId = PHD.PaySheetHeaderId)  AND (ETE.WorkDate >= PH.CutOffStartDate) AND (ETE.WorkDate <= PH.CutOffEndDate)
+WHERE (PH.PaySheetHeaderId = @PaySheetHeaderId)
+*/',1,'PaySheetHeaderId',NULL,NULL,NULL,NULL)
+INSERT [report].[ReportSubReport] ([ReportCode],[SubReportName],[CmdQuery],[CmdType],[ReportParamNames],[CreateId],[Createdate],[LastUpdateId],[LastUpdateDate])VALUES('PaySlipTimeSummarywithGrosstoDate','LeaveBalanceDetail','SELECT 
+    PLB.* 
+FROM report.vwPayrollLeaveBalance PLB
+LEFT JOIN payroll.PaySheetHeaderDetail PHD 
+    ON (PHD.ProfileId = PLB.ProfileId)
+LEFT JOIN payroll.PaySheetHeader PH 
+    ON (PH.PaySheetHeaderId = PHD.PaySheetHeaderId) AND (PLB.PostedDate <= PHD.PeriodEndDate) 
+WHERE (PH.PaySheetHeaderId = @PaySheetHeaderId)',1,'PaySheetHeaderId',NULL,NULL,NULL,NULL)
+/*end insert data to report.ReportSubReport*/
+
+IF(SELECT COUNT(CompanyId) FROM maintenance.Company WHERE CHARINDEX('IBIDEN',[Name]) > 0) > 0
+		BEGIN
+		UPDATE report.ReportParameter SET [Source] = '$table:maintenance.Unit,UnitId,Code' WHERE LabelName = 'Unit'
+		END
+		
+SET NOCOUNT OFF

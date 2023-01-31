@@ -1,0 +1,18 @@
+UPDATE admin.MenuSubMenu SET SortOrder = 1, SubMenuName = 'BPI' WHERE MenuSubMenuId = 97 AND MenuMenuId = 87
+UPDATE admin.MenuSubMenu SET SortOrder = 2, SubMenuName = 'BDO' WHERE MenuSubMenuId = 103 AND MenuMenuId = 87
+UPDATE admin.MenuSubMenu SET SortOrder = 6, SubMenuName = 'Union Bank ONEHUB' WHERE MenuSubMenuId = 113 AND MenuMenuId = 87
+UPDATE admin.MenuSubMenu SET SortOrder = 6, SubMenuName = 'Union Bank Loan' WHERE MenuSubMenuId = 114 AND MenuMenuId = 87
+UPDATE admin.MenuSubMenu SET SortOrder = 7, SubMenuName = 'Security Bank' WHERE MenuSubMenuId = 115 AND MenuMenuId = 87
+UPDATE admin.MenuSubMenu SET SortOrder = 8, SubMenuName = 'Metrobank' WHERE MenuSubMenuId = 116 AND MenuMenuId = 87
+UPDATE admin.MenuSubMenu SET SortOrder = 9, SubMenuName = 'Union Bank of The Philippines' WHERE MenuSubMenuId = 119 AND MenuMenuId = 87
+UPDATE admin.MenuSubMenu SET SortOrder = 10, SubMenuName = 'RCBC' WHERE MenuSubMenuId = 128 AND MenuMenuId = 87
+UPDATE admin.MenuSubMenu SET SortOrder = 11, SubMenuName = 'China Bank' WHERE MenuSubMenuId = 133 AND MenuMenuId = 87
+UPDATE admin.MenuSubMenu SET SortOrder = 12, SubMenuName = 'PNB' WHERE MenuSubMenuId = 134 AND MenuMenuId = 87
+UPDATE admin.MenuSubMenu SET SortOrder = 13, SubMenuName = 'PSBank' WHERE MenuSubMenuId = 135 AND MenuMenuId = 87
+UPDATE admin.MenuSubMenu SET SortOrder = 14, SubMenuName = 'Bank Upload File Bandar' WHERE MenuSubMenuId = 140 AND MenuMenuId = 87
+UPDATE admin.MenuSubMenu SET SortOrder = 15, SubMenuName = 'BDO Monthly Contribution' WHERE MenuSubMenuId = 141 AND MenuMenuId = 87
+UPDATE admin.MenuSubMenu SET SortOrder = 16, SubMenuName = 'BDO Loan' WHERE MenuSubMenuId = 142 AND MenuMenuId = 87
+UPDATE admin.MenuSubMenu SET SortOrder = 5, SubMenuName = 'BDO (With Header)' WHERE MenuSubMenuId = 146 AND MenuMenuId = 87
+UPDATE admin.MenuSubMenu SET SortOrder = 17, SubMenuName = 'ONEHUB Loan Text File' WHERE MenuSubMenuId = 147 AND MenuMenuId = 87
+UPDATE admin.MenuSubMenu SET SortOrder = 3, SubMenuName = 'BDO (Old File)' WHERE MenuSubMenuId = 149 AND MenuMenuId = 87
+UPDATE admin.MenuSubMenu SET SortOrder = 4, SubMenuName = 'BDO (Cash Card)' WHERE MenuSubMenuId = 150 AND MenuMenuId = 87

@@ -1,0 +1,15 @@
+/****** Object:  UserDefinedTableType [attendance].[tvpTimeEntryLog]    Script Date: 6/18/2019 4:20:25 PM ******/
+IF NOT TYPE_ID('[attendance].[tvpTimeEntryLog]') IS NULL
+DROP TYPE [attendance].[tvpTimeEntryLog]
+GO
+
+/****** Object:  UserDefinedTableType [attendance].[tvpTimeEntryLog]    Script Date: 6/18/2019 4:20:25 PM ******/
+CREATE TYPE [attendance].[tvpTimeEntryLog] AS TABLE(
+	[AccessID] [varchar](50) NULL,
+	[TimeEntry] [datetime] NULL,
+	[LogType] [varchar](20) NULL,
+	[Source] [varchar](30) NULL,
+	[Location] [varchar](50) NULL,
+	[IPAddress] [varchar](50) NULL
+)
+GO

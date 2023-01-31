@@ -1,0 +1,6 @@
+IF NOT EXISTS(SELECT TOP 1 * FROM report.ReportGroup RG WHERE RG.ReportGroupId = 36)
+BEGIN
+SET IDENTITY_INSERT [report].[ReportGroup] ON
+INSERT INTO report.ReportGroup ([ReportGroupId],[ReportGroupName]) VALUES (36,'Schedule of Contributions')
+SET IDENTITY_INSERT [report].[ReportGroup] OFF
+END

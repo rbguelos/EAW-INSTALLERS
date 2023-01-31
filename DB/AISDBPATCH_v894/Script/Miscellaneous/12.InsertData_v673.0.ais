@@ -1,0 +1,29 @@
+INSERT INTO maintenance.TemplateBuilder (
+	TemplateTypeId,
+	[Name],
+	ModuleId,
+	PaperSizeId,
+	LetterHead,
+	Header,
+	Body,
+	ComplimentaryCloseId,
+	Signatory,
+	Footer,
+	CourtesyCopy,
+	IsProtected,
+	AllowEdit
+) VALUES (
+	1,
+	'Job Opening Memo and Announcement',
+	1,
+	3,
+	'',
+	'',
+	'<div><font size="3"><b>Company: </b>{Manpower: Company}</font></div><div><font size="3"><b><br></b></font></div><div><font size="3"><b>Description:</b></font></div><div><font size="3">{Manpower: Job Position - Description}</font></div><div><font size="3"><br></font></div><div><font size="3"><b>Qualifications:</b></font></div><div><font size="3">{Manpower: Job Position - Other Qualifications}</font></div>',
+	0,
+	'',
+	'',
+	'',
+	1,
+	1
+)

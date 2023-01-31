@@ -1,0 +1,22 @@
+/*
+Missing Index Details from SQLQuery1.sql - DATABASE-SERVER\SQLDEVELOPER2017.EatWork_VIVOProd (aisapp)
+The Query Processor estimates that implementing the following index could improve the query cost by 35.1495%.
+*/
+
+
+IF NOT EXISTS(SELECT index_id FROM SYS.indexes WHERE name = 'IX_LeaveBalanceDetailLeaveBalanceHeaderId' AND object_id = object_id('[leave].[LeaveBalanceDetail]'))
+CREATE NONCLUSTERED INDEX [IX_LeaveBalanceDetailLeaveBalanceHeaderId]	
+	ON [leave].[LeaveBalanceDetail] ([LeaveBalanceHeaderId]) 
+GO
+
+IF NOT EXISTS(SELECT index_id FROM SYS.indexes WHERE name = 'IX_LeaveBalanceHeaderProfileIdLeaveTypeSetupId' AND object_id = object_id('[leave].[LeaveBalanceHeader]'))
+CREATE NONCLUSTERED INDEX [IX_LeaveBalanceHeaderProfileIdLeaveTypeSetupId]	
+	ON [leave].[LeaveBalanceHeader] ([ProfileId],[LeaveTypeSetupId])
+GO
+
+IF NOT EXISTS(SELECT index_id FROM SYS.indexes WHERE name = 'IX_LeaveBenefitLeaveTypeSetupId' AND object_id = object_id('[leave].[LeaveBenefit]'))
+CREATE NONCLUSTERED INDEX [IX_LeaveBenefitLeaveTypeSetupId]	
+	ON [leave].[LeaveBenefit] ([LeaveTypeSetupId])
+GO
+
+

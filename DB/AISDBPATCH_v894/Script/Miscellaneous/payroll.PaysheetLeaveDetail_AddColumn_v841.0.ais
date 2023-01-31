@@ -1,0 +1,3 @@
+EXEC dbo.AddColumn @SCHEMA = 'payroll',@TABLENAME = 'PaysheetLeaveDetail', @COLUMNNAME = 'LeavePay',@DATATYPE = 'DECIMAL(18,4)',@DEFAULTVALUE = '0'
+SELECT * FROM payroll.PaysheetLeaveDetail
+

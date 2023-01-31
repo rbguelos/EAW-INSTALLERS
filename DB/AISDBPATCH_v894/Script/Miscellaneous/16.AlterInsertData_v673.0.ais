@@ -1,0 +1,54 @@
+UPDATE maintenance.JobPositionDetail SET GenderIds = '', EducationalAttainmentId = 0, AcademicBackground = '', YearsOfExperienceId = 0
+
+DECLARE @JPTable TABLE (
+	RowId INT IDENTITY(1,1), JobPositionId BIGINT,
+	GenderIds VARCHAR(20), EducationalAttainmentId BIGINT,
+	AcademicBackground VARCHAR(50), YearsOfExperienceId BIGINT
+)
+INSERT INTO @JPTable
+SELECT
+	JP.JobPositionId, JP.GenderIds, JP.EducationalAttainment,
+	JP.AcademicBackground, JP.YearsOfExperience
+FROM maintenance.JobPosition JP
+
+DECLARE @Counter BIGINT = 1,
+		@JPCount BIGINT = (SELECT COUNT(JobPositionId) FROM @JPTable)
+	
+WHILE @Counter <= @JPCount
+	BEGIN
+		DECLARE @JobPositionId BIGINT = (SELECT JP.JobPositionId FROM @JPTable JP WHERE JP.RowId = @Counter),
+				@GenderIds VARCHAR(20) = (SELECT ISNULL(JP.GenderIds, '') FROM @JPTable JP WHERE JP.RowId = @Counter),
+				@EducationalAttainmentId BIGINT = (SELECT ISNULL(JP.EducationalAttainmentId, 0) FROM @JPTable JP WHERE JP.RowId = @Counter),
+				@AcademicBackground VARCHAR(50) = (SELECT ISNULL(JP.AcademicBackground, '') FROM @JPTable JP WHERE JP.RowId = @Counter),
+				@YearsOfExperienceId BIGINT = (SELECT ISNULL(JP.YearsOfExperienceId, 0) FROM @JPTable JP WHERE JP.RowId = @Counter)
+
+		/* Gender */
+		INSERT INTO maintenance.JobPositionDetail (
+			JobPositionId, QualificationTypeId, SkillId, Description,
+			RatingScaleGroupId, RatingScaleId, Weight, QualificationRequirementId,
+			GenderIds, EducationalAttainmentId, AcademicBackground, YearsOfExperienceId
+		) VALUES (@JobPositionId, 5, 0, '', 0, 0, 0, 0, @GenderIds, 0, '', 0)
+
+		/* Educational Attainment */
+		INSERT INTO maintenance.JobPositionDetail (
+			JobPositionId, QualificationTypeId, SkillId, Description,
+			RatingScaleGroupId, RatingScaleId, Weight, QualificationRequirementId,
+			GenderIds, EducationalAttainmentId, AcademicBackground, YearsOfExperienceId
+		) VALUES (@JobPositionId, 6, 0, '', 0, 0, 0, 0, '', @EducationalAttainmentId, '', 0)
+
+		/* Academic Background */
+		INSERT INTO maintenance.JobPositionDetail (
+			JobPositionId, QualificationTypeId, SkillId, Description,
+			RatingScaleGroupId, RatingScaleId, Weight, QualificationRequirementId,
+			GenderIds, EducationalAttainmentId, AcademicBackground, YearsOfExperienceId
+		) VALUES (@JobPositionId, 7, 0, '', 0, 0, 0, 0, '', 0, @AcademicBackground, 0)
+
+		/* Years of Experience */
+		INSERT INTO maintenance.JobPositionDetail (
+			JobPositionId, QualificationTypeId, SkillId, Description,
+			RatingScaleGroupId, RatingScaleId, Weight, QualificationRequirementId,
+			GenderIds, EducationalAttainmentId, AcademicBackground, YearsOfExperienceId
+		) VALUES (@JobPositionId, 8, 0, '', 0, 0, 0, 0, '', 0, '', @YearsOfExperienceId)
+
+		SET @Counter = @Counter + 1
+	END

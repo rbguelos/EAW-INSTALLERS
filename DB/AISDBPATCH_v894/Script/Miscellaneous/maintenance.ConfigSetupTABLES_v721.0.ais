@@ -1,0 +1,525 @@
+DECLARE @PayslipTempLate NVARCHAR(MAX) = ''
+SELECT
+    --Set @PayslipTempLate
+    @PayslipTempLate = Source
+FROM maintenance.ConfigSetupDetail
+WHERE ConfigSetupDetailId = 92 /*PayslipTemplate*/
+--===============================================================================
+print @PayslipTempLate
+
+--===============================================================================
+--02 - Put the Latest Policy
+--===============================================================================
+
+IF  EXISTS (SELECT * FROM sys.foreign_keys WHERE object_id = OBJECT_ID(N'[maintenance].[FK_ConfigSetupDetail_ConfigSetupHeader]') AND parent_object_id = OBJECT_ID(N'[maintenance].[ConfigSetupDetail]'))
+ALTER TABLE [maintenance].[ConfigSetupDetail] DROP CONSTRAINT [FK_ConfigSetupDetail_ConfigSetupHeader]
+;
+/****** Object:  Table [maintenance].[ConfigSetupHeader]    Script Date: 6/27/2019 10:26:05 AM ******/
+IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[maintenance].[ConfigSetupHeader]') AND type in (N'U'))
+DROP TABLE [maintenance].[ConfigSetupHeader]
+;
+/****** Object:  Table [maintenance].[ConfigSetupDetail]    Script Date: 6/27/2019 10:26:05 AM ******/
+IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[maintenance].[ConfigSetupDetail]') AND type in (N'U'))
+DROP TABLE [maintenance].[ConfigSetupDetail]
+;
+/****** Object:  Table [maintenance].[ConfigSetupDetail]    Script Date: 6/27/2019 10:26:05 AM ******/
+SET ANSI_NULLS ON
+;
+SET QUOTED_IDENTIFIER ON
+;
+IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[maintenance].[ConfigSetupDetail]') AND type in (N'U'))
+BEGIN
+CREATE TABLE [maintenance].[ConfigSetupDetail](
+	[ConfigSetupDetailId] [bigint] IDENTITY(1,1) NOT NULL,
+	[ConfigSetupHeaderId] [bigint] NULL,
+	[PropertyName] [varchar](150) NULL,
+	[LabelName] [varchar](150) NULL,
+	[PropertyValue] [nvarchar](max) NULL,
+	[Type] [varchar](150) NULL,
+	[Source] [nvarchar](max) NULL,
+	[Group] [varchar](150) NULL,
+	[SubGroup] [varchar](150) NULL,
+	[SortOrder] [int] NULL,
+	[Alignment] [varchar](150) NULL,
+	[CreateId] [bigint] NULL,
+	[CreateDate] [datetime] NULL,
+	[LastUpdateId] [bigint] NULL,
+	[LastUpdateDate] [datetime] NULL,
+ CONSTRAINT [PK_ConfigSetupDetail] PRIMARY KEY CLUSTERED 
+(
+	[ConfigSetupDetailId] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+END
+;
+/****** Object:  Table [maintenance].[ConfigSetupHeader]    Script Date: 6/27/2019 10:26:05 AM ******/
+SET ANSI_NULLS ON
+;
+SET QUOTED_IDENTIFIER ON
+;
+IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[maintenance].[ConfigSetupHeader]') AND type in (N'U'))
+BEGIN
+CREATE TABLE [maintenance].[ConfigSetupHeader](
+	[ConfigSetupHeaderId] [bigint] IDENTITY(1,1) NOT NULL,
+	[ConfigSetupName] [varchar](200) NULL,
+	[ConfigSetupDescription] [nvarchar](max) NULL,
+	[ConfigSetupLabelName] [varchar](50) NULL,
+	[ConfigSetupLabelDescription] [varchar](50) NULL,
+	[Panel1] [varchar](100) NULL,
+	[Panel2] [varchar](100) NULL,
+	[Panel3] [varchar](100) NULL,
+	[Panel4] [varchar](100) NULL,
+	[Panel5] [varchar](100) NULL,
+	[Panel6] [varchar](100) NULL,
+	[Panel7] [varchar](100) NULL,
+	[Panel8] [varchar](100) NULL,
+	[Panel9] [varchar](100) NULL,
+	[Panel10] [varchar](100) NULL,
+	[CreateId] [bigint] NULL,
+	[CreateDate] [datetime] NULL,
+	[LastUpdateId] [bigint] NULL,
+	[LastUpdateDate] [datetime] NULL,
+ CONSTRAINT [PK_ConfigSetup] PRIMARY KEY CLUSTERED 
+(
+	[ConfigSetupHeaderId] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
+END
+;
+SET IDENTITY_INSERT [maintenance].[ConfigSetupDetail] ON 
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (1, 1, N'TimeInLimit', N'Time In Limit (hrs)', N'', N'number', N'', N'1', N'0', 1, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:54:33.570' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (2, 1, N'TimeOutLimit', N'Time Out Limit (hrs)', N'', N'number', N'', N'1', N'0', 2, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:54:33.570' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (3, 1, N'FirstInLastIn', N'', N'', N'option', N'First In:1,Last In:2', N'1', N'0', 3, N'horizontal', NULL, NULL, 30, CAST(N'2019-05-28T14:54:33.570' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (4, 1, N'FirstOutLastOut', N'', N'', N'option', N'First Out:1,Last Out:2', N'1', N'0', 4, N'horizontal', NULL, NULL, 30, CAST(N'2019-05-28T14:54:33.570' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (5, 1, N'Allowearlytimein', N'Allow early time in', N'', N'checkbox', N'', N'1', N'0', 6, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:54:33.570' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (6, 1, N'Earlytime-inlimit', N'Early time-in limit (hrs)', N'', N'number', N'', N'1', N'0', 9, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:54:33.570' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (7, 1, N'Earlytime-inisovertime', N'Early time-in is overtime', N'', N'checkbox', N'', N'1', N'0', 7, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:54:33.570' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (8, 1, N'Graceperiod', N'Grace period (min)', N'', N'number', N'', N'1', N'0', 10, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:54:33.570' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (9, 1, N'Affectpayrollcomputation', N'Affect payroll computation', N'', N'checkbox', N'', N'1', N'0', 12, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:54:33.570' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (10, 1, N'Limitpermonth', N'Limit per month', N'', N'number', N'', N'1', N'0', -1, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:54:33.570' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (11, 1, N'Deductgraceperiodfromtardiness', N'Deduct grace period from tardiness', N'', N'checkbox', N'', N'1', N'0', 13, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:54:33.570' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (12, 1, N'Allowflexibletime', N'Allow flexible time', N'', N'checkbox', N'', N'1', N'0', 14, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:54:33.573' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (13, 1, N'FlexibleTime', N'Flexible Time (hrs)', N'', N'number', N'', N'1', N'0', 16, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:54:33.573' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (14, 1, N'Checktimeentryagainstschedule', N'Check time entry against schedule', N'', N'checkbox', N'', N'1', N'0', 5, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:54:33.573' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (15, 1, N'MinimumOT', N'Minimum OT (hrs)', N'', N'number', N'', N'2', N'0', 9, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:54:33.573' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (16, 1, N'AutomaticallyadjustOThourstoscheduledOThours', N'Automatically adjust OT hours to scheduled OT hours', N'', N'checkbox', N'', N'2', N'0', 1, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:54:33.573' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (17, 1, N'RequirenumberofworkinghourstobefulfilledbeforerecognizingOT', N'Require number of working hours to be fulfilled before recognizing OT', N'', N'checkbox', N'', N'2', N'0', 2, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:54:33.573' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (18, 1, N'Computeovertimeandundertimebasedonaperiod', N'Compute overtime and undertime based on a period', N'', N'checkbox', N'', N'2', N'0', -1, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:54:33.573' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (19, 1, N'Checkholidayeligibilityrule', N'Check holiday eligibility rule', N'', N'checkbox', N'', N'3', N'0', 3, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:54:33.573' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (20, 1, N'Markemployeeasabsentifabsentonaholidaywithworkschedule', N'Mark employee as absent if absent on a holiday with work schedule', N'', N'checkbox', N'', N'3', N'0', 4, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:54:33.573' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (21, 1, N'HolidaySplitting', N'Holiday Splitting', N'', N'option', N'Always split:1,Do not split:2,Split if Regular to Holiday:3', N'3', N'0', 1, N'vertical', NULL, NULL, 30, CAST(N'2019-05-28T14:54:33.573' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (22, 1, N'RestDaySplitting', N'Rest Day Splitting', N'', N'option', N'Always split hrs:1,Do not split:2,Split based on schedule:3', N'3', N'0', 2, N'vertical', NULL, NULL, 30, CAST(N'2019-05-28T14:54:33.573' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (30, 3, N'ProRateCalculation', N'Pro-rate Calculation', N'', N'option', N'# days per month:1,# days per year:2', N'1', N'0', 1, N'vertical', NULL, NULL, 30, CAST(N'2019-05-28T14:52:16.347' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (31, 3, N'ProRateCalculationNoOfWorkingDays', N'# of Working Days', N'', N'number', N'', N'1', N'0', 2, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:52:16.347' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (32, 3, N'ProRateCalculationNoOfWorkingHoursPerDay', N'# of Working Hours per Day', N'', N'number', N'', N'1', N'0', 3, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:52:16.347' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (33, 3, N'ProRateCalculationTaxExemptLimitForBenefits', N'Pro-rate Calculation Tax Exempt Limit for Benefits', N'', N'number', N'', N'1', N'0', -1, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:52:16.347' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (34, 3, N'TaxTaxExemptLimitForBenefits', N'Tax Exempt Limit for Benefits', N'', N'number', N'', N'2', N'0', 1, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:52:16.347' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (35, 3, N'TaxUseAnnualTaxTable', N'Use Annual Tax Table', N'', N'checkbox', N'', N'2', N'0', -1, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:52:16.347' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (36, 3, N'TaxDoNotUseMonthly', N'Do not use monthly tax table for end-of-month processing', N'', N'checkbox', N'', N'2', N'0', -1, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:52:16.347' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (37, 3, N'RRRestDay', N'Restday (RE)', N'', N'number', N'', N'3', N'0', 1, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:52:16.347' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (38, 3, N'RRSpecialHoliday', N'Special Holiday (SP)', N'', N'number', N'', N'3', N'0', 2, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:52:16.347' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (39, 3, N'RRSpecialRestDay', N'Special Restday (SR)', N'', N'number', N'', N'3', N'0', 3, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:52:16.347' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (40, 3, N'RRHoliday', N'Holiday (HO)', N'', N'number', N'', N'3', N'0', 4, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:52:16.347' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (41, 3, N'RRHolidayRestDay', N'Holiday Restday (HR)', N'', N'number', N'', N'3', N'0', 5, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:52:16.347' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (42, 3, N'ROROrdinaryOT', N'Ordinary OT (OROT)', N'', N'number', N'', N'3', N'0', 6, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:52:16.347' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (43, 3, N'RORRestDayOT', N'Restday OT (REOT)', N'', N'number', N'', N'3', N'0', 7, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:52:16.347' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (44, 3, N'RORSpecialHoliday OT', N'Special Holiday OT (SPOT)', N'', N'number', N'', N'3', N'0', 8, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:52:16.347' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (45, 3, N'RORSpecialRest Day', N'Special Restday OT', N'', N'number', N'', N'3', N'0', 9, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:52:16.347' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (46, 3, N'RORHolidayOT', N'Holiday OT (HOOT)', N'', N'number', N'', N'3', N'0', 10, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:52:16.347' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (47, 3, N'RORHolidayRestDayOT', N'Holiday Restday OT', N'', N'number', N'', N'3', N'0', 11, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:52:16.347' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (48, 3, N'RNROrdinaryNS', N'Ordinary NS (ORNS)', N'', N'number', N'', N'3', N'0', 12, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:52:16.347' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (49, 3, N'RNRRest DayNS', N'Restday NS (RENS)', N'', N'number', N'', N'3', N'0', 13, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:52:16.347' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (50, 3, N'RNRSpecialHolidayNS', N'Special Holiday NS (SPNS)', N'', N'number', N'', N'3', N'0', 14, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:52:16.350' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (51, 3, N'RNRSpecialRestDay', N'Special Restday NS', N'', N'number', N'', N'3', N'0', 15, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:52:16.350' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (52, 3, N'RNRHolidayNS', N'Holiday NS (HONS)', N'', N'number', N'', N'3', N'0', 16, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:52:16.350' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (53, 3, N'RNRHolidayRestDayNS', N'Holiday Restday NS', N'', N'number', N'', N'3', N'0', 17, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:52:16.350' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (54, 3, N'NOROrdinaryNSOT', N'Ordinary NS OT (ORNSOT)', N'', N'number', N'', N'3', N'0', 18, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:52:16.350' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (55, 3, N'NORRestDayNSOT', N'Restday NS OT (RENSOT)', N'', N'number', N'', N'3', N'0', 19, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:52:16.350' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (56, 3, N'NORSpecialHolidayNSOT', N'Special Holiday NS OT (SPNSOT)', N'', N'number', N'', N'3', N'0', 20, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:52:16.350' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (57, 3, N'NORSpecialRestDayNSOT', N'Special Restday NS OT (SRNSOT)', N'', N'number', N'', N'3', N'0', 21, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:52:16.350' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (58, 3, N'NORHolidayNSOT', N'Holiday NS OT (HONSOT)', N'', N'number', N'', N'3', N'0', 22, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:52:16.350' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (59, 3, N'NORHolidayRestDayNSOT', N'Holiday Restday NS OT (HRNSOT)', N'', N'number', N'', N'3', N'0', 23, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:52:16.350' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (60, 3, N'AttendancePayrollRulesAuto-generatePastOT', N'Auto-generate Past OT for late OT approval', N'', N'checkbox', N'', N'4', N'0', 1, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:52:16.350' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (61, 3, N'AttendancePayrollRulesMinimumTimeToUse', N'Minimum time to use OT Rate', N'', N'number', N'', N'4', N'0', 3, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:52:16.350' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (62, 3, N'EmpSavingsLimit', N'Limit', N'', N'number', N'', N'5', N'0', 1, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:52:16.350' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (63, 3, N'EmpSavingsInterestRate', N'Interest Rate (%)', N'', N'number', N'', N'5', N'0', 2, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:52:16.350' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (64, 3, N'EmpSavingsMinimum Amount', N'Minimum Amount', N'', N'number', N'', N'5', N'0', 3, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:52:16.350' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (65, 3, N'PayrollDeductionSSSFrequency', N'SSS   Frequency', N'', N'dropdownList', N' :0,Every Period:6, Period 1:8, Period 2:9, Period 3:10, Period 4:11, Period 5:23, Periods 1 2 3 4:24, End of Month:7', N'6', N'0', 1, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:52:16.350' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (66, 3, N'PayrollDeductionSSSMonthlyLimit', N'SSS   Monthly Limit', N'', N'number', N'', N'6', N'0', 2, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:52:16.350' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (67, 3, N'PayrollDeductionPhilhealthFrequency', N'Philhealth   Frequency', N'', N'dropdownList', N' :0,Every Period:6, Period 1:8, Period 2:9, Period 3:10, Period 4:11, Period 5:23, Periods 1 2 3 4:24, End of Month:7', N'6', N'0', 3, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:52:16.350' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (68, 3, N'PayrollDeductionPhilhealthMonthlyLimit', N'Philhealth   Monthly Limit', N'', N'number', N'', N'6', N'0', 4, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:52:16.350' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (69, 3, N'PayrollDeductionPAGIBIGFrequency', N'PAGIBIG   Frequency', N'', N'dropdownList', N' :0,Every Period:6, Period 1:8, Period 2:9, Period 3:10, Period 4:11, Period 5:23, Periods 1 2 3 4:24, End of Month:7', N'6', N'0', 5, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:52:16.350' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (70, 3, N'PayrollDeductionPAGIBIGMonthlyLimit', N'PAGIBIG   Monthly Limit', N'', N'number', N'', N'6', N'0', 6, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:52:16.353' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (71, 3, N'PayrollDeductionPAGIBIGTaxExemptLimit', N'PAGIBIG   Tax Exempt Limit', N'', N'number', N'', N'6', N'0', 7, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:52:16.353' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (72, 3, N'PayrollDeductionWithholdingTaxFrequency', N'Withholding Tax   Frequency', N'', N'dropdownList', N' :0,Every Period:6, Period 1:8, Period 2:9, Period 3:10, Period 4:11, Period 5:23, Periods 1 2 3 4:24, End of Month:7', N'6', N'0', 8, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:52:16.353' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (73, 3, N'PayrollDeductionWithholdingTaxMonthlyLimit', N'Withholding Tax   Monthly Limit', N'', N'number', N'', N'6', N'0', 9, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:52:16.353' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (74, 4, N'Compute13thmonth', N'Compute 13th month', N'', N'checkbox', N'', N'1', N'0', 1, N'', NULL, NULL, NULL, NULL)
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (75, 4, N'SalaryAdjustment', N'Salary Adjustment', N'', N'checkbox', N'', N'1', N'0', 2, N'', NULL, NULL, NULL, NULL)
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (76, 4, N'SeparationPay', N'Separation Pay', N'', N'checkbox', N'', N'1', N'0', 3, N'', NULL, NULL, NULL, NULL)
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (77, 4, N'Opt13thMonthPayOptions', N'13th Month Rate Basis', N'', N'dropdownList', N' :0,Actual Income:1,Pro-rate Actual Rate:5,Pro-rate Current Rate:2,Fixed current rate:3,Acrrued 13th month:4,Current Rate less Absences and LWOP (Leave Without Pay):6', N'4', N'0', 2, N'', NULL, NULL, NULL, NULL)
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (78, 4, N'PredictIncome', N'Predict Income', N'', N'checkbox', N'', N'4', N'0', 8, N'', NULL, NULL, NULL, NULL)
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (79, 4, N'cmb13thMonthPayCode', N'13th Month pay code', N'', N'dropdownList', N'$table: compben.EarningDeduction WHERE EarningDeduction.MappedToId IS NULL OR  EarningDeduction.MappedToId = 0 ,EarningDeductionId,Code', N'4', N'0', 1, N'', NULL, NULL, NULL, NULL)
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (80, 4, N'MultiplierFactor', N'Multiplier Factor', N'', N'number', N'', N'4', N'0', 5, N'', NULL, NULL, NULL, NULL)
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (81, 4, N'DoNotComputeRegularPay', N'Do not compute for Regular Pay', N'', N'checkbox', N'', N'2', N'0', 1, N'', NULL, NULL, NULL, NULL)
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (82, 4, N'DoNotUseMonthlyTaxTableforEndOfMonth', N'Do not use Monthly tax table for end of month', N'', N'checkbox', N'', N'3', N'0', 3, N'', NULL, NULL, NULL, NULL)
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (83, 4, N'DoNotAutomatePayComputations', N'Do not automate pay  computations', N'', N'checkbox', N'', N'2', N'0', 2, N'', NULL, NULL, NULL, NULL)
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (84, 4, N'IncludeNonWorkedHolidayPayIn13thMonthPayComputation_REGULAR', N'Include non-worked holiday pay in 13th month pay computation (Regular)', N'', N'checkbox', N'', N'4', N'0', 11, N'', NULL, NULL, NULL, NULL)
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (85, 4, N'IncludeNonWorkedHolidayPayIn13thMonthPayComputation_CONTRACTUAL_PROBATIONARY', N'Include non-worked holiday pay in 13th month pay computation (Contractual / Probationary)', N'', N'checkbox', N'', N'4', N'0', 12, N'', NULL, NULL, NULL, NULL)
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (86, 4, N'IncludeLeavePayIn13thMonthPayComputation', N'Include leave pay in 13th month pay computation', N'', N'checkbox', N'', N'4', N'0', 10, N'', NULL, NULL, NULL, NULL)
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (87, 4, N'Issue13thMonthEveryPeriod', N'Issue 13th month every period', N'', N'checkbox', N'', N'4', N'0', 7, N'', NULL, NULL, NULL, NULL)
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (88, 4, N'Accrue13thMonthEveryPeriod', N'Accrue 13th Month every period', N'', N'checkbox', N'', N'4', N'0', 6, N'', NULL, NULL, NULL, NULL)
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (89, 4, N'Consolidate13thMonthPay', N'Consolidate 13th Month pay', N'', N'checkbox', N'', N'4', N'0', 9, N'', NULL, NULL, NULL, NULL)
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (90, 4, N'ProcessBaseOnIssueDate', N'Process based on Issue Date (required for 13th Month Payroll and Salary Adjustment)', N'', N'checkbox', N'', N'2', N'0', 3, N'', NULL, NULL, NULL, NULL)
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (91, 4, N'ApplyNSRateToNSMajorityHours', N'Apply NS rate to NS majority hours', N'', N'checkbox', N'', N'2', N'0', 4, N'', NULL, NULL, NULL, NULL)
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (92, 4, N'PayslipTemplate', N'Payslip template', N'', N'dropdownList', N':0,Pay Slip Time Summary:PayslipTimeSummary_WithLogo,No Tearout Signature Section:NoTearoutSignatureSection,Web Template:PaycheckWebTemplate,Payslip Supress Zero Amount:PayslipSupressZeroAmount,Payslip with OT Breakdown:PayslipWithOTBreakdown,Payslip with Tearout Section:PayslipWithTearoutSection   ,Payslip No Tearout with Signature Remarks:PayslipNoTearoutWithSignatureRemarks,Payslip with OT Breakdown 2:PayslipWithOTBreakdown2,OJT Payslip:OJTPayslip,TAP Payslip:TAPPayslip,Final Payslip Template:FinalPayslipTemplate,Detailed Computation Payslip:DetailedComputationPayslip,Detailed Computation Suppressed Zero Amount:DetailedComputationSupressedZeroAmount,Payslip Regular OT Summary:PayslipRegularOTSummary,Detailed Payslip Template:DetailedPayslipTemplate,Descriptive Payslip Supress Zero Amount:DescriptivePayslipSupressZeroAmount,Payslip YTD OT and Payment Breakdown:PayslipYTDOTAndPaymentBreakdown,Payslip Summary with Total Earnings and Deductions:PayslipSummaryWithTotalEarningsDeductions,Payslip Time Summary with Detailed Leave Balance:PayslipTimeSummaryWithDetailedLeaveBalance,Descriptive Payslip Excluding Net Pay:DescriptivePayslipExcludingNetPay,Payslip with Tearout Section (Centered Header):PayslipWithTearoutSection2', N'5', N'0', 1, N'', NULL, NULL, NULL, NULL)
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (93, 4, N'SplitBasicPay_DAILY_HOURLY', N'Split Basic pay', N'', N'checkbox', N'', N'2', N'0', 5, N'', NULL, NULL, NULL, NULL)
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (94, 4, N'DoubleColaOnWorkedHolidays', N'Double Cola on worked Holidays', N'', N'checkbox', N'', N'2', N'0', 14, N'', NULL, NULL, NULL, NULL)
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (95, 4, N'EnableGracePeriodLimitMonth', N'Enable grace period limit / month', N'', N'checkbox', N'', N'2', N'0', -1, N'', NULL, NULL, NULL, NULL)
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (96, 4, N'MonthlyRatesDonotIncludeRestDays', N'Do not include Restdays in Monthly Rate', N'', N'checkbox', N'', N'2', N'0', 16, N'', NULL, NULL, NULL, NULL)
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (97, 4, N'LeaveAccrual', N'Leave Accrual', N'', N'checkbox', N'', N'1', N'0', -1, N'', NULL, NULL, NULL, NULL)
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (98, 4, N'Annualize', N'Annualize', N'', N'checkbox', N'', N'3', N'0', 1, N'', NULL, NULL, NULL, NULL)
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (135, 3, N'CompanyNonWorkingDayFactor', N'Company Non Working Day', N'', N'number', N'', N'3', N'0', 24, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:52:16.353' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (136, 1, N'OffSettingExpiration', N'Offsetting Expiration', N'', N'dropdownList', N':0,None:1,Next Working Day:2,1 Week:3,1 Month:4,2 Months:5,3 Months:6,4 Months:7,5 Months:8,6 Months:9,7 Months:10,8 Months:11,9 Months:12,10 Months:13,11 Months:14,1 Year:15', N'4', N'0', 3, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:54:33.573' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (137, 1, N'AllowSameDayoffsetting', N'Allow same-day offsetting', N'', N'checkbox', N'', N'4', N'0', -1, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:54:33.573' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (138, 1, N'FollowStandardWorkingHoursPerDayforAbsencesandLeaves', N'Follow Standard Working Hours Per Day for Absences and Leaves', N'', N'checkbox', N'', N'2', N'0', 6, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:54:33.573' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (139, 1, N'NoOfWorkingHoursperDay', N'Standard # Working Hours per Day', N'', N'number', N'', N'2', N'0', 8, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:54:33.573' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (140, 3, N'NoPayforCompleteAbsence', N'No Pay for Complete Absence', N'', N'checkbox', N'', N'4', N'0', 2, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:52:16.353' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (141, 1, N'CalculateUTandAbsencesBasedonTheStandardWorkingHoursPerDay', N'Calculate Undertime and Absences based on the Standard # Working Hours Per Day', N'', N'checkbox', N'', N'2', N'0', 7, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:54:33.573' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (142, 1, N'CalculateCompressedOTbasedonIdealWorkingHoursforthePeriod', N'Calculate Compressed OT based on Ideal Working Hours for the Period', N'', N'checkbox', N'', N'2', N'0', -1, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:54:33.573' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (143, 1, N'DeductOverbreaks', N'Deduct overbreaks', N'', N'checkbox', N'', N'2', N'0', 4, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:54:33.577' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (144, 3, N'NoDeductionforLates', N'No Deduction for Lates', N'', N'checkbox', N'', N'6', N'0', 11, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:52:16.353' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (145, 3, N'NoDeductionforUndertime', N'No Deduction for Undertime', N'', N'checkbox', N'', N'6', N'0', 12, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:52:16.353' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (146, 3, N'NoDeductionforAbsences', N'No Deduction for Absences', N'', N'checkbox', N'', N'6', N'0', 13, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:52:16.353' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (147, 4, N'SalaryAdjustmentPayrollTypes', N'Salary Adjustment Payroll Types', N'', N'checkboxList', N'$table: payroll.PayrollType,PayrollTypeId,PayrollTypeName', N'5', N'0', 3, N'', NULL, NULL, NULL, NULL)
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (148, 1, N'DetermineTimeLogTypeFromDeviceName', N'Determine time-log type from Device Name', N'', N'checkbox', N'', N'1', N'0', 17, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:54:33.577' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (149, 1, N'DeductOverbreaksForLunch', N'Deduct over breaks for lunch', N'', N'checkbox', N'', N'2', N'0', 5, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:54:33.577' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (150, 3, N'CompanyNonWorkingDayOT', N'Company Non Working Day OT', N'', N'number', N'', N'3', N'0', 25, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:52:16.353' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (151, 3, N'CompanyNonWorkingDayforNS', N'Company Non Working Day for NS', N'', N'number', N'', N'3', N'0', 26, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:52:16.353' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (152, 3, N'CompanyNonWorkingDayforNSOT', N'Company Non Working Day for NSOT', N'', N'number', N'', N'3', N'0', 27, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:52:16.353' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (153, 1, N'FlexibleLunchBreak', N'Flexible Lunch Break', N'', N'checkbox', N'', N'2', N'0', -1, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:54:33.577' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (154, 1, N'MinimumOffsetRequestHours', N'Minimum Offset Request Hours', N'', N'number', N'', N'4', N'0', 4, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:54:33.577' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (155, 1, N'MinimumOffsetUsageHours', N'Minimum Offset Usage Hours', N'', N'number', N'', N'4', N'0', -1, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:54:33.577' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (156, 1, N'AllowOffsetOnRegularWorkingDays', N'Allow Offset Earning on Regular Working Days', N'', N'checkbox', N'', N'4', N'0', 5, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:54:33.577' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (157, 1, N'AllowOffsetOnRestdays', N'Allow Offset Earning on Restdays', N'', N'checkbox', N'', N'4', N'0', 6, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:54:33.577' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (158, 1, N'AllowOffsetOnHolidays', N'Allow Offset Earning on Holidays', N'', N'checkbox', N'', N'4', N'0', 7, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:54:33.577' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (159, 1, N'RequireAttendanceBeforeAndAfterHolidays', N'Require attendance before and after Holidays', N'', N'checkbox', N'', N'4', N'0', -1, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:54:33.577' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (160, 1, N'UseSeparateOffsetUsageForm', N'Use Separate Offset Usage Form', N'', N'checkbox', N'', N'4', N'0', -1, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:54:33.577' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (161, 1, N'ValidateOvertimeAgainstClassifiedHours', N'Validate Overtime against Classified Hours', N'', N'checkbox', N'', N'2', N'0', -1, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:54:33.577' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (162, 1, N'UseRegularOTRateForPreshiftOT', N'Use Regular OT Rate for Pre-shift OT', N'', N'checkbox', N'', N'1', N'0', 8, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:54:33.577' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (163, 1, N'AutomateTimeLogTransactionType', N'Automate time-log transaction type', N'', N'checkbox', N'', N'1', N'0', 18, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:54:33.577' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (164, 1, N'OvertimeLimit', N'Overtime Limit', N'', N'number', N'', N'2', N'0', -1, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:54:33.577' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (165, 1, N'OvertimeDuration', N'Overtime Duration', N'', N'dropdownList', N':0,Per Period:1,Per Month:2,Per Year:3', N'2', N'0', -1, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:54:33.577' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (166, 1, N'Include1st8hrs', N'Include 1st 8 hrs', N'', N'checkbox', N'', N'2', N'0', -1, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:54:33.577' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (167, 1, N'DeductFlexibleTimeLimitFromTardiness', N'Deduct Flexible Time Limit from Tardiness', N'', N'checkbox', N'', N'1', N'0', 15, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:54:33.577' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (168, 4, N'ShowReportHeaderinPayslip', N'Show Report Header in Payslip', N'', N'checkbox', N'', N'5', N'0', 2, N'', NULL, NULL, NULL, NULL)
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (169, 4, N'DeductOutstandingLoanBalances', N'Deduct Outstanding Loan Balances', N'', N'checkbox', N'', N'2', N'0', 17, N'', NULL, NULL, NULL, NULL)
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (170, 4, N'DeductOutstandingDeductionBalances', N'Deduct Outstanding Deduction Balances', N'', N'checkbox', N'', N'2', N'0', 18, N'', NULL, NULL, NULL, NULL)
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (171, 1, N'TimeLogsNotRequired', N'Time-logs not required', N'', N'checkbox', N'', N'1', N'0', 19, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:54:33.577' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (172, 4, N'CodeForCompanyAdvances', N'Code for Company Advances', N'', N'dropdownList', N'$table: compben.EarningDeduction WHERE (EarningDeduction.MappedToId IS NULL OR  EarningDeduction.MappedToId = 0) AND TypeId = 2 ,EarningDeductionId,Code', N'2', N'0', 19, N'', NULL, NULL, NULL, NULL)
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (173, 1, N'LimitForLateOTApproval', N'Limit for Late OT Approval', N'', N'number', N'', N'5', N'0', 1, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:54:33.577' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (174, 1, N'LimitForLateOTApprovalType', N'', N'', N'dropdownList', N':0,Days:1,Months:2,Period:3', N'5', N'0', 2, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:54:33.577' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (175, 1, N'LimitForLateOBApproval', N'Limit for Late OB Approval', N'', N'number', N'', N'5', N'0', 3, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:54:33.577' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (176, 1, N'LimitForLateOBApprovalType', N'', N'', N'dropdownList', N':0,Days:1,Months:2,Period:3', N'5', N'0', 4, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:54:33.577' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (177, 1, N'LimitForLateTimeOffApproval', N'Limit for Late Time-Off Approval', N'', N'number', N'', N'5', N'0', 5, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:54:33.577' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (178, 1, N'LimitForLateTimeOffApprovalType', N'', N'', N'dropdownList', N':0,Days:1,Months:2,Period:3', N'5', N'0', 6, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:54:33.577' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (179, 1, N'LimitForLateLeaveApproval', N'Limit for Late Leave Approval', N'', N'number', N'', N'5', N'0', 7, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:54:33.577' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (180, 1, N'LimitForLateLeaveApprovalType', N'', N'', N'dropdownList', N':0,Days:1,Months:2,Period:3', N'5', N'0', 8, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:54:33.580' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (181, 1, N'ProcessLateOTApproval', N'Process Late OT Approval', N'', N'checkbox', N'', N'5', N'0', 9, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:54:33.580' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (182, 1, N'ProcessLateOTApprovalEarningId', N'', N'', N'dropdownList', N'$table: compben.EarningDeduction WHERE (EarningDeduction.MappedToId IS NULL OR  EarningDeduction.MappedToId = 0) AND TypeId = 1 ,EarningDeductionId,Code', N'5', N'0', 10, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:54:33.580' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (183, 1, N'ProcessLateOBApproval', N'Process Late Basic Approval', N'', N'checkbox', N'', N'5', N'0', 11, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:54:33.580' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (184, 1, N'ProcessLateOBApprovalEarningId', N'', N'', N'dropdownList', N'$table: compben.EarningDeduction WHERE (EarningDeduction.MappedToId IS NULL OR  EarningDeduction.MappedToId = 0) AND TypeId = 1 ,EarningDeductionId,Code', N'5', N'0', 12, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:54:33.580' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (185, 1, N'ProcessLateTimeOffApproval', N'Process Late Time-Off Approval', N'', N'checkbox', N'', N'5', N'0', -1, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:54:33.580' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (186, 1, N'ProcessLateTimeOffApprovalEarningId', N'', N'', N'dropdownList', N'$table: compben.EarningDeduction WHERE (EarningDeduction.MappedToId IS NULL OR  EarningDeduction.MappedToId = 0) AND TypeId = 1 ,EarningDeductionId,Code', N'5', N'0', -1, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:54:33.580' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (187, 1, N'ProcessLateLeaveApproval', N'Process Late Leave Approval', N'', N'checkbox', N'', N'5', N'0', 13, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:54:33.580' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (188, 1, N'ProcessLateLeaveApprovalEarningId', N'', N'', N'dropdownList', N'$table: compben.EarningDeduction WHERE (EarningDeduction.MappedToId IS NULL OR  EarningDeduction.MappedToId = 0) AND TypeId = 1 ,EarningDeductionId,Code', N'5', N'0', 14, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:54:33.580' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (189, 4, N'IssueOnHoldPayroll', N'Issue on-hold payroll', N'', N'checkbox', N'', N'2', N'0', -1, N'', NULL, NULL, NULL, NULL)
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (190, 4, N'ProRateMethodIfStartedOrLeftWithinTheYear', N'Pro-rate method if started or left within the year', N'', N'option', N'Daily Rate x Worked Days / Calendar Days for the month:1,Monthly Rate x Hire Date up to end of year / 365:2', N'4', N'0', 3, N'vertical', NULL, NULL, NULL, NULL)
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (191, 1, N'TagAbsentOnlyOnDaysWithSchedule', N'Tag absent only on days with schedule', N'', N'checkbox', N'', N'1', N'0', 20, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:54:33.580' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (192, 3, N'DoNotProcessBasedOnAttendance', N'Do not process based on Attendance', N'', N'checkbox', N'', N'4', N'0', 4, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:52:16.353' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (193, 4, N'ProRateBasisForNewHiresAndExitingEmployees', N'Pro-rate basis for new-hires and exiting employees', N'', N'dropdownList', N':0,Daily Rate x no. of worked days:1,Working days per week:2,Calendar days of the month:3,Days per year:4,Days per period:5,Fixed days per month:6,Working days per month table:7,Compute as daily rate:8,Deduct calendar days:9,Deduct working days:10', N'2', N'0', 9, N'', NULL, NULL, NULL, NULL)
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (194, 4, N'PayrollProcessing_WorkingDaysPerWeek_NoOfWeeksPerYear', N'# of weeks per year', N'', N'number', N'', N'2', N'0', 10, N'', NULL, NULL, NULL, NULL)
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (195, 4, N'PayrollProcessing_WorkingDaysPerWeek_NoOfDaysPerWeek', N'# of days per week', N'', N'number', N'', N'2', N'0', 11, N'', NULL, NULL, NULL, NULL)
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (196, 4, N'PayrollProcessing_DaysPerYear_NoOfDaysPerYear', N'# of days per year', N'', N'number', N'', N'2', N'0', 12, N'', NULL, NULL, NULL, NULL)
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (197, 4, N'PayrollProcessing_FixedDaysPerMonth_NoOfDaysPerMonth', N'# of days per month', N'', N'number', N'', N'2', N'0', 13, N'', NULL, NULL, NULL, NULL)
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (198, 4, N'DoubleColaOnWorkedHolidaysValue', N'COLA Type', N'', N'dropdownList', N'$table: compben.EarningDeduction WHERE (EarningDeduction.MappedToId IS NULL OR EarningDeduction.MappedToId = 0) AND TypeId = 3,EarningDeductionId,Code', N'2', N'0', 15, N'', NULL, NULL, NULL, NULL)
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (199, 4, N'DeductNegativeLeaveBalance', N'Deduct negative leave balance', N'', N'checkbox', N'', N'2', N'0', 20, N'', NULL, NULL, NULL, NULL)
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (200, 1, N'AutomaticallyApprovedExcessHrs', N'Automatically Approved Excess Hrs without filed OT (For OB)', N'', N'checkbox', N'', N'1', N'0', 21, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:54:33.580' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (201, 1, N'RequirenumberofworkinghourstobefulfilledbeforerecognizingHolidayRestdayOT', N'Require number of working hours to be fulfilled before recognizing OT on Holiday or Restday', N'', N'checkbox', N'', N'2', N'0', 3, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:54:33.580' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (202, 4, N'IncludeWeekendsInCountingNoOfDaysWorked', N'Include weekends in counting # of work days', N'', N'checkbox', N'', N'2', N'0', 7, N'', NULL, NULL, NULL, NULL)
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (203, 3, N'UseSpecialGovernmentTables', N'Use special Government tables', N'', N'dropdownList', N'$table: maintenance.Company,CompanyId,Code', N'6', N'0', 10, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:52:16.353' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (204, 1, N'DisablePreShiftOT', N'Disable Pre-shift OT', N'', N'checkbox', N'', N'2', N'0', 10, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:54:33.580' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (205, 4, N'PreprocessBeforePayroll', N'Preprocess Before Payroll', N'', N'checkbox', N'', N'2', N'0', 21, N'', NULL, NULL, NULL, NULL)
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (206, 4, N'ApplyCustomMonthlyRatePercentage', N'Apply Custom Monthly Rate Percentage', N'', N'checkbox', N'', N'2', N'0', 22, N'', NULL, NULL, NULL, NULL)
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (207, 4, N'ApplyCustomMonthlyRatePercentagePeriod1', N'Period 1', N'', N'number', N'', N'2', N'0', 23, N'', NULL, NULL, NULL, NULL)
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (208, 4, N'ApplyCustomMonthlyRatePercentagePeriod2', N'Period 2', N'', N'number', N'', N'2', N'0', 24, N'', NULL, NULL, NULL, NULL)
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (209, 4, N'SpecifyExchangeRate', N'Specify Exchange Rate', N'', N'checkbox', N'', N'5', N'0', 3, N'', NULL, NULL, NULL, NULL)
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (210, 4, N'IssueInForeignCurrency', N'Issue in Foreign Currency', N'', N'checkbox', N'', N'5', N'0', 6, N'', NULL, NULL, NULL, NULL)
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (211, 4, N'IssueInForeignCurrencyCodeValue', N'Currency Code', N'', N'dropdownList', N'$table: maintenance.Currency,CurrencyId,Code', N'5', N'0', 7, N'', NULL, NULL, NULL, NULL)
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (212, 4, N'ComputeGovernmentDeductionsInLocalCurrency', N'Compute Government deductions in local currency', N'', N'checkbox', N'', N'5', N'0', 4, N'', NULL, NULL, NULL, NULL)
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (213, 4, N'ComputeDeputisingPay', N'Compute Deputising Pay', N'', N'checkbox', N'', N'2', N'0', 25, N'', NULL, NULL, NULL, NULL)
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (214, 4, N'DeputisingPayCode', N'Deputising Pay Code', N'', N'dropdownList', N'$table: compben.EarningDeduction WHERE (EarningDeduction.MappedToId IS NULL OR  EarningDeduction.MappedToId = 0) AND TypeId =1 ,EarningDeductionId,Code', N'2', N'0', 26, N'', NULL, NULL, NULL, NULL)
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (215, 3, N'IncludeWeekendsInCountingNoOfWorkDaysPayrollPolicy', N'Include weekends in counting # of work days', N'', N'checkbox', N'', N'1', N'0', 4, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:52:16.353' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (216, 4, N'NoOfDecimalPlacesForAmounts', N'# of Decimal Places for Amounts', N'', N'number', N'', N'5', N'0', 8, N'', NULL, NULL, NULL, NULL)
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (217, 4, N'TaxComputationMethod', N'Tax Computation Method', N'', N'dropdownList', N'Normal:1,Deduct Tax Exemption based on Dependents:2', N'3', N'0', 4, N'', NULL, NULL, NULL, NULL)
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (218, 4, N'DeductTax', N'Deduct Tax', N'', N'checkbox', N'', N'3', N'0', -1, N'', NULL, NULL, NULL, NULL)
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (219, 4, N'CalculateTaxRefund', N'Calculate Tax Refund', N'', N'checkbox', N'', N'3', N'0', 2, N'', NULL, NULL, NULL, NULL)
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (220, 4, N'DoNotIncludeIn13thMonthComputation', N'Do not include in 13th Month Computation', N'', N'checkbox', N'', N'2', N'0', 8, N'', NULL, NULL, NULL, NULL)
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (221, 1, N'EnableOffsetting', N'Enable Offsetting', N'', N'checkbox', N'', N'4', N'0', 1, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:54:33.580' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (222, 1, N'OffsetingLeaveType', N'Offseting Leave Type', N'', N'checkboxList', N'$table: leave.LeaveTypeSetup LTS JOIN maintenance.Company C ON LTS.CompanyId = C.CompanyId ,  LTS.LeaveTypeSetupId, C.Code + ''-'' + LTS.Code', N'4', N'0', 2, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:54:33.583' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (223, 1, N'AutomaticallyApproveAllOvertimeHours', N'Automatically approve all overtime hours', N'', N'checkbox', N'', N'2', N'0', 11, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:54:33.583' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (224, 1, N'RequireFileAttachmentForManualTimeLogRequest', N'Require file attachment for manual time-log request', N'', N'checkbox', N'', N'1', N'0', 11, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:54:33.583' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (225, 1, N'DoNotAllowPostOBFiling', N'Do not allow Post OB filing', N'', N'checkbox', N'', N'6', N'0', 1, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:54:33.583' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (226, 4, N'WorkingDaysPerYear', N'# Working Days per Year (WDPY)', N'', N'number', N'', N'4', N'0', 4, N'', NULL, NULL, NULL, NULL)
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (227, 3, N'RNROrdinaryNS2', N'Ordinary NS2 (ORNS2)', N'', N'number', N'', N'7', N'0', 1, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:52:16.357' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (228, 3, N'RNRRestDayNS2', N'Restday NS2 (RENS2)', N'', N'number', N'', N'7', N'0', 2, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:52:16.357' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (229, 3, N'RNRSpecialHolidayNS2', N'Special Holiday NS2 (SPNS2)', N'', N'number', N'', N'7', N'0', 3, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:52:16.357' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (230, 3, N'RNRSpecialRestDayNS2', N'Special Restday NS2 (SRNS2)', N'', N'number', N'', N'7', N'0', 4, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:52:16.357' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (231, 3, N'RNRHolidayNS2', N'Holiday NS2 (HONS2)', N'', N'number', N'', N'7', N'0', 5, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:52:16.357' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (232, 3, N'RNRHolidayRestDayNS2', N'Holiday Restday NS2 (HRNS2)', N'', N'number', N'', N'7', N'0', 6, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:52:16.357' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (233, 3, N'NOROrdinaryNSOT2', N'Ordinary NS OT2 (ORNSOT2)', N'', N'number', N'', N'7', N'0', 7, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:52:16.357' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (234, 3, N'NORRestDayNSOT2', N'Restday NS OT2 (RENSOT2)', N'', N'number', N'', N'7', N'0', 8, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:52:16.357' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (235, 3, N'NORSpecialHolidayNSOT2', N'Special Holiday NS OT2 (SPNSOT2)', N'', N'number', N'', N'7', N'0', 9, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:52:16.357' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (236, 3, N'NORSpecialRestDayNSOT2', N'Special Restday NS OT2 (SRNSOT2)', N'', N'number', N'', N'7', N'0', 10, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:52:16.357' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (237, 3, N'NORHolidayNSOT2', N'Holiday NS OT2 (HONSOT2)', N'', N'number', N'', N'7', N'0', 11, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:52:16.357' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (238, 3, N'NORHolidayRestDayNSOT2', N'Holiday Restday NS OT2 (HRNSOT2)', N'', N'number', N'', N'7', N'0', 12, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:52:16.357' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (239, 1, N'AllowOverlapOfTimeOutAndNextDayStartTime', N'Allow overlap of time-out and next day start time', N'', N'checkbox', N'', N'1', N'0', 22, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:54:33.580' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (240, 1, N'PayUnworkedHolidayBasedOnScheduledWorkingHours', N'Pay Unworked Holiday based on Scheduled Working Hours', N'', N'checkbox', N'', N'3', N'0', -1, N'', NULL, NULL, 30, CAST(N'2019-05-28T14:54:33.573' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (241, 4, N'SplitBasicPay_For_Restdays_DAILY_HOURLY', N'Split for Restdays', N'', N'checkbox', N'', N'6', N'0', -1, N'', NULL, NULL, NULL, NULL)
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (242, 4, N'SplitBasicPay_For_SpecialHolidays_DAILY_HOURLY', N'Split for Special Holidays', N'', N'checkbox', N'', N'6', N'0', -1, N'', NULL, NULL, NULL, NULL)
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (243, 4, N'SplitBasicPay_For_RegularHolidays_DAILY_HOURLY', N'Split for Regular Holidays', N'', N'checkbox', N'', N'6', N'0', -1, N'', NULL, NULL, NULL, NULL)
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (244, 4, N'SplitBasicPay_For_SpecialHolidayRestdays_DAILY_HOURLY', N'Split for Special Holiday Restdays', N'', N'checkbox', N'', N'6', N'0', -1, N'', NULL, NULL, NULL, NULL)
+;
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupDetailId], [ConfigSetupHeaderId], [PropertyName], [LabelName], [PropertyValue], [Type], [Source], [Group], [SubGroup], [SortOrder], [Alignment], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (245, 4, N'SplitBasicPay_For_RegularHolidayRestdays_DAILY_HOURLY', N'Split for Regular Holiday Restdays', N'', N'checkbox', N'', N'6', N'0', -1, N'', NULL, NULL, NULL, NULL)
+;
+SET IDENTITY_INSERT [maintenance].[ConfigSetupDetail] OFF
+;
+SET IDENTITY_INSERT [maintenance].[ConfigSetupHeader] ON 
+;
+INSERT [maintenance].[ConfigSetupHeader] ([ConfigSetupHeaderId], [ConfigSetupName], [ConfigSetupDescription], [ConfigSetupLabelName], [ConfigSetupLabelDescription], [Panel1], [Panel2], [Panel3], [Panel4], [Panel5], [Panel6], [Panel7], [Panel8], [Panel9], [Panel10], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (1, N'Attendance Policy', N'Attendance Policy Description', N'Policy Code', N'Description', N'Time Entry;22;2', N'Overtime and Undertime;11;2', N'Holiday and Rest Day;4;2', N'Offsetting Rules;7;2', N'Late Approval;15;2', N'Official Business;1;2', N'', N'', N'', N'', NULL, NULL, 30, CAST(N'2019-05-28T14:54:33.583' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupHeader] ([ConfigSetupHeaderId], [ConfigSetupName], [ConfigSetupDescription], [ConfigSetupLabelName], [ConfigSetupLabelDescription], [Panel1], [Panel2], [Panel3], [Panel4], [Panel5], [Panel6], [Panel7], [Panel8], [Panel9], [Panel10], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (3, N'Payroll Policy', N'Payroll Policy', N'Policy Code', N'Description', N'Pro-rate Calculation;4;2', N'Tax;3;1', N'Rates;27;2', N'Attendance Payroll Rules;4;2', N'Employee Savings;3;2', N'Payroll Deduction;13;2', N'Special Rates;12;2', N'', N'', N'', NULL, NULL, 30, CAST(N'2019-05-28T14:52:16.357' AS DateTime))
+;
+INSERT [maintenance].[ConfigSetupHeader] ([ConfigSetupHeaderId], [ConfigSetupName], [ConfigSetupDescription], [ConfigSetupLabelName], [ConfigSetupLabelDescription], [Panel1], [Panel2], [Panel3], [Panel4], [Panel5], [Panel6], [Panel7], [Panel8], [Panel9], [Panel10], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (4, N'Paysheet Type Config', N'Paysheet Type Config Description', N'Set up Name', N'Description', N'Special Payroll Options;3;2', N'Payroll Processing Options;23;2', N'Tax Computation Options;4;2', N'13th Month Options;11;2', N'Others;7;2', N'', N'', N'', N'', N'', NULL, NULL, NULL, CAST(N'2016-04-01T00:00:00.000' AS DateTime))
+;
+SET IDENTITY_INSERT [maintenance].[ConfigSetupHeader] OFF
+;
+IF NOT EXISTS (SELECT * FROM sys.foreign_keys WHERE object_id = OBJECT_ID(N'[maintenance].[FK_ConfigSetupDetail_ConfigSetupHeader]') AND parent_object_id = OBJECT_ID(N'[maintenance].[ConfigSetupDetail]'))
+ALTER TABLE [maintenance].[ConfigSetupDetail]  WITH CHECK ADD  CONSTRAINT [FK_ConfigSetupDetail_ConfigSetupHeader] FOREIGN KEY([ConfigSetupHeaderId])
+REFERENCES [maintenance].[ConfigSetupHeader] ([ConfigSetupHeaderId])
+ON DELETE CASCADE
+;
+IF  EXISTS (SELECT * FROM sys.foreign_keys WHERE object_id = OBJECT_ID(N'[maintenance].[FK_ConfigSetupDetail_ConfigSetupHeader]') AND parent_object_id = OBJECT_ID(N'[maintenance].[ConfigSetupDetail]'))
+ALTER TABLE [maintenance].[ConfigSetupDetail] CHECK CONSTRAINT [FK_ConfigSetupDetail_ConfigSetupHeader]
+;
+
+
+
+--===============================================================================
+--03 - Update the payslipTemplate
+--===============================================================================
+UPDATE maintenance.ConfigSetupDetail
+    --Update @PayslipTempLate
+    SET Source = @PayslipTempLate
+WHERE ConfigSetupDetailId = 92
+--===============================================================================

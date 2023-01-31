@@ -1,0 +1,54 @@
+ IF  EXISTS (
+	SELECT TOP  1 1  
+	FROM sys.objects WHERE object_id = OBJECT_ID(N'[employee].[spBankAccountList]')
+)
+DROP PROCEDURE [employee].[spBankAccountList]
+
+/****** Object:  StoredProcedure [employee].[spBankAccountList]    Script Date: 6/29/2020 11:49:06 AM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE PROCEDURE [employee].[spBankAccountList] 
+(
+	@ProfileId BIGINT = 0
+)
+AS
+BEGIN
+	SET NOCOUNT ON;
+
+DECLARE @SourceName VARCHAR(50)= 'BankAccountType';
+
+	SELECT 
+		 BankAccountId = BankAccount.BankAccountId	
+		,ProfileId = BankAccount.ProfileId	
+		,cmbBankId = BankAccount.BankId	
+		,BankName = Bank.Name
+		,cmbAccountTypeId = BankAccount.AccountTypeId	
+		,AccountTypeDescription = EnumValues.DisplayText
+		,txtAccountName = BankAccount.AccountName	
+		,txtAccountNo = BankAccount.AccountNo
+		,txtBankBranchCode = ISNULL(BankAccount.BankBranchCode,'')
+		,cmbCurrencyId = BankAccount.CurrencyId					
+		,CurrencyName = Currency.Name
+		,cmbDebitFrom = BankAccount.DebitFrom
+		,DebitFromDescription =MBankAccount.AccountName
+		,chkIsMainAccount =BankAccount.IsMainAccount
+		,chkIsMainAccountDescription =
+		(
+			CASE BankAccount.IsMainAccount 
+				WHEN 1 THEN 'Yes'ELSE 'No'
+			END
+		)
+	FROM employee.BankAccount
+	JOIN maintenance.Currency ON BankAccount.CurrencyId = Currency.CurrencyId
+	JOIN maintenance.Bank ON BankAccount.BankId = Bank.BankId
+	LEFT JOIN maintenance.MBankAccount ON BankAccount.DebitFrom = MBankAccount.MBankAccountId
+	JOIN maintenance.EnumValues ON BankAccount.AccountTypeId = CAST(EnumValues.Value AS bigint)
+								AND EnumValues.SourceName  = @SourceName
+	WHERE
+		BankAccount.ProfileId = COALESCE(@ProfileId,0) 
+	ORDER BY 
+		BankAccount.BankAccountId
+END

@@ -1,0 +1,214 @@
+SET NOCOUNT ON
+/*start deleting existing report configs*/
+DELETE FROM report.Report WHERE ReportId IN (299,300)
+DELETE FROM report.ReportData WHERE ReportId IN (299,300)
+DELETE FROM report.ReportParameter WHERE ReportCode IN ('ApplicantsCountReportbyJobPostChannel','ApplicantsCountReportbySupplier')
+DELETE FROM report.ReportSubReport WHERE ReportCode  IN ('ApplicantsCountReportbyJobPostChannel','ApplicantsCountReportbySupplier')
+/*end deleting existing report configs*/
+
+/*start insert data to report.Report*/
+SET IDENTITY_INSERT [report].[Report] ON
+INSERT [report].[Report] ([ReportId],[ReportCode],[ReportName],[ReportFile],[ReportExcelFile],[EmploymentStatus],[TableSPUsed],[SPUsed],[NoOrderBy],[QueryType],[InsertToReportTempTable],[Description],[ImageFile],[SortFields],[Event],[ExportFormat],[CreateId],[Createdate],[LastUpdateId],[LastUpdateDate],[UseExportToExcelAPI],[DetailColStartPos],[DetailRowStartPos],[HeaderRowStartPos],[IncludeColHeader],[InsertNewRowAtRowPos],[Template],[SourceName],[ShowGrandTotals],[RepeatColumnHeaderOnHeaderGroup],[RepeatColumnHeaderOnGroupLevel],[AutoSizeColumn],[MaxRowPerPage],[DisplayReportHeader])VALUES(299,'ApplicantsCountReportbyJobPostChannel','Applicants Count Report by Job Post Channel','\Reports\TalentAcquisition\ApplicantsCountReportbyJobPostChannel.rpt',NULL,NULL,'SELECT 
+[JobPostChannel] = JPC.JobChannel
+,[Supplier] = ISNULL(JPCD.ProviderName,'''')
+,[ApplicantCount] = COUNT(ISNULL(AGI.ApplicantProfileId,0))
+,MR.CompanyId
+,[JobPositionId] = CASE WHEN ISNULL(@JobPositionId,0) = 0 THEN 0 ELSE MR.JobPositionId END 
+,[JobLevelId] = CASE WHEN ISNULL(@JobLevelId,0) = 0 THEN 0 ELSE JP.JobLevelId END 
+,CountPerJobPostChannel.SubTotal
+FROM recruitment.JobPostChannel JPC 
+
+/* Application Generation Information */
+LEFT JOIN recruitment.ApplicationGeneralInformation AGI ON AGI.SourceId = JPC.JobPostChannelId
+/* Job Post Channel */
+LEFT JOIN recruitment.JobPostChannelDetail JPCD ON JPCD.JobPostChannelId = JPC.JobPostChannelId AND JPCD.JobPostChannelDetailId = AGI.Provider  
+/* Manpower Request */
+JOIN recruitment.ManpowerRequest MR ON MR.ManpowerRequestId = AGI.ManpowerRequestId
+/* Job Level */
+JOIN maintenance.JobPosition JP ON JP.JobPositionId = MR.JobPositionId
+
+/* Total Count per JobPostChannel */ 
+OUTER APPLY
+(
+	SELECT 
+	_JPC.JobPostChannelId
+	,[JobPostChannel] = _JPC.JobChannel
+	,[SubTotal] = COUNT(ISNULL(_AGI.ApplicantProfileId,0))
+	,_MR.CompanyId
+	FROM recruitment.JobPostChannel _JPC 
+
+	LEFT JOIN recruitment.ApplicationGeneralInformation _AGI ON _AGI.SourceId = _JPC.JobPostChannelId
+	LEFT JOIN recruitment.JobPostChannelDetail _JPCD ON _JPCD.JobPostChannelId = _JPC.JobPostChannelId AND _JPCD.JobPostChannelDetailId = _AGI.Provider  
+	JOIN recruitment.ManpowerRequest _MR ON _MR.ManpowerRequestId = _AGI.ManpowerRequestId
+	JOIN maintenance.JobPosition _JP ON _JP.JobPositionId = _MR.JobPositionId
+
+	WHERE 
+	(
+		(_MR.RequestDate >= CAST(@StartDate AS DATETIME)
+		AND
+		(CAST(@EndDate AS DATETIME) <= _MR.RequestDate))
+	)
+	AND _MR.JobPositionId = _JP.JobPositionId
+	AND _JP.JobLevelId = _JP.JobLevelId
+	AND _JPC.JobPostChannelId = JPC.JobPostChannelId
+	AND _MR.CompanyId = MR.CompanyId
+
+	GROUP BY 
+	_JPC.JobPostChannelId
+	,_JPC.JobChannel
+	,_MR.CompanyId
+
+) CountPerJobPostChannel
+
+
+WHERE 
+(
+
+	(
+		CAST(ISNULL(@StartDate, ''1/1/1900'') AS DATETIME) <= CAST(''1/1/1900'' AS DATETIME)
+		OR 
+		(MR.RequestDate>= CAST(@StartDate AS DATETIME))
+	)
+	AND 
+	(
+		CAST(ISNULL(@EndDate, ''1/1/1900'') AS DATETIME) <= CAST(''1/1/1900'' AS DATETIME)
+		OR 
+		(MR.RequestDate <= CAST(@EndDate AS DATETIME))
+	)
+	
+
+)
+AND (ISNULL(@JobPositionId,0) = 0 OR MR.JobPositionId = @JobPositionId) 
+AND (ISNULL(@JobLevelId,0) = 0 OR JP.JobLevelId = @JobLevelId)
+AND (ISNULL(@CompanyId,0) = 0 OR MR.CompanyId = @CompanyId)
+
+GROUP BY 
+JPC.JobChannel
+,JPCD.ProviderName
+,MR.CompanyId
+,CASE WHEN ISNULL(@JobPositionId,0) = 0 THEN 0 ELSE MR.JobPositionId END 
+,CASE WHEN ISNULL(@JobLevelId,0) = 0 THEN 0 ELSE JP.JobLevelId END 
+,CountPerJobPostChannel.SubTotal
+
+
+
+
+',NULL,NULL,'QUERY',1,'These report will show which job post channels are the most successful in terms of getting the most # of applicants.','\TalentAcquisition\ApplicantsCountReportbyJobPostChannel.png',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[Report] ([ReportId],[ReportCode],[ReportName],[ReportFile],[ReportExcelFile],[EmploymentStatus],[TableSPUsed],[SPUsed],[NoOrderBy],[QueryType],[InsertToReportTempTable],[Description],[ImageFile],[SortFields],[Event],[ExportFormat],[CreateId],[Createdate],[LastUpdateId],[LastUpdateDate],[UseExportToExcelAPI],[DetailColStartPos],[DetailRowStartPos],[HeaderRowStartPos],[IncludeColHeader],[InsertNewRowAtRowPos],[Template],[SourceName],[ShowGrandTotals],[RepeatColumnHeaderOnHeaderGroup],[RepeatColumnHeaderOnGroupLevel],[AutoSizeColumn],[MaxRowPerPage],[DisplayReportHeader])VALUES(300,'ApplicantsCountReportbySupplier','Applicants Count Report by Supplier','\Reports\TalentAcquisition\ApplicantsCountReportbySupplier.rpt',NULL,NULL,'SELECT 
+[JobPostChannel] = JPC.JobChannel
+,[Supplier] = ISNULL(JPCD.ProviderName,'''')
+,[ApplicantCount] = COUNT(ISNULL(AGI.ApplicantProfileId,0))
+,MR.CompanyId
+,[JobPositionId] = CASE WHEN ISNULL(@JobPositionId,0) = 0 THEN 0 ELSE MR.JobPositionId END 
+,[JobLevelId] = CASE WHEN ISNULL(@JobLevelId,0) = 0 THEN 0 ELSE JP.JobLevelId END 
+,CountPerJobPostChannel.SubTotal
+FROM recruitment.JobPostChannel JPC 
+
+/* Application Generation Information */
+LEFT JOIN recruitment.ApplicationGeneralInformation AGI ON AGI.SourceId = JPC.JobPostChannelId
+/* Job Post Channel */
+LEFT JOIN recruitment.JobPostChannelDetail JPCD ON JPCD.JobPostChannelId = JPC.JobPostChannelId AND JPCD.JobPostChannelDetailId = AGI.Provider  
+/* Manpower Request */
+JOIN recruitment.ManpowerRequest MR ON MR.ManpowerRequestId = AGI.ManpowerRequestId
+/* Job Level */
+JOIN maintenance.JobPosition JP ON JP.JobPositionId = MR.JobPositionId
+
+/* Total Count per JobPostChannel */ 
+OUTER APPLY
+(
+	SELECT 
+	_JPC.JobPostChannelId
+	,[JobPostChannel] = _JPC.JobChannel
+	,[SubTotal] = COUNT(ISNULL(_AGI.ApplicantProfileId,0))
+	,_MR.CompanyId
+	FROM recruitment.JobPostChannel _JPC 
+
+	LEFT JOIN recruitment.ApplicationGeneralInformation _AGI ON _AGI.SourceId = _JPC.JobPostChannelId
+	LEFT JOIN recruitment.JobPostChannelDetail _JPCD ON _JPCD.JobPostChannelId = _JPC.JobPostChannelId AND _JPCD.JobPostChannelDetailId = _AGI.Provider  
+	JOIN recruitment.ManpowerRequest _MR ON _MR.ManpowerRequestId = _AGI.ManpowerRequestId
+	JOIN maintenance.JobPosition _JP ON _JP.JobPositionId = _MR.JobPositionId
+
+	WHERE 
+	(
+			(
+		CAST(ISNULL(@StartDate, ''1/1/1900'') AS DATETIME) <= CAST(''1/1/1900'' AS DATETIME)
+		OR 
+		(_MR.RequestDate>= CAST(@StartDate AS DATETIME))
+	)
+	AND 
+	(
+		CAST(ISNULL(@EndDate, ''1/1/1900'') AS DATETIME) <= CAST(''1/1/1900'' AS DATETIME)
+		OR 
+		(_MR.RequestDate <= CAST(@EndDate AS DATETIME))
+	)
+	)
+	AND _MR.JobPositionId = _JP.JobPositionId
+	AND _JP.JobLevelId = _JP.JobLevelId
+	AND _JPC.JobPostChannelId = JPC.JobPostChannelId
+	AND _MR.CompanyId = MR.CompanyId
+
+	GROUP BY 
+	_JPC.JobPostChannelId
+	,_JPC.JobChannel
+	,_MR.CompanyId
+
+) CountPerJobPostChannel
+
+
+WHERE 
+(
+	(CAST(ISNULL(@StartDate, ''1/1/1900'') AS DATETIME) <= CAST(''1/1/1900'' AS DATETIME)
+		OR 
+		(MR.RequestDate>= CAST(@StartDate AS DATETIME)))
+AND 
+	(
+		CAST(ISNULL(@EndDate, ''1/1/1900'') AS DATETIME) <= CAST(''1/1/1900'' AS DATETIME)
+		OR 
+		(MR.RequestDate <= CAST(@EndDate AS DATETIME))
+	)	
+)
+AND (ISNULL(@JobPositionId,0) = 0 OR MR.JobPositionId = @JobPositionId) 
+AND (ISNULL(@JobLevelId,0) = 0 OR JP.JobLevelId = @JobLevelId)
+AND (ISNULL(@CompanyId,0) = 0 OR MR.CompanyId = @CompanyId)
+
+GROUP BY 
+JPC.JobChannel
+,JPCD.ProviderName
+,MR.CompanyId
+,CASE WHEN ISNULL(@JobPositionId,0) = 0 THEN 0 ELSE MR.JobPositionId END 
+,CASE WHEN ISNULL(@JobLevelId,0) = 0 THEN 0 ELSE JP.JobLevelId END 
+,CountPerJobPostChannel.SubTotal',NULL,NULL,'QUERY',1,'These report will show which suppliers are the most successful in terms of getting the most # of applicants.','\TalentAcquisition\ApplicantsCountReportbySupplier.png',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+SET IDENTITY_INSERT [report].[Report] OFF
+/*end insert data to report.Report*/
+
+/*start insert data to report.ReportData*/
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(299,'Job Post Channel','JobPostChannel','string','','',NULL,1,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(299,'Supplier','Supplier','string','','',NULL,2,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(299,'# Applicants','ApplicantCount','decimal','','',NULL,3,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(299,'SubTotal','SubTotal','decimal','','',NULL,4,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(300,'Supplier','Supplier','string','','',NULL,1,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(300,'Job Post Channel','JobPostChannel','string','','',NULL,2,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(300,'# Applicants','ApplicantCount','decimal','','',NULL,3,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(300,'SubTotal','SubTotal','decimal','','',NULL,4,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+/*end insert data to report.ReportData*/
+
+/*start insert data to report.ReportParameter*/
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('ApplicantsCountReportbyJobPostChannel','@CompanyId','Company','dropdownList','$table:maintenance.Company,CompanyId,Name','',1,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('ApplicantsCountReportbyJobPostChannel','@JobLevelId','Job Level','dropdownList','$table:maintenance.JobLevel,JobLevelId,Code','$table:maintenance.JobPosition WHERE JobLevelId = ,JobPositionId,Name|@JobPositionId,',2,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('ApplicantsCountReportbyJobPostChannel','@JobPositionId','Job Position','dropdownList','$table:maintenance.JobPosition,JobPositionId,Code','',3,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('ApplicantsCountReportbyJobPostChannel','@StartDate,@EndDate','Date Range','daterange','','',4,'','Param1','Stored','>=,<=','date',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('ApplicantsCountReportbySupplier','@CompanyId','Company','dropdownList','$table:maintenance.Company,CompanyId,Name','',1,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('ApplicantsCountReportbySupplier','@JobLevelId','Job Level','dropdownList','$table:maintenance.JobLevel,JobLevelId,Code','$table:maintenance.JobPosition WHERE JobLevelId = ,JobPositionId,Name|@JobPositionId,',2,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('ApplicantsCountReportbySupplier','@JobPositionId','Job Position','dropdownList','$table:maintenance.JobPosition,JobPositionId,Code','',3,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[SaveValue],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('ApplicantsCountReportbySupplier','@StartDate,@EndDate','Date Range','daterange','','',4,'','Param1','Stored','>=,<=','date',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+/*end insert data to report.ReportParameter*/
+
+/*start insert data to report.ReportSubReport*/
+/*end insert data to report.ReportSubReport*/
+
+IF(SELECT COUNT(CompanyId) FROM maintenance.Company WHERE CHARINDEX('IBIDEN',[Name]) > 0) > 0
+		BEGIN
+		UPDATE report.ReportParameter SET [Source] = '$table:maintenance.Unit,UnitId,Code' WHERE LabelName = 'Unit'
+		END
+		
+SET NOCOUNT OFF

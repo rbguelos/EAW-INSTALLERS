@@ -1,0 +1,8 @@
+INSERT INTO maintenance.DOLERate (PropertyName, Rate, EffectiveDate) VALUES ('DoubleHoliday', 3, '06/01/2018')
+INSERT INTO maintenance.DOLERate (PropertyName, Rate, EffectiveDate) VALUES ('DoubleHolidayOT', 3.9, '06/01/2018')
+INSERT INTO maintenance.DOLERate (PropertyName, Rate, EffectiveDate) VALUES ('DoubleHolidayNS', 3.3, '06/01/2018')
+INSERT INTO maintenance.DOLERate (PropertyName, Rate, EffectiveDate) VALUES ('DoubleHolidayNSOT', 4.29, '06/01/2018')
+INSERT INTO maintenance.DOLERate (PropertyName, Rate, EffectiveDate) VALUES ('DoubleHolidayRestday', 3.9, '06/01/2018')
+INSERT INTO maintenance.DOLERate (PropertyName, Rate, EffectiveDate) VALUES ('DoubleHolidayRestdayOT', 5.07, '06/01/2018')
+INSERT INTO maintenance.DOLERate (PropertyName, Rate, EffectiveDate) VALUES ('DoubleHolidayRestdayNS', 4.29, '06/01/2018')
+INSERT INTO maintenance.DOLERate (PropertyName, Rate, EffectiveDate) VALUES ('DoubleHolidayRestdayNSOT', 5.577, '06/01/2018')

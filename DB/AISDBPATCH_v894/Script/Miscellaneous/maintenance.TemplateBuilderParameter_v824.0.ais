@@ -1,0 +1,49 @@
+
+DELETE FROM maintenance.TemplateBuilderField WHERE FieldName in('ViolatorPosition',
+'ViolatorCompanyName',
+'ViolationReportDate',
+'ViolationCloseDate',
+'ViolationNoticeToExplainTemplate',
+'ViolationInitialDecisionDate',
+'ViolationFinalDecisionDate',
+'ViolationFinalDisciplinaryAction')
+
+INSERT INTO maintenance.TemplateBuilderField (FieldCode, FieldName, DisplayText, ModuleCode, FieldType, SourceTable, SourceTableLink, SourceFieldLink, UseAsParameter, [Hidden])
+VALUES
+('ViolationPosition','ViolatorPosition','Violator Position','Employee Relations','string','employeerelation.vwEmployeeViolation','','','0','0')
+
+INSERT INTO maintenance.TemplateBuilderField (FieldCode, FieldName, DisplayText, ModuleCode, FieldType, SourceTable, SourceTableLink, SourceFieldLink, UseAsParameter, [Hidden])
+VALUES
+('ViolationCompany','ViolatorCompanyName','Violator Company','Employee Relations','string','employeerelation.vwEmployeeViolation','','','0','0')
+
+INSERT INTO maintenance.TemplateBuilderField (FieldCode, FieldName, DisplayText, ModuleCode, FieldType, SourceTable, SourceTableLink, SourceFieldLink, UseAsParameter, [Hidden])
+VALUES
+('ViolationReportDate','ViolationReportDate','Report Date','Employee Relations','date','employeerelation.vwEmployeeViolation','','','0','0')
+
+INSERT INTO maintenance.TemplateBuilderField (FieldCode, FieldName, DisplayText, ModuleCode, FieldType, SourceTable, SourceTableLink, SourceFieldLink, UseAsParameter, [Hidden])
+VALUES
+('ViolationCloseDate','ViolationCloseDate','Close Date','Employee Relations','date','employeerelation.vwEmployeeViolation','','','0','0')
+
+INSERT INTO maintenance.TemplateBuilderField (FieldCode, FieldName, DisplayText, ModuleCode, FieldType, SourceTable, SourceTableLink, SourceFieldLink, UseAsParameter, [Hidden])
+VALUES
+('ViolationNoticeToExplainTemplate','ViolationNoticeToExplainTemplate','Notice to explain template','Employee Relations','string','employeerelation.vwEmployeeViolation','','','0','0')
+
+INSERT INTO maintenance.TemplateBuilderField (FieldCode, FieldName, DisplayText, ModuleCode, FieldType, SourceTable, SourceTableLink, SourceFieldLink, UseAsParameter, [Hidden])
+VALUES
+('ViolationInitialDecisionDate','ViolationInitialDecisionDate','Initial Decision Date','Employee Relations','date','employeerelation.vwEmployeeViolation','','','0','0')
+
+INSERT INTO maintenance.TemplateBuilderField (FieldCode, FieldName, DisplayText, ModuleCode, FieldType, SourceTable, SourceTableLink, SourceFieldLink, UseAsParameter, [Hidden])
+VALUES
+('ViolationInitialDecisionDate','ViolationInitialDecisionDate','Initial Decision Date','Employee Relations','date','employeerelation.vwEmployeeViolation','','','0','0')
+
+INSERT INTO maintenance.TemplateBuilderField (FieldCode, FieldName, DisplayText, ModuleCode, FieldType, SourceTable, SourceTableLink, SourceFieldLink, UseAsParameter, [Hidden])
+VALUES
+('ViolationFinalDecisionDate','ViolationFinalDecisionDate','Final Decision Date','Employee Relations','date','employeerelation.vwEmployeeViolation','','','0','0')
+
+INSERT INTO maintenance.TemplateBuilderField (FieldCode, FieldName, DisplayText, ModuleCode, FieldType, SourceTable, SourceTableLink, SourceFieldLink, UseAsParameter, [Hidden])
+VALUES
+('ViolationFinalDisciplinaryAction','ViolationFinalDisciplinaryAction','Disciplinary Action','Employee Relations','string','employeerelation.vwEmployeeViolation','','','0','0')
+
+SELECT FieldCode, FieldName, DisplayText, ModuleCode, FieldType, SourceTable, SourceTableLink, SourceFieldLink, UseAsParameter, [Hidden] FROm maintenance.TemplateBuilderField Where  FieldName IN('ViolatorPosition','ViolatorCompanyName','ViolationReportDate','ViolationCloseDate','ViolationNoticeToExplainTemplate','ViolationInitialDecisionDate',
+'ViolationFinalDecisionDate','ViolationFinalDisciplinaryAction')
+

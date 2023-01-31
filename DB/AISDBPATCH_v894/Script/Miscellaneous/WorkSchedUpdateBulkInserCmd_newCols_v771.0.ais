@@ -1,0 +1,890 @@
+DECLARE @WORKSHEDULEBYSHIFT VARCHAR(MAX)
+,@WORKSHEDULE VARCHAR(MAX)
+SET @WORKSHEDULEBYSHIFT = 'SET NOCOUNT OFF;
+DECLARE @TABLEDESCRIPTION VARCHAR(250),@ValidationLog varchar(max)
+
+
+SELECT @TABLEDESCRIPTION = CASE WHEN ISNULL(T.Description,'''') <> '''' THEN T.Description ELSE T.SourceTableName END FROM fileimport.FileImportCfgHdr T WHERE FileImportCfgHdrId = @FileImportCfgHdrId
+
+/*VALIDATION*/
+SELECT @ValidationLog = (
+SELECT 
+	CASE WHEN NOT ws.WorkScheduleId IS NULL THEN CONCAT(''Row '', t.RowNum_,'' - Source data already exist on Work Schedule'', CHAR(10)) ELSE '''' END
+		+ CASE WHEN t.DetailNo > 1 THEN CONCAT(''Row '', t.RowNum_,'' - Work Schedule was duplicated from the source data.'',CHAR(10),CHAR(9),''Details - Work Date:'',t.[Work Date],''; Employee Number:'',t.[Employee Number], CHAR(10)) ELSE '''' END
+		+ CASE WHEN isnull(t.[Employee Number],'''') = '''' AND CHARINDEX(''is not a valid Employee Number'',[DataValidationRemarks_]) = 0 THEN CONCAT(''Row '', t.RowNum_,'' - Employee Number cannot be blank.'', CHAR(10)) ELSE '''' END
+		+ CASE WHEN isnull(t.[Work Date],'''') <= ''1/1/1900'' AND CHARINDEX(''is not a valid Work Date'',[DataValidationRemarks_]) = 0 THEN CONCAT(''Row '', t.RowNum_,'' - Work Date cannot be blank.'', CHAR(10)) ELSE '''' END
+		+ CASE WHEN isdate(t.[Work Date]) = 0 AND CHARINDEX(''is not a valid Work Date'',[DataValidationRemarks_]) = 0 THEN CONCAT(''Row '', t.RowNum_,'' - '',t.[Work Date],'' is not a valid Work Date.'', CHAR(10)) ELSE '''' END
+		+ CASE WHEN isnull(t.[Shift Code],'''') = '''' THEN CONCAT(''Row '', t.RowNum_,'' - Shift Code cannot be blank.'', CHAR(10)) ELSE '''' END
+		+ CASE WHEN isnull(t.[Shift Code],'''') <> '''' AND s.ShiftId IS NULL  AND CHARINDEX(''is not a valid Shift Code.'',[DataValidationRemarks_]) = 0  THEN CONCAT(''Row '', t.RowNum_,'' - '',t.[Shift Code],'' is not a valid Shift Code.'', CHAR(10)) ELSE '''' END
+		+ CASE WHEN isnull(t.[Employee Number],'''') <> '''' AND ei.ProfileId IS NULL AND CHARINDEX(''is not a valid Employee Number'',[DataValidationRemarks_]) = 0 THEN CONCAT(''Row '', t.RowNum_,'' - '',t.[Employee Number],'' is not a valid Employee Number.'', CHAR(10)) ELSE '''' END
+		+ ISNULL([DataValidationRemarks_],'''')
+  FROM (SELECT DetailNo = ROW_NUMBER() OVER(PARTITION BY [Employee Number], [Work Date] ORDER BY RowNum_),* 
+	FROM @tmpTVP) T
+  LEFT JOIN (SELECT
+		ISNULL([Shift].ShiftId, 0) ShiftId
+	   ,ISNULL([Shift].Code, '''') Code
+	FROM schedule.[Shift] UNION ALL SELECT
+		-2 ShiftId
+	   ,''RD'' Code /*REST DAY SHIFT FOR CROSS TAB USED*/) s on s.Code = t.[Shift Code]
+  LEFT join employee.EmploymentInformation ei on ei.CJI_EmployeeNo = t.[Employee Number]
+  LEFT JOIN schedule.WorkSchedule ws ON ws.WorkDate = t.[Work Date] and ws.ProfileId = ei.ProfileId
+  ORDER BY T.RowId FOR XML PATH(''''), ROOT (''MyString''), TYPE).value(''/MyString[1]'', ''varchar(max)'') 
+
+
+	/* AUDIT TRAIL */
+	DECLARE @LOGID  BIGINT
+	;INSERT INTO [fileimport].[FileImportLog]([Filename],[SourceSheet],[DestinationTable],[ImportCount],[SourceDataCnt],[ImportedKeyIds],[ImportFileId],[ProcessedById],[ProcessedDate]) VALUES(@SourceFileName,@SourceSheet,''[schedule].[WorkSchedule]'',0,0,null,0,999,GETDATE());SET @LOGID = SCOPE_IDENTITY();
+  
+
+/*INSERT/UPDATE METHOD*/
+MERGE INTO [schedule].[WorkSchedule] as TRGT USING(
+SELECT 
+      [WorkDate] = [T].[Work Date]
+      ,[ei].[ProfileId]
+      ,[s].[ShiftId]
+      ,[s].[DaysOfWeek]
+      ,[StartTime] = sch.StartTime
+      ,[EndTime] = sch.EndTime
+      ,[LunchBreakStartTime] = tr.LunchBreakStartTime
+      ,[LunchBreakEndTime] = tr.LunchBreakEndTime
+      ,[Break1StartTime] = tr.Break1StartTime
+      ,[Break1EndTime] = tr.Break1EndTime
+      ,[Break2StartTime] = tr.Break2StartTime
+      ,[Break2EndTime] = tr.Break2EndTime
+      ,[Break3StartTime] = tr.Break3StartTime
+      ,[Break3EndTime] = tr.Break3EndTime
+      ,[WorkingHours] = s.WorkingHours
+      ,[FixedSchedule] = 0
+      ,[FixedStartDate] = ''1/1/1900''
+      ,[FixedEndDate] = ''1/1/1900''
+      ,[OverrideAttendancePolicyRule] = 0
+      ,[FlexiTime] = 0
+      ,[FlexiTimeLimit] = 0
+      ,[EarlyTimeIn] = 0
+      ,[EarlyTimeInLimit] = 0
+      ,[EarlyTimeInOvertime] = 0
+      ,[CreateId] = @UserId
+      ,[CreateDate] = GETDATE()
+      ,[LastUpdateId] = @UserId
+      ,[LastUpdateDate] = GETDATE()
+      ,[DayType] = NULL
+      ,[s].[FlexiBreakTime]
+      ,[s].[LunchDuration]
+      ,[s].[Break1Duration]
+      ,[s].[Break2Duration]
+      ,[s].[Break3Duration]
+	  ,s.[SpecialNSRates]
+  FROM (SELECT DetailNo = ROW_NUMBER() OVER(PARTITION BY [Employee Number], [Work Date] ORDER BY RowId),* FROM @tmpTVP) T
+  INNER JOIN schedule.Shift s on s.Code = t.[Shift Code]
+  INNER join employee.EmploymentInformation ei on ei.CJI_EmployeeNo = t.[Employee Number]
+  	--CROSS APPLY(SELECT [Work Date] = T.[Work Date])s
+	CROSS APPLY (SELECT
+			StartWorkDate =
+			CASE
+				WHEN ISNULL(s.StartTimePreviousDay, 0) = 1 THEN DATEADD(DAY, -1, t.[Work Date])
+				ELSE t.[Work Date]
+			END
+		   ,EndWorkDate =
+			CASE
+				WHEN ISNULL(s.EndTimeNextDay, 0) = 1 THEN DATEADD(DAY, 1, t.[Work Date])
+				ELSE t.[Work Date]
+			END) AS wd
+	CROSS APPLY(SELECT
+	 [StartTime]			=	CAST(CASE WHEN isnull(s.[StartTime],''1/1/1900'')>''1/1/1900'' THEN CONVERT(VARCHAR,t.[Work Date],101)+'' ''+CONVERT(VARCHAR,s.[StartTime],108) ELSE ''1/1/1900'' END AS DATETIME)
+	,[EndTime]				=	CAST(CASE WHEN isnull(s.[EndTime],''1/1/1900'')>''1/1/1900'' THEN CONVERT(VARCHAR,t.[Work Date],101)+'' ''+ CONVERT(VARCHAR,s.[EndTime],108) ELSE ''1/1/1900'' END AS DATETIME)
+	,[LunchBreakStartTime]	= 	CAST(CASE WHEN isnull(s.[LunchBreakStartTime],''1/1/1900'')>''1/1/1900'' THEN CONVERT(VARCHAR,t.[Work Date],101)+'' ''+ CONVERT(VARCHAR,s.[LunchBreakStartTime],108) ELSE ''1/1/1900'' END AS DATETIME)
+	,[LunchBreakEndTime]	=	CAST(CASE WHEN isnull(s.[LunchBreakEndTime],''1/1/1900'')>''1/1/1900'' THEN CONVERT(VARCHAR,t.[Work Date],101)+'' ''+ CONVERT(VARCHAR,s.[LunchBreakEndTime],108) ELSE ''1/1/1900'' END AS DATETIME)
+	,[Break1StartTime]		=	CAST(CASE WHEN isnull(s.[Break1StartTime],''1/1/1900'')>''1/1/1900'' THEN CONVERT(VARCHAR,t.[Work Date],101)+'' ''+ CONVERT(VARCHAR,s.[Break1StartTime],108) ELSE ''1/1/1900'' END AS DATETIME)
+	,[Break1EndTime]		=	CAST(CASE WHEN isnull(s.[Break1EndTime],''1/1/1900'')>''1/1/1900'' THEN CONVERT(VARCHAR,t.[Work Date],101)+'' ''+ CONVERT(VARCHAR,s.[Break1EndTime],108) ELSE ''1/1/1900'' END AS DATETIME)
+	,[Break2StartTime]		=	CAST(CASE WHEN isnull(s.[Break2StartTime],''1/1/1900'')>''1/1/1900'' THEN CONVERT(VARCHAR,t.[Work Date],101)+'' ''+ CONVERT(VARCHAR,s.[Break2StartTime],108) ELSE ''1/1/1900'' END AS DATETIME)
+	,[Break2EndTime]		=	CAST(CASE WHEN isnull(s.[Break2EndTime],''1/1/1900'')>''1/1/1900'' THEN CONVERT(VARCHAR,t.[Work Date],101)+'' ''+ CONVERT(VARCHAR,s.[Break2EndTime],108) ELSE ''1/1/1900'' END AS DATETIME)
+	,[Break3StartTime]		=	CAST(CASE WHEN isnull(s.[Break3StartTime],''1/1/1900'')>''1/1/1900'' THEN CONVERT(VARCHAR,t.[Work Date],101)+'' ''+ CONVERT(VARCHAR,s.[Break3StartTime],108) ELSE ''1/1/1900'' END AS DATETIME)
+	,[Break3EndTime]		=	CAST(CASE WHEN isnull(s.[Break3EndTime],''1/1/1900'')>''1/1/1900'' THEN CONVERT(VARCHAR,t.[Work Date],101)+'' ''+ CONVERT(VARCHAR,s.[Break3EndTime],108) ELSE ''1/1/1900'' END AS DATETIME)
+	)ti/*initial time entry*/
+	CROSS APPLY(
+		SELECT [EndTimeNxtDayAfterStartTime] = CASE WHEN ti.StartTime > ti.EndTime THEN 1 ELSE 0 END
+		,[StartTime]			= 	cast(convert(varchar,wd.StartWorkDate,101) + '' '' + convert(varchar,ti.[StartTime],108) as datetime)
+		,[EndTime]				=	cast(convert(varchar,wd.EndWorkDate,101) + '' '' + convert(varchar,ti.[EndTime],108) as datetime)
+		,AMWorkStart	=	t.[Work Date]
+		,AMWorkEnd		=	cast(convert(varchar,t.[Work Date],101) + '' 11:59:59 am'' as datetime)
+		,PMWorkStart	=	cast(convert(varchar,t.[Work Date],101) + '' 12:00 pm'' as datetime)
+		,PMWorkEnd		=	cast(convert(varchar,t.[Work Date],101) + '' 11:59:59 pm'' as datetime)
+		,[StartTimeShift] = CASE WHEN ti.StartTime < DATEADD(HOUR,12,t.[Work Date]) THEN 0/*AM*/ ELSE 1 END
+		,[EndTimeShift] = CASE WHEN ti.EndTime < DATEADD(HOUR,12,t.[Work Date]) THEN 0/*AM*/ ELSE 1 END
+	)sch
+	/*computed time values based from shift config*/
+	CROSS APPLY(SELECT sch.StartTimeShift,sch.EndTimeShift,sch.EndTimeNxtDayAfterStartTime
+,[LunchBreakStartTime]	= CASE WHEN isnull(s.[LunchBreakStartTime],''1/1/1900'')>''1/1/1900'' THEN cast(CONVERT(VARCHAR,(CASE WHEN sch.StartTimeShift = 0 AND sch.EndTimeShift = 1 AND ti.[LunchBreakStartTime] BETWEEN sch.AMWorkStart AND sch.AMWorkEnd/*morning break*/ THEN wd.StartWorkDate/*wordate for start time*/
+								WHEN sch.StartTimeShift = 1 AND sch.EndTimeShift = 0/*night shift*/ AND ti.[LunchBreakStartTime] BETWEEN sch.AMWorkStart AND sch.AMWorkEnd/*morning break*/ THEN wd.EndWorkDate/*wordate for end time*/
+								WHEN sch.StartTimeShift = 0 AND sch.EndTimeShift = 0/*am shift*/ AND ti.[LunchBreakStartTime] BETWEEN sch.AMWorkStart AND sch.AMWorkEnd/*morning break*/ THEN 
+									CASE WHEN sch.EndTimeNxtDayAfterStartTime = 1 THEN wd.EndWorkDate/*wordate for end time*/ ELSE wd.StartWorkDate END 
+								WHEN sch.StartTimeShift = 1 AND sch.EndTimeShift = 1/*pm shift*/ THEN 
+									CASE WHEN ti.[LunchBreakStartTime] BETWEEN sch.AMWorkStart AND sch.AMWorkEnd/*morning break*/ THEN wd.EndWorkDate
+									ELSE wd.StartWorkDate END
+								ELSE wd.StartWorkDate END),101) + '' '' + CONVERT(VARCHAR,ti.[LunchBreakStartTime],108) as datetime) 
+							ELSE ''1/1/1900'' END
+,[LunchBreakEndTime]	= CASE WHEN isnull(s.[LunchBreakEndTime],''1/1/1900'')>''1/1/1900'' THEN cast(CONVERT(VARCHAR,(CASE WHEN sch.StartTimeShift = 0 AND sch.EndTimeShift = 1 AND ti.[LunchBreakEndTime] BETWEEN sch.AMWorkStart AND sch.AMWorkEnd/*morning break*/ THEN wd.StartWorkDate/*wordate for start time*/
+								WHEN sch.StartTimeShift = 1 AND sch.EndTimeShift = 0/*night shift*/ AND ti.[LunchBreakEndTime] BETWEEN sch.AMWorkStart AND sch.AMWorkEnd/*morning break*/ THEN wd.EndWorkDate/*wordate for end time*/
+								WHEN sch.StartTimeShift = 0 AND sch.EndTimeShift = 0/*am shift*/ AND ti.[LunchBreakEndTime] BETWEEN sch.AMWorkStart AND sch.AMWorkEnd/*morning break*/ THEN 
+									CASE WHEN sch.EndTimeNxtDayAfterStartTime = 1 THEN wd.EndWorkDate/*wordate for end time*/ ELSE wd.StartWorkDate END 
+								WHEN sch.StartTimeShift = 1 AND sch.EndTimeShift = 1/*pm shift*/ THEN 
+									CASE WHEN ti.[LunchBreakEndTime] BETWEEN sch.AMWorkStart AND sch.AMWorkEnd/*morning break*/ THEN wd.EndWorkDate
+									ELSE wd.StartWorkDate END
+								ELSE wd.StartWorkDate END),101) + '' '' + CONVERT(VARCHAR,ti.[LunchBreakEndTime],108) as datetime)
+							 ELSE ''1/1/1900'' END
+,[Break1StartTime]		= CASE WHEN isnull(s.[Break1StartTime],''1/1/1900'')>''1/1/1900'' THEN cast(CONVERT(VARCHAR,(CASE WHEN sch.StartTimeShift = 0 AND sch.EndTimeShift = 1 AND ti.[Break1StartTime] BETWEEN sch.AMWorkStart AND sch.AMWorkEnd/*morning break*/ THEN wd.StartWorkDate/*wordate for start time*/
+								WHEN sch.StartTimeShift = 1 AND sch.EndTimeShift = 0/*night shift*/ AND ti.[Break1StartTime] BETWEEN sch.AMWorkStart AND sch.AMWorkEnd/*morning break*/ THEN wd.EndWorkDate/*wordate for end time*/
+								WHEN sch.StartTimeShift = 0 AND sch.EndTimeShift = 0/*am shift*/ AND ti.[Break1StartTime] BETWEEN sch.AMWorkStart AND sch.AMWorkEnd/*morning break*/ THEN 
+									CASE WHEN sch.EndTimeNxtDayAfterStartTime = 1 THEN wd.EndWorkDate/*wordate for end time*/ ELSE wd.StartWorkDate END 
+								WHEN sch.StartTimeShift = 1 AND sch.EndTimeShift = 1/*pm shift*/ THEN 
+									CASE WHEN ti.[Break1StartTime] BETWEEN sch.AMWorkStart AND sch.AMWorkEnd/*morning break*/ THEN wd.EndWorkDate
+									ELSE wd.StartWorkDate END
+								ELSE wd.StartWorkDate END),101) + '' '' + CONVERT(VARCHAR,ti.[Break1StartTime],108) as datetime)
+							 ELSE ''1/1/1900'' END
+,[Break1EndTime]		= CASE WHEN isnull(s.[Break1EndTime],''1/1/1900'')>''1/1/1900'' THEN cast(CONVERT(VARCHAR,(CASE WHEN sch.StartTimeShift = 0 AND sch.EndTimeShift = 1 AND ti.[Break1EndTime] BETWEEN sch.AMWorkStart AND sch.AMWorkEnd/*morning break*/ THEN wd.StartWorkDate/*wordate for start time*/
+								WHEN sch.StartTimeShift = 1 AND sch.EndTimeShift = 0/*night shift*/ AND ti.[Break1EndTime] BETWEEN sch.AMWorkStart AND sch.AMWorkEnd/*morning break*/ THEN wd.EndWorkDate/*wordate for end time*/
+								WHEN sch.StartTimeShift = 0 AND sch.EndTimeShift = 0/*am shift*/ AND ti.[Break1EndTime] BETWEEN sch.AMWorkStart AND sch.AMWorkEnd/*morning break*/ THEN 
+									CASE WHEN sch.EndTimeNxtDayAfterStartTime = 1 THEN wd.EndWorkDate/*wordate for end time*/ ELSE wd.StartWorkDate END 
+								WHEN sch.StartTimeShift = 1 AND sch.EndTimeShift = 1/*pm shift*/ THEN 
+									CASE WHEN ti.[Break1EndTime] BETWEEN sch.AMWorkStart AND sch.AMWorkEnd/*morning break*/ THEN wd.EndWorkDate
+									ELSE wd.StartWorkDate END
+								ELSE wd.StartWorkDate END),101) + '' '' + CONVERT(VARCHAR,ti.[Break1EndTime],108) as datetime)
+							 ELSE ''1/1/1900'' END
+,[Break2StartTime]		= CASE WHEN isnull(s.[Break2StartTime],''1/1/1900'')>''1/1/1900'' THEN cast(CONVERT(VARCHAR,(CASE WHEN sch.StartTimeShift = 0 AND sch.EndTimeShift = 1 AND ti.[Break2StartTime] BETWEEN sch.AMWorkStart AND sch.AMWorkEnd/*morning break*/ THEN wd.StartWorkDate/*wordate for start time*/
+								WHEN sch.StartTimeShift = 1 AND sch.EndTimeShift = 0/*night shift*/ AND ti.[Break2StartTime] BETWEEN sch.AMWorkStart AND sch.AMWorkEnd/*morning break*/ THEN wd.EndWorkDate/*wordate for end time*/
+								WHEN sch.StartTimeShift = 0 AND sch.EndTimeShift = 0/*am shift*/ AND ti.[Break2StartTime] BETWEEN sch.AMWorkStart AND sch.AMWorkEnd/*morning break*/ THEN 
+									CASE WHEN sch.EndTimeNxtDayAfterStartTime = 1 THEN wd.EndWorkDate/*wordate for end time*/ ELSE wd.StartWorkDate END 
+								WHEN sch.StartTimeShift = 1 AND sch.EndTimeShift = 1/*pm shift*/ THEN 
+									CASE WHEN ti.[Break2StartTime] BETWEEN sch.AMWorkStart AND sch.AMWorkEnd/*morning break*/ THEN wd.EndWorkDate
+									ELSE wd.StartWorkDate END
+								ELSE wd.StartWorkDate END),101) + '' '' + CONVERT(VARCHAR,ti.[Break2StartTime],108) as datetime)
+							 ELSE ''1/1/1900'' END
+,[Break2EndTime]		= CASE WHEN isnull(s.[Break2EndTime],''1/1/1900'')>''1/1/1900'' THEN cast(CONVERT(VARCHAR,(CASE WHEN sch.StartTimeShift = 0 AND sch.EndTimeShift = 1 AND ti.[Break2EndTime] BETWEEN sch.AMWorkStart AND sch.AMWorkEnd/*morning break*/ THEN wd.StartWorkDate/*wordate for start time*/
+								WHEN sch.StartTimeShift = 1 AND sch.EndTimeShift = 0/*night shift*/ AND ti.[Break2EndTime] BETWEEN sch.AMWorkStart AND sch.AMWorkEnd/*morning break*/ THEN wd.EndWorkDate/*wordate for end time*/
+								WHEN sch.StartTimeShift = 0 AND sch.EndTimeShift = 0/*am shift*/ AND ti.[Break2EndTime] BETWEEN sch.AMWorkStart AND sch.AMWorkEnd/*morning break*/ THEN 
+									CASE WHEN sch.EndTimeNxtDayAfterStartTime = 1 THEN wd.EndWorkDate/*wordate for end time*/ ELSE wd.StartWorkDate END 
+								WHEN sch.StartTimeShift = 1 AND sch.EndTimeShift = 1/*pm shift*/ THEN 
+									CASE WHEN ti.[Break2EndTime] BETWEEN sch.AMWorkStart AND sch.AMWorkEnd/*morning break*/ THEN wd.EndWorkDate
+									ELSE wd.StartWorkDate END
+								ELSE wd.StartWorkDate END),101) + '' '' + CONVERT(VARCHAR,ti.[Break2EndTime],108) as datetime)
+							 ELSE ''1/1/1900'' END
+,[Break3StartTime]		= CASE WHEN isnull(s.[Break3StartTime],''1/1/1900'')>''1/1/1900'' THEN cast(CONVERT(VARCHAR,(CASE WHEN sch.StartTimeShift = 0 AND sch.EndTimeShift = 1 AND ti.[Break3StartTime] BETWEEN sch.AMWorkStart AND sch.AMWorkEnd/*morning break*/ THEN wd.StartWorkDate/*wordate for start time*/
+								WHEN sch.StartTimeShift = 1 AND sch.EndTimeShift = 0/*night shift*/ AND ti.[Break3StartTime] BETWEEN sch.AMWorkStart AND sch.AMWorkEnd/*morning break*/ THEN wd.EndWorkDate/*wordate for end time*/
+								WHEN sch.StartTimeShift = 0 AND sch.EndTimeShift = 0/*am shift*/ AND ti.[Break3StartTime] BETWEEN sch.AMWorkStart AND sch.AMWorkEnd/*morning break*/ THEN 
+									CASE WHEN sch.EndTimeNxtDayAfterStartTime = 1 THEN wd.EndWorkDate/*wordate for end time*/ ELSE wd.StartWorkDate END 
+								WHEN sch.StartTimeShift = 1 AND sch.EndTimeShift = 1/*pm shift*/ THEN 
+									CASE WHEN ti.[Break3StartTime] BETWEEN sch.AMWorkStart AND sch.AMWorkEnd/*morning break*/ THEN wd.EndWorkDate
+									ELSE wd.StartWorkDate END
+								ELSE wd.StartWorkDate END),101) + '' '' + CONVERT(VARCHAR,ti.[Break3StartTime],108) as datetime)
+							 ELSE ''1/1/1900'' END
+,[Break3EndTime]		= CASE WHEN isnull(s.[Break3EndTime],''1/1/1900'')>''1/1/1900'' THEN cast(CONVERT(VARCHAR,(CASE WHEN sch.StartTimeShift = 0 AND sch.EndTimeShift = 1 AND ti.[Break3EndTime] BETWEEN sch.AMWorkStart AND sch.AMWorkEnd/*morning break*/ THEN wd.StartWorkDate/*wordate for start time*/
+								WHEN sch.StartTimeShift = 1 AND sch.EndTimeShift = 0/*night shift*/ AND ti.[Break3EndTime] BETWEEN sch.AMWorkStart AND sch.AMWorkEnd/*morning break*/ THEN wd.EndWorkDate/*wordate for end time*/
+								WHEN sch.StartTimeShift = 0 AND sch.EndTimeShift = 0/*am shift*/ AND ti.[Break3EndTime] BETWEEN sch.AMWorkStart AND sch.AMWorkEnd/*morning break*/ THEN 
+									CASE WHEN sch.EndTimeNxtDayAfterStartTime = 1 THEN wd.EndWorkDate/*wordate for end time*/ ELSE wd.StartWorkDate END 
+								WHEN sch.StartTimeShift = 1 AND sch.EndTimeShift = 1/*pm shift*/ THEN 
+									CASE WHEN ti.[Break3EndTime] BETWEEN sch.AMWorkStart AND sch.AMWorkEnd/*morning break*/ THEN wd.EndWorkDate
+									ELSE wd.StartWorkDate END
+								ELSE wd.StartWorkDate END),101) + '' '' + CONVERT(VARCHAR,ti.[Break3EndTime],108) as datetime)
+							 ELSE ''1/1/1900'' END
+	)tr/*computed time values*/
+  WHERE 1=1
+  AND T.DetailNo = 1/*do not include duplicates*/
+  AND ISNULL(T.[DataValidationRemarks_],'''') = ''''
+  AND isnull(T.[Work Date],'''') > ''1/1/1900''
+  AND NOT ei.ProfileId IS NULL
+
+) AS SRC ON SRC.ProfileId = TRGT.ProfileId
+AND SRC.[WorkDate] = TRGT.WorkDate
+AND SRC.ShiftId = TRGT.ShiftId
+/*OVERRIDE EXISTING*/
+WHEN MATCHED THEN UPDATE
+   SET [WorkDate]                     = SRC.WorkDate
+      ,[ProfileId]                    = SRC.ProfileId
+      ,[ShiftId]                      = SRC.ShiftId
+      ,[DaysOfWeek]                   = SRC.DaysOfWeek
+      ,[StartTime]                    = SRC.StartTime
+      ,[EndTime]                      = SRC.EndTime
+      ,[LunchBreakStartTime]          = SRC.LunchBreakStartTime
+      ,[LunchBreakEndTime]            = SRC.LunchBreakEndTime
+      ,[Break1StartTime]              = SRC.Break1StartTime
+      ,[Break1EndTime]                = SRC.Break1EndTime
+      ,[Break2StartTime]              = SRC.Break2StartTime
+      ,[Break2EndTime]                = SRC.Break2EndTime
+      ,[Break3StartTime]              = SRC.Break3StartTime
+      ,[Break3EndTime]                = SRC.Break3EndTime
+      ,[WorkingHours]                 = SRC.WorkingHours
+      ,[FixedSchedule]                = SRC.FixedSchedule
+      ,[FixedStartDate]               = SRC.FixedStartDate
+      ,[FixedEndDate]                 = SRC.FixedEndDate
+      ,[OverrideAttendancePolicyRule] = SRC.OverrideAttendancePolicyRule
+      ,[FlexiTime]                    = SRC.FlexiTime
+      ,[FlexiTimeLimit]               = SRC.FlexiTimeLimit
+      ,[EarlyTimeIn]                  = SRC.EarlyTimeIn
+      ,[EarlyTimeInLimit]             = SRC.EarlyTimeInLimit
+      ,[EarlyTimeInOvertime]          = SRC.EarlyTimeInOvertime
+      ,[DayType]                      = SRC.DayType
+      ,[FlexiBreakTime]               = SRC.FlexiBreakTime
+      ,[LunchDuration]                = SRC.LunchDuration
+      ,[Break1Duration]               = SRC.Break1Duration
+      ,[Break2Duration]               = SRC.Break2Duration
+      ,[Break3Duration]               = SRC.Break3Duration
+      ,[LastUpdateId]                 = SRC.LastUpdateId
+      ,[LastUpdateDate]               = SRC.LastUpdateDate
+	  WHEN NOT MATCHED THEN INSERT /*INSERT NON EXISTING RECORD*/
+([WorkDate],[ProfileId],[ShiftId],[DaysOfWeek],[StartTime],[EndTime],[LunchBreakStartTime],[LunchBreakEndTime],[Break1StartTime],[Break1EndTime],[Break2StartTime],[Break2EndTime],[Break3StartTime],[Break3EndTime],[WorkingHours],[FixedSchedule],[FixedStartDate],[FixedEndDate],[OverrideAttendancePolicyRule],[FlexiTime],[FlexiTimeLimit],[EarlyTimeIn],[EarlyTimeInLimit],[EarlyTimeInOvertime],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate],[DayType],[FlexiBreakTime],[LunchDuration],[Break1Duration],[Break2Duration],[Break3Duration],ForOffsetting,OffsettingExpirationDate,SpecialNSRates)
+VALUES(SRC.[WorkDate],SRC.[ProfileId],SRC.[ShiftId],SRC.[DaysOfWeek],SRC.[StartTime],SRC.[EndTime],SRC.[LunchBreakStartTime],SRC.[LunchBreakEndTime],SRC.[Break1StartTime],SRC.[Break1EndTime],SRC.[Break2StartTime],SRC.[Break2EndTime],SRC.[Break3StartTime],SRC.[Break3EndTime],SRC.[WorkingHours],SRC.[FixedSchedule],SRC.[FixedStartDate],SRC.[FixedEndDate],SRC.[OverrideAttendancePolicyRule],SRC.[FlexiTime],SRC.[FlexiTimeLimit],SRC.[EarlyTimeIn],SRC.[EarlyTimeInLimit],SRC.[EarlyTimeInOvertime],SRC.[CreateId],SRC.[CreateDate],SRC.[LastUpdateId],SRC.[LastUpdateDate],SRC.[DayType],SRC.[FlexiBreakTime],SRC.[LunchDuration],SRC.[Break1Duration],SRC.[Break2Duration],SRC.[Break3Duration],0,''1/1/1900'',SRC.[SpecialNSRates])
+OUTPUT @LOGID,''Inserted'', INSERTED.[WorkScheduleId] INTO fileimport.ImportLogDtl(FileimportLogId,LogStatus,ImportKeyValue);
+DECLARE @INSERTEDROWS INT = @@rowcount;
+
+/*REST DAYS*/
+INSERT INTO [schedule].[RestDay]([ProfileId],[Days],[IsFix],[RestDayDate],[Type],[CreateId],[CreateDate],[SourceId])
+OUTPUT @LOGID,''RestDay'',INSERTED.RestDayId INTO fileimport.ImportLogDtl (FileimportLogId, LogStatus, ImportKeyValue)
+SELECT ei.ProfileId, '''', 0, T.[Work Date], 0, @UserId, GETDATE(), 3 /*imported*/
+FROM (SELECT DetailNo = ROW_NUMBER() OVER(PARTITION BY [Employee Number], [Work Date], [Shift Code], [DataValidationRemarks_] ORDER BY RowId),* FROM @tmpTVP
+WHERE [Shift Code] = ''RD'') T
+  JOIN employee.EmploymentInformation ei on ei.CJI_EmployeeNo = t.[Employee Number]
+  LEFT JOIN schedule.RestDay rd on rd.ProfileId = ei.ProfileId AND rd.RestDayDate = T.[Work Date]
+  WHERE rd.RestDayId IS NULL /*not exists only*/
+
+SELECT ImportedRecord = @INSERTEDROWS, [Log] = @ValidationLog;';
+
+SET @WORKSHEDULE = 'SET NOCOUNT ON;
+DECLARE @LOGDETAIL AS TABLE(ImportLogDtlId bigint primary key);
+BEGIN TRY
+
+SELECT
+	s.[RowId]
+   ,s.[DataValidationRemarks_]
+   ,s.[RowNum_]
+   ,DetailNo = ROW_NUMBER() OVER (PARTITION BY [Employee Number], [Work Date] ORDER BY [Employee Number], [Work Date])
+   ,[ProfileId] = t430.[ProfileId]
+   ,s.[Employee Number]
+   ,[WorkDate] = [Work Date]
+   ,s.[Work Date]
+   ,[ShiftId] = t432.[ShiftId]
+   ,s.[Shift Code]
+   ,[DaysOfWeek] = COALESCE(dow.[DaysOfWeek],s.[Days Of Week],sh.[DaysOfWeek])
+   ,s.[Days Of Week]
+   ,s.[Start Time]
+   ,s.[End Time]
+   ,[OverrideAttendancePolicyRule] = t448.[Value]
+   ,s.[Override Attendance Policy Rule (Yes/No)]
+   ,[FlexiTime] = t449.[Value]
+   ,s.[Flexi Time (Yes/No)]
+   ,[FlexiTimeLimit] = [Flexi Time Limit]
+   ,s.[Flexi Time Limit]
+   ,[EarlyTimeIn] = t451.[Value]
+   ,s.[Early Time In (Yes/No)]
+   ,[EarlyTimeInLimit] = [Early Time In Limit]
+   ,s.[Early Time In Limit]
+   ,[EarlyTimeInOvertime] = t453.[Value]
+   ,s.[Early Time In Overtime (Yes/No)]
+   ,s.[Working Hours]
+   ,[FixedSchedule] = t445.[Value]
+   ,s.[Fixed Schedule (Yes/No)]
+   ,[FixedStartDate] = [Fixed Start Date]
+   ,s.[Fixed Start Date]
+   ,[FixedEndDate] = [Fixed End Date]
+   ,s.[Fixed End Date]
+   ,s.[Lunch Break Start Time]
+   ,s.[Lunch Break End Time]
+   ,s.[Break 1 Start Time]
+   ,s.[Break 1 End Time]
+   ,s.[Break 2 Start Time]
+   ,s.[Break 2 End Time]
+   ,s.[Break 3 Start Time]
+   ,s.[Break 3 End Time]
+   ,[StartTime] = ISNULL(sch.StartTime, s.[Start Time])
+   ,[EndTime] = ISNULL(sch.EndTime, s.[End Time])
+   ,[LunchBreakStartTime] = ISNULL(tr.LunchBreakStartTime, s.[Lunch Break Start Time])
+   ,[LunchBreakEndTime] = ISNULL(tr.LunchBreakEndTime, s.[Lunch Break End Time])
+   ,[Break1StartTime] = ISNULL(tr.Break1StartTime, s.[Break 1 Start Time])
+   ,[Break1EndTime] = ISNULL(tr.Break1EndTime, s.[Break 1 End Time])
+   ,[Break2StartTime] = ISNULL(tr.Break2StartTime, s.[Break 2 Start Time])
+   ,[Break2EndTime] = ISNULL(tr.Break2EndTime, s.[Break 2 End Time])
+   ,[Break3StartTime] = ISNULL(tr.Break3StartTime, s.[Break 3 Start Time])
+   ,[Break3EndTime] = ISNULL(tr.Break3EndTime, s.[Break 3 End Time])
+   ,[WorkingHours] = ISNULL(sh.WorkingHours, s.[Working Hours])
+   ,[sh].[FlexiBreakTime]
+   ,[sh].[LunchDuration]
+   ,[sh].[Break1Duration]
+   ,[sh].[Break2Duration]
+   ,[sh].[Break3Duration] INTO #tmpTVP
+FROM @tmpTVP s
+OUTER APPLY (SELECT TOP 1
+		[ProfileId]
+	FROM employee.EmploymentInformation
+	WHERE 1 = 1
+	AND REPLACE(CAST(CJI_EmployeeNo AS VARCHAR), '' '', '''') = REPLACE(CAST(s.[Employee Number] AS VARCHAR), '' '', '''')) AS T430
+OUTER APPLY (SELECT TOP 1
+		[ShiftId]
+	FROM (SELECT
+			COALESCE([Shift].ShiftId, 0) ShiftId
+		   ,COALESCE([Shift].Code, '''') Code
+		FROM schedule.[Shift] UNION ALL SELECT
+			-1 ShiftId
+		   ,''Others'' Code) Shift
+	WHERE 1 = 1
+	AND REPLACE(CAST(Code AS VARCHAR), '' '', '''') = REPLACE(CAST(s.[Shift Code] AS VARCHAR), '' '', '''')) AS T432
+OUTER APPLY (SELECT TOP 1
+		[Value]
+	FROM maintenance.EnumValues
+	WHERE 1 = 1
+	AND SourceName = ''YesNo''
+	AND REPLACE(CAST(DisplayText AS VARCHAR), '' '', '''') = REPLACE(CAST(s.[Override Attendance Policy Rule (Yes/No)] AS VARCHAR), '' '', '''')) AS T448
+OUTER APPLY (SELECT TOP 1
+		[Value]
+	FROM maintenance.EnumValues
+	WHERE 1 = 1
+	AND SourceName = ''YesNo''
+	AND REPLACE(CAST(DisplayText AS VARCHAR), '' '', '''') = REPLACE(CAST(s.[Flexi Time (Yes/No)] AS VARCHAR), '' '', '''')) AS T449
+OUTER APPLY (SELECT TOP 1
+		[Value]
+	FROM maintenance.EnumValues
+	WHERE 1 = 1
+	AND SourceName = ''YesNo''
+	AND REPLACE(CAST(DisplayText AS VARCHAR), '' '', '''') = REPLACE(CAST(s.[Early Time In (Yes/No)] AS VARCHAR), '' '', '''')) AS T451
+OUTER APPLY (SELECT TOP 1
+		[Value]
+	FROM maintenance.EnumValues
+	WHERE 1 = 1
+	AND SourceName = ''YesNo''
+	AND REPLACE(CAST(DisplayText AS VARCHAR), '' '', '''') = REPLACE(CAST(s.[Early Time In Overtime (Yes/No)] AS VARCHAR), '' '', '''')) AS T453
+OUTER APPLY (SELECT TOP 1
+		[Value]
+	FROM maintenance.EnumValues
+	WHERE 1 = 1
+	AND SourceName = ''YesNo''
+	AND REPLACE(CAST(DisplayText AS VARCHAR), '' '', '''') = REPLACE(CAST(s.[Fixed Schedule (Yes/No)] AS VARCHAR), '' '', '''')) AS T445
+OUTER APPLY (SELECT TOP 1
+		*
+	FROM schedule.[Shift]
+	WHERE ShiftId = [T432].[ShiftId]) sh
+/*calculate schedule based on shift config*/
+CROSS APPLY (SELECT
+		StartWorkDate =
+		CASE
+			WHEN ISNULL(sh.StartTimePreviousDay, 0) = 1 THEN DATEADD(DAY, -1, s.[Work Date])
+			ELSE s.[Work Date]
+		END
+	   ,EndWorkDate =
+		CASE
+			WHEN ISNULL(sh.EndTimeNextDay, 0) = 1 THEN DATEADD(DAY, 1, s.[Work Date])
+			ELSE s.[Work Date]
+		END) AS wd
+CROSS APPLY(
+SELECT a.[Days Of Week],[DaysOfWeek] = STUFF(( ISNULL(CASE WHEN CHARINDEX (a.[Days Of Week],'',sun,'') > 0 THEN '',1'' ELSE '''' END,'''')
+	+ ISNULL(CASE WHEN CHARINDEX (''mon,'',a.[Days Of Week]) > 0 THEN '',2'' END,'''')
+	+ ISNULL(CASE WHEN CHARINDEX (''tue,'',a.[Days Of Week]) > 0 THEN '',3'' END,'''')
+	+ ISNULL(CASE WHEN CHARINDEX (''wed,'',a.[Days Of Week]) > 0 THEN '',4'' END,'''')
+	+ ISNULL(CASE WHEN CHARINDEX (''thu,'',a.[Days Of Week]) > 0 THEN '',5'' END,'''')
+	+ ISNULL(CASE WHEN CHARINDEX (''fri,'',a.[Days Of Week]) > 0 THEN '',6'' END,'''')
+	+ ISNULL(CASE WHEN CHARINDEX (''sat,'',a.[Days Of Week]) > 0 THEN '',7'' END,'''')
+	+ ISNULL(CASE WHEN CHARINDEX (''sunday,'',a.[Days Of Week]) > 0 THEN '',1'' ELSE '''' END,'''')
+	+ ISNULL(CASE WHEN CHARINDEX (''monday,'',a.[Days Of Week]) > 0 THEN '',2'' END,'''')
+	+ ISNULL(CASE WHEN CHARINDEX (''tuesday,'',a.[Days Of Week]) > 0 THEN '',3'' END,'''')
+	+ ISNULL(CASE WHEN CHARINDEX (''wednesday,'',a.[Days Of Week]) > 0 THEN '',4'' END,'''')
+	+ ISNULL(CASE WHEN CHARINDEX (''thursday,'',a.[Days Of Week]) > 0 THEN '',5'' END,'''')
+	+ ISNULL(CASE WHEN CHARINDEX (''friday,'',a.[Days Of Week]) > 0 THEN '',6'' END,'''')
+	+ ISNULL(CASE WHEN CHARINDEX (''saturday,'',a.[Days Of Week]) > 0 THEN '',7'' END,'''')),1,1,'''')
+FROM (SELECT [Days Of Week] = CONCAT(lower(replace(s.[Days Of Week],'' '','''')),'',''))a
+)dow
+CROSS APPLY(
+	SELECT 
+   [StartTime]				= case when s.[Start Time] > ''1/1/1900'' then s.[Start Time] END
+   ,[EndTime]				= case when s.[End Time] > ''1/1/1900'' then s.[End Time] END
+   ,[LunchBreakStartTime]	= case when s.[Lunch Break Start Time] > ''1/1/1900'' then s.[Lunch Break Start Time] END
+   ,[LunchBreakEndTime]		= case when s.[Lunch Break End Time] > ''1/1/1900'' then s.[Lunch Break End Time] END
+   ,[Break1StartTime]		= case when s.[Break 1 Start Time] > ''1/1/1900'' then s.[Break 1 Start Time] END
+   ,[Break1EndTime]			= case when s.[Break 1 End Time] > ''1/1/1900'' then s.[Break 1 End Time] END
+   ,[Break2StartTime]		= case when s.[Break 2 Start Time] > ''1/1/1900'' then s.[Break 2 Start Time] END
+   ,[Break2EndTime]			= case when s.[Break 2 End Time] > ''1/1/1900'' then s.[Break 2 End Time] END
+   ,[Break3StartTime]		= case when s.[Break 3 Start Time] > ''1/1/1900'' then s.[Break 3 Start Time] END
+   ,[Break3EndTime]			= case when s.[Break 3 End Time] > ''1/1/1900'' then s.[Break 3 End Time] END
+)ac /*actual values*/
+CROSS APPLY (SELECT
+		[StartTime] = CAST(CASE
+			WHEN COALESCE(ac.[StartTime], sh.[StartTime], ''1/1/1900'') > ''1/1/1900'' THEN CONVERT(VARCHAR, s.[Work Date], 101) + '' '' + CONVERT(VARCHAR, ISNULL(ac.[StartTime], sh.[StartTime]), 108)
+			ELSE ''1/1/1900''
+		END AS DATETIME)
+	   ,[EndTime] = CAST(CASE
+			WHEN coalesce(ac.[EndTime], sh.[EndTime], ''1/1/1900'') > ''1/1/1900'' THEN CONVERT(VARCHAR, s.[Work Date], 101) + '' '' + CONVERT(VARCHAR, ISNULL(ac.[EndTime], sh.[EndTime]), 108)
+			ELSE ''1/1/1900''
+		END AS DATETIME)
+	   ,[LunchBreakStartTime] = CAST(CASE
+			WHEN coalesce(ac.[LunchBreakStartTime], sh.[LunchBreakStartTime], ''1/1/1900'') > ''1/1/1900'' THEN CONVERT(VARCHAR, s.[Work Date], 101) + '' '' + CONVERT(VARCHAR, ISNULL(ac.[LunchBreakStartTime], sh.[LunchBreakStartTime]), 108)
+			ELSE ''1/1/1900''
+		END AS DATETIME)
+	   ,[LunchBreakEndTime] = CAST(CASE
+			WHEN coalesce(ac.[LunchBreakEndTime], sh.[LunchBreakEndTime], ''1/1/1900'') > ''1/1/1900'' THEN CONVERT(VARCHAR, s.[Work Date], 101) + '' '' + CONVERT(VARCHAR, ISNULL(ac.[LunchBreakEndTime], sh.[LunchBreakEndTime]), 108)
+			ELSE ''1/1/1900''
+		END AS DATETIME)
+	   ,[Break1StartTime] = CAST(CASE
+			WHEN coalesce(ac.[Break1StartTime], sh.[Break1StartTime], ''1/1/1900'') > ''1/1/1900'' THEN CONVERT(VARCHAR, s.[Work Date], 101) + '' '' + CONVERT(VARCHAR, ISNULL(ac.[Break1StartTime], sh.[Break1StartTime]), 108)
+			ELSE ''1/1/1900''
+		END AS DATETIME)
+	   ,[Break1EndTime] = CAST(CASE
+			WHEN coalesce(ac.[Break1EndTime], sh.[Break1EndTime], ''1/1/1900'') > ''1/1/1900'' THEN CONVERT(VARCHAR, s.[Work Date], 101) + '' '' + CONVERT(VARCHAR, ISNULL(ac.[Break1EndTime], sh.[Break1EndTime]), 108)
+			ELSE ''1/1/1900''
+		END AS DATETIME)
+	   ,[Break2StartTime] = CAST(CASE
+			WHEN coalesce(ac.[Break2StartTime], sh.[Break2StartTime], ''1/1/1900'') > ''1/1/1900'' THEN CONVERT(VARCHAR, s.[Work Date], 101) + '' '' + CONVERT(VARCHAR, ISNULL(ac.[Break2StartTime], sh.[Break2StartTime]), 108)
+			ELSE ''1/1/1900''
+		END AS DATETIME)
+	   ,[Break2EndTime] = CAST(CASE
+			WHEN coalesce(ac.[Break2EndTime], sh.[Break2EndTime], ''1/1/1900'') > ''1/1/1900'' THEN CONVERT(VARCHAR, s.[Work Date], 101) + '' '' + CONVERT(VARCHAR, ISNULL(ac.[Break2EndTime], sh.[Break2EndTime]), 108)
+			ELSE ''1/1/1900''
+		END AS DATETIME)
+	   ,[Break3StartTime] = CAST(CASE
+			WHEN coalesce(ac.[Break3StartTime], sh.[Break3StartTime], ''1/1/1900'') > ''1/1/1900'' THEN CONVERT(VARCHAR, s.[Work Date], 101) + '' '' + CONVERT(VARCHAR, ISNULL(ac.[Break3StartTime], sh.[Break3StartTime]), 108)
+			ELSE ''1/1/1900''
+		END AS DATETIME)
+	   ,[Break3EndTime] = CAST(CASE
+			WHEN coalesce(ac.[Break3EndTime], sh.[Break3EndTime], ''1/1/1900'') > ''1/1/1900'' THEN CONVERT(VARCHAR, s.[Work Date], 101) + '' '' + CONVERT(VARCHAR, ISNULL(ac.[Break3EndTime], sh.[Break3EndTime]), 108)
+			ELSE ''1/1/1900''
+		END AS DATETIME)) ti/*initial time entry*/
+CROSS APPLY (SELECT
+		[EndTimeNxtDayAfterStartTime] =
+		CASE
+			WHEN ti.StartTime > ti.EndTime THEN 1
+			ELSE 0
+		END
+	   ,[StartTime] = CAST(CONVERT(VARCHAR, wd.StartWorkDate, 101) + '' '' + CONVERT(VARCHAR, ti.[StartTime], 108) AS DATETIME)
+	   ,[EndTime] = CAST(CONVERT(VARCHAR, wd.EndWorkDate, 101) + '' '' + CONVERT(VARCHAR, ti.[EndTime], 108) AS DATETIME)
+	   ,AMWorkStart = s.[Work Date]
+	   ,AMWorkEnd = CAST(CONVERT(VARCHAR, s.[Work Date], 101) + '' 11:59:59 am'' AS DATETIME)
+	   ,PMWorkStart = CAST(CONVERT(VARCHAR, s.[Work Date], 101) + '' 12:00 pm'' AS DATETIME)
+	   ,PMWorkEnd = CAST(CONVERT(VARCHAR, s.[Work Date], 101) + '' 11:59:59 pm'' AS DATETIME)
+	   ,[StartTimeShift] =
+		CASE
+			WHEN ti.StartTime < DATEADD(HOUR, 12, s.[Work Date]) THEN 0/*AM*/
+			ELSE 1
+		END
+	   ,[EndTimeShift] =
+		CASE
+			WHEN ti.EndTime < DATEADD(HOUR, 12, s.[Work Date]) THEN 0/*AM*/
+			ELSE 1
+		END) sch
+/*computed time values based from shift config*/
+CROSS APPLY (SELECT
+		sch.StartTimeShift
+	   ,sch.EndTimeShift
+	   ,sch.EndTimeNxtDayAfterStartTime
+	   ,[LunchBreakStartTime] =
+		CASE
+			WHEN ISNULL(sh.[LunchBreakStartTime], ''1/1/1900'') > ''1/1/1900'' THEN CAST(CONVERT(VARCHAR, (CASE
+					WHEN sch.StartTimeShift = 0 AND
+						sch.EndTimeShift = 1 AND
+						ti.[LunchBreakStartTime] BETWEEN sch.AMWorkStart AND sch.AMWorkEnd/*morning break*/ THEN wd.StartWorkDate/*wordate for start time*/
+					WHEN sch.StartTimeShift = 1 AND
+						sch.EndTimeShift = 0/*night shift*/ AND ti.[LunchBreakStartTime] BETWEEN sch.AMWorkStart AND sch.AMWorkEnd/*morning break*/ THEN wd.EndWorkDate/*wordate for end time*/
+					WHEN sch.StartTimeShift = 0 AND
+						sch.EndTimeShift = 0/*am shift*/ AND ti.[LunchBreakStartTime] BETWEEN sch.AMWorkStart AND sch.AMWorkEnd/*morning break*/ THEN CASE
+							WHEN sch.EndTimeNxtDayAfterStartTime = 1 THEN wd.EndWorkDate/*wordate for end time*/
+							ELSE wd.StartWorkDate
+						END
+					WHEN sch.StartTimeShift = 1 AND
+						sch.EndTimeShift = 1/*pm shift*/ THEN CASE
+							WHEN ti.[LunchBreakStartTime] BETWEEN sch.AMWorkStart AND sch.AMWorkEnd/*morning break*/ THEN wd.EndWorkDate
+							ELSE wd.StartWorkDate
+						END
+					ELSE wd.StartWorkDate
+				END), 101) + '' '' + CONVERT(VARCHAR, ti.[LunchBreakStartTime], 108) AS DATETIME)
+			ELSE ''1/1/1900''
+		END
+	   ,[LunchBreakEndTime] =
+		CASE
+			WHEN ISNULL(sh.[LunchBreakEndTime], ''1/1/1900'') > ''1/1/1900'' THEN CAST(CONVERT(VARCHAR, (CASE
+					WHEN sch.StartTimeShift = 0 AND
+						sch.EndTimeShift = 1 AND
+						ti.[LunchBreakEndTime] BETWEEN sch.AMWorkStart AND sch.AMWorkEnd/*morning break*/ THEN wd.StartWorkDate/*wordate for start time*/
+					WHEN sch.StartTimeShift = 1 AND
+						sch.EndTimeShift = 0/*night shift*/ AND ti.[LunchBreakEndTime] BETWEEN sch.AMWorkStart AND sch.AMWorkEnd/*morning break*/ THEN wd.EndWorkDate/*wordate for end time*/
+					WHEN sch.StartTimeShift = 0 AND
+						sch.EndTimeShift = 0/*am shift*/ AND ti.[LunchBreakEndTime] BETWEEN sch.AMWorkStart AND sch.AMWorkEnd/*morning break*/ THEN CASE
+							WHEN sch.EndTimeNxtDayAfterStartTime = 1 THEN wd.EndWorkDate/*wordate for end time*/
+							ELSE wd.StartWorkDate
+						END
+					WHEN sch.StartTimeShift = 1 AND
+						sch.EndTimeShift = 1/*pm shift*/ THEN CASE
+							WHEN ti.[LunchBreakEndTime] BETWEEN sch.AMWorkStart AND sch.AMWorkEnd/*morning break*/ THEN wd.EndWorkDate
+							ELSE wd.StartWorkDate
+						END
+					ELSE wd.StartWorkDate
+				END), 101) + '' '' + CONVERT(VARCHAR, ti.[LunchBreakEndTime], 108) AS DATETIME)
+			ELSE ''1/1/1900''
+		END
+	   ,[Break1StartTime] =
+		CASE
+			WHEN ISNULL(sh.[Break1StartTime], ''1/1/1900'') > ''1/1/1900'' THEN CAST(CONVERT(VARCHAR, (CASE
+					WHEN sch.StartTimeShift = 0 AND
+						sch.EndTimeShift = 1 AND
+						ti.[Break1StartTime] BETWEEN sch.AMWorkStart AND sch.AMWorkEnd/*morning break*/ THEN wd.StartWorkDate/*wordate for start time*/
+					WHEN sch.StartTimeShift = 1 AND
+						sch.EndTimeShift = 0/*night shift*/ AND ti.[Break1StartTime] BETWEEN sch.AMWorkStart AND sch.AMWorkEnd/*morning break*/ THEN wd.EndWorkDate/*wordate for end time*/
+					WHEN sch.StartTimeShift = 0 AND
+						sch.EndTimeShift = 0/*am shift*/ AND ti.[Break1StartTime] BETWEEN sch.AMWorkStart AND sch.AMWorkEnd/*morning break*/ THEN CASE
+							WHEN sch.EndTimeNxtDayAfterStartTime = 1 THEN wd.EndWorkDate/*wordate for end time*/
+							ELSE wd.StartWorkDate
+						END
+					WHEN sch.StartTimeShift = 1 AND
+						sch.EndTimeShift = 1/*pm shift*/ THEN CASE
+							WHEN ti.[Break1StartTime] BETWEEN sch.AMWorkStart AND sch.AMWorkEnd/*morning break*/ THEN wd.EndWorkDate
+							ELSE wd.StartWorkDate
+						END
+					ELSE wd.StartWorkDate
+				END), 101) + '' '' + CONVERT(VARCHAR, ti.[Break1StartTime], 108) AS DATETIME)
+			ELSE ''1/1/1900''
+		END
+	   ,[Break1EndTime] =
+		CASE
+			WHEN ISNULL(sh.[Break1EndTime], ''1/1/1900'') > ''1/1/1900'' THEN CAST(CONVERT(VARCHAR, (CASE
+					WHEN sch.StartTimeShift = 0 AND
+						sch.EndTimeShift = 1 AND
+						ti.[Break1EndTime] BETWEEN sch.AMWorkStart AND sch.AMWorkEnd/*morning break*/ THEN wd.StartWorkDate/*wordate for start time*/
+					WHEN sch.StartTimeShift = 1 AND
+						sch.EndTimeShift = 0/*night shift*/ AND ti.[Break1EndTime] BETWEEN sch.AMWorkStart AND sch.AMWorkEnd/*morning break*/ THEN wd.EndWorkDate/*wordate for end time*/
+					WHEN sch.StartTimeShift = 0 AND
+						sch.EndTimeShift = 0/*am shift*/ AND ti.[Break1EndTime] BETWEEN sch.AMWorkStart AND sch.AMWorkEnd/*morning break*/ THEN CASE
+							WHEN sch.EndTimeNxtDayAfterStartTime = 1 THEN wd.EndWorkDate/*wordate for end time*/
+							ELSE wd.StartWorkDate
+						END
+					WHEN sch.StartTimeShift = 1 AND
+						sch.EndTimeShift = 1/*pm shift*/ THEN CASE
+							WHEN ti.[Break1EndTime] BETWEEN sch.AMWorkStart AND sch.AMWorkEnd/*morning break*/ THEN wd.EndWorkDate
+							ELSE wd.StartWorkDate
+						END
+					ELSE wd.StartWorkDate
+				END), 101) + '' '' + CONVERT(VARCHAR, ti.[Break1EndTime], 108) AS DATETIME)
+			ELSE ''1/1/1900''
+		END
+	   ,[Break2StartTime] =
+		CASE
+			WHEN ISNULL(sh.[Break2StartTime], ''1/1/1900'') > ''1/1/1900'' THEN CAST(CONVERT(VARCHAR, (CASE
+					WHEN sch.StartTimeShift = 0 AND
+						sch.EndTimeShift = 1 AND
+						ti.[Break2StartTime] BETWEEN sch.AMWorkStart AND sch.AMWorkEnd/*morning break*/ THEN wd.StartWorkDate/*wordate for start time*/
+					WHEN sch.StartTimeShift = 1 AND
+						sch.EndTimeShift = 0/*night shift*/ AND ti.[Break2StartTime] BETWEEN sch.AMWorkStart AND sch.AMWorkEnd/*morning break*/ THEN wd.EndWorkDate/*wordate for end time*/
+					WHEN sch.StartTimeShift = 0 AND
+						sch.EndTimeShift = 0/*am shift*/ AND ti.[Break2StartTime] BETWEEN sch.AMWorkStart AND sch.AMWorkEnd/*morning break*/ THEN CASE
+							WHEN sch.EndTimeNxtDayAfterStartTime = 1 THEN wd.EndWorkDate/*wordate for end time*/
+							ELSE wd.StartWorkDate
+						END
+					WHEN sch.StartTimeShift = 1 AND
+						sch.EndTimeShift = 1/*pm shift*/ THEN CASE
+							WHEN ti.[Break2StartTime] BETWEEN sch.AMWorkStart AND sch.AMWorkEnd/*morning break*/ THEN wd.EndWorkDate
+							ELSE wd.StartWorkDate
+						END
+					ELSE wd.StartWorkDate
+				END), 101) + '' '' + CONVERT(VARCHAR, ti.[Break2StartTime], 108) AS DATETIME)
+			ELSE ''1/1/1900''
+		END
+	   ,[Break2EndTime] =
+		CASE
+			WHEN ISNULL(sh.[Break2EndTime], ''1/1/1900'') > ''1/1/1900'' THEN CAST(CONVERT(VARCHAR, (CASE
+					WHEN sch.StartTimeShift = 0 AND
+						sch.EndTimeShift = 1 AND
+						ti.[Break2EndTime] BETWEEN sch.AMWorkStart AND sch.AMWorkEnd/*morning break*/ THEN wd.StartWorkDate/*wordate for start time*/
+					WHEN sch.StartTimeShift = 1 AND
+						sch.EndTimeShift = 0/*night shift*/ AND ti.[Break2EndTime] BETWEEN sch.AMWorkStart AND sch.AMWorkEnd/*morning break*/ THEN wd.EndWorkDate/*wordate for end time*/
+					WHEN sch.StartTimeShift = 0 AND
+						sch.EndTimeShift = 0/*am shift*/ AND ti.[Break2EndTime] BETWEEN sch.AMWorkStart AND sch.AMWorkEnd/*morning break*/ THEN CASE
+							WHEN sch.EndTimeNxtDayAfterStartTime = 1 THEN wd.EndWorkDate/*wordate for end time*/
+							ELSE wd.StartWorkDate
+						END
+					WHEN sch.StartTimeShift = 1 AND
+						sch.EndTimeShift = 1/*pm shift*/ THEN CASE
+							WHEN ti.[Break2EndTime] BETWEEN sch.AMWorkStart AND sch.AMWorkEnd/*morning break*/ THEN wd.EndWorkDate
+							ELSE wd.StartWorkDate
+						END
+					ELSE wd.StartWorkDate
+				END), 101) + '' '' + CONVERT(VARCHAR, ti.[Break2EndTime], 108) AS DATETIME)
+			ELSE ''1/1/1900''
+		END
+	   ,[Break3StartTime] =
+		CASE
+			WHEN ISNULL(sh.[Break3StartTime], ''1/1/1900'') > ''1/1/1900'' THEN CAST(CONVERT(VARCHAR, (CASE
+					WHEN sch.StartTimeShift = 0 AND
+						sch.EndTimeShift = 1 AND
+						ti.[Break3StartTime] BETWEEN sch.AMWorkStart AND sch.AMWorkEnd/*morning break*/ THEN wd.StartWorkDate/*wordate for start time*/
+					WHEN sch.StartTimeShift = 1 AND
+						sch.EndTimeShift = 0/*night shift*/ AND ti.[Break3StartTime] BETWEEN sch.AMWorkStart AND sch.AMWorkEnd/*morning break*/ THEN wd.EndWorkDate/*wordate for end time*/
+					WHEN sch.StartTimeShift = 0 AND
+						sch.EndTimeShift = 0/*am shift*/ AND ti.[Break3StartTime] BETWEEN sch.AMWorkStart AND sch.AMWorkEnd/*morning break*/ THEN CASE
+							WHEN sch.EndTimeNxtDayAfterStartTime = 1 THEN wd.EndWorkDate/*wordate for end time*/
+							ELSE wd.StartWorkDate
+						END
+					WHEN sch.StartTimeShift = 1 AND
+						sch.EndTimeShift = 1/*pm shift*/ THEN CASE
+							WHEN ti.[Break3StartTime] BETWEEN sch.AMWorkStart AND sch.AMWorkEnd/*morning break*/ THEN wd.EndWorkDate
+							ELSE wd.StartWorkDate
+						END
+					ELSE wd.StartWorkDate
+				END), 101) + '' '' + CONVERT(VARCHAR, ti.[Break3StartTime], 108) AS DATETIME)
+			ELSE ''1/1/1900''
+		END
+	   ,[Break3EndTime] =
+		CASE
+			WHEN ISNULL(sh.[Break3EndTime], ''1/1/1900'') > ''1/1/1900'' THEN CAST(CONVERT(VARCHAR, (CASE
+					WHEN sch.StartTimeShift = 0 AND
+						sch.EndTimeShift = 1 AND
+						ti.[Break3EndTime] BETWEEN sch.AMWorkStart AND sch.AMWorkEnd/*morning break*/ THEN wd.StartWorkDate/*wordate for start time*/
+					WHEN sch.StartTimeShift = 1 AND
+						sch.EndTimeShift = 0/*night shift*/ AND ti.[Break3EndTime] BETWEEN sch.AMWorkStart AND sch.AMWorkEnd/*morning break*/ THEN wd.EndWorkDate/*wordate for end time*/
+					WHEN sch.StartTimeShift = 0 AND
+						sch.EndTimeShift = 0/*am shift*/ AND ti.[Break3EndTime] BETWEEN sch.AMWorkStart AND sch.AMWorkEnd/*morning break*/ THEN CASE
+							WHEN sch.EndTimeNxtDayAfterStartTime = 1 THEN wd.EndWorkDate/*wordate for end time*/
+							ELSE wd.StartWorkDate
+						END
+					WHEN sch.StartTimeShift = 1 AND
+						sch.EndTimeShift = 1/*pm shift*/ THEN CASE
+							WHEN ti.[Break3EndTime] BETWEEN sch.AMWorkStart AND sch.AMWorkEnd/*morning break*/ THEN wd.EndWorkDate
+							ELSE wd.StartWorkDate
+						END
+					ELSE wd.StartWorkDate
+				END), 101) + '' '' + CONVERT(VARCHAR, ti.[Break3EndTime], 108) AS DATETIME)
+			ELSE ''1/1/1900''
+		END) tr/*computed time values*/;
+
+;
+ALTER TABLE #tmpTVP ADD CONSTRAINT pk_tmpTVPRowID PRIMARY KEY (RowId)
+
+DECLARE @ValidationLog VARCHAR(MAX) = '''';
+;
+UPDATE #tmpTVP
+SET [DataValidationRemarks_] = T.[DataValidationRemarks_]
+FROM (SELECT
+		[RowId]
+	   ,[DataValidationRemarks_] = ''''
+		+
+		CASE
+			WHEN NOT d.[ProfileId] IS NULL THEN CONCAT(''"Employee Work Schedule"'', '' on row '', s.[RowNum_], '' already exist.'', CHAR(10))
+			ELSE ''''
+		END
+		+
+		CASE
+			WHEN s.DetailNo > 1 THEN CONCAT(''"Employee Work Schedule"'', '' on row '', s.[RowNum_], '' was duplicated from the source data.'', CHAR(10))
+			ELSE ''''
+		END
+		/*+
+		CASE
+			WHEN s.[ProfileId] IS NULL AND
+				ISNULL(s.[Employee Number], '''') <> '''' THEN CONCAT(''The '', ''Employee Number:'', ''"'', s.[Employee Number], ''"'', '' on row '', s.[RowNum_], '' is not valid or do not exist on source data '', ''EmploymentInformation.'', CHAR(10))
+			ELSE ''''
+		END
+		+
+		CASE
+			WHEN s.[ShiftId] IS NULL AND
+				ISNULL(s.[Shift Code], ''Others'') <> ''Others'' THEN CONCAT(''The '', ''Shift Code:'', ''"'', s.[Shift Code], ''"'', '' on row '', s.[RowNum_], '' is not valid or do not exist on source data '', ''Shift Schedule.'', CHAR(10))
+			ELSE ''''
+		END*/
+		+
+		CASE
+			WHEN s.[FixedSchedule] IS NULL AND
+				ISNULL(s.[Fixed Schedule (Yes/No)], '''') <> '''' THEN CONCAT(''The '', ''Fixed Schedule (Yes/No):'', ''"'', s.[Fixed Schedule (Yes/No)], ''"'', '' on row '', s.[RowNum_], '' is not valid or do not exist on source data '', ''.'', CHAR(10))
+			ELSE ''''
+		END
+		+
+		CASE
+			WHEN s.[OverrideAttendancePolicyRule] IS NULL AND
+				ISNULL(s.[Override Attendance Policy Rule (Yes/No)], ''No'') <> ''No'' THEN CONCAT(''The '', ''Override Attendance Policy Rule (Yes/No):'', ''"'', s.[Override Attendance Policy Rule (Yes/No)], ''"'', '' on row '', s.[RowNum_], '' is not valid or do not exist on source data '', ''.'', CHAR(10))
+			ELSE ''''
+		END
+		+
+		CASE
+			WHEN s.[FlexiTime] IS NULL AND
+				ISNULL(s.[Flexi Time (Yes/No)], ''No'') <> ''No'' THEN CONCAT(''The '', ''Flexi Time (Yes/No):'', ''"'', s.[Flexi Time (Yes/No)], ''"'', '' on row '', s.[RowNum_], '' is not valid or do not exist on source data '', ''.'', CHAR(10))
+			ELSE ''''
+		END
+		+
+		CASE
+			WHEN s.[EarlyTimeIn] IS NULL AND
+				ISNULL(s.[Early Time In (Yes/No)], ''No'') <> ''No'' THEN CONCAT(''The '', ''Early Time In (Yes/No):'', ''"'', s.[Early Time In (Yes/No)], ''"'', '' on row '', s.[RowNum_], '' is not valid or do not exist on source data '', ''.'', CHAR(10))
+			ELSE ''''
+		END
+		+
+		CASE
+			WHEN s.[EarlyTimeInOvertime] IS NULL AND
+				ISNULL(s.[Early Time In Overtime (Yes/No)], ''No'') <> ''No'' THEN CONCAT(''The '', ''Early Time In Overtime (Yes/No):'', ''"'', s.[Early Time In Overtime (Yes/No)], ''"'', '' on row '', s.[RowNum_], '' is not valid or do not exist on source data '', ''.'', CHAR(10))
+			ELSE ''''
+		END +
+		CASE
+			WHEN ISNULL(s.[DataValidationRemarks_], '''') <> '''' THEN s.[DataValidationRemarks_]
+			ELSE ''''
+		END
+		+
+		CASE
+			WHEN ISNULL(s.[Days Of Week], '''') = '''' AND
+				ISNULL(s.[Work Date], ''1/1/1900'') <= ''1/1/1900'' THEN CONCAT(''Data on row "'', s.[RowNum_], ''" is not valid. '', ''Please specify values for "Work Date" or "Days of Week".'')
+			ELSE ''''
+		END
+		+
+		CASE
+			WHEN ISNULL(s.[Work Date], ''1/1/1900'') > ''1/1/1900'' AND
+				ISNULL(s.[Fixed Schedule (Yes/No)], '''') = ''Yes'' THEN CONCAT(''Data on row "'', s.[RowNum_], ''" is not valid. '', ''Work schedule is a fixed schedule, please remove the "work date".'')
+			ELSE ''''
+		END
+		+
+		CASE
+			WHEN ISNULL(s.[Shift Code], '''') = '''' AND
+				ISNULL(s.[Fixed Schedule (Yes/No)], '''') = ''Yes'' THEN CONCAT(''Data on row "'', s.[RowNum_], ''" is not valid. '', ''"Shift Code" is required for "Fix Schedule"'')
+			ELSE ''''
+		END
+	FROM #tmpTVP s
+	LEFT JOIN [schedule].[WorkSchedule] d
+		ON 1 = 1
+		AND d.[ProfileId] = s.[ProfileId]
+		AND d.[WorkDate] = s.[WorkDate]
+		AND d.[StartTime] = s.[StartTime]
+		AND d.[EndTime] = s.[EndTime]
+		AND d.[WorkingHours] = s.[WorkingHours]) T
+WHERE T.[RowId] = #tmpTVP.[RowId];
+
+
+SELECT
+	@ValidationLog = (SELECT
+			[DataValidationRemarks_]
+		FROM #tmpTVP
+		ORDER BY RowId
+		FOR XML PATH (''''), ROOT (''MyString''), TYPE)
+	.value(''/MyString[1]'', ''varchar(max)'');
+
+/* AUDIT TRAIL */
+DECLARE @LOGID BIGINT
+;
+INSERT INTO [fileimport].[FileImportLog] ([Filename], [SourceSheet], [DestinationTable], [ImportCount], [SourceDataCnt], [ImportedKeyIds], [ImportFileId], [ProcessedById], [ProcessedDate])
+	VALUES (@SourceFileName, @SourceSheet, ''[schedule].[WorkSchedule]'', 0, 0, NULL, 0, 999, GETDATE());
+SET @LOGID = SCOPE_IDENTITY();
+
+
+/*INSERT/UPDATE METHOD*/
+MERGE INTO [schedule].[WorkSchedule] as TRGT USING( SELECT
+		[Break1EndTime] = ISNULL(s.[Break1EndTime], ''1/1/1900'')
+	   ,[Break1StartTime] = ISNULL(s.[Break1StartTime], ''1/1/1900'')
+	   ,[Break2EndTime] = ISNULL(s.[Break2EndTime], ''1/1/1900'')
+	   ,[Break2StartTime] = ISNULL(s.[Break2StartTime], ''1/1/1900'')
+	   ,[Break3EndTime] = ISNULL(s.[Break3EndTime], ''1/1/1900'')
+	   ,[Break3StartTime] = ISNULL(s.[Break3StartTime], ''1/1/1900'')
+	   ,[DaysOfWeek] = ISNULL(s.[DaysOfWeek], '''')
+	   ,[EarlyTimeIn] = ISNULL(s.[EarlyTimeIn], 0)
+	   ,[EarlyTimeInLimit] = ISNULL(s.[EarlyTimeInLimit], 0)
+	   ,[EarlyTimeInOvertime] = ISNULL(s.[EarlyTimeInOvertime], 0)
+	   ,[EndTime] = ISNULL(s.[EndTime], ''1/1/1900'')
+	   ,[FixedEndDate] = ISNULL(s.[FixedEndDate], ''1/1/1900'')
+	   ,[FixedSchedule] = ISNULL(s.[FixedSchedule], 0)
+	   ,[FixedStartDate] = ISNULL(s.[FixedStartDate], ''1/1/1900'')
+	   ,[FlexiTime] = ISNULL(s.[FlexiTime], 0)
+	   ,[FlexiTimeLimit] = ISNULL(s.[FlexiTimeLimit], 0)
+	   ,[LunchBreakEndTime] = ISNULL(s.[LunchBreakEndTime], ''1/1/1900'')
+	   ,[LunchBreakStartTime] = ISNULL(s.[LunchBreakStartTime], ''1/1/1900'')
+	   ,[OverrideAttendancePolicyRule] = ISNULL(s.[OverrideAttendancePolicyRule], 0)
+	   ,[ProfileId] = ISNULL(s.[ProfileId], 0)
+	   ,[ShiftId] = ISNULL(s.[ShiftId], 0)
+	   ,[StartTime] = ISNULL(s.[StartTime], ''1/1/1900'')
+	   ,[WorkDate] = ISNULL(s.[WorkDate], ''1/1/1900'')
+	   ,[WorkingHours] = ISNULL(s.[WorkingHours], 0)
+	   ,[CreateDate] = GETDATE()
+	   ,[CreateId] = @UserId
+	   ,[LastUpdateId] = @UserId
+	   ,[LastUpdateDate] = GETDATE()
+	   ,[DayType] = ''''
+	   ,[FlexiBreakTime] = ISNULL(s.[FlexiBreakTime], 0)
+	   ,[LunchDuration] = ISNULL(s.[LunchDuration], 0)
+	   ,[Break1Duration] = ISNULL(s.[Break1Duration], 0)
+	   ,[Break2Duration] = ISNULL(s.[Break2Duration], 0)
+	   ,[Break3Duration] = ISNULL(s.[Break3Duration], 0)
+	FROM #tmpTVP s
+	WHERE DetailNo = 1
+	AND ISNULL(s.[DataValidationRemarks_], '''') = ''''
+	AND NOT (ISNULL(s.[Days Of Week], '''') = ''''
+	AND ISNULL(s.[Work Date], ''1/1/1900'') <= ''1/1/1900'')
+	AND NOT (ISNULL(s.[Work Date], ''1/1/1900'') > ''1/1/1900''
+	AND ISNULL(s.[Fixed Schedule (Yes/No)], '''') = ''Yes'')
+	AND NOT (ISNULL(s.[Shift Code], '''') = ''''
+	AND ISNULL(s.[Fixed Schedule (Yes/No)], '''') = ''Yes'')) AS SRC
+ON 1 = 1
+	AND SRC.[ProfileId] = TRGT.[ProfileId]
+	AND SRC.[WorkDate] = TRGT.[WorkDate]
+WHEN MATCHED
+	THEN UPDATE
+		SET [WorkDate] = SRC.WorkDate
+		   ,[ProfileId] = SRC.ProfileId
+		   ,[ShiftId] = SRC.ShiftId
+		   ,[DaysOfWeek] = SRC.DaysOfWeek
+		   ,[StartTime] = SRC.StartTime
+		   ,[EndTime] = SRC.EndTime
+		   ,[LunchBreakStartTime] = SRC.LunchBreakStartTime
+		   ,[LunchBreakEndTime] = SRC.LunchBreakEndTime
+		   ,[Break1StartTime] = SRC.Break1StartTime
+		   ,[Break1EndTime] = SRC.Break1EndTime
+		   ,[Break2StartTime] = SRC.Break2StartTime
+		   ,[Break2EndTime] = SRC.Break2EndTime
+		   ,[Break3StartTime] = SRC.Break3StartTime
+		   ,[Break3EndTime] = SRC.Break3EndTime
+		   ,[WorkingHours] = SRC.WorkingHours
+		   ,[FixedSchedule] = SRC.FixedSchedule
+		   ,[FixedStartDate] = SRC.FixedStartDate
+		   ,[FixedEndDate] = SRC.FixedEndDate
+		   ,[OverrideAttendancePolicyRule] = SRC.OverrideAttendancePolicyRule
+		   ,[FlexiTime] = SRC.FlexiTime
+		   ,[FlexiTimeLimit] = SRC.FlexiTimeLimit
+		   ,[EarlyTimeIn] = SRC.EarlyTimeIn
+		   ,[EarlyTimeInLimit] = SRC.EarlyTimeInLimit
+		   ,[EarlyTimeInOvertime] = SRC.EarlyTimeInOvertime
+		   ,[DayType] = SRC.DayType
+		   ,[FlexiBreakTime] = SRC.FlexiBreakTime
+		   ,[LunchDuration] = SRC.LunchDuration
+		   ,[Break1Duration] = SRC.Break1Duration
+		   ,[Break2Duration] = SRC.Break2Duration
+		   ,[Break3Duration] = SRC.Break3Duration
+		   ,[LastUpdateId] = SRC.LastUpdateId
+		   ,[LastUpdateDate] = SRC.LastUpdateDate
+WHEN NOT MATCHED
+	THEN INSERT /*INSERT NON EXISTING RECORD*/ ([Break1EndTime], [Break1StartTime], [Break2EndTime], [Break2StartTime], [Break3EndTime], [Break3StartTime], [DaysOfWeek], [EarlyTimeIn], [EarlyTimeInLimit], [EarlyTimeInOvertime], [EndTime], [FixedEndDate], [FixedSchedule], [FixedStartDate], [FlexiTime], [FlexiTimeLimit], [LunchBreakEndTime], [LunchBreakStartTime], [OverrideAttendancePolicyRule], [ProfileId], [ShiftId], [StartTime], [WorkDate], [WorkingHours], [CreateDate], [CreateId], [LastUpdateId], [LastUpdateDate], [DayType], [FlexiBreakTime], [LunchDuration], [Break1Duration], [Break2Duration], [Break3Duration],ForOffsetting,OffsettingExpirationDate,SpecialNSRates)
+			VALUES (SRC.[Break1EndTime], SRC.[Break1StartTime], SRC.[Break2EndTime], SRC.[Break2StartTime], SRC.[Break3EndTime], SRC.[Break3StartTime], SRC.[DaysOfWeek], SRC.[EarlyTimeIn], SRC.[EarlyTimeInLimit], SRC.[EarlyTimeInOvertime], SRC.[EndTime], SRC.[FixedEndDate], SRC.[FixedSchedule], SRC.[FixedStartDate], SRC.[FlexiTime], SRC.[FlexiTimeLimit], SRC.[LunchBreakEndTime], SRC.[LunchBreakStartTime], SRC.[OverrideAttendancePolicyRule], SRC.[ProfileId], SRC.[ShiftId], SRC.[StartTime], SRC.[WorkDate], SRC.[WorkingHours], SRC.[CreateDate], SRC.[CreateId], SRC.[LastUpdateId], SRC.[LastUpdateDate], SRC.[DayType], SRC.[FlexiBreakTime], SRC.[LunchDuration], SRC.[Break1Duration], SRC.[Break2Duration], SRC.[Break3Duration],0,''1/1/1900'',0)
+OUTPUT @LOGID
+	  ,NULL
+	  ,INSERTED.[WorkScheduleId] INTO fileimport.ImportLogDtl (FileimportLogId, LogStatus, ImportKeyValue)
+
+;
+DECLARE @INSERTEDROWS INT;
+SET @INSERTEDROWS = @@rowcount;
+INSERT INTO @LOGDETAIL
+	SELECT
+		fileimport.ImportLogDtl.ImportLogDtlId
+	FROM fileimport.ImportLogDtl
+	WHERE FileimportLogId = @LOGID;/* get key values of the inserted records*/
+;
+UPDATE fileimport.FileImportLog
+SET ImportCount = @INSERTEDROWS
+WHERE FileimportLogId = @LOGID;
+/*output result*/
+SELECT
+	ImportedRecord = @INSERTEDROWS
+   ,[Log] = @ValidationLog;
+
+DROP TABLE #tmpTVP;
+
+
+END TRY
+BEGIN CATCH
+SELECT
+	ImportedRecord = 0
+   ,[Log] = ERROR_MESSAGE()
+END CATCH';
+
+/*UPDATE BULK INSERT COMMAND*/
+UPDATE fileimport.FileImportCfgHdr SET BulkInsertCmd = @WORKSHEDULEBYSHIFT WHERE FileImportCode = 'WorkScheduleShiftCode';
+UPDATE fileimport.FileImportCfgHdr SET BulkInsertCmd = @WORKSHEDULEBYSHIFT WHERE FileImportCode = 'WorkscheduleByShiftCrossTab';
+UPDATE fileimport.FileImportCfgDetail SET SourceLinkTable = N'employee.EmploymentInformation' 
+	WHERE FileImportCfgHdrId = (SELECT TOP 1 FileImportCfgHdrId FROM fileimport.FileImportCfgHdr WHERE FileImportCode = 'WorkscheduleByShiftCrossTab')
+	AND DestinationColumnField = 'ProfileId'
+UPDATE fileimport.FileImportCfgDetail SET SourceLinkTable = N'(SELECT ISNULL([Shift].ShiftId, 0) ShiftId ,ISNULL([Shift].Code, '''') Code
+	FROM schedule.[Shift] UNION ALL SELECT -2 ShiftId,''RD'' Code /*REST DAY SHIFT FOR CROSS TAB USED*/) [Shift]' 
+	WHERE FileImportCfgHdrId = (SELECT TOP 1 FileImportCfgHdrId FROM fileimport.FileImportCfgHdr WHERE FileImportCode = 'WorkscheduleByShiftCrossTab')
+	AND DestinationColumnField = 'ShiftId'
+
+UPDATE fileimport.FileImportCfgHdr SET BulkInsertCmd = @WORKSHEDULE WHERE FileImportCode = 'WorkSchedule';
+/*UPDATE NULL VALUES*/
+UPDATE schedule.WorkSchedule SET ForOffsetting = 0,OffsettingExpirationDate = '1/1/1900',SpecialNSRates = 0 WHERE ForOffsetting IS NULL AND OffsettingExpirationDate IS NULL AND SpecialNSRates IS NULL;

@@ -1,0 +1,50 @@
+IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[report].[fnGetLabelPerPayrollType]') AND type in (N'FN', N'IF', N'TF', N'FS', N'FT'))
+DROP FUNCTION [report].[fnGetLabelPerPayrollType]
+GO
+
+-- =============================================
+-- Author:      AGC
+-- Create date: 08.05.2019
+-- Description: Returns paysheet label if the column 
+-- =============================================
+
+CREATE FUNCTION [report].[fnGetLabelPerPayrollType]
+(
+	--DECLARE 
+	@PayrollTypeCount INT = 0 
+	,@PayrollTypeId BIGINT = 0
+	,@EarningCode VARCHAR(500) = ''
+	,@CustomLabel VARCHAR(500) = ''
+)
+RETURNS VARCHAR(MAX)
+AS
+BEGIN
+
+	DECLARE @RETURNVALUE VARCHAR(MAX) = ''
+
+	SET @RETURNVALUE = 
+	(
+		SELECT 
+			ColumnName = QUOTENAME((CASE WHEN ISNULL(@PayrollTypeCount,0) = 1 THEN COALESCE(PD.Label,Col.CustomLabel,'') ELSE Col.CustomLabel END))
+		FROM compben.EarningDeduction EAD
+		LEFT JOIN payroll.PayrollTypeDetail PD ON PD.PaySheetColumnsId = EAD.EarningDeductionId AND PD.PayrollTypeId = @PayrollTypeId
+		CROSS APPLY
+		(
+		SELECT
+			COLNAME = (CASE WHEN ISNULL(@PayrollTypeCount,0) = 1 THEN COALESCE(PD.Label,EAD.Description,'') ELSE EAD.Description END)
+			,CustomLabel = (CASE WHEN ISNULL(@CustomLabel,'') = '' THEN EAD.Description ELSE @CustomLabel END)
+		)Col
+		WHERE 1=1
+		AND (ISNULL(EAD.MappedToId,0) <> 0)
+		AND (ISNULL(@EarningCode,'') = '' OR EAD.Code = @EarningCode)
+	)
+
+	/*SELECT @RETURNVALUE;RETURN;*/
+
+	RETURN @RETURNVALUE
+
+
+END
+GO
+
+

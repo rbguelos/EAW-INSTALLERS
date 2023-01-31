@@ -1,0 +1,2 @@
+/*this will set default statusid value to 0 for import time entry log on excel*/
+UPDATE admin.FileImportDtl SET FixValue = '0' WHERE TableFieldName = 'StatusId' AND FileImportHeaderId IN (select FileImportHeaderId from admin.FileImportHeader where SystemModuleId = 13 AND FileType = 1);

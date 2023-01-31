@@ -1,0 +1,5 @@
+UPDATE employee.SalaryInformation
+    SET MinimumWageEarner = employee.Profile.MinimumWageEarner
+FROM employee.SalaryInformation
+JOIN employee.Profile
+    ON employee.SalaryInformation.ProfileId = Profile.ProfileId

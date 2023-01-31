@@ -1,0 +1,6 @@
+IF NOT EXISTS(SELECT RequestTypeDetailId FROM employee.RequestTypeDetail WHERE RequestTypeId = 2 AND DisplayName = 'Personality Type' AND FieldName = 'PersonalityType')
+BEGIN
+	INSERT INTO employee.RequestTypeDetail
+	(RequestTypeId, DisplayName, FieldName, SortOrder, Width, EntryType, DataType, SourceDisplay, RequiredField)
+	VALUES (2, 'Personality Type', 'PersonalityType', 20, 135, 1, 'String', 'Test', 0)
+END

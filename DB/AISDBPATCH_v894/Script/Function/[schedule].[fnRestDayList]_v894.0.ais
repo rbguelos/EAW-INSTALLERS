@@ -1,0 +1,100 @@
+ 
+/****** Object:  UserDefinedFunction [schedule].[fnRestDayList]    Script Date: 8/8/2020 12:29:37 AM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+/*===========================================***	   Last Update Date: 02/07/2019
+**	   Last Update By: Bryan
+**	   Last DBVersion executed: v663
+\*===========================================*/
+-- =============================================
+-- Author:		Bryan Avellana
+-- Create date: January 08, 2019
+-- =============================================
+ALTER FUNCTION [schedule].[fnRestDayList]
+(
+	-- Add the parameters for the function here
+	@StartDate DATETIME = NULL,
+    @EndDate DATETIME = NULL
+)
+RETURNS 
+@RestDay TABLE 
+(
+	-- Add the column definitions for the TABLE variable here
+	RestDayId BIGINT, ProfileId BIGINT, EmployeeName VARCHAR(150), EmployeeNo VARCHAR(50), Department VARCHAR(100),
+	Position VARCHAR(100), [Date] DATETIME, FixedSchedule VARCHAR(5), [Days] VARCHAR(50), [Type] VARCHAR(50), CreateUser VARCHAR(150), 
+	CreateDate DATETIME, [Source] VARCHAR(150) 
+)
+AS
+BEGIN
+	-- Fill the table variable with the rows for your result set
+	DECLARE @NullDate DATE = CAST('1900-01-01' AS DATE)
+
+	INSERT INTO @RestDay
+
+	SELECT 
+		RD.RestDayId,
+		RD.ProfileId,
+		EMP.LastName + ', ' + EMP.FirstName + ISNULL(' ' + EMP.MiddleName, '') AS EmployeeName,
+		EI.EmployeeNo,
+		ISNULL(EI.Department, '') AS Department,
+		ISNULL(EI.Position, '') AS Position,
+		RD.RestDayDate AS [Date],
+		CASE
+			WHEN RD.IsFix = 1
+			THEN 'Yes' ELSE 'No'
+		END AS FixedSchedule,
+		CASE
+			WHEN RD.IsFix = 1
+			THEN REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(
+				REPLACE([Days], 2, ' Mon'), 3, ' Tue'), 4, ' Wed'), 5, ' Thu'), 6, ' Fri'), 7, ' Sat'), 1, ' Sun') 
+			ELSE LEFT(DATENAME(DW, RestDayDate), 3)
+		END AS [Days], 
+		ISNULL(RT.DisplayText, '') AS [Type],
+		ISNULL(U.CreateUser, '') AS CreateUser,
+		ISNULL(RD.CreateDate, @NullDate) AS CreateDate,
+		CASE WHEN RD.SourceId = 0
+			THEN 'Change Restday Request'
+			ELSE 'Imported from Excel'
+		END AS [Source]
+	FROM schedule.RestDay RD
+	-- Employee Profile --
+	JOIN employee.[Profile] EMP ON EMP.ProfileId = RD.ProfileId
+	-- Employee Information --
+	OUTER APPLY (
+		SELECT TOP 1
+			DE.DepartmentName AS Department,
+			JP.[Name] AS Position,
+			E.CJI_EmployeeNo AS EmployeeNo
+		FROM employee.EmploymentInformation E
+		-- Department --
+		LEFT JOIN maintenance.Department DE ON DE.DepartmentId = E.AOA_Department
+		-- Job Position --
+		LEFT JOIN maintenance.JobPosition JP ON JP.JobPositionId = E.CJI_Position
+		WHERE E.ProfileId=  EMP.ProfileId
+		ORDER BY E.LastUpdateDate DESC
+	) EI
+	
+	-- Create Information --
+		OUTER APPLY (
+		SELECT TOP 1
+			CASE
+				WHEN US.UserType = 1 THEN (SELECT EU.LastName + ', ' + EU.FirstName FROM employee.[Profile] EU WHERE EU.UserAccountId = US.UserSecurityId)
+				WHEN US.UserType = 2 THEN (SELECT NEU.NELastName + ', ' + NEU.NEFirstName FROM security.NonEmployeeUser NEU WHERE NEU.UserSecurityId = US.UserSecurityId)
+				ELSE ''
+			END CreateUser
+		FROM [security].UserSecurity US
+		WHERE US.UserSecurityId = RD.CreateId
+	) U
+	-- Rest Day Type --
+	LEFT JOIN maintenance.EnumValues RT ON CAST(RT.[Value] AS SMALLINT) = RD.[Type] AND RT.SourceName = 'RestDayType'
+	WHERE ((
+		RD.IsFix = 0
+		AND (ISNULL(@StartDate, @NullDate) = @NullDate OR CAST(RD.RestDayDate AS DATE) >= @StartDate)
+		AND (ISNULL(@EndDate, @NullDate) = @NullDate OR CAST(RD.RestDayDate AS DATE) <= @EndDate)
+	) OR RD.IsFix = 1)
+
+	RETURN 
+END

@@ -1,0 +1,17 @@
+EXEC spInsertTableData 
+@SCHEMA = 'maintenance', 
+@TABLENAME = 'EnumValues', 
+@COLUMNS = '[SourceName],[DisplayText],[Value],[OrderNumber],[Status]', 
+@VALUETOINSERT = '
+TypeOfBusinessTrip|Others|1|1|1
+TypeOfBusinessTrip|Store Opening|2|2|1
+TypeOfBusinessTrip|Audit|3|3|1
+TypeOfBusinessTrip|New Hire Orientation|4|4|1
+TypeOfBusinessTrip|Training|5|5|1
+TypeOfBusinessTrip|Site-Visit / Inspection|6|6|1
+TypeOfBusinessTrip|Event|7|7|1
+TypeOfBusinessTrip|Permit Processing|8|8|1
+TypeOfBusinessTrip|Business Meeting|9|9|1', 
+@COLUMNSEPARATOR = '|', @ROWSEPARATATOR = '
+',
+@CHECKDUPLICATECOLUMNS = '[SourceName],[DisplayText],[Value],[OrderNumber],[Status]'

@@ -1,0 +1,6 @@
+EXEC dbo.AddColumn 
+@SCHEMA = 'email',
+@TABLENAME = 'SMTPLookUp',
+@COLUMNNAME = 'IsEncrypted',
+@DATATYPE = 'bit',
+@DEFAULTVALUE = '0'

@@ -1,0 +1,20 @@
+EXEC spInsertTableData 
+@SCHEMA = 'maintenance'
+,@TABLENAME = 'EnumValues'
+,@COLUMNS = '[SourceName],[DisplayText],[Value],[OrderNumber],[Status]'
+,@VALUETOINSERT = 'RecruitmentTemplateType|Screening (Applicant)|1|1|1
+RecruitmentTemplateType|Screening (Conductor)|2|2|1
+RecruitmentTemplateType|Screening (Applicant Reschedule)|3|3|1
+RecruitmentTemplateType|Screening (HR Reschedule)|4|4|1
+RecruitmentTemplateType|Screening Confirmation (Applicant)|5|5|1
+RecruitmentTemplateType|Screening Confirmation (Conductor)|6|6|1
+RecruitmentTemplateType|Job Offer|7|7|1
+RecruitmentTemplateType|Another Position (Current Job Opening)|8|8|1
+RecruitmentTemplateType|Another Position (Future Job Opening)|9|9|1
+RecruitmentTemplateType|Consider in Future|10|10|1
+RecruitmentTemplateType|Reject|11|11|1
+RecruitmentTemplateType|Blacklist|12|12|1'
+,@COLUMNSEPARATOR = '|'
+,@ROWSEPARATATOR = '
+'
+

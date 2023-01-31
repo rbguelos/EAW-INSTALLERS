@@ -1,0 +1,9 @@
+IF NOT EXISTS (SELECT * FROM maintenance.ConfigSetupDetail WHERE PropertyName = 'SplitHolidayToRestdayAsHolidayToOrdinaryDay')
+BEGIN
+	INSERT INTO maintenance.ConfigSetupDetail (
+	ConfigSetupHeaderId, PropertyName, LabelName, PropertyValue, Type, Source, [Group], SubGroup, SortOrder, Alignment)
+	VALUES(1, 'SplitHolidayToRestdayAsHolidayToOrdinaryDay', 'Split Holiday to Restday as Holiday to Ordinary Day', '', 'checkbox', '', 3, 0, 1, '')
+
+	UPDATE maintenance.ConfigSetupDetail SET SortOrder = 1 WHERE PropertyName = 'HolidaySplitting' AND ConfigSetupHeaderId = 1 AND [Group] = 3
+	UPDATE maintenance.ConfigSetupDetail SET SortOrder = -1 WHERE PropertyName = 'PayUnworkedHolidayBasedOnScheduledWorkingHours' AND ConfigSetupHeaderId = 1 AND [Group] = 3
+END

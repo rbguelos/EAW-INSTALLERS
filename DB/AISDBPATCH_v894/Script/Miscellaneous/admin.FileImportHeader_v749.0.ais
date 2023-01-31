@@ -1,0 +1,7 @@
+﻿IF NOT EXISTS(SELECT * FROM admin.FileImportHeader WHERE FileConfigurationCode = 'WorkscheduleByShiftCrossTab')
+BEGIN
+  INSERT admin.FileImportHeader(
+    FileConfigurationCode, FileConfigurationDescription, FileType, ContainHeader, ContainDetail, ContainFooter, DatabaseName, TableHeaderName, TableDetailName, HasParentTableField, ParentTableFieldName, TableDetailPrimaryFieldName, WriteOption, HasFooterGap, FooterKeyWord, FooterKeyWordColumn, RecTypeHeader, RecTypeDetail, RecTypeFooter, Separator, ContinueExtractingDataWhenErrorFound, SystemModuleId, PromptUserIfDataExist, CreateId, CreateDate, LastUpdateId, LastUpdateDate, SheetName) 
+  VALUES (
+    'WorkscheduleByShiftCrossTab', N'For the importing of work schedule with required shift code', 1, 0, 1, 0, '', '', 'schedule.ImportWorkSchedule', 0, '', 'ImportWorkScheduleId', 2, 0, NULL, 0, N'', N'', N'', N'', 0, 10, 0, NULL, NULL, NULL, NULL, 'WorkSchedule')
+END

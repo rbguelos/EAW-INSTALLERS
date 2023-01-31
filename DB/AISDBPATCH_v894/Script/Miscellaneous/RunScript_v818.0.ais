@@ -1,0 +1,24 @@
+IF NOT EXISTS (SELECT * FROM maintenance.EnumValues WHERE SourceName = 'RateTableBasis' AND DisplayText = 'Shift Code')
+BEGIN 
+	INSERT INTO maintenance.EnumValues (SourceName, DisplayText, Value, OrderNumber, Status) 
+	VALUES ('RateTableBasis', 'Shift Code', 10, 10, 1)
+END
+
+IF NOT EXISTS(SELECT * FROM maintenance.ConfigSetupDetail WHERE PropertyName = 'ProcessEarningsBasedOnShiftCodeAssignment')
+BEGIN
+	INSERT INTO maintenance.ConfigSetupDetail(
+		ConfigSetupHeaderId, PropertyName, LabelName, PropertyValue, Type, Source, [Group], Subgroup, SortOrder, Alignment)
+	SELECT 
+	ConfigSetupHeaderId = 1, 
+	PropertyName = 'ProcessEarningsBasedOnShiftCodeAssignment', 
+	LabelName = 'Process earnings based on Shift Code Assignment', 
+	PropertyValue = '', 
+	Type = 'checkbox', 
+	Source = '', 
+	[Group] = 1, 
+	Subgroup = 0, 
+	SortOrder = 27, 
+	Alignment = ''
+END
+
+UPDATE maintenance.ConfigSetupHeader SET Panel1 = 'Time Entry;27;2' WHERE ConfigSetupHeaderId = 1

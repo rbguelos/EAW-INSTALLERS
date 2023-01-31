@@ -1,0 +1,53 @@
+-------------------------------------------------
+-- Update RuleIds of Benefit Issuance Transaction
+-------------------------------------------------
+
+UPDATE sa SET sa.RuleId = TSM.RuleId
+--SELECT sa.RuleId, TSM.RuleId 
+FROM workflow.StageAction sa
+INNER JOIN workflow.Stage S
+	ON S.StageId =sa.StageId
+INNER JOIN workflow.Setup SU
+	ON S.SetupId = SU.SetupId
+CROSS APPLY (
+	SELECT tsam.RuleId FROM workflow.TransactionStageActionMapping tsam 
+	INNER JOIN workflow.TransactionStageMapping tsm
+		ON tsam.TransactionStageMappingId = tsm.TransactionStageMappingId
+	WHERE tsam.ActionTypeId = sa.ActionTypeId
+	AND tsm.TransactionTypeId = SU.TransactionTypeId
+	AND tsm.StageTypeId = S.StageTypeId
+) TSM
+WHERE SU.TransactionTypeId = 41
+
+UPDATE S SET S.RuleId = R.RuleId
+--SELECT S.RuleId, R.RuleId 
+FROM workflow.Setup s 
+INNER JOIN workflow.[Rule] R
+	ON s.TransactionTypeId = R.TransactionTypeId
+	AND R.RuleTypeId = 1
+WHERE s.TransactionTypeId = 41
+
+
+-------------------------------------------------
+-- Update RuleIds of IDP
+-------------------------------------------------
+
+UPDATE sa SET sa.RuleId = TSM.RuleId
+--SELECT sa.RuleId, TSM.RuleId 
+FROM workflow.StageAction sa
+INNER JOIN workflow.Stage S
+	ON S.StageId =sa.StageId
+INNER JOIN workflow.Setup SU
+	ON S.SetupId = SU.SetupId
+CROSS APPLY (
+	SELECT tsam.RuleId FROM workflow.TransactionStageActionMapping tsam 
+	INNER JOIN workflow.TransactionStageMapping tsm
+		ON tsam.TransactionStageMappingId = tsm.TransactionStageMappingId
+	WHERE tsam.ActionTypeId = sa.ActionTypeId
+	AND tsm.TransactionTypeId = SU.TransactionTypeId
+	AND tsm.StageTypeId = S.StageTypeId
+) TSM
+WHERE SU.TransactionTypeId = 30
+
+UPDATE workflow.Setup SET RuleId = 189 
+WHERE RuleId = 190 AND TransactionTypeId = 30

@@ -1,0 +1,1 @@
+UPDATE report.ReportConfiguration SET ConfigValue = 'dd/MM/yyyy' WHERE ConfigName = 'DateFormat'

@@ -1,0 +1,108 @@
+/*===========================================*\	  
+**	   Last Update Date: 09/27/2019
+**	   Last Update By: Abdiel
+**	   Last DBVersion executed: v
+\*===========================================*/
+
+ALTER VIEW [report].[vwLoansAndPayment]
+AS
+
+SELECT 
+    DetailId = ROW_NUMBER() OVER( PARTITION BY LR.LoanRequestId ORDER BY LR.LoanRequestId,LP.PaymentDate)
+    ,LR.LoanRequestId
+    ,LR.ProfileId
+    ,LoanTypeCode = LT.Code
+    ,LoanTypeDescription = LT.Description
+    ,LT.LoanTypeSetupId
+    ,LR.DateRequest
+    ,LR.LoanRequestNumber
+    ,LR.DateOfApproval
+    ,LR.ApprovedId
+    ,LR.RequestedAmount
+    ,LR.PrincipalAmount
+    ,LR.TotalAmortization
+    ,LR.OutstandingLoan
+    ,LR.VoucherNumber
+    ,LR.ChargeSlipNumber
+    ,LR.VoucherDate
+    ,LR.ReferenceNumber
+    ,LR.Remarks
+    ,LR.Balance
+    ,NewBalance = (CASE WHEN ISNULL(LP.NewBalance,0) = 0 THEN LR.Balance ELSE LP.NewBalance END)
+    ,LR.PenaltyAmount
+    ,LR.PenaltyPercent
+    ,LR.AdvanceInterestPercent
+    ,LR.AdvanceInterestAmount
+    ,LR.AddOnInterestPercent
+    ,LR.AddOnInterestAmount
+    ,LR.NumberOfPayPeriod
+    ,LR.Amortization
+    ,LR.FirstPaymentDate 
+    ,PaymentFrequency = 
+    (
+	   SELECT TOP 1
+		  DisplayText
+	   FROM maintenance.EnumValues
+	   WHERE maintenance.EnumValues.SourceName = 'LoanPaymentFrequency'
+	   AND Value = LR.PaymentFrequencyId
+    )
+    ,LP.PaymentDate
+    ,LP.PaymentMethodId
+    ,AmountPaid = LP.Amount
+    ,PenaltyAmountPayment = LP.PenaltyAmount
+    ,TotalAmount = ISNULL
+    (
+	   (
+		  SELECT    
+			 SUM(Amount)
+		  FROM payroll.LoanRequestPayment
+		  WHERE LoanRequestId = LR.LoanRequestId AND PaymentDate <= LP.PaymentDate
+	   )
+    , 0)
+    ,TotalAmountPaid = LR.AmountPaid 
+    ,PaymentRemarks = LP.Remarks
+    ,PaymentStartDt = 
+    (
+	   SELECT TOP 1
+		  payroll.LoanRequestSchedule.ScheduleDate
+	   FROM payroll.LoanRequestSchedule
+	   WHERE LoanRequestId = LR.LoanRequestId 
+	   ORDER BY ScheduleDate ASC
+    )
+    ,PaymentEndDt = 
+    (
+	   SELECT TOP 1
+		  payroll.LoanRequestSchedule.ScheduleDate
+	   FROM payroll.LoanRequestSchedule
+	   WHERE LoanRequestId = LR.LoanRequestId
+	   ORDER BY ScheduleDate DESC
+    )
+    ,Status = 
+    (
+	   SELECT TOP 1
+		  Name
+	   FROM maintenance.Status
+	   WHERE maintenance.Status.Value = LR.StatusId
+    )
+    ,PaysheetHeaderDetailId = CAST(0 AS BIGINT)
+    ,LR.StatusId
+    ,LR.LoanAmount
+    ,LR.ActualLoanAmount
+    ,IssueDate = LR.VoucherDate  
+    ,LR.TotalAmountDue
+FROM payroll.LoanRequest LR
+LEFT JOIN payroll.LoanRequestPayment LP ON LP.LoanRequestId = LR.LoanRequestId
+
+OUTER APPLY
+(
+    SELECT TOP 1 
+	   LTS.Code
+	   ,LTS.Description
+	   ,LTS.LoanTypeSetupId
+    FROM maintenance.LoanTypeSetup LTS WHERE LTS.LoanTypeSetupId = LR.LoanTypeSetupId
+)LT
+
+
+GO
+
+

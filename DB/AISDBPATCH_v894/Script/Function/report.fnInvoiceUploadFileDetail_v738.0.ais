@@ -1,0 +1,136 @@
+
+IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[report].[fnInvoiceUploadFileDetail]') AND type in (N'FN', N'IF', N'TF', N'FS', N'FT'))
+DROP FUNCTION [report].[fnInvoiceUploadFileDetail]
+GO
+/****** Object:  UserDefinedFunction [report].[fnInvoiceUploadFileDetail]    Script Date: 7/30/2019 5:08:54 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+-- =============================================
+-- Author:      RME
+-- Create date: 11/14/2018
+-- Description: For Invoice Upload File
+-- Updated by RME.05/08/2019
+-- =============================================
+
+CREATE FUNCTION [report].[fnInvoiceUploadFileDetail] 
+(
+	--DECLARE
+	@CompanyId BIGINT = 0
+	,@BranchId BIGINT = 0
+	,@StartPayrollDate DATETIME = '1/1/1900'
+	,@EndPayrollDate DATETIME = '1/1/1900'
+	,@MonthYear DATETIME = '1/1/1900'
+	,@EarningDeductionIds VARCHAR(MAX) = ''
+)
+RETURNS TABLE 
+AS
+RETURN
+(
+	SELECT 
+		ROWID = ROW_NUMBER() OVER (ORDER BY p.DescriptionOfSpend)
+		,RowNumber = (ROW_NUMBER() OVER (ORDER BY p.DescriptionOfSpend) + 13)
+		,IssuedDate = p.IssuedDate
+		,IssuedDateDDMMYY = CONCAT('=IF(C',(ROW_NUMBER() OVER (ORDER BY p.DescriptionOfSpend) + 13),'="","",TODAY())') /*FORMAT(p.IssuedDate,N'dd/MM/yy')*/
+		,PayrollPeriod = CONCAT(MAX(DATEPART(DAY,ISNULL(@StartPayrollDate,phd.PeriodStartDate))),' - ',DATEPART(DAY,MAX(ISNULL(@EndPayrollDate,phd.PeriodEndDate))))
+		,MonthYear = p.MonthYear
+		,p.DescriptionOfSpend
+		,CompanyCode	= ISNULL(pa.[Company],ci.[Company])
+		,BudgetHolder	= ISNULL(pa.[Budget Holder],ci.[Budget Holder])
+		,AccountCode	= ISNULL(pa.[Account Code],ci.[Account Code])
+		,Beneficiary	= ISNULL(pa.Beneficiary,ci.Beneficiary)
+		,Objective		= ISNULL(pa.[Objective],ci.[Objective])
+		,Spare1			= ISNULL(pa.[Spare 1],ci.[Spare 1])
+		,Spare2			= ISNULL(pa.[Spare 2],ci.[Spare 2])
+		,ProjectNo		= ISNULL(pa.[Project No.],ci.[Project No.])
+		,TaskNo			= ISNULL(pa.[Task No.],ci.[Task No.])
+		,ExpType		= ISNULL(pa.[Exp Type],ci.[Exp Type])
+		,ExpOrg			= ISNULL(pa.[Exp org],ci.[Exp org])
+		,AdditionalInformation = ai.AdditionalInformation
+		,Amount = CAST(sum( isnull(pa.Amount,(pd.[Value] * (isnull(ci.PercentValue,100)/100)))) AS DECIMAL(18,2))
+		,AccNumber = ci.[ACC NUMBER]
+		,AccountName = ci.[Account Name]
+		,Bank = ci.BANK
+		,OtherInformation = ci.[Other information]
+	FROM payroll.PaySheetHeaderDetail phd
+	JOIN payroll.PaySheetHeader PH ON PH.PaySheetHeaderId = phd.PaySheetHeaderId
+	JOIN payroll.PaySheetDetail pd on pd.PaySheetHeaderDetailId = phd.PaySheetHeaderDetailId
+	JOIN [report].[vwCompBenEarnings] ed on ed.[Code] = pd.[Type]
+	CROSS APPLY(SELECT T.Number FROM dbo.fnNumberSeries(14,170) T)Number
+	/*payroll allowance*/
+	LEFT JOIN (SELECT pa.PaySheetHeaderDetailId,pa.Code,ao.AllowanceOtherId, ao.ProfileId, ao.EarningDeductionId, Amount = pa.Amount * (isnull(pc.PercentValue,100) / 100), pc.PercentValue, ActualAmount = pa.Amount 
+	,[Company]		= CASE WHEN ci.IsChargeInst = 1 THEN cc.[Company]		ELSE '' END
+	,[Budget Holder]= CASE WHEN ci.IsChargeInst = 1 THEN cc.[Budget Holder]	ELSE '' END
+	,[Account Code]	= CASE WHEN ci.IsChargeInst = 1 THEN cc.[Account Code]	ELSE '' END
+	,[Beneficiary]	= CASE WHEN ci.IsChargeInst = 1 THEN cc.[Beneficiary]	ELSE '' END
+	,[Objective]	= CASE WHEN ci.IsChargeInst = 1 THEN cc.[Objective]		ELSE '' END
+	,[Spare 1]		= CASE WHEN ci.IsChargeInst = 1 THEN cc.[Spare 1]		ELSE '' END
+	,[Spare 2]		= CASE WHEN ci.IsChargeInst = 1 THEN cc.[Spare 2]		ELSE '' END
+	,[Project No.]	= CASE WHEN ci.IsChargeInst = 0 THEN cc.[Company]		ELSE '' END
+	,[Task No.]		= CASE WHEN ci.IsChargeInst = 0 THEN cc.[Budget Holder]	ELSE '' END
+	,[Exp Type]		= CASE WHEN ci.IsChargeInst = 0 THEN cc.[Account Code]	ELSE '' END
+	,[Exp org]		= CASE WHEN ci.IsChargeInst = 0 THEN cc.[Beneficiary]	ELSE '' END 
+	FROM payroll.PaysheetAllowance pa
+	JOIN payroll.AllowanceOther ao on pa.TransactionId = ao.AllowanceOtherId
+	LEFT JOIN payroll.AllowanceOtherChargeCode aoc on aoc.AllowanceOtherId = ao.AllowanceOtherId
+	CROSS APPLY(
+	SELECT ChargeCode, [Company],[Budget Holder],[Account Code],[Beneficiary],[Objective],[Spare 1],[Spare 2] 
+			FROM(select ChargeType = CASE [ROWID] 
+			WHEN 1 THEN 'Company'
+			WHEN 2 THEN 'Budget Holder'
+			WHEN 3 THEN 'Account Code'
+			WHEN 4 THEN 'Beneficiary'
+			WHEN 5 THEN 'Objective'
+			WHEN 6 THEN 'Spare 1'
+			WHEN 7 THEN 'Spare 2' ELSE NULL END, [VALUE]
+			from dbo.SplitStrings_XML(aoc.ChargeCode,CASE WHEN CHARINDEX('/',[ChargeCode]) > 0 THEN '/' ELSE '-' END))ct
+			PIVOT (max([VALUE]) FOR [ChargeType] IN ([Company],[Budget Holder],[Account Code],[Beneficiary],[Objective],[Spare 1],[Spare 2])) AS T
+	)cc
+	CROSS APPLY(SELECT IsChargeInst = CASE WHEN CHARINDEX('/',cc.[ChargeCode]) > 0 THEN 0 ELSE 1 END)ci
+	CROSS APPLY (SELECT
+			PercentValue =
+			CASE
+				WHEN p.PrcntLoc > 0 THEN SUBSTRING([VALUE], 0, p.PrcntLoc)
+				ELSE NULL
+			END
+		FROM dbo.SplitStrings_XML(ao.Remarks, CHAR(10))
+	CROSS APPLY (SELECT
+			PrcntLoc = CHARINDEX('%', LEFT([VALUE], 10))) p) pc) pa 
+			on pa.PaySheetHeaderDetailId = phd.PaySheetHeaderDetailId and pa.EarningDeductionId = ed.EarningDeductionId /*payroll allowance - END*/
+	JOIN maintenance.Company Company ON Company.CompanyId = phd.CompanyId
+	JOIN employee.vwChargingInstructions ci on ci.ProfileId = phd.ProfileId
+	CROSS APPLY(select AdditionalInformation = '' )ai
+	CROSS APPLY(
+	SELECT IssuedDate = PH.IssuedDate
+		,MonthYear = format(PH.MonthYear,N'MMMM-yy')
+		,DescriptionOfSpend = ed.[Description]
+	)p
+	WHERE (Company.CompanyId = @CompanyId or isnull(@CompanyId,0) = 0)
+	AND (phd.PeriodStartDate >= @StartPayrollDate or isnull(@StartPayrollDate,'') <= '1/1/1900')
+	AND (phd.PeriodEndDate < (@EndPayrollDate + 1) or isnull(@EndPayrollDate,'') <= '1/1/1900')
+	and (charindex(concat(',',ed.EarningDeductionId,','),concat(',',@EarningDeductionIds,',')) > 0 or isnull(@EarningDeductionIds,'') = '')
+	GROUP BY
+		p.IssuedDate
+		,p.MonthYear
+		,p.DescriptionOfSpend
+		,ISNULL(pa.[Company],ci.[Company])
+		,ISNULL(pa.[Budget Holder],ci.[Budget Holder])
+		,ISNULL(pa.[Account Code],ci.[Account Code])
+		,ISNULL(pa.Beneficiary,ci.Beneficiary)
+		,ISNULL(pa.[Objective],ci.[Objective])
+		,ISNULL(pa.[Spare 1],ci.[Spare 1])
+		,ISNULL(pa.[Spare 2],ci.[Spare 2])
+		,ISNULL(pa.[Project No.],ci.[Project No.])
+		,ISNULL(pa.[Task No.],ci.[Task No.])
+		,ISNULL(pa.[Exp Type],ci.[Exp Type])
+		,ISNULL(pa.[Exp org],ci.[Exp org])
+		,ai.AdditionalInformation
+		,ci.[ACC NUMBER]
+		,ci.[Account Name]
+		,ci.BANK
+		,ci.[Other information]
+)
+
+GO

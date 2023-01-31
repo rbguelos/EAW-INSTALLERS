@@ -1,0 +1,180 @@
+IF  EXISTS (SELECT * FROM sys.views WHERE object_id = OBJECT_ID(N'[report].[vwCompBenEarningsGroupedByTyeAndCompany]'))
+DROP VIEW [report].[vwCompBenEarningsGroupedByTyeAndCompany]
+GO
+
+--=============================================
+--Author:      AGC
+--Create date: 09/23/2019
+--Description: For Company Payroll Report per Department with Breakdown
+--=============================================
+
+CREATE VIEW [report].[vwCompBenEarningsGroupedByTyeAndCompany]
+AS
+
+SELECT 
+	CompanyId = COLS.CompanyId
+	,EarningCompanyId = CMB.SplittedCompanyId
+	,CMB.EarningDeductionId
+	,Code = 
+	(
+		CASE CMB.Code 
+		WHEN 'SSS' THEN (CASE WHEN ISNULL(Company.SSSLabel,'') <> '' THEN Company.SSSLabel ELSE CMB.Code END)
+		WHEN 'PhilHealth' THEN (CASE WHEN ISNULL(Company.PhilhealthLabel,'') <> '' THEN Company.PhilhealthLabel ELSE CMB.Code END)
+		WHEN 'PagIbig' THEN (CASE WHEN ISNULL(Company.PAGIBIGLabel,'') <> '' THEN Company.PAGIBIGLabel ELSE CMB.Code END)
+		WHEN 'PagIbigES' THEN (CASE WHEN ISNULL(Company.PAGIBIGESLabel,'') <> '' THEN Company.PAGIBIGESLabel ELSE CMB.Code END)
+		WHEN 'WHT' THEN (CASE WHEN ISNULL(Company.WHTLabel,'') <> '' THEN Company.WHTLabel ELSE CMB.Code END)
+		ELSE CMB.Code END 
+	)
+	,CMB.Description
+	,CMB.TypeId
+	,CMB.GroupCode
+	,CMB.EarningDeductionCriteriaValue
+	,CMB.CriteriaValue
+	,CMB.CategoryId
+	,CMB.CategoryValue
+	,CMB.MappedToId
+	,CMB.SplittedCompanyId
+FROM maintenance.Company Company
+OUTER APPLY
+(
+	SELECT 
+		EarningDeductionId
+		,Code
+		,[Description]
+		,TypeId 
+		,GroupCode =
+		(
+			CASE TypeId WHEN 3 THEN 'Allowance'
+			WHEN 2 THEN 'Deduction'
+			WHEN 1 THEN
+			(
+				CASE WHEN MappedToId = 0 THEN 'Other'
+				ELSE CASE WHEN Code IN ('SSS','SSSEC','SSSES','PhilHealth','PhilHealthES','Pagibig','PagIbigES','WHT') THEN 'GovContri'
+				ELSE 'Income' END END
+			) 
+			ELSE NULL END
+		) 
+		,CMB.*
+		/*
+		1   Earning
+		2   Deduction
+		3   Allowance
+		4   Savings
+		6   Loan
+		7   Other Income
+		9   Govt Deductions
+		*/
+		,CategoryId = 
+		(
+			CASE TypeId WHEN 1 THEN
+			(
+				CASE WHEN ISNULL(MappedToId,0) = 0 THEN 7 
+				ELSE 
+				(
+					CASE WHEN Code IN ('SSS','SSSEC','SSSES','PhilHealth','PhilHealthES','Pagibig','PagIbigES','WHT') THEN 9 ELSE TypeId END
+				)	 
+				END
+			)
+			ELSE TypeId END
+		)
+		,CategoryValue = 
+		(
+			CASE TypeId 
+				WHEN 2 THEN 'Deduction'
+				WHEN 3 THEN 'Allowance'
+				WHEN 4 THEN 'Savings'
+				WHEN 6 THEN 'Loan'
+				WHEN 1 THEN
+				(
+					CASE WHEN MappedToId = 0 THEN 'Earning'
+					ELSE CASE WHEN Code IN ('SSS','SSSEC','SSSES','PhilHealth','PhilHealthES','Pagibig','PagIbigES','WHT') THEN 'Govt. Deduction'
+					ELSE 'Earning' END END
+				) 
+			ELSE '' END
+		)
+		,MappedToId
+		,SplittedCompanyId = SPLITTED.CompanyId
+	FROM payroll.vwCOMPBEN 
+	CROSS APPLY
+	(
+		SELECT TOP 1 
+			CMB.EarningDeductionCriteriaValue 
+			,T3.CriteriaValue
+			,T3.CriteriaId
+		FROM compben.EarningDeduction CMB 
+		CROSS APPLY(SELECT EarningDeductionCriteriaValue = REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(CMB.EarningDeductionCriteriaValue,'[',''),'{',''),'}',''),']',''),'"',''))T
+		CROSS APPLY
+		(
+			SELECT
+			CriteriaValue = 
+			(
+				CASE WHEN CHARINDEX('Value', T.EarningDeductionCriteriaValue) > 0 
+				THEN SUBSTRING(T.EarningDeductionCriteriaValue, CHARINDEX('Value', T.EarningDeductionCriteriaValue), LEN(T.EarningDeductionCriteriaValue)) 
+				ELSE T.EarningDeductionCriteriaValue END
+			)
+			,CriteriaId = 
+			(
+				CASE WHEN CHARINDEX('EarningDeductionCriteriaId', T.EarningDeductionCriteriaValue) > 0 
+				THEN SUBSTRING(T.EarningDeductionCriteriaValue, CHARINDEX('EarningDeductionCriteriaId', T.EarningDeductionCriteriaValue), LEN('EarningDeductionCriteriaId') + 2) 
+				ELSE T.EarningDeductionCriteriaValue END
+			)
+		)T2
+		CROSS APPLY
+		(
+			SELECT
+			CriteriaValue = SUBSTRING(T2.CriteriaValue, CHARINDEX(':', T2.CriteriaValue) + 1, LEN(T2.CriteriaValue)) 
+			,CriteriaId = SUBSTRING(T2.CriteriaId, CHARINDEX(':', T2.CriteriaId) + 1, LEN(T2.CriteriaId)) 
+		)T3
+		WHERE CMB.EarningDeductionId = vwCOMPBEN.EarningDeductionId
+	)CMB
+
+	OUTER APPLY
+	(
+		SELECT 
+			CompanyId = (CASE WHEN ISNULL(CMB.CriteriaId,0) = 9 THEN T.VALUE ELSE NULL END)
+		FROM dbo.FN_SPLITWITHID(CMB.CriteriaValue,',')T
+	)SPLITTED
+
+	WHERE (TypeId IN (1,3) and (RIGHT(Code,3) <> 'hrs'))
+	AND NOT Code IN
+	(
+	'PhilHealthBasis'
+	,'SSSBasis'
+	,'PagibigBasis'
+	,'CompanyNonWorkingDayHrs'
+	,'CompanyNonWorkingDayHrsPay'
+	,'CompanyNonWorkingDayHrsPay_NoWork'
+	,'CompanyNonWorkingDayNightShiftHrs'
+	,'CompanyNonWorkingDayNightShiftHrsPay'
+	,'CompanyNonWorkingDayNightShiftOvertimeHrs'
+	,'CompanyNonWorkingDayNightShiftOvertimeHrsPay'
+	,'CompanyNonWorkingDayOvertimeHrs'
+	,'CompanyNonWorkingDayOvertimeHrsPay'
+	,'CompanyTax'
+	,'CompanyTaxable'
+	)
+)CMB
+CROSS APPLY
+(
+	SELECT
+	CompanyId = 
+	(
+		CASE WHEN ISNULL(CMB.MappedToId,0) <> 0 THEN Company.CompanyId 
+		ELSE 
+		(
+			CASE WHEN ISNULL(CMB.SplittedCompanyId,0) = Company.CompanyId AND ISNULL(CMB.CriteriaId,0) = 9 
+			THEN CMB.SplittedCompanyId 
+			ELSE  
+			(
+				CASE WHEN ISNULL(CMB.CriteriaValue,'') = '' THEN Company.CompanyId ELSE 0 END
+			)
+			END
+		) END
+	)
+)COLS
+
+
+
+GO
+
+

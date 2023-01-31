@@ -1,0 +1,1 @@
+UPDATE maintenance.BIRForms SET Taxable = 1 WHERE BIRForm = '7.5' AND BIRFormId IN (70,71)

@@ -1,0 +1,500 @@
+IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[report].[spAuditTrailReportByType]') AND type in (N'P', N'PC'))
+DROP PROCEDURE [report].[spAuditTrailReportByType]
+GO
+
+--=============================================
+--Author:      AGC
+--Update date: 04.30.2020
+--Description: For Audit trail report
+--=============================================
+
+CREATE PROCEDURE [report].[spAuditTrailReportByType]
+--DECLARE
+@StartDate date = '01/01/2018'
+,@EndDate date = '12/31/2018'
+,@PortalId tinyint = 1
+,@ModuleId bigint = 4
+,@MenuId bigint = 9
+,@SubMenuId BIGINT = 0
+,@RecordType varchar(250) = ''
+,@TransactionTypeId bigint = 0
+,@User varchar(250) = 'sa'
+,@DisplayId INT = 1
+,@UserSecurityId BIGINT = 0
+AS
+BEGIN
+
+SET NOCOUNT ON;
+
+--===================================================================================================================================
+--DECLARATIONS
+--===================================================================================================================================
+
+DECLARE @ReportId BIGINT = (CASE WHEN ISNULL(@DisplayId,0) = 1 THEN 502 ELSE 503 END)
+DECLARE @TMPTABLENAME VARCHAR(MAX) = 'report.TMPAuditTrailReports'
+
+/*DROP TEMP TABLE IF EXISTS*/
+IF EXISTS(SELECT * FROM sys.tables WHERE object_id = object_id(@TMPTABLENAME))
+EXEC('DROP TABLE ' + @TMPTABLENAME)
+
+
+DECLARE @TransactionType VARCHAR(500) = 
+(
+	CASE @TransactionTypeId
+		WHEN 1 THEN 'Added'
+		WHEN 2 THEN 'Updated'
+		WHEN 3 THEN 'Deleted'
+		WHEN 4 THEN 'Print'
+		WHEN 0 THEN ''
+	END
+)
+
+DECLARE @LOOKUPTABLE VARCHAR(500) = 
+(
+	SELECT TOP 1
+		TT.MenuMenuId 
+	FROM report.vwAuditTrailSystemTable TT
+	WHERE TT.MenuMenuId = @MenuId
+)
+
+DECLARE @LOOKUPSUBMENU VARCHAR(500) = 
+(
+	SELECT TOP 1
+		PSM.MenuSubMenuId 
+	FROM report.vwParamSubMenu PSM
+	WHERE 
+	( PSM.MenuSubMenuId = ISNULL (@SubMenuId,0))
+
+)
+
+DECLARE @LOOKUPSPORTAL VARCHAR(500) = 
+(
+	SELECT TOP 1
+		TT.PortalId 
+	FROM report.vwAuditTrailSystemTable TT
+	WHERE TT.PortalId = @PortalId
+
+)
+
+IF OBJECT_ID('tempdb..#AuditTrailReplaceField') IS NOT NULL
+DROP TABLE #AuditTrailReplaceField
+CREATE TABLE #AuditTrailReplaceField 
+(
+DetailId bigint identity(1,1)
+,TableValueId bigint
+,TableName varchar(250)
+,FieldNames varchar(MAX)
+,ReplaceValue varchar(250)
+,ReplaceName varchar(150)
+,UNIQUE NONCLUSTERED(TableValueId,TableName,DetailId)
+)
+
+
+--===================================================================================================================================
+--CREATE REPLACER
+--===================================================================================================================================
+
+DECLARE @SelectSourceTablesForValueReplacement VARCHAR(MAX) = STUFF((
+SELECT ' UNION ALL '+ char(10)+' SELECT TableValueId = '+ CAST(TableValueField AS VARCHAR(MAX)) + ',TableName = ''' + CAST(CASE WHEN CHARINDEX('WHERE',ReplaceTable) > 0 THEN LEFT(ReplaceTable,CHARINDEX(' ', ReplaceTable) - 1) ELSE ReplaceTable END AS VARCHAR(MAX)) + ''',FieldNames = ''' + CAST(FieldNames AS VARCHAR(MAX)) + ''',ReplaceValue = ' + CAST(ReplaceField  AS VARCHAR(MAX)) + ', ReplaceFieldName = '''+ CAST(DisplayFieldName AS VARCHAR(MAX)) +''' FROM ' + CAST(ReplaceTable AS VARCHAR(MAX)) 
+FROM maintenance.AuditTrailReplaceField 
+FOR XML PATH('')),1,10,'')
+
+INSERT INTO #AuditTrailReplaceField EXEC (@SelectSourceTablesForValueReplacement)
+
+/*SELECT * FROM #AuditTrailReplaceField;return*/
+
+--===================================================================================================================================
+--MAIN QUERY
+--===================================================================================================================================
+
+DECLARE 
+@CMD VARCHAR(MAX) = 
+'
+SELECT 
+	/*ATB.[Schema],ATB.TableName,ATB.IdentityColumn,ATB.TableIdValue,ATB.ProfileRelated*/
+	CompanyId = 1
+	'+CASE WHEN ISNULL(@DisplayId,0) = 1 
+	THEN 
+	',ATB.[User]
+	,[Date Time] = ATB.Date
+	,[Record] = CASE WHEN ATB.TransactionType = ''Print'' THEN ATB.TableName  ELSE LTRIM(REPLACE(REPLACE(REPLACE(REPLACE(COALESCE(ORF.ReplaceName,NRF.ReplaceName,ATB.ColumnName),''|'',''''),''CJI_'',''''),''CJI_'',''''),''RED_'','''')) END    
+	,[Action] = ATB.TransactionType
+	,Details = 
+	(
+	CASE ISNULL(ATB.TransactionType,'''')
+	WHEN ''Added'' THEN CONCAT(''<b>'',COLS.[New],''</b>'',(CASE WHEN ISNULL(E.EmployeeName,'''') <> '''' THEN '' for <b>'' + E.EmployeeName + ''</b>'' ELSE '''' END))
+	WHEN ''Updated'' THEN CONCAT(''from <b>'',COLS.[Old],''</b> to <b>'',COLS.[New],''</b>'',(CASE WHEN ISNULL(E.EmployeeName,'''') <> '''' THEN '' for <b>'' + E.EmployeeName + ''</b>'' ELSE '''' END),'' <b> '',E.SourceField,'' </b> '')
+	WHEN ''Deleted'' THEN CONCAT(''<b>'',COLS.[Old],''</b>'',(CASE WHEN ISNULL(E.EmployeeName,'''') <> '''' THEN '' for <b>'' + E.EmployeeName + ''</b>'' ELSE '''' END))
+	WHEN ''Print'' THEN CONCAT(''<b>'',ATB.ColumnName,''</b>'','' Input Data: '') + CONCAT(''<b>'',COLS.[New],''</b>'',(CASE WHEN ISNULL(E.EmployeeName,'''') <> '''' THEN '' for <b>'' + E.EmployeeName + ''</b>'' ELSE '''' END))
+	ELSE '''' END
+	)
+	/*
+	,[Old] = COLS.[Old]
+	,[New] = COLS.[New]
+	*/
+	'
+	ELSE 
+	',[Record] = CASE WHEN ATB.TransactionType = ''Print'' THEN ATB.TableName  ELSE LTRIM(REPLACE(REPLACE(REPLACE(REPLACE(COALESCE(ORF.ReplaceName,NRF.ReplaceName,ATB.ColumnName),''|'',''''),''CJI_'',''''),''CJI_'',''''),''RED_'','''')) END   
+	,[Action] = ATB.TransactionType
+	,Details = 
+	(
+	CASE ISNULL(ATB.TransactionType,'''')
+	WHEN ''Added'' THEN CONCAT(''<b>'',COLS.[New],''</b>'',(CASE WHEN ISNULL(E.EmployeeName,'''') <> '''' THEN '' for <b>'' + E.EmployeeName + ''</b>'' ELSE '''' END) )
+	WHEN ''Updated'' THEN CONCAT(''from <b>'',COLS.[Old],''</b> to <b>'',COLS.[New],''</b>'',(CASE WHEN ISNULL(E.EmployeeName,'''') <> '''' THEN '' for <b>'' + E.EmployeeName + ''</b>'' ELSE '''' END),'' <b> '',E.SourceField,'' </b> '')
+	WHEN ''Deleted'' THEN CONCAT(''<b>'',COLS.[Old],''</b>'',(CASE WHEN ISNULL(E.EmployeeName,'''') <> '''' THEN '' for <b>'' + E.EmployeeName + ''</b>'' ELSE '''' END))
+	WHEN ''Print'' THEN CONCAT(''<b>'',ATB.ColumnName,''</b>'','' Input Data: '') + CONCAT(''<b>'',COLS.[New],''</b>'',(CASE WHEN ISNULL(E.EmployeeName,'''') <> '''' THEN '' for <b>'' + E.EmployeeName + ''</b>'' ELSE '''' END))
+	ELSE '''' END
+	)
+	/*
+	,[Old] = COLS.[Old]
+	,[New] = COLS.[New]
+	*/
+	,[Date Time] = ATB.Date
+	,ATB.[User]
+	' 
+	END+'
+INTO ' + @TMPTABLENAME + ' 
+FROM dbo.fnRetrieveAuditTrailPerTransaction('''+CAST(@StartDate AS VARCHAR)+''','''+CAST(@EndDate AS VARCHAR)+''','''+CAST(@TransactionType AS VARCHAR)+''','''+@LOOKUPTABLE+''','''','''+ISNULL(@LOOKUPSUBMENU,0)+ ''','''+@LOOKUPSPORTAL+ ''') ATB
+
+OUTER APPLY
+(
+	SELECT TOP 1 
+		EmployeeNo
+		,EmployeeName 
+		,SourceField
+	FROM report.fnAuditTableEmployee(ATB.TableIdValue,ATB.TableName)
+)E
+
+
+OUTER APPLY 
+(
+	SELECT TOP 1 
+	ReplaceName
+	,ReplaceValue 
+	FROM #AuditTrailReplaceField 
+	WHERE 
+	CHARINDEX('','' + ATB.ColumnName + '','','','' + FieldNames + '','') > 0
+	AND CAST(TableValueId AS VARCHAR) = ATB.OldValues
+) ORF
+
+OUTER APPLY 
+(
+	SELECT TOP 1 
+	ReplaceName
+	,ReplaceValue 
+	FROM #AuditTrailReplaceField 
+	WHERE 
+	CHARINDEX('','' + ATB.ColumnName + '','','','' + FieldNames + '','') > 0
+	AND (CAST(TableValueId AS VARCHAR) = ATB.NewValues)
+) NRF
+
+OUTER APPLY 
+(
+	SELECT TOP 1
+	 ReplaceName 
+	,ReplaceValue = CMDOLD.Txt1
+	,FieldNames
+	,TableValueId
+
+	FROM #AuditTrailReplaceField 
+	OUTER APPLY
+	(
+	SELECT 
+		Txt1 =  STUFF((SELECT '','' + CAST(ReplaceValue AS VARCHAR(MAX))  FROM #AuditTrailReplaceField WHERE CHARINDEX(CONCAT('','', TableValueId, '',''), CONCAT('','',ATB.OldValues,'','')) > 0  AND  CHARINDEX(CONCAT('','', ATB.ColumnName, '',''), CONCAT('','',FieldNames,'','')) > 0 
+            FOR XML PATH(''''), ROOT (''MyString''), TYPE).value(''/MyString[1]'', ''varchar(max)''), 1, 1, '''')
+	   ,Txt2 =  STUFF((SELECT '','' + CAST(TableValueId AS VARCHAR(MAX)) 
+	 FROM #AuditTrailReplaceField WHERE CHARINDEX(CONCAT('','', TableValueId, '',''), CONCAT('','',ATB.OldValues,'','')) > 0 AND  CHARINDEX(CONCAT('','',ATB.ColumnName, '''',''''), CONCAT('','',FieldNames,'','')) > 0 AND CHARINDEX(CONCAT('','', ATB.ColumnName, '',''), CONCAT('','',FieldNames,'','')) > 0
+            FOR XML PATH(''''), ROOT (''MyString''), TYPE).value(''/MyString[1]'', ''varchar(max)''), 1, 1, '''')
+
+	)CMDOLD
+	WHERE 
+	CHARINDEX(CONCAT('','', ATB.ColumnName, '',''), CONCAT('','',FieldNames,'','')) > 0
+	AND CHARINDEX(CONCAT('','',CMDOLD.Txt2, '',''), CONCAT('','',ATB.OldValues,'','')) >= 0
+) CDORF
+
+OUTER APPLY 
+(
+	SELECT TOP 1
+	 ReplaceName
+	,ReplaceValue = CMDNEW.Txt1
+	,FieldNames
+	,TableValueId
+	FROM #AuditTrailReplaceField 
+	OUTER APPLY
+
+	(
+	SELECT 
+		Txt1 =  STUFF((SELECT '','' + CAST(ReplaceValue AS VARCHAR(MAX))  FROM #AuditTrailReplaceField CMD  WHERE CHARINDEX(CONCAT('','',CMD.TableValueId, '',''), CONCAT('','',ATB.NewValues,'','')) > 0 AND  CHARINDEX(CONCAT('','',ATB.ColumnName, '',''), CONCAT('','',FieldNames,'','')) > 0 
+            FOR XML PATH(''''), ROOT (''MyString''), TYPE).value(''/MyString[1]'', ''varchar(max)''), 1, 1, '''')
+	   ,Txt2 =  STUFF((SELECT '','' + CAST(TableValueId AS VARCHAR(MAX)) 
+	 FROM #AuditTrailReplaceField  WHERE CHARINDEX(CONCAT('','',TableValueId, '',''), CONCAT('','',ATB.NewValues,'','')) > 0 AND  CHARINDEX(CONCAT('','',ATB.ColumnName, '',''), CONCAT('','',FieldNames,'','')) > 0 AND CHARINDEX(CONCAT('','',ATB.ColumnName, '',''), CONCAT('','',FieldNames,'','')) > 0
+            FOR XML PATH(''''), ROOT (''MyString''), TYPE).value(''/MyString[1]'', ''varchar(max)''), 1, 1, '''')
+	
+	)CMDNEW
+	WHERE 
+	CHARINDEX(CONCAT('','',ATB.ColumnName, '',''), CONCAT('','',FieldNames,'','')) > 0
+	AND CHARINDEX(CONCAT('','',CMDNEW.Txt2, '',''), CONCAT('','',ATB.NewValues,'','')) >= 0
+) CDNRF
+
+OUTER APPLY
+(
+
+SELECT ReplaceValue = CASE WHEN  ATB.TableName	 = ''Available Leave Credit Report'' AND ATB.ColumnName = ''Display''  AND ATB.NewValues = ''1'' THEN ''WITH LEAVE BALANCE ONLY'' 
+						   WHEN  ATB.TableName = ''Available Leave Credit Report''AND ATB.ColumnName = ''Display'' AND ATB.NewValues = ''2'' THEN ''WITHOUT LEAVE BALANCE ONLY''
+						   WHEN ATB.TableName = ''YTD Overtime Hour Report'' AND ATB.ColumnName = ''Display'' AND ATB.NewValues = ''1'' THEN ''WITH OT ONLY''
+						   WHEN ATB.TableName = ''YTD Overtime Hour Report''AND ATB.ColumnName = ''Display'' AND ATB.NewValues = ''2'' THEN ''WITHOUT OT ONLY''
+						   WHEN ATB.TableName = ''MANPOWER AND MANHOUR PER TM REPORT'' AND ATB.ColumnName = ''Month'' AND ATB.NewValues = ''1'' THEN ''January''
+						   WHEN ATB.TableName = ''MANPOWER AND MANHOUR PER TM REPORT'' AND ATB.ColumnName = ''Month'' AND ATB.NewValues = ''2'' THEN ''February''
+						   WHEN ATB.TableName = ''MANPOWER AND MANHOUR PER TM REPORT'' AND ATB.ColumnName = ''Month'' AND ATB.NewValues = ''3'' THEN ''March''
+						   WHEN ATB.TableName = ''MANPOWER AND MANHOUR PER TM REPORT'' AND ATB.ColumnName = ''Month'' AND ATB.NewValues = ''4'' THEN ''April''
+						   WHEN ATB.TableName = ''MANPOWER AND MANHOUR PER TM REPORT'' AND ATB.ColumnName = ''Month'' AND ATB.NewValues = ''5'' THEN ''May''
+						   WHEN ATB.TableName = ''MANPOWER AND MANHOUR PER TM REPORT'' AND ATB.ColumnName = ''Month'' AND ATB.NewValues = ''6'' THEN ''June''
+						   WHEN ATB.TableName = ''MANPOWER AND MANHOUR PER TM REPORT'' AND ATB.ColumnName = ''Month'' AND ATB.NewValues = ''7'' THEN ''July''
+						   WHEN ATB.TableName = ''MANPOWER AND MANHOUR PER TM REPORT'' AND ATB.ColumnName = ''Month'' AND ATB.NewValues = ''8'' THEN ''August''
+						   WHEN ATB.TableName = ''MANPOWER AND MANHOUR PER TM REPORT'' AND ATB.ColumnName = ''Month'' AND ATB.NewValues = ''9'' THEN ''September''
+						   WHEN ATB.TableName = ''MANPOWER AND MANHOUR PER TM REPORT'' AND ATB.ColumnName = ''Month'' AND ATB.NewValues = ''10'' THEN ''October''
+						   WHEN ATB.TableName = ''MANPOWER AND MANHOUR PER TM REPORT'' AND ATB.ColumnName = ''Month'' AND ATB.NewValues = ''11'' THEN ''November''
+						   WHEN ATB.TableName = ''MANPOWER AND MANHOUR PER TM REPORT'' AND ATB.ColumnName = ''Month'' AND ATB.NewValues = ''12'' THEN ''December''
+
+						   WHEN ATB.TableName = ''Monthly Manpower and Manhour per Unit Report'' AND ATB.ColumnName = ''Month'' AND ATB.NewValues = ''1'' THEN ''January''
+						   WHEN ATB.TableName = ''Monthly Manpower and Manhour per Unit Report'' AND ATB.ColumnName = ''Month'' AND ATB.NewValues = ''2'' THEN ''February''
+						   WHEN ATB.TableName = ''Monthly Manpower and Manhour per Unit Report'' AND ATB.ColumnName = ''Month'' AND ATB.NewValues = ''3'' THEN ''March''
+						   WHEN ATB.TableName = ''Monthly Manpower and Manhour per Unit Report'' AND ATB.ColumnName = ''Month'' AND ATB.NewValues = ''4'' THEN ''April''
+						   WHEN ATB.TableName = ''Monthly Manpower and Manhour per Unit Report'' AND ATB.ColumnName = ''Month'' AND ATB.NewValues = ''5'' THEN ''May''
+						   WHEN ATB.TableName = ''Monthly Manpower and Manhour per Unit Report'' AND ATB.ColumnName = ''Month'' AND ATB.NewValues = ''6'' THEN ''June''
+						   WHEN ATB.TableName = ''Monthly Manpower and Manhour per Unit Report'' AND ATB.ColumnName = ''Month'' AND ATB.NewValues = ''7'' THEN ''July''
+						   WHEN ATB.TableName = ''Monthly Manpower and Manhour per Unit Report'' AND ATB.ColumnName = ''Month'' AND ATB.NewValues = ''8'' THEN ''August''
+						   WHEN ATB.TableName = ''Monthly Manpower and Manhour per Unit Report'' AND ATB.ColumnName = ''Month'' AND ATB.NewValues = ''9'' THEN ''September''
+						   WHEN ATB.TableName = ''Monthly Manpower and Manhour per Unit Report'' AND ATB.ColumnName = ''Month'' AND ATB.NewValues = ''10'' THEN ''October''
+						   WHEN ATB.TableName = ''Monthly Manpower and Manhour per Unit Report'' AND ATB.ColumnName = ''Month'' AND ATB.NewValues = ''11'' THEN ''November''
+						   WHEN ATB.TableName = ''Monthly Manpower and Manhour per Unit Report'' AND ATB.ColumnName = ''Month'' AND ATB.NewValues = ''12'' THEN ''December''
+
+						   WHEN ATB.TableName = ''Rest Days Monitoring Report'' AND ATB.ColumnName = ''Display'' AND ATB.NewValues = ''1'' THEN ''WHO WORKED ON RESTDAY ONLY''
+						   WHEN ATB.TableName = ''Rest Days Monitoring Report''  AND ATB.ColumnName = ''Display'' AND ATB.NewValues = ''2'' THEN ''WHO DID NOT WORKED ON RESTDAY ONLY''
+
+						   WHEN ATB.TableName = ''User Registration Report'' AND ATB.ColumnName = ''Status'' AND ATB.NewValues = ''Draft'' THEN ''Registered''
+						   WHEN ATB.TableName = ''User Registration Report'' AND ATB.ColumnName = ''Status'' AND ATB.NewValues = ''Approved'' THEN ''Not Registered''
+						   WHEN ATB.TableName = ''User Registration Report'' AND ATB.ColumnName = ''Status'' AND ATB.NewValues = ''1,2'' THEN ''Registered, Not Registered''
+						   WHEN ATB.TableName = ''User Registration Report'' AND ATB.ColumnName = ''Sort By'' AND ATB.NewValues = ''1'' THEN ''Employee Name''
+						   WHEN ATB.TableName = ''User Registration Report'' AND ATB.ColumnName = ''Sort By'' AND ATB.NewValues = ''2'' THEN ''(Not Registered first, then Registered)''
+						   WHEN ATB.TableName = ''SSS R-1A'' AND ATB.ColumnName = ''Type of Employer'' AND ATB.NewValues = ''1'' THEN ''Business''
+						   WHEN ATB.TableName = ''SSS R-1A'' AND ATB.ColumnName = ''Type of Employer'' AND ATB.NewValues = ''2'' THEN ''Household''
+						   WHEN ATB.TableName = ''SSS R-1A'' AND ATB.ColumnName = ''Applicable Box'' AND ATB.NewValues = ''1'' THEN ''INITIAL LIST''
+						   WHEN ATB.TableName = ''SSS R-1A'' AND ATB.ColumnName = ''Applicable Box'' AND ATB.NewValues = ''2'' THEN ''SUBSEQUENT LIST''
+
+						   WHEN ATB.TableName = ''SSS R-1A'' AND ATB.ColumnName = ''Philhealth ER2'' AND ATB.NewValues = ''1'' THEN ''INITIAL LIST''
+						   WHEN ATB.TableName = ''SSS R-1A'' AND ATB.ColumnName = ''Philhealth ER2'' AND ATB.NewValues = ''2'' THEN ''SUBSEQUENT LIST''
+
+						   WHEN ATB.TableName = ''Employee Assignment Movement List Report'' AND ATB.ColumnName = ''Assignment'' AND ATB.NewValues = ''1'' THEN ''Company''
+						   WHEN ATB.TableName = ''Employee Assignment Movement List Report'' AND ATB.ColumnName = ''Assignment'' AND ATB.NewValues = ''2'' THEN ''Branch''
+						   WHEN ATB.TableName = ''Employee Assignment Movement List Report'' AND ATB.ColumnName = ''Assignment'' AND ATB.NewValues = ''3'' THEN ''Department''
+						   WHEN ATB.TableName = ''Employee Assignment Movement List Report'' AND ATB.ColumnName = ''Assignment'' AND ATB.NewValues = ''4'' THEN ''Division''
+						   WHEN ATB.TableName = ''Employee Assignment Movement List Report'' AND ATB.ColumnName = ''Assignment'' AND ATB.NewValues = ''5'' THEN ''Office''
+						   WHEN ATB.TableName = ''Employee Assignment Movement List Report'' AND ATB.ColumnName = ''Assignment'' AND ATB.NewValues = ''6'' THEN ''District''
+						   WHEN ATB.TableName = ''Employee Assignment Movement List Report'' AND ATB.ColumnName = ''Assignment'' AND ATB.NewValues = ''7'' THEN ''Group''
+						   WHEN ATB.TableName = ''Employee Assignment Movement List Report'' AND ATB.ColumnName = ''Assignment'' AND ATB.NewValues = ''8'' THEN ''Team''
+					       WHEN ATB.TableName = ''Employee Assignment Movement List Report'' AND ATB.ColumnName = ''Assignment'' AND ATB.NewValues = ''9'' THEN ''Unit''
+						   WHEN ATB.TableName = ''Employee Assignment Movement List Report'' AND ATB.ColumnName = ''Assignment'' AND ATB.NewValues = ''10'' THEN ''Line''
+						   WHEN ATB.TableName = ''Employee Assignment Movement List Report'' AND ATB.ColumnName = ''Assignment'' AND ATB.NewValues = ''11'' THEN ''Project''
+						   WHEN ATB.TableName = ''Employee Assignment Movement List Report'' AND ATB.ColumnName = ''Assignment'' AND ATB.NewValues = ''12'' THEN ''Cost Center Group''
+						   WHEN ATB.TableName = ''Employee Assignment Movement List Report'' AND ATB.ColumnName = ''Assignment'' AND ATB.NewValues = ''13'' THEN ''Cost Center Name''
+						   WHEN ATB.TableName = ''Employee Assignment Movement List Report'' AND ATB.ColumnName = ''Assignment'' AND ATB.NewValues = ''14'' THEN ''Employee Type''
+						   WHEN ATB.TableName = ''Employee Assignment Movement List Report'' AND ATB.ColumnName = ''Assignment'' AND ATB.NewValues = ''15'' THEN ''Job Level''
+						   WHEN ATB.TableName = ''Employee Assignment Movement List Report'' AND ATB.ColumnName = ''Assignment'' AND ATB.NewValues = ''16'' THEN ''Job Rank''
+						   WHEN ATB.TableName = ''Employee Assignment Movement List Report'' AND ATB.ColumnName = ''Assignment'' AND ATB.NewValues = ''17'' THEN ''Job Grade''
+						   WHEN ATB.TableName = ''Employee Assignment Movement List Report'' AND ATB.ColumnName = ''Assignment'' AND ATB.NewValues = ''18'' THEN ''Job Position''
+
+						   WHEN ATB.TableName = ''Performance Appraisal Affected by Disciplinary Action'' AND ATB.ColumnName = ''PA Effect'' AND ATB.NewValues = ''1'' THEN ''Annual Increase''
+						   WHEN ATB.TableName = ''Performance Appraisal Affected by Disciplinary Action'' AND ATB.ColumnName = ''PA Effect'' AND ATB.NewValues = ''2'' THEN ''Performance Bonus''
+						   WHEN ATB.TableName = ''Performance Appraisal Affected by Disciplinary Action'' AND ATB.ColumnName = ''PA Effect'' AND ATB.NewValues = ''3'' THEN ''Both''
+
+						   WHEN ATB.TableName = ''Late and Undertime Detailed Report per Department'' AND ATB.ColumnName = ''Sort By'' AND ATB.NewValues = ''1'' THEN ''Employee Name''
+						   WHEN ATB.TableName = ''Late and Undertime Detailed Report per Department'' AND ATB.ColumnName = ''Sort By'' AND ATB.NewValues = ''2'' THEN ''Employee Number''
+						   WHEN ATB.TableName = ''Late and Undertime Detailed Report per Department'' AND ATB.ColumnName = ''Sort By'' AND ATB.NewValues = ''3'' THEN ''Job Position''
+						   WHEN ATB.TableName = ''Late and Undertime Detailed Report per Department'' AND ATB.ColumnName = ''Sort By'' AND ATB.NewValues = ''4'' THEN ''Department Name''
+						   WHEN ATB.TableName = ''Late and Undertime Detailed Report per Department'' AND ATB.ColumnName = ''Sort By'' AND ATB.NewValues = ''5'' THEN ''Cost Center''
+						   
+						   WHEN ATB.TableName = ''Detailed Attendance Report'' AND ATB.ColumnName = ''Group By'' AND ATB.NewValues = ''1'' THEN ''Branch''
+						   WHEN ATB.TableName = ''Detailed Attendance Report'' AND ATB.ColumnName = ''Group By'' AND ATB.NewValues = ''2'' THEN ''Department''
+						   WHEN ATB.TableName = ''Detailed Attendance Report'' AND ATB.ColumnName = ''Group By'' AND ATB.NewValues = ''3'' THEN ''Division''
+						   WHEN ATB.TableName = ''Detailed Attendance Report'' AND ATB.ColumnName = ''Group By'' AND ATB.NewValues = ''4'' THEN ''Team''
+						   WHEN ATB.TableName = ''Detailed Attendance Report'' AND ATB.ColumnName = ''Group By'' AND ATB.NewValues = ''5'' THEN ''Group''
+						   WHEN ATB.TableName = ''Detailed Attendance Report'' AND ATB.ColumnName = ''Group By'' AND ATB.NewValues = ''6'' THEN ''Unit''						   
+						   WHEN ATB.TableName = ''Detailed Attendance Report'' AND ATB.ColumnName = ''Sort By'' AND ATB.NewValues = ''1'' THEN ''Employee Name''
+						   WHEN ATB.TableName = ''Detailed Attendance Report'' AND ATB.ColumnName = ''Sort By'' AND ATB.NewValues = ''2'' THEN ''Employee Number''
+						   WHEN ATB.TableName = ''Detailed Attendance Report'' AND ATB.ColumnName = ''Sort By'' AND ATB.NewValues = ''3'' THEN ''Branch''
+
+						   WHEN ATB.TableName = ''Individual Attendance Report'' AND ATB.ColumnName = ''Group By'' AND ATB.NewValues = ''1'' THEN ''Branch''
+						   WHEN ATB.TableName = ''Individual Attendance Report'' AND ATB.ColumnName = ''Group By'' AND ATB.NewValues = ''2'' THEN ''Department''
+						   WHEN ATB.TableName = ''Individual Attendance Report'' AND ATB.ColumnName = ''Group By'' AND ATB.NewValues = ''3'' THEN ''Division''
+						   WHEN ATB.TableName = ''Individual Attendance Report'' AND ATB.ColumnName = ''Group By'' AND ATB.NewValues = ''4'' THEN ''Team''
+						   WHEN ATB.TableName = ''Individual Attendance Report'' AND ATB.ColumnName = ''Group By'' AND ATB.NewValues = ''5'' THEN ''Group''
+						   WHEN ATB.TableName = ''Individual Attendance Report'' AND ATB.ColumnName = ''Group By'' AND ATB.NewValues = ''6'' THEN ''Unit''
+						   WHEN ATB.TableName = ''Individual Attendance Report'' AND ATB.ColumnName = ''Group By'' AND ATB.NewValues = ''7'' THEN ''Office''
+						   WHEN ATB.TableName = ''Individual Attendance Report'' AND ATB.ColumnName = ''Sort By'' AND ATB.NewValues = ''1'' THEN ''Employee Name''
+						   WHEN ATB.TableName = ''Individual Attendance Report'' AND ATB.ColumnName = ''Sort By'' AND ATB.NewValues = ''2'' THEN ''Employee Number''
+						   WHEN ATB.TableName = ''Individual Attendance Report'' AND ATB.ColumnName = ''Sort By'' AND ATB.NewValues = ''3'' THEN ''Branch''
+						   WHEN ATB.TableName = ''Individual Attendance Report'' AND ATB.ColumnName = ''Sort By'' AND ATB.NewValues = ''4'' THEN ''Department''
+						   WHEN ATB.TableName = ''Individual Attendance Report'' AND ATB.ColumnName = ''Sort By'' AND ATB.NewValues = ''5'' THEN ''Job Position''
+
+						   WHEN ATB.TableName = ''Detailed Attendance Report Breakdown with Overtime Type'' AND ATB.ColumnName = ''Source'' AND ATB.NewValues = ''0'' THEN ''Regular Attendance''
+						   WHEN ATB.TableName = ''Detailed Attendance Report Breakdown with Overtime Type'' AND ATB.ColumnName = ''Source'' AND ATB.NewValues = ''1'' THEN ''Adjustment Attendance''
+						   WHEN ATB.TableName = ''Detailed Attendance Report Breakdown with Overtime Type'' AND ATB.ColumnName = ''Source'' AND ATB.NewValues = ''0,1'' THEN ''Regular Attendance,Adjustment Attendance''
+						   
+						   WHEN ATB.TableName = ''Employees with Obligatory Terms of Service List Report'' AND ATB.ColumnName = ''Status'' AND ATB.NewValues = ''1'' THEN ''All''
+						   WHEN ATB.TableName = ''Employees with Obligatory Terms of Service List Report'' AND ATB.ColumnName = ''Status'' AND ATB.NewValues = ''2'' THEN ''Expired''
+						   WHEN ATB.TableName = ''Employees with Obligatory Terms of Service List Report'' AND ATB.ColumnName = ''Status'' AND ATB.NewValues = ''3'' THEN ''Outstanding''
+
+						   WHEN ATB.TableName = ''Transfer Advise Form Printout'' AND ATB.ColumnName = ''Section Type'' AND ATB.NewValues = ''1'' THEN ''Company''
+						   WHEN ATB.TableName = ''Transfer Advise Form Printout'' AND ATB.ColumnName = ''Section Type'' AND ATB.NewValues = ''2'' THEN ''Branch''
+						   WHEN ATB.TableName = ''Transfer Advise Form Printout'' AND ATB.ColumnName = ''Section Type'' AND ATB.NewValues = ''3'' THEN ''Department''
+						   WHEN ATB.TableName = ''Transfer Advise Form Printout'' AND ATB.ColumnName = ''Section Type'' AND ATB.NewValues = ''4'' THEN ''Division''
+						   WHEN ATB.TableName = ''Transfer Advise Form Printout'' AND ATB.ColumnName = ''Section Type'' AND ATB.NewValues = ''5'' THEN ''Office''
+						   WHEN ATB.TableName = ''Transfer Advise Form Printout'' AND ATB.ColumnName = ''Section Type'' AND ATB.NewValues = ''6'' THEN ''District''
+						   WHEN ATB.TableName = ''Transfer Advise Form Printout'' AND ATB.ColumnName = ''Section Type'' AND ATB.NewValues = ''7'' THEN ''Group''
+						   WHEN ATB.TableName = ''Transfer Advise Form Printout'' AND ATB.ColumnName = ''Section Type'' AND ATB.NewValues = ''8'' THEN ''Team''
+					       WHEN ATB.TableName = ''Transfer Advise Form Printout'' AND ATB.ColumnName = ''Section Type'' AND ATB.NewValues = ''9'' THEN ''Unit''
+						   WHEN ATB.TableName = ''Transfer Advise Form Printout'' AND ATB.ColumnName = ''Section Type'' AND ATB.NewValues = ''10'' THEN ''Line''
+						   WHEN ATB.TableName = ''Transfer Advise Form Printout'' AND ATB.ColumnName = ''Section Type'' AND ATB.NewValues = ''11'' THEN ''Project''
+						   WHEN ATB.TableName = ''Transfer Advise Form Printout'' AND ATB.ColumnName = ''Section Type'' AND ATB.NewValues = ''12'' THEN ''Cost Center Group''
+						   WHEN ATB.TableName = ''Transfer Advise Form Printout'' AND ATB.ColumnName = ''Section Type'' AND ATB.NewValues = ''13'' THEN ''Cost Center Name''
+						   WHEN ATB.TableName = ''Transfer Advise Form Printout'' AND ATB.ColumnName = ''Section Type'' AND ATB.NewValues = ''14'' THEN ''Employee Type''
+						   WHEN ATB.TableName = ''Transfer Advise Form Printout'' AND ATB.ColumnName = ''Section Type'' AND ATB.NewValues = ''15'' THEN ''Job Position''
+						   WHEN ATB.TableName = ''Transfer Advise Form Printout'' AND ATB.ColumnName = ''Section Type'' AND ATB.NewValues = ''16'' THEN ''Job Rank''
+						   WHEN ATB.TableName = ''Transfer Advise Form Printout'' AND ATB.ColumnName = ''Section Type'' AND ATB.NewValues = ''17'' THEN ''Job Grade''
+						   WHEN ATB.TableName = ''Transfer Advise Form Printout'' AND ATB.ColumnName = ''Section Type'' AND ATB.NewValues = ''18'' THEN ''Job Level''
+
+						   WHEN ATB.TableName = ''Demographic Report'' AND ATB.ColumnName = ''Set as Column'' AND ATB.NewValues = ''1'' THEN ''Age Group''
+						   WHEN ATB.TableName = ''Demographic Report'' AND ATB.ColumnName = ''Set as Column'' AND ATB.NewValues = ''2'' THEN ''Religion''
+						   WHEN ATB.TableName = ''Demographic Report'' AND ATB.ColumnName = ''Set as Column'' AND ATB.NewValues = ''3'' THEN ''City''
+						   WHEN ATB.TableName = ''Demographic Report'' AND ATB.ColumnName = ''Set as Column'' AND ATB.NewValues = ''4'' THEN ''Blood Type''
+						   WHEN ATB.TableName = ''Demographic Report'' AND ATB.ColumnName = ''Set as Column'' AND ATB.NewValues = ''5'' THEN ''School''
+						   WHEN ATB.TableName = ''Demographic Report'' AND ATB.ColumnName = ''Set as Column'' AND ATB.NewValues = ''6'' THEN ''Course''
+						   WHEN ATB.TableName = ''Demographic Report'' AND ATB.ColumnName = ''Set as Column'' AND ATB.NewValues = ''7'' THEN ''Educational Attainment''
+						   WHEN ATB.TableName = ''Demographic Report'' AND ATB.ColumnName = ''Set as Column'' AND ATB.NewValues = ''8'' THEN ''Gender''
+					       WHEN ATB.TableName = ''Demographic Report'' AND ATB.ColumnName = ''Set as Column'' AND ATB.NewValues = ''9'' THEN ''Department''
+						   WHEN ATB.TableName = ''Demographic Report'' AND ATB.ColumnName = ''Set as Column'' AND ATB.NewValues = ''10'' THEN ''Cost Center''
+						   WHEN ATB.TableName = ''Demographic Report'' AND ATB.ColumnName = ''Set as Column'' AND ATB.NewValues = ''11'' THEN ''Job Position''
+						   WHEN ATB.TableName = ''Demographic Report'' AND ATB.ColumnName = ''Set as Column'' AND ATB.NewValues = ''12'' THEN ''Job Level''
+
+
+						   WHEN ATB.TableName = ''Demographic Report'' AND ATB.ColumnName = ''Set as Row'' AND ATB.NewValues = ''1'' THEN ''Age Group''
+						   WHEN ATB.TableName = ''Demographic Report'' AND ATB.ColumnName = ''Set as Row'' AND ATB.NewValues = ''2'' THEN ''Religion''
+						   WHEN ATB.TableName = ''Demographic Report'' AND ATB.ColumnName = ''Set as Row'' AND ATB.NewValues = ''3'' THEN ''City''
+						   WHEN ATB.TableName = ''Demographic Report'' AND ATB.ColumnName = ''Set as Row'' AND ATB.NewValues = ''4'' THEN ''Blood Type''
+						   WHEN ATB.TableName = ''Demographic Report'' AND ATB.ColumnName = ''Set as Row'' AND ATB.NewValues = ''5'' THEN ''School''
+						   WHEN ATB.TableName = ''Demographic Report'' AND ATB.ColumnName = ''Set as Row'' AND ATB.NewValues = ''6'' THEN ''Course''
+						   WHEN ATB.TableName = ''Demographic Report'' AND ATB.ColumnName = ''Set as Row'' AND ATB.NewValues = ''7'' THEN ''Educational Attainment''
+						   WHEN ATB.TableName = ''Demographic Report'' AND ATB.ColumnName = ''Set as Row'' AND ATB.NewValues = ''8'' THEN ''Gender''
+					       WHEN ATB.TableName = ''Demographic Report'' AND ATB.ColumnName = ''Set as Row'' AND ATB.NewValues = ''9'' THEN ''Department''
+						   WHEN ATB.TableName = ''Demographic Report'' AND ATB.ColumnName = ''Set as Row'' AND ATB.NewValues = ''10'' THEN ''Cost Center''
+						   WHEN ATB.TableName = ''Demographic Report'' AND ATB.ColumnName = ''Set as Row'' AND ATB.NewValues = ''11'' THEN ''Job Position''
+						   WHEN ATB.TableName = ''Demographic Report'' AND ATB.ColumnName = ''Set as Row'' AND ATB.NewValues = ''12'' THEN ''Job Level''
+
+						   WHEN ATB.TableName = ''Assignment Policies'' AND ATB.ColumnName = ''Attendance Policy'' AND ATB.NewValues = ''1'' THEN ''With''
+						   WHEN ATB.TableName = ''Assignment Policies'' AND ATB.ColumnName = ''Attendance Policy'' AND ATB.NewValues = ''2'' THEN ''Without''
+						   WHEN ATB.TableName = ''Assignment Policies'' AND ATB.ColumnName = ''Attendance Policy'' AND ATB.NewValues = ''3'' THEN ''Any''
+						   WHEN ATB.TableName = ''Assignment Policies'' AND ATB.ColumnName = ''Payroll Policy'' AND ATB.NewValues = ''1'' THEN ''With''
+						   WHEN ATB.TableName = ''Assignment Policies'' AND ATB.ColumnName = ''Payroll Policy'' AND ATB.NewValues = ''2'' THEN ''Without''
+						   WHEN ATB.TableName = ''Assignment Policies'' AND ATB.ColumnName = ''Payroll Policy'' AND ATB.NewValues = ''3'' THEN ''Any''
+						   WHEN ATB.TableName = ''Assignment Policies'' AND ATB.ColumnName = ''Leave Code Policy'' AND ATB.NewValues = ''1'' THEN ''With''
+						   WHEN ATB.TableName = ''Assignment Policies'' AND ATB.ColumnName = ''Leave Code Policy'' AND ATB.NewValues = ''2'' THEN ''Without''
+						   WHEN ATB.TableName = ''Assignment Policies'' AND ATB.ColumnName = ''Leave Code Policy'' AND ATB.NewValues = ''3'' THEN ''Any''
+
+						   WHEN ATB.TableName = ''Performance Appraisal Affected by Disciplinary Action'' AND ATB.ColumnName = ''PA Effect'' AND ATB.NewValues = ''1'' THEN ''Annual Increase''
+						   WHEN ATB.TableName = ''Performance Appraisal Affected by Disciplinary Action'' AND ATB.ColumnName = ''PA Effect'' AND ATB.NewValues = ''2'' THEN ''Performance Bonus''
+						   WHEN ATB.TableName = ''Performance Appraisal Affected by Disciplinary Action'' AND ATB.ColumnName = ''PA Effect'' AND ATB.NewValues = ''3'' THEN ''Both''
+						   
+						   WHEN ATB.TableName = ''Attendance Summary Detailed Report'' AND ATB.ColumnName = ''Group By'' AND ATB.NewValues = ''0'' THEN ''None''
+						   WHEN ATB.TableName = ''Attendance Summary Detailed Report'' AND ATB.ColumnName = ''Group By'' AND ATB.NewValues = ''1'' THEN ''Branch''
+						   WHEN ATB.TableName = ''Attendance Summary Detailed Report'' AND ATB.ColumnName = ''Group By'' AND ATB.NewValues = ''2'' THEN ''Office''
+						   WHEN ATB.TableName = ''Attendance Summary Detailed Report'' AND ATB.ColumnName = ''Group By'' AND ATB.NewValues = ''3'' THEN ''Department''
+						   WHEN ATB.TableName = ''Attendance Summary Detailed Report'' AND ATB.ColumnName = ''Group By'' AND ATB.NewValues = ''4'' THEN ''Division''
+						   WHEN ATB.TableName = ''Attendance Summary Detailed Report'' AND ATB.ColumnName = ''Group By'' AND ATB.NewValues = ''5'' THEN ''Team''
+						   WHEN ATB.TableName = ''Attendance Summary Detailed Report'' AND ATB.ColumnName = ''Group By'' AND ATB.NewValues = ''6'' THEN ''Group''
+						   WHEN ATB.TableName = ''Attendance Summary Detailed Report'' AND ATB.ColumnName = ''Group By'' AND ATB.NewValues = ''7'' THEN ''Unit''
+						   
+						   WHEN ATB.TableName = ''Loan and Deduction List Report'' AND ATB.ColumnName = ''Group By'' AND ATB.NewValues = ''1'' THEN ''Branch''
+						   WHEN ATB.TableName = ''Loan and Deduction List Report'' AND ATB.ColumnName = ''Group By'' AND ATB.NewValues = ''2'' THEN ''Department''
+						   WHEN ATB.TableName = ''Loan and Deduction List Report'' AND ATB.ColumnName = ''Group By'' AND ATB.NewValues = ''3'' THEN ''Office''
+						   WHEN ATB.TableName = ''Loan and Deduction List Report'' AND ATB.ColumnName = ''Group By'' AND ATB.NewValues = ''4'' THEN ''Division''
+						   WHEN ATB.TableName = ''Loan and Deduction List Report'' AND ATB.ColumnName = ''Group By'' AND ATB.NewValues = ''5'' THEN ''Group''
+						   WHEN ATB.TableName = ''Loan and Deduction List Report'' AND ATB.ColumnName = ''Group By'' AND ATB.NewValues = ''6'' THEN ''Office''
+
+						   WHEN ATB.TableName = ''Loan and Deduction List Report'' AND ATB.ColumnName = ''Group By'' AND ATB.NewValues = ''1'' THEN ''Branch''
+						   WHEN ATB.TableName = ''Loan and Deduction List Report'' AND ATB.ColumnName = ''Group By'' AND ATB.NewValues = ''2'' THEN ''Department''
+
+						   WHEN ATB.TableName = ''Employee Unproductivity Summary Report'' AND ATB.ColumnName = ''Group By'' AND ATB.NewValues = ''1'' THEN ''Group By Date''
+						   WHEN ATB.TableName = ''Employee Unproductivity Summary Report'' AND ATB.ColumnName = ''Group By'' AND ATB.NewValues = ''2'' THEN ''Group By Employee''
+						   WHEN ATB.TableName = ''Employee Unproductivity Summary Report'' AND ATB.ColumnName = ''Display Type'' AND ATB.NewValues = ''1'' THEN ''Summary''
+						   WHEN ATB.TableName = ''Employee Unproductivity Summary Report'' AND ATB.ColumnName = ''Display Type'' AND ATB.NewValues = ''2'' THEN ''Detailed''
+						   
+						   WHEN ATB.TableName = ''Salary Register Report'' AND ATB.ColumnName = ''Group By'' AND ATB.NewValues = ''1'' THEN ''Branch''
+						   WHEN ATB.TableName = ''Salary Register Report'' AND ATB.ColumnName = ''Group By'' AND ATB.NewValues = ''2'' THEN ''Department''
+						   WHEN ATB.TableName = ''Salary Register Report'' AND ATB.ColumnName = ''Group By'' AND ATB.NewValues = ''3'' THEN ''Cost Center''
+						   WHEN ATB.TableName = ''Salary Register Report'' AND ATB.ColumnName = ''Group By'' AND ATB.NewValues = ''4'' THEN ''Division''
+						   WHEN ATB.TableName = ''Salary Register Report'' AND ATB.ColumnName = ''Group By'' AND ATB.NewValues = ''5'' THEN ''Unit''
+						   WHEN ATB.TableName = ''Salary Register Report'' AND ATB.ColumnName = ''Group By'' AND ATB.NewValues = ''6'' THEN ''Office''
+
+						   WHEN ATB.TableName = ''Payroll Deduction Schedule Report'' AND ATB.ColumnName = ''Sort By'' AND ATB.NewValues = ''1'' THEN ''Employee Name''
+						   WHEN ATB.TableName = ''Payroll Deduction Schedule Report'' AND ATB.ColumnName = ''Sort By'' AND ATB.NewValues = ''2'' THEN ''Employee No''
+						   WHEN ATB.TableName = ''Payroll Deduction Schedule Report'' AND ATB.ColumnName = ''Sort By'' AND ATB.NewValues = ''3'' THEN ''Department''
+						   WHEN ATB.TableName = ''Payroll Deduction Schedule Report'' AND ATB.ColumnName = ''Sort By'' AND ATB.NewValues = ''4'' THEN ''Position''
+						
+
+						   END
+
+
+)NOTableId
+
+
+
+
+OUTER APPLY
+(
+	SELECT TOP 1
+	[Old] =  COALESCE(CDORF.ReplaceValue,ORF.ReplaceValue,ATB.OldValues,'''')
+	,[New] = COALESCE(NOTableId.ReplaceValue,CDNRF.ReplaceValue,NRF.ReplaceValue,ATB.NewValues,'''')
+	,FieldName =  COALESCE(ORF.ReplaceName,NRF.ReplaceName,ATB.ColumnName)
+)COLS
+
+CROSS APPLY
+(
+
+SELECT TOP 1 * FROM security.UserSecurity US
+WHERE US.Username = ATB.[User]
+AND US.Username = '''+@User+''' OR ISNULL('''+@User+''','''') = ''''
+)US
+
+
+
+
+
+
+WHERE /* ATB.ColumnName */  COLS.FieldName  NOT IN
+(
+	SELECT DISTINCT T.IDENTITY_COLUMN FROM report.vwIdentityColumns T
+)
+
+--AND NOT(COLS.NEW =  ''1/1/1900 12:00:00 AM'' OR COLS.OLD =  ''1/1/1900 12:00:00 AM'')
+
+'
+
+/*SELECT @CMD;RETURN*/
+
+EXEC(@CMD);
+
+/*
+EXEC('SELECT * FROM ' + @TMPTABLENAME);
+RETURN;
+*/
+
+
+--===================================================================================================================================
+--GET THE TMP TABLE COLUMNS, INSERT INTO REPORTDATA TABLE
+--===================================================================================================================================
+
+EXEC [report].[spCreateReportColumn] @TMPTABLENAME, @ReportId, 'CompanyId'
+
+
+END

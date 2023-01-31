@@ -1,0 +1,8 @@
+UPDATE schedule.Shift SET SpecialNSRates = 0
+UPDATE schedule.WorkSchedule SET SpecialNSRates = 0
+
+INSERT INTO security.FieldLookUp (FormName, [Table], TableFieldName, FormFieldName, HideTag, RequiredTag)
+VALUES ('Shift Schedule', 'Shift', 'SpecialNSRates', 'chkSpecialNSRates', 1, 0)
+
+INSERT INTO security.FieldLookUp (FormName, [Table], TableFieldName, FormFieldName, HideTag, RequiredTag)
+VALUES ('Work Schedule', 'WorkSchedule', 'SpecialNSRates', 'chkSpecialNSRates', 1, 0)

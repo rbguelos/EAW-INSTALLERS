@@ -1,0 +1,75 @@
+IF NOT OBJECT_ID('[fileimport].[fnGetRefNo]') IS NULL
+DROP FUNCTION [fileimport].[fnGetRefNo]
+GO
+
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+-- =============================================
+-- Author:		RME
+-- Create date: 11/21/2019
+-- Description:	Generates reference number
+-- =============================================
+CREATE FUNCTION [fileimport].[fnGetRefNo] 
+(
+	-- Add the parameters for the function here
+	@Transaction varchar(50),
+	@Sequence int
+)
+RETURNS varchar(150)
+AS
+BEGIN
+	-- Declare the return variable here
+DECLARE @REFNO VARCHAR(150)
+
+SELECT
+	--rn.[Transaction]
+	@REFNO = CONCAT(MAX(fv.FMT1), MAX(fv.FMT2), MAX(fv.FMT3), MAX(fv.FMT4))
+FROM (SELECT
+		[Sequence] = [Sequence] + @SEQUENCE
+	   ,[Length]
+	   ,[Format]
+	   ,[Prefix]
+	   ,[Suffix]
+	FROM maintenance.ReferenceNumberLookUp  WITH (NOLOCK)
+	WHERE [Transaction] = @TRANSACTION) rn
+CROSS APPLY (SELECT
+		FMTSEQUENCE = CAST(RIGHT(CONCAT('00000000000000000000', ISNULL(rn.[Sequence], 0)), rn.[Length]) AS VARCHAR)) seq
+CROSS APPLY (SELECT
+		*
+	FROM dbo.SplitStrings_XML(rn.[Format], '|')) fmt
+CROSS APPLY (SELECT
+		fmtValue =
+		CASE fmt.[VALUE]
+			WHEN 'PREFIX' THEN rn.Prefix
+			WHEN 'SUFFIX' THEN rn.Suffix
+			WHEN 'SEQUENCE' THEN seq.FMTSEQUENCE
+			ELSE FORMAT(GETDATE(), REPLACE(fmt.[VALUE], 'Y', 'y'))
+		END) vl
+CROSS APPLY (SELECT
+		FMT1 =
+		CASE
+			WHEN ROWID = 1 THEN vl.FMTValue
+		END
+	   ,FMT2 =
+		CASE
+			WHEN ROWID = 2 THEN vl.FMTValue
+		END
+	   ,FMT3 =
+		CASE
+			WHEN ROWID = 3 THEN vl.FMTValue
+		END
+	   ,FMT4 =
+		CASE
+			WHEN ROWID = 4 THEN vl.FMTValue
+		END) fv;
+
+RETURN @REFNO
+
+END
+GO
+
+

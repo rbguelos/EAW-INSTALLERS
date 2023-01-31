@@ -1,0 +1,7 @@
+UPDATE admin.MenuMenu SET MenuName = 'Individual Objective'
+WHERE MenuName = 'Performance Objective'
+
+UPDATE security.Module_Forms SET [Name] = 'Individual Objective',
+Form = 'Individual Objective'
+WHERE [Name] = 'Performance Objective'
+AND ModuleId = 25

@@ -1,0 +1,86 @@
+SET NOCOUNT ON
+/*start deleting existing report configs*/
+DELETE FROM report.Report WHERE ReportId = 413
+DELETE FROM report.ReportData WHERE ReportId = 413
+DELETE FROM report.ReportParameter WHERE ReportCode = 'UserRegistratationReport'
+DELETE FROM report.ReportSubReport WHERE ReportCode = 'UserRegistratationReport'
+DELETE FROM report.ReportMenu WHERE ReportId = 413
+/*end deleting existing report configs*/
+
+/*start insert data to report.Report*/
+SET IDENTITY_INSERT [report].[Report] ON
+INSERT [report].[Report] ([ReportId],[ReportCode],[ReportName],[ReportFile],[ReportExcelFile],[EmploymentStatus],[TableSPUsed],[SPUsed],[NoOrderBy],[QueryType],[InsertToReportTempTable],[Description],[ImageFile],[SortFields],[Event],[ExportFormat],[UseExportToExcelAPI],[DetailColStartPos],[DetailRowStartPos],[HeaderRowStartPos],[IncludeColHeader],[InsertNewRowAtRowPos],[Template],[SourceName],[ShowGrandTotals],[RepeatColumnHeaderOnHeaderGroup],[RepeatColumnHeaderOnGroupLevel],[AutoSizeColumn],[MaxRowPerPage],[DisplayReportHeader],[CreateId],[Createdate],[LastUpdateId],[LastUpdateDate])VALUES(413,'UserRegistratationReport','User Registratation Report','\Reports\Security\UserRegistratationReport.rpt',NULL,NULL,'SELECT         
+	RowId = ROW_NUMBER() OVER
+	(ORDER BY 
+		(CASE @SortBy WHEN 0 THEN E.LastFirstMIName WHEN 1 THEN E.LastFirstMIName WHEN 2 THEN CAST(Cols.RegStatusIdSort AS VARCHAR) END),
+		(CASE @SortBy WHEN 0 THEN CAST(Cols.RegStatusIdSort AS VARCHAR) WHEN 1 THEN CAST(Cols.RegStatusIdSort AS VARCHAR) WHEN 2 THEN E.LastFirstMIName END)
+	)
+	,EmployeeNo = ISNULL(E.EmployeeNo,'''')
+	,EmployeeName = ISNULL(E.LastFirstMIName,'''')
+	,UserName = ISNULL(SEC.Username,'''')
+	,UserRole = ISNULL(RR.Role,'''')
+	,RegStatus = ISNULL(Cols.RegStatus,'''')
+	,CompanyName = ISNULL(E.CompanyName,'''')
+	,E.CompanyId
+FROM employee.Profile EP
+LEFT JOIN security.UserSecurity SEC ON SEC.UserSecurityId = EP.UserAccountId
+LEFT JOIN security.[Role] RR ON RR.RoleId = SEC.RoleId
+CROSS APPLY
+(
+	SELECT TOP 1	
+		E.CompanyId
+		,E.LastFirstMIName 
+		,E.CompanyName
+		,E.EmployeeNo
+	FROM dbo.fnProfileInfo(@CompanyId,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0) E 
+	WHERE E.ProfileId = EP.ProfileId
+)E
+CROSS APPLY
+(
+	SELECT
+		RegStatus = (CASE WHEN ISNULL(SEC.Username,'''') <> '''' THEN ''Registered'' ELSE ''Not Registered'' END)
+		,RegStatusIdSort = (CASE WHEN ISNULL(SEC.Username,'''') <> '''' THEN 2 ELSE 1 END)
+		,RegStatusId = (CASE WHEN ISNULL(SEC.Username,'''') <> '''' THEN 1 ELSE 2 END)
+)Cols
+WHERE 1=1
+AND ((COALESCE(@StatusIds, '''') = '''') OR (CHARINDEX(''''''''+CAST(Cols.RegStatusId AS VARCHAR)+'''''''',@StatusIds) > 0))
+AND ((COALESCE(@RoleIds, '''') = '''') OR (CHARINDEX(''''''''+CAST(SEC.RoleId AS VARCHAR)+'''''''',@RoleIds) > 0))',NULL,1,'QUERY',1,'This report will show user registration.','\Security\UserRegistratationReport.png',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+SET IDENTITY_INSERT [report].[Report] OFF
+/*end insert data to report.Report*/
+
+/*start insert data to report.ReportData*/
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate])VALUES(413,'Employee No','EmployeeNo','string','','',NULL,1,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate])VALUES(413,'Employee Name','EmployeeName','string','','',NULL,2,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate])VALUES(413,'Username','UserName','string','','',NULL,3,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate])VALUES(413,'Role','UserRole','string','','',NULL,4,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate])VALUES(413,'Status','RegStatus','string','','',NULL,5,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate])VALUES(413,'Company Name','CompanyName','string','','',NULL,6,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate])VALUES(413,'RowId','RowId','decimal','','',NULL,7,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+/*end insert data to report.ReportData*/
+
+/*start insert data to report.ReportParameter*/
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('UserRegistratationReport','@CompanyId','Company','dropdownList','$table:maintenance.Company,CompanyId,Name','',1,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('UserRegistratationReport','@StatusIds','Status','checkboxList',':0|Registered:1|Not Registered:2','',3,'','Param1','Stored','IN','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('UserRegistratationReport','@RoleIds','Role','checkboxList','$table:security.Role,RoleId,Role','',2,'','Param1','Stored','IN','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES('UserRegistratationReport','@SortBy','Sort By','dropdownList','Employee Name:1|Status (Not Registered first, then Registered):2','',4,'','Param1','Stored','=','int',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+/*end insert data to report.ReportParameter*/
+
+/*start insert data to report.ReportSubReport*/
+/*end insert data to report.ReportSubReport*/
+
+/*start insert data to report.ReportMenu*/
+INSERT [report].[ReportMenu] ([ReportId],[AdminMenuModuleId],[MenuModuleId],[ReportGroupId],[ModuleFormId],[FileGeneratorHdrId],[XMLReportId],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES(413,1,0,28,0,0,0,NULL,NULL,NULL,NULL)
+/*end insert data to report.ReportMenu*/
+
+/*start insert data to security.Module_Forms*/
+SET IDENTITY_INSERT [security].[Module_Forms] ON
+SET IDENTITY_INSERT [security].[Module_Forms] OFF
+/*end insert data to security.Module_Forms*/
+
+/*start insert data to security.Role_FormAccess*/
+/*end insert data to security.Role_FormAccess*/
+
+/*start insert data to security.UserSecurity_Detail*/
+/*end insert data to security.UserSecurity_Detail*/
+
+SET NOCOUNT OFF

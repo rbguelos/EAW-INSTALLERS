@@ -1,0 +1,111 @@
+IF  EXISTS (SELECT * FROM sys.views WHERE object_id = OBJECT_ID(N'[report].[vwPayrollLeaveRunningBalance]'))
+DROP VIEW [report].[vwPayrollLeaveRunningBalance]
+GO
+/*===========================================*\
+**	   Last Update Date: 6/27/2019
+**	   Last Update By: Abdiel
+**	   Last DBVersion executed: v713
+\*===========================================*/
+-- =============================================
+-- Author:		Abdiel Corda
+-- Create date: 08/14/2018
+-- Description:	Earning/Deduction with Allowance Details 
+-- That displays on payslip templates
+-- =============================================
+
+CREATE VIEW [report].[vwPayrollLeaveRunningBalance]
+--THIS WILL BE USED TO DISPLAY AVAILABLE LEAVE CREDITS IN PAYSLIP
+AS
+
+SELECT 
+	ROWID = ROW_NUMBER() OVER (ORDER BY  LBL.TransactionDate DESC)
+	,PostedDate = LBL.TransactionDate
+	,EP.ProfileId
+	,LeaveTypeCode = LTS.Code
+	,LBDStatus = 0
+	,EarnedHours = 
+	(
+		CAST((CASE WHEN ISNULL(COMPCONFIG.DisplayInDays,0) = 1 AND ISNULL(LBL.PreviousBalance,0) <> 0 THEN ISNULL(LBL.PreviousBalance / COMPCONFIG.NoOfDays,0) ELSE ISNULL(LBL.PreviousBalance,0) END) AS DECIMAL(18,4))
+	)
+	,UsedHours =
+	(
+		CAST((CASE WHEN ISNULL(COMPCONFIG.DisplayInDays,0) = 1 AND ISNULL(LBL.UsedHours,0) <> 0 THEN ISNULL(LBL.UsedHours / COMPCONFIG.NoOfDays,0) ELSE ISNULL( LBL.UsedHours,0) END) AS DECIMAL(18,4))
+	)
+	,CurrentBalance =
+	(
+		CAST((CASE WHEN ISNULL(COMPCONFIG.DisplayInDays,0) = 1 AND ISNULL(LBL.CurrentBalance,0) <> 0 THEN ISNULL(LBL.CurrentBalance / COMPCONFIG.NoOfDays,0) ELSE ISNULL(LBL.CurrentBalance,0) END) AS DECIMAL(18,4))
+	)
+	,LBL.ExpiryDate
+	,LBL.UseExpiration
+	,LeaveInDays =	
+	(
+		CASE WHEN ISNULL(LBL.CurrentBalance,0) <> 0 THEN FLOOR(LBL.CurrentBalance / COALESCE(EmpPolicy.NoOfWorkingHoursperDay,COMPCONFIG.NoOfDays,1)) ELSE 0 END
+	)
+	,LeaveInHours = 
+	(
+		CASE WHEN ISNULL(LBL.CurrentBalance,0) <> 0 THEN FLOOR((LBL.CurrentBalance % COALESCE(EmpPolicy.NoOfWorkingHoursperDay,COMPCONFIG.NoOfDays,1))) ELSE 0 END
+	)
+	,LeaveInMins =	
+	(
+		(CASE WHEN ISNULL(LBL.CurrentBalance,0) <> 0 THEN (((LBL.CurrentBalance % COALESCE(EmpPolicy.NoOfWorkingHoursperDay,COMPCONFIG.NoOfDays,1)) * 60) % 60) ELSE 0 END)
+	)
+	,NoOfWorkingHoursperDay = COALESCE(EmpPolicy.NoOfWorkingHoursperDay,COMPCONFIG.NoOfDays,1)
+	,LBL.LeaveTypeSetUpId
+FROM employee.Profile EP
+INNER JOIN report.fnRunningLeaveBalance(0) LBL ON LBL.ProfileId = EP.ProfileId
+INNER JOIN leave.LeaveTypeSetup LTS ON LTS.LeaveTypeSetupId = LBL.LeaveTypeSetUpId
+
+/*EMPLOYEE POLICY*/
+OUTER APPLY
+(
+	SELECT TOP 1 
+		EmpPolicy.PropertyName
+		,NoOfWorkingHoursperDay = (CASE WHEN ISNULL(CAST(EmpPolicy.Value AS DECIMAL(18,4)),0) > 0 THEN CAST(EmpPolicy.Value AS DECIMAL(18,4)) ELSE 1 END)
+	FROM dbo.fnRetrieveEmployeePolicy(EP.ProfileId,1,0) EmpPolicy
+	WHERE EmpPolicy.PropertyName IN ('NoOfWorkingHoursperDay')
+)EmpPolicy
+
+
+OUTER APPLY 
+(
+    SELECT TOP 1
+	   CompanyConfig.CompanyId
+	   ,DisplayInDays.DisplayInDays
+	   /*,NoOfDays.NoOfDays*/
+	   ,NoOfDays = (CASE WHEN ISNULL(CAST(NoOfDays.NoOfDays AS DECIMAL(18,4)),0) > 0 THEN CAST(NoOfDays.NoOfDays AS DECIMAL(18,4)) ELSE 1 END)
+    FROM maintenance.CompanyConfig CompanyConfig
+
+    OUTER APPLY
+    (
+	   SELECT
+	   DisplayInDays = REPLACE(value,'1:','') 
+	   FROM dbo.FN_SPLITWITHID(CompanyConfig.Value, '|') T
+	   WHERE T.ROWID = 1
+    )DisplayInDays
+
+    OUTER APPLY
+    (
+	   SELECT
+	   NoOfDays = REPLACE(value,'2:','') 
+	   FROM dbo.FN_SPLITWITHID(CompanyConfig.Value, '|') T
+	   WHERE T.ROWID = 2
+    )NoOfDays
+
+    WHERE CompanyConfig.CompanyId = LTS.CompanyId
+    AND (CompanyConfig.Type = 'LVEConfiguration')
+
+) COMPCONFIG
+
+WHERE 1=1  /*AND EP.ProfileId = 222 AND LTS.Code = 'Birthday Leave' */
+
+/*
+ORDER BY LBL.TransactionDate DESC
+
+--WHERE (CAST(LBL.TransactionDate AS DATE) <= CAST('02/09/2019' AS DATE)) AND EP.ProfileId = 222 AND LTS.Code = 'Birthday Leave' 
+--AND ( ((LBL.ExpiryDate >= CAST('02/09/2019' AS DATE)) AND LBL.UseExpiration = 1))
+
+--AND ( ((LBL.ExpiryDate >= CAST('01/26/2019' AS DATE)) AND LBL.UseExpiration = 1) OR (ISNULL(LBL.ExpiryDate,'1/1/1900') = '1/1/1900' OR LBL.UseExpiration = 0)) --OR (LBL.UseExpiration = 0)
+*/
+GO
+
+

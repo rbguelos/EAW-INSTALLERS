@@ -1,0 +1,14 @@
+/*
+Missing Index Details from report.spEmployeePayrollDetailReportBreakdownV2.sql - SQLDEVELOPER2017.EatWork_AFPProd (aisapp)
+The Query Processor estimates that implementing the following index could improve the query cost by 40.6774%.
+ */
+
+IF NOT EXISTS(SELECT index_id FROM SYS.indexes WHERE name = 'IX_PaySheetDetailTypeTaxCategoryId' AND object_id = object_id('[payroll].[PaySheetDetail]'))
+CREATE NONCLUSTERED INDEX [IX_PaySheetDetailTypeTaxCategoryId] ON [payroll].[PaySheetDetail] ([Type]) 
+INCLUDE ([PaySheetHeaderDetailId],[TaxCategoryId])
+GO
+
+IF NOT EXISTS(SELECT index_id FROM SYS.indexes WHERE name = 'IX_PaySheetDetailPaySheetHeaderDetailIdProfileId' AND object_id = object_id('[payroll].[PaySheetDetail]'))
+CREATE NONCLUSTERED INDEX [IX_PaySheetDetailPaySheetHeaderDetailIdProfileId] ON [payroll].[PaySheetDetail] ([Type])
+INCLUDE ([PaySheetHeaderDetailId],[ProfileId],[Value],[TaxCategoryId])
+GO

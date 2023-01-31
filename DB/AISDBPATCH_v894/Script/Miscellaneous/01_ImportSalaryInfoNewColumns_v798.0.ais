@@ -1,0 +1,30 @@
+/*ADDED NEW FIELDS IN TABLE ImportSalaryInformation*/
+EXEC AddColumn @SCHEMA = 'compben', @TABLENAME = 'ImportSalaryInformation', @COLUMNNAME = 'PagIbigESType', @DATATYPE = 'smallint', @DEFAULTVALUE = '0';
+EXEC AddColumn @SCHEMA = 'compben', @TABLENAME = 'ImportSalaryInformation', @COLUMNNAME = 'PagIbigESSalaryLimit', @DATATYPE = 'decimal(18, 4)', @DEFAULTVALUE = '0';
+
+/*ADDED NEW CONFIG IN IMPORT SALARY INFORMATION*/
+DECLARE @FileImportHeaderId bigint
+
+SELECT @FileImportHeaderId = FileImportHeaderId FROM admin.FileImportHeader WHERE FileConfigurationCode = 'EmployeeSalaryInformation'
+
+IF NOT @FileImportHeaderId IS NULL
+BEGIN
+	IF NOT EXISTS(SELECT FileImportDtlId FROM admin.FileImportDtl WHERE FileImportHeaderId = @FileImportHeaderId AND TableFieldName = 'PagIbigESType')
+	BEGIN
+		INSERT [admin].[FileImportDtl] ([FileImportHeaderId], [TableFieldName], [IsHeader], [IsDetail], [IsFooter], [ColumnNumber], [RowNumber], [DataType], [IsKeyField], [RecordOrder], [Position], [Length], [EnableFieldSource], [FieldSourceTable], [FieldSourceName], [WhereClauseSourceName], [IsFixValue], [FixValue], [Label], [DisplayLabelAndValueWhenRecordExist], [AllowBlankValueIfFieldSourceEnable], [SkipExtractingDataWhenFieldHasNoSourceValue], [CharacterMaximumLength], [ValidateCharacterMaximumLength], [IsRequired], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (@FileImportHeaderId, N'PagIbigESType', 0, 1, 0, 15, 2, 4, 0, 15, 0, 0, 1, N'(SELECT COALESCE(EnumValues.DisplayText,'''') GovernmentDeductionTypeText, COALESCE(EnumValues.Value, 0) GovernmentDeductionTypeValue FROM maintenance.EnumValues WHERE EnumValues.SourceName = ''GovernmentDeductionType'') GovernmentDeductionType', N'GovernmentDeductionTypeValue', N'GovernmentDeductionTypeText', 0, N'', N'', 0, 1, 0, 0, 0, 0, NULL, NULL, NULL, NULL);
+	END
+
+	IF NOT EXISTS(SELECT FileImportDtlId FROM admin.FileImportDtl WHERE FileImportHeaderId = @FileImportHeaderId AND TableFieldName = 'PagIbigESSalaryLimit')
+	BEGIN
+		INSERT [admin].[FileImportDtl] ([FileImportHeaderId], [TableFieldName], [IsHeader], [IsDetail], [IsFooter], [ColumnNumber], [RowNumber], [DataType], [IsKeyField], [RecordOrder], [Position], [Length], [EnableFieldSource], [FieldSourceTable], [FieldSourceName], [WhereClauseSourceName], [IsFixValue], [FixValue], [Label], [DisplayLabelAndValueWhenRecordExist], [AllowBlankValueIfFieldSourceEnable], [SkipExtractingDataWhenFieldHasNoSourceValue], [CharacterMaximumLength], [ValidateCharacterMaximumLength], [IsRequired], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate]) VALUES (@FileImportHeaderId, N'PagIbigESSalaryLimit', 0, 1, 0, 16, 2, 10, 0, 16, 0, 0, 0, N'', N'', N'', 0, N'', N'', 0, 0, 0, 0, 0, 0, NULL, NULL, NULL, NULL)
+	END
+
+;UPDATE admin.FileImportDtl SET AllowBlankValueIfFieldSourceEnable = 1 WHERE FileImportHeaderId = @FileImportHeaderId AND TableFieldName = 'SSSType'
+;UPDATE admin.FileImportDtl SET AllowBlankValueIfFieldSourceEnable = 1 WHERE FileImportHeaderId = @FileImportHeaderId AND TableFieldName = 'PhilHealthType'
+;UPDATE admin.FileImportDtl SET AllowBlankValueIfFieldSourceEnable = 1 WHERE FileImportHeaderId = @FileImportHeaderId AND TableFieldName = 'PagIbigType'
+;UPDATE admin.FileImportDtl SET AllowBlankValueIfFieldSourceEnable = 1 WHERE FileImportHeaderId = @FileImportHeaderId AND TableFieldName = 'PagIbigESType'
+;UPDATE admin.FileImportDtl SET ColumnNumber = 17, AllowBlankValueIfFieldSourceEnable = 1 WHERE FileImportHeaderId = @FileImportHeaderId AND TableFieldName = 'WHTType'
+;UPDATE admin.FileImportDtl SET ColumnNumber = 18 WHERE FileImportHeaderId = @FileImportHeaderId AND TableFieldName = 'WHTSalaryLimit'
+;UPDATE admin.FileImportDtl SET ColumnNumber = 19 WHERE FileImportHeaderId = @FileImportHeaderId AND TableFieldName = 'MinimumWageEarner'
+
+END

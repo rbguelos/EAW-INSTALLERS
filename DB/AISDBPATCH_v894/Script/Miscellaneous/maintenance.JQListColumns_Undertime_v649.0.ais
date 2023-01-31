@@ -1,0 +1,11 @@
+EXEC [maintenance].[UpdateJQListColumns]
+	@ListType = 'UndertimeColumnList', @ColumnType = 'label', @Name = 'UTHrs', @Label = 'UT Hours',
+	@Width = '90', @Align = 'right', @Formatter = '', @FormatterOption = '', @Others = ''
+
+EXEC [maintenance].[UpdateJQListColumns]
+	@ListType = 'UndertimeColumnList', @ColumnType = 'label', @Name = 'ETD', @Label = 'Start Time',
+	@Width = '70', @Align = '', @Formatter = '', @FormatterOption = '', @Others = ''
+
+EXEC [maintenance].[UpdateJQListColumns]
+	@ListType = 'UndertimeColumnList', @ColumnType = 'label', @Name = 'ETA', @Label = 'End Time',
+	@Width = '70', @Align = '', @Formatter = '', @FormatterOption = '', @Others = ''

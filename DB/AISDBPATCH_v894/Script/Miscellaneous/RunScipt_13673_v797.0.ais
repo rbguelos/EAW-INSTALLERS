@@ -1,0 +1,5 @@
+IF NOT EXISTS(SELECT * FROM maintenance.EnumValues WHERE Value = 8 AND SourceName = 'RateTableBasis')
+ BEGIN
+	 INSERT INTO maintenance.EnumValues (SourceName, DisplayText, Value, OrderNumber, Status)
+	 VALUES ('RateTableBasis', 'Job Level and Hours Worked', 8, 8, 1)
+ END

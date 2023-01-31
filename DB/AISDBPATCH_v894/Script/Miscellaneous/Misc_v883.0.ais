@@ -1,0 +1,60 @@
+UPDATE admin.ListColumns 
+SET DefaultColumns = 'ScreenTypeDescription|ActualDateTime|ScreeningLocation|Status|ConductedByName|QuestionnaireFormCode|ScreeningResult',
+MasterColumns = 'ScreenTypeDescription|ActualDateTime|ScreeningLocation|Status|ConductedByName|QuestionnaireFormCode|ScreeningResult'
+WHERE ListType = 'ApplicationProgressScreeningScheduleListColumn' 
+
+
+
+DELETE FROM maintenance.JQListColumns 
+WHERE ListType = 'ApplicantProfileListColumn' AND Name = 'ContactDetails'  
+
+DELETE FROM maintenance.JQListColumns 
+WHERE ListType = 'ApplicantProfileListColumn' AND NAME= 'EmailAddress'
+
+INSERT INTO maintenance.JQListColumns  (ListType, ColumnType, Name, Label, Width, Align, Formatter, FormatterOption, Others)
+VALUES
+('ApplicantProfileListColumn','label','EmailAddress','Contact Details','120','','','','formatter: jsFunction.FormatApplicantContanctDetails, cellattr: jsFunction.FormatApplicantAppliedToolTip')
+
+----------------------
+
+DELETE FROM maintenance.JQListColumns 
+WHERE ListType = 'ApplicationProgressListColumn' AND Name = 'ContactDetails'  
+
+DELETE FROM maintenance.JQListColumns 
+WHERE ListType = 'ApplicationProgressListColumn' AND NAME= 'EmailAddress'
+
+DELETE FROM maintenance.JQListColumns 
+WHERE ListType = 'ApplicationProgressListColumn' AND NAME= 'Stage'
+
+INSERT INTO maintenance.JQListColumns  (ListType, ColumnType, Name, Label, Width, Align, Formatter, FormatterOption, Others)
+VALUES
+('ApplicationProgressListColumn','label','EmailAddress','Contact Details','120','','','','formatter: jsFunction.FormatApplicantContanctDetails, cellattr: jsFunction.FormatApplicantAppliedToolTip')
+
+INSERT INTO maintenance.JQListColumns  (ListType, ColumnType, Name, Label, Width, Align, Formatter, FormatterOption, Others)
+VALUES
+('ApplicationProgressListColumn','label','Stage','Stage','120','','','','formatter: jsFunction.FormatSage, cellattr: jsFunction.FormatSageToolTip')
+
+
+-------------------------
+
+
+DELETE FROM maintenance.JQListColumns
+WHERE ListType = 'ApplicationProgressScreeningScheduleListColumn' 
+AND Name = 'ScreeningLocation'
+
+INSERT INTO maintenance.JQListColumns (ListType, ColumnType, Name, Label, Width, Align, Formatter, FormatterOption, Others)
+VALUES
+('ApplicationProgressScreeningScheduleListColumn','label','ScreeningLocation','Location','200','','','sortable: false','')
+
+
+
+--------------------------
+
+
+DELETE FROM maintenance.JQListColumns 
+WHERE ListType = 'ApplicantProfileListColumn' AND NAME= 'EmailAddress'
+ 
+
+INSERT INTO maintenance.JQListColumns  (ListType, ColumnType, Name, Label, Width, Align, Formatter, FormatterOption, Others)
+VALUES
+('ApplicantProfileListColumn','label','EmailAddress','Contact Details','120','','','','formatter: jsFunction.FormatApplicantContanctDetails, cellattr: jsFunction.FormatApplicantAppliedToolTip')

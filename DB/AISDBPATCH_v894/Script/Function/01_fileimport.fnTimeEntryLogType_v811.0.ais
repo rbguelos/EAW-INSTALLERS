@@ -1,0 +1,40 @@
+/****** Object:  UserDefinedFunction [fileimport].[fnTimeEntryLogType]    Script Date: 4/3/2018 2:17:36 PM ******/
+IF NOT OBJECT_ID('[fileimport].[fnTimeEntryLogType]') IS NULL
+DROP FUNCTION [fileimport].[fnTimeEntryLogType]
+GO
+
+/****** Object:  UserDefinedFunction [fileimport].[fnTimeEntryLogType]    Script Date: 4/3/2018 2:17:36 PM ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+-- =============================================
+-- Author:		RME
+-- Create date: 4/3/2018
+-- Description:	user defined log types
+-- =============================================
+CREATE FUNCTION [fileimport].[fnTimeEntryLogType] 
+(	
+	-- Add the parameters for the function here
+	@FileImportCfgHdrId bigint = 21
+)
+RETURNS TABLE 
+AS
+RETURN 
+(
+	 SELECT DisplayText = ISNULL(T.DisplayText,[T].[Value]),[T].[Value] FROM(
+	 SELECT DisplayText = TimeInEquivalentValue, [Value] = 'In' FROM attendance.TimeEntryLogFileImportDetail WHERE TimeEntryLogFileImportHeaderId = @FileImportCfgHdrId AND TableFieldName = 'Type'  
+	 UNION ALL  
+	 SELECT DisplayText = TimeOutEquivalentValue, [Value] = 'Out' FROM attendance.TimeEntryLogFileImportDetail WHERE TimeEntryLogFileImportHeaderId = @FileImportCfgHdrId AND TableFieldName = 'Type'  
+	 UNION ALL  
+	 SELECT DisplayText = BreakInEquivalentValue, [Value] = 'Break-In' FROM attendance.TimeEntryLogFileImportDetail WHERE TimeEntryLogFileImportHeaderId = @FileImportCfgHdrId AND TableFieldName = 'Type'  
+	 UNION ALL  
+	 SELECT DisplayText = BreakOutEquivalentValue, [Value] = 'Break-Out' FROM attendance.TimeEntryLogFileImportDetail WHERE TimeEntryLogFileImportHeaderId = @FileImportCfgHdrId AND TableFieldName = 'Type'  
+	 )T
+)
+
+GO
+
+

@@ -1,0 +1,4 @@
+SET NOCOUNT ON
+DELETE FROM maintenance.ConfigSetupDetail WHERE PropertyName = 'AllowOverlapOfTimeOutAndNextDayStartTime' 
+INSERT [maintenance].[ConfigSetupDetail] ([ConfigSetupHeaderId],[PropertyName],[LabelName],[PropertyValue],[Type],[Source],[Group],[SubGroup],[SortOrder],[Alignment],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES(1,'AllowOverlapOfTimeOutAndNextDayStartTime','Allow overlap of time-out and next day start time','','checkbox','','1','0',22,'',NULL,NULL,30,'May 28 2019  2:54:33:580PM')
+SET NOCOUNT OFF

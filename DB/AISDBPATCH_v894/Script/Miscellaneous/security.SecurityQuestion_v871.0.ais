@@ -1,0 +1,55 @@
+/****** Object:  Table [security].[SecurityQuestion]    Script Date: 5/28/2020 10:03:04 AM ******/
+IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[security].[SecurityQuestion]') AND type in (N'U'))
+DROP TABLE [security].[SecurityQuestion]
+GO
+/****** Object:  Table [security].[SecurityQuestion]    Script Date: 5/28/2020 10:03:04 AM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+CREATE TABLE [security].[SecurityQuestion](
+	[SecurityQuestionId] [int] IDENTITY(1,1) NOT NULL,
+	[SortOrder] [int] NOT NULL,
+	[Question] [varchar](1000) NULL,
+ CONSTRAINT [PK_SecurityQuestion] PRIMARY KEY CLUSTERED 
+(
+	[SecurityQuestionId] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY]
+GO
+SET IDENTITY_INSERT [security].[SecurityQuestion] ON 
+GO
+INSERT [security].[SecurityQuestion] ([SecurityQuestionId], [SortOrder], [Question]) VALUES (1, 1, N'Where was your father born?')
+GO
+INSERT [security].[SecurityQuestion] ([SecurityQuestionId], [SortOrder], [Question]) VALUES (2, 2, N'Where was your mother born?')
+GO
+INSERT [security].[SecurityQuestion] ([SecurityQuestionId], [SortOrder], [Question]) VALUES (3, 3, N'Where did your mother and father get married?')
+GO
+INSERT [security].[SecurityQuestion] ([SecurityQuestionId], [SortOrder], [Question]) VALUES (4, 4, N'When where your mother and father married?')
+GO
+INSERT [security].[SecurityQuestion] ([SecurityQuestionId], [SortOrder], [Question]) VALUES (5, 5, N'In what city or town did your mother and father first meet?')
+GO
+INSERT [security].[SecurityQuestion] ([SecurityQuestionId], [SortOrder], [Question]) VALUES (6, 6, N'In what city or town did you meet your spouse / significant other?')
+GO
+INSERT [security].[SecurityQuestion] ([SecurityQuestionId], [SortOrder], [Question]) VALUES (7, 7, N'What is the name of your favorite childhood friend?')
+GO
+INSERT [security].[SecurityQuestion] ([SecurityQuestionId], [SortOrder], [Question]) VALUES (9, 8, N'What is the name of the person you had your first kiss with?')
+GO
+INSERT [security].[SecurityQuestion] ([SecurityQuestionId], [SortOrder], [Question]) VALUES (10, 9, N'What is the name of your favorite pet?')
+GO
+INSERT [security].[SecurityQuestion] ([SecurityQuestionId], [SortOrder], [Question]) VALUES (11, 10, N'What is your childhood nickname?')
+GO
+INSERT [security].[SecurityQuestion] ([SecurityQuestionId], [SortOrder], [Question]) VALUES (12, 11, N'What is the name of your elementary school?')
+GO
+INSERT [security].[SecurityQuestion] ([SecurityQuestionId], [SortOrder], [Question]) VALUES (13, 12, N'What is your favorite color?')
+GO
+INSERT [security].[SecurityQuestion] ([SecurityQuestionId], [SortOrder], [Question]) VALUES (14, 13, N'What is your favorite movie?')
+GO
+INSERT [security].[SecurityQuestion] ([SecurityQuestionId], [SortOrder], [Question]) VALUES (15, 14, N'What is your favorite song?')
+GO
+INSERT [security].[SecurityQuestion] ([SecurityQuestionId], [SortOrder], [Question]) VALUES (17, 15, N'What are the last 5 digits of your TIN?')
+GO
+INSERT [security].[SecurityQuestion] ([SecurityQuestionId], [SortOrder], [Question]) VALUES (18, 16, N'What are the last 5 digits of your SSS #?')
+GO
+SET IDENTITY_INSERT [security].[SecurityQuestion] OFF
+GO

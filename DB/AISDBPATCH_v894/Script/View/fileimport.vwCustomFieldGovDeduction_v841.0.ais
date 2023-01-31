@@ -1,0 +1,61 @@
+
+IF NOT OBJECT_ID('[fileimport].[vwCustomFieldGovDeduction]') IS NULL
+DROP VIEW [fileimport].[vwCustomFieldGovDeduction]
+GO
+
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE VIEW [fileimport].[vwCustomFieldGovDeduction]
+AS
+
+SELECT
+	st.CompanyId
+   ,ei.ProfileId
+   ,st.[Statutory]
+   ,st.[Label] AS [CustomFieldType]
+   ,cf.CustomFieldId
+   ,pcf.CustomFieldValue
+,NameId = (SELECT TOP 1 [Value] FROM maintenance.EnumValues WITH (NOLOCK) WHERE SourceName = 'GovernmentDeductionName' and DisplayText = st.[Statutory])
+FROM (SELECT
+		CompanyId
+	   ,SSS =
+		CASE
+			WHEN ISNULL(SSSLabel, '') <> '' THEN SSSLabel
+			ELSE 'SSS'
+		END
+	   ,PAGIBIG =
+		CASE
+			WHEN ISNULL(PAGIBIGLabel, '') <> '' THEN PAGIBIGLabel
+			ELSE 'PAGIBIG'
+		END
+	   ,Philhealth =
+		CASE
+			WHEN ISNULL(PhilhealthLabel, '') <> '' THEN PhilhealthLabel
+			ELSE 'Philhealth'
+		END
+	   ,WHT =
+		CASE
+			WHEN ISNULL(WHTLabel, '') <> '' THEN WHTLabel
+			ELSE 'WHT'
+		END
+	   ,[PAGIBIG ES] =
+		CASE
+			WHEN ISNULL(PAGIBIGESLabel, '') <> '' THEN PAGIBIGESLabel
+			ELSE 'PAGIBIG ES'
+		END
+	   ,[SSS ES] = CAST('SSS ES' AS VARCHAR(150))
+	   ,[Philhealth ES] = CAST('PhilHealth ES' AS VARCHAR(150))
+	FROM maintenance.Company WITH (NOLOCK)) AS l
+UNPIVOT (Label FOR Statutory IN (SSS, PAGIBIG, Philhealth, WHT, [PAGIBIG ES], [SSS ES], [Philhealth ES])) AS st
+JOIN employee.CustomField cf  WITH (NOLOCK)
+	ON cf.CustomFieldType = st.[Statutory]
+JOIN employee.EmploymentInformation ei WITH (NOLOCK) on ei.AOA_Company = st.CompanyId
+left join employee.ProfileCustomField pcf WITH (NOLOCK) on pcf.CustomFieldId = cf.CustomFieldId AND pcf.ProfileId = ei.ProfileId
+--join employee.Profile e WITH (NOLOCK) on e.ProfileId = ei.ProfileId
+
+GO
+

@@ -1,0 +1,36 @@
+IF NOT OBJECT_ID('[payroll].[vwCOMPBEN]') IS NULL
+DROP VIEW [payroll].[vwCOMPBEN]
+GO
+/*===========================================*
+**	   Last Update Date: 01/18/2019
+**	   Last Update By: Abdiel
+**	   Last DBVersion executed: v650
+\*===========================================*/
+--======================================
+--Create Date:	 08/30/2017
+--Created By:	 RME
+--======================================
+
+CREATE VIEW [payroll].[vwCOMPBEN]
+AS
+
+SELECT
+    ED.EarningDeductionId
+    ,ED.TypeId
+    ,Code = ISNULL(PC.[Name], ED.Code)
+    ,ED.MappedToId
+    ,ED.TaxCategoryId
+    ,ED.BIRFormIds
+    ,ED.Description
+    ,IncludeIn13thMonthPay = ISNULL(ED.IncludeIn13thMonthPay,0)
+	,IncludeInGrossPay = ISNULL(ED.IncludeInGrossPay,0)
+	,IncludeInNetPay = ISNULL(ED.IncludeInNetPay,0)
+	,IncludeInLeavePayConversion = ISNULL(ED.IncludeInLeavePayConversion,0)
+	,DonotAddToGrossPay = ISNULL(ED.DonotAddToGrossPay,0)
+FROM compben.EarningDeduction ED
+LEFT JOIN maintenance.PaySheetColumns PC
+    ON PC.PaySheetColumnsId = ED.MappedToId
+
+GO
+
+

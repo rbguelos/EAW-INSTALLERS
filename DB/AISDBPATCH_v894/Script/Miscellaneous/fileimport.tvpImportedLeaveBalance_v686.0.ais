@@ -1,0 +1,18 @@
+IF NOT TYPE_ID('[fileimport].[tvpImportedLeaveBalance]') IS NULL
+	DROP TYPE [fileimport].[tvpImportedLeaveBalance]
+GO
+
+CREATE TYPE [fileimport].[tvpImportedLeaveBalance] AS TABLE(
+        ImportLeaveBalanceId bigint NULL,
+        ProfileId bigint NULL,
+        IssuedDate datetime NULL,
+        DatePosted datetime NULL,
+        LeaveTypeId bigint NULL,
+        LeaveCredits decimal(18,4) NULL,
+        ExpirationDate	datetime NULL,
+        Remarks varchar(max) NULL,
+        StatusId bigint NULL,
+        TransactionStatusId bigint NULL,
+		RunningBalance decimal(18,4)
+);
+GO

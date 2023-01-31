@@ -1,0 +1,13 @@
+UPDATE employee.EmploymentInformation SET [AOA_Company] = 0		  WHERE  [AOA_Company] IS NULL
+UPDATE employee.EmploymentInformation SET [AOA_Branch] = 0		  WHERE  [AOA_Branch] IS NULL
+UPDATE employee.EmploymentInformation SET [AOA_Department] = 0	  WHERE  [AOA_Department] IS NULL
+UPDATE employee.EmploymentInformation SET [AOA_Office] = 0		  WHERE  [AOA_Office] IS NULL	
+UPDATE employee.EmploymentInformation SET [AOA_Unit] = 0		  WHERE  [AOA_Unit] IS NULL
+UPDATE employee.EmploymentInformation SET [AOA_District] = 0	  WHERE [AOA_District] IS NULL
+UPDATE employee.EmploymentInformation SET [AOA_Location] = 0	  WHERE [AOA_Location] IS NULL
+UPDATE employee.EmploymentInformation SET [AOA_Project] = 0		  WHERE [AOA_Project] IS NULL	
+UPDATE employee.EmploymentInformation SET [AOA_CostCenter] = 0	  WHERE [AOA_CostCenter] IS NULL
+UPDATE employee.EmploymentInformation SET [AOA_Division] = 0	  WHERE [AOA_Division] IS NULL
+UPDATE employee.EmploymentInformation SET [AOA_Groups] = 0		  WHERE [AOA_Groups] IS NULL
+UPDATE employee.EmploymentInformation SET [AOA_Team] = 0		  WHERE [AOA_Team] IS NULL
+UPDATE employee.EmploymentInformation SET [AOA_Line] = 0		  WHERE [AOA_Line] IS NULL

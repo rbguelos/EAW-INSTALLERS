@@ -1,0 +1,10 @@
+IF NOT EXISTS(SELECT * FROM admin.FileGeneratorHeader where FileGeneratorHdrId = 92)
+BEGIN
+DELETE FROM report.ReportMenu WHERE FileGeneratorHdrId = 92
+END
+ELSE
+PRINT('EXIT')
+
+GO
+
+

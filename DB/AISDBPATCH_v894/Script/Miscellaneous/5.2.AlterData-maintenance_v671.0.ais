@@ -1,0 +1,34 @@
+/* Rating Scale */
+EXEC [maintenance].[UpdateJQListColumns]
+	@ListType = 'RatingScaleColumnList', @ColumnType = 'label', @Name = 'txtRateCode',
+	@Label = 'Rate Code', @Width = '150', @Align = '', @Formatter = '', @FormatterOption = '', @Others = ''
+
+EXEC [maintenance].[UpdateJQListColumns]
+	@ListType = 'RatingScaleColumnList', @ColumnType = 'label', @Name = 'txtValue',
+	@Label = 'Value', @Width = '100', @Align = '', @Formatter = '', @FormatterOption = '', @Others = 'formatter: jsFunction.ValueFormatter'
+
+/* PA Template */
+EXEC [maintenance].[UpdateJQListColumns]
+	@ListType = 'PATemplateColumnList', @ColumnType = 'label', @Name = 'Name', @Label = 'Template Name',
+	@Width = '250', @Align = '', @Formatter = '', @FormatterOption = '', @Others = ''
+
+EXEC [maintenance].[UpdateJQListColumns]
+	@ListType = 'PATemplateColumnList', @ColumnType = 'label', @Name = 'EvaluatorType',
+	@Label = 'Evaluator Type', @Width = '300', @Align = '', @Formatter = '', @FormatterOption = '', @Others = ''
+
+/* PA Schedule */
+EXEC [maintenance].[UpdateJQListColumns]
+	@ListType = 'PAScheduleColumnList', @ColumnType = 'label',
+	@Name = 'ApplicableTo', @Label = 'Job Level/Position', @Width = '140',
+	@Align = '', @Formatter = '', @FormatterOption = '', @Others = ''
+
+/* PA Actual */
+EXEC [maintenance].[UpdateJQListColumns]
+	@ListType = 'PerformanceAppraisalColumnList', @ColumnType = 'label',
+	@Name = 'ApplicableTo', @Label = 'Job Level/Position', @Width = '140',
+	@Align = '', @Formatter = '', @FormatterOption = '', @Others = ''
+
+/* KPI */
+EXEC [maintenance].[UpdateJQListColumns]
+	@ListType = 'KeyPerformanceIndicatorColumnList', @ColumnType = 'label', @Name = 'Domain',
+	@Label = 'Domain', @Width = '130', @Align = '', @Formatter = '', @FormatterOption = '', @Others = ''

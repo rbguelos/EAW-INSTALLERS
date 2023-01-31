@@ -1,0 +1,26 @@
+GO
+IF NOT EXISTS(SELECT TOP 1 1 FROM sys.objects WHERE object_id = object_id('[attendance].[CalculatedOTBreakdown]'))
+BEGIN
+/****** Object:  Table [attendance].[CalculatedOTBreakdown]    Script Date: 5/14/2020 10:31:22 AM ******/
+SET ANSI_NULLS ON
+
+SET QUOTED_IDENTIFIER ON
+
+CREATE TABLE [attendance].[CalculatedOTBreakdown](
+	[CalculatedOTBreakdownId] [bigint] IDENTITY(1,1) NOT NULL,
+	[CutOff] [datetime] NULL,
+	[ProfileId] [bigint] NULL,
+	[ActCalcOT] [decimal](18, 2) NULL,
+	[CalcOT] [decimal](18, 2) NULL,
+	[RunBal] [decimal](18, 2) NULL,
+	[CreateId] [bigint] NULL,
+	[CreateDate] [datetime] NULL,
+	[LastUpdateId] [bigint] NULL,
+	[LastUpdateDate] [datetime] NULL,
+ CONSTRAINT [PK_CalculatedOTBreakdown] PRIMARY KEY CLUSTERED 
+(
+	[CalculatedOTBreakdownId] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY]
+
+END

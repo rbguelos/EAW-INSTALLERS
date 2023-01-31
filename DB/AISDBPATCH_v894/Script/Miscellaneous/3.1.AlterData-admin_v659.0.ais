@@ -1,0 +1,44 @@
+/* Undertime */
+EXEC [admin].[UpdateListColumns]
+	@ListName = 'Under time List', @ListType = 'UndertimeColumnList',
+	@DefaultColumn = 'UndertimeDate|EmployeeNo|EmployeeName|Department|Division|Status|UTHrs|ETD|ETA|Type|Reason|DateFiled'
+
+/* Overtime */
+EXEC [admin].[UpdateListColumns]
+	@ListName = 'Overtime List', @ListType = 'OvertimeColumnList',
+	@DefaultColumn = 'OvertimeDate|EmployeeNo|EmployeeName|Department|Division|Status|TimeSchedule|OROTHrs|ApprovedOROTHrs|IsPreShift|Reason|DateFiled'
+
+/* Timeoff */
+EXEC [admin].[UpdateListColumns]
+	@ListName = 'Time Off List', @ListType = 'TimeOffColumnList',
+	@DefaultColumn = 'OfficialBusinessDate|EmployeeNo|EmployeeName|Department|Division|Status|TimeSchedule|NoOfHours|ApplyAgainst|DateFiled'
+
+/* Change Work Schedule */
+EXEC [admin].[UpdateListColumns]
+	@ListName = 'Change Work Schedule List', @ListType = 'ChangeWorkScheduleColumnList',
+	@DefaultColumn = 'WorkDate|RequestWorkSchedule|EmployeeNo|RequestedBy|Department|Division|Status|OriginalShift|OriginalWorkSchedule|NewShift|SwapWith|DateFiled'
+
+/* Change Restday Schedule */
+EXEC [admin].[UpdateListColumns]
+	@ListName = 'Change Rest Day List', @ListType = 'ChangeRestDayColumnList',
+	@DefaultColumn = 'RestDayDate|RequestDate|EmployeeNo|RequestedBy|Department|Division|Status|SwapWith|DateFiled'
+
+/* Special Work Schedule */
+EXEC [admin].[UpdateListColumns]
+	@ListName = 'Special Work Schedule Request List', @ListType = 'WorkScheduleRequestColumnList',
+	@DefaultColumn = 'WorkDate|EmployeeNo|EmployeeName|Department|Division|Position|Status|Schedule|WorkingHours|RequestType|Reason|DateFiled'
+
+/* Official Business */
+EXEC [admin].[UpdateListColumns]
+	@ListName = 'Official Business List', @ListType = 'OfficialBusinessColumnList',
+	@DefaultColumn = 'OfficialBusinessDate|EmployeeNo|EmployeeName|Department|Division|Status|TimeSchedule|NoOfHours|Reason|Details|ApplyAgainst|DateFiled'
+
+/* Leave Request */
+EXEC [admin].[UpdateListColumns]
+	@ListName = 'Leave Request List', @ListType = 'LeaveRequestColumnsList',
+	@DefaultColumn = 'EmployeeNo|EmployeeName|Division|LeaveTypeSetup|DateFiled|InclusiveDate|LeaveRequestDisplay|Status|Reason'
+
+/* Time Entry Logs */
+EXEC [admin].[UpdateListColumns]
+	@ListName = 'Time Entry Log List', @ListType = 'TimeEntryLogListColumn',
+	@DefaultColumn = 'EmployeeNo|EmployeeName|Branch|Department|Division|Position|Status|TimeEntry|Type|Source|Location|IPAddress|Latitude|Longitude|Username|CreateDate'

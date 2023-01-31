@@ -1,0 +1,14 @@
+/* Delete script will delete duplicate role form access */
+;WITH DuplicateRoleFormAccess AS (
+	SELECT
+	DETAIL_ID = ROW_NUMBER() OVER(PARTITION BY ReportId, AdminMenuModuleId, MenuModuleId, ReportGroupId, ModuleFormId, FileGeneratorHdrId, XMLReportId  ORDER BY ReportId)
+	,ReportId
+	,AdminMenuModuleId
+	,MenuModuleId
+	,ReportGroupId
+	,ModuleFormId
+	,FileGeneratorHdrId
+	,XMLReportId
+	FROM report.ReportMenu
+) 
+DELETE FROM DuplicateRoleFormAccess WHERE DETAIL_ID > 1

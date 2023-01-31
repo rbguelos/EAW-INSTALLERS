@@ -1,0 +1,11 @@
+EXEC admin.UpdateListColumns 
+    @ListName = ''
+   ,@ListType ='TimeEntryHeaderListColumn'
+   ,@DefaultColumn ='Status|StartDate|EndDate|Company|Branch|Department|Division|Unit|ReferenceNumber|AdjustmentAttendance|CreateDate|LastUpdateDate'
+
+
+
+EXEC admin.UpdateListColumns 
+    @ListName = ''
+   ,@ListType ='PaySheetListColumn'
+   ,@DefaultColumn ='Status|PayrollType|ReferenceNo|Paygroup|MonthYr|CutOff|IssueDate|Period|EndOfMonth|Company|Branch|Department|Division|Project|Location|Unit|CreateDate|LastUpdateDate'

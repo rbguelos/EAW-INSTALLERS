@@ -1,0 +1,143 @@
+IF NOT OBJECT_ID('[employee].[vwChargingInstructions]') IS NULL
+DROP VIEW [employee].[vwChargingInstructions]
+GO
+  
+CREATE VIEW [employee].[vwChargingInstructions]  
+AS
+SELECT
+	e.ProfileId
+   ,[Code] =
+	CASE
+		WHEN ci.IsChargeInst = 1 THEN cc.[Code]
+		ELSE ''
+	END
+   ,[Description] =
+	CASE
+		WHEN ci.IsChargeInst = 1 THEN cc.[Description]
+		ELSE ''
+	END
+   ,[Company] =
+	CASE
+		WHEN ci.IsChargeInst = 1 THEN cc.[Company]
+		ELSE ''
+	END
+   ,[Budget Holder] =
+	CASE
+		WHEN ci.IsChargeInst = 1 THEN cc.[Budget Holder]
+		ELSE ''
+	END
+   ,[Account Code] =
+	CASE
+		WHEN ci.IsChargeInst = 1 THEN cc.[Account Code]
+		ELSE ''
+	END
+   ,[Beneficiary] =
+	CASE
+		WHEN ci.IsChargeInst = 1 THEN cc.[Beneficiary]
+		ELSE ''
+	END
+   ,[Objective] =
+	CASE
+		WHEN ci.IsChargeInst = 1 THEN cc.[Objective]
+		ELSE ''
+	END
+   ,[Spare 1] =
+	CASE
+		WHEN ci.IsChargeInst = 1 THEN cc.[Spare 1]
+		ELSE ''
+	END
+   ,[Spare 2] =
+	CASE
+		WHEN ci.IsChargeInst = 1 THEN cc.[Spare 2]
+		ELSE ''
+	END
+   ,[Project No.] =
+	CASE
+		WHEN ci.IsChargeInst = 0 THEN cc.[Company]
+		ELSE ''
+	END
+   ,[Task No.] =
+	CASE
+		WHEN ci.IsChargeInst = 0 THEN cc.[Budget Holder]
+		ELSE ''
+	END
+   ,[Exp Type] =
+	CASE
+		WHEN ci.IsChargeInst = 0 THEN cc.[Account Code]
+		ELSE ''
+	END
+   ,[Exp org] =
+	CASE
+		WHEN ci.IsChargeInst = 0 THEN cc.[Beneficiary]
+		ELSE ''
+	END
+   ,ac.[ACC NUMBER]
+   ,ac.[Account Name]
+   ,ac.[BANK]
+   ,ac.[Other information]
+   ,pv.PercentValue
+FROM employee.[Profile] e
+JOIN employee.EmploymentInformation ei
+	ON ei.ProfileId = e.ProfileId
+LEFT JOIN (SELECT
+		ChargeCodeId
+	   ,Code
+	   ,[Description]
+	   ,[Company]
+	   ,[Budget Holder]
+	   ,[Account Code]
+	   ,[Beneficiary]
+	   ,[Objective]
+	   ,[Spare 1]
+	   ,[Spare 2]
+	FROM maintenance.ChargeCode
+	CROSS APPLY (SELECT
+			ChargeType =
+			CASE [ROWID]
+				WHEN 1 THEN 'Company'
+				WHEN 2 THEN 'Budget Holder'
+				WHEN 3 THEN 'Account Code'
+				WHEN 4 THEN 'Beneficiary'
+				WHEN 5 THEN 'Objective'
+				WHEN 6 THEN 'Spare 1'
+				WHEN 7 THEN 'Spare 2'
+				ELSE NULL
+			END
+		   ,[VALUE]
+		FROM dbo.FN_SPLITWITHID(ChargeCode.[Description], CASE WHEN CHARINDEX('/',ChargeCode.[Description]) > 0 THEN '/' ELSE '-' END)) ct
+	PIVOT (MAX([VALUE]) FOR [ChargeType] IN ([Company], [Budget Holder], [Account Code], [Beneficiary], [Objective], [Spare 1], [Spare 2])) AS T) cc
+	ON cc.ChargeCodeId = ei.ChargeCodeId
+CROSS APPLY (SELECT
+		IsChargeInst =
+		CASE
+			--WHEN ISNULL(cc.[Spare 1], '') = '' THEN 0 ELSE 1
+			WHEN CHARINDEX('/',cc.[Description]) > 0 THEN 0 ELSE 1
+		END) ci
+
+OUTER APPLY (SELECT TOP 1
+		[ACC NUMBER] = ''
+	   ,[Account Name] = ''
+	   ,[BANK] = ''
+	   ,[Other information] = '') ac
+LEFT JOIN (SELECT
+		pcf.ProfileId
+	   ,PercentValue = CAST(CASE
+			WHEN ISNUMERIC(pc.PercentValue) = 1 THEN pc.PercentValue
+			ELSE NULL
+		END AS DECIMAL(18, 4))
+	FROM employee.ProfileCustomField pcf
+	JOIN employee.CustomField cf
+		ON cf.CustomFieldId = pcf.CustomFieldId
+	CROSS APPLY (SELECT
+			PercentValue =
+			CASE
+				WHEN p.PrcntLoc > 0 THEN SUBSTRING([VALUE], 0, p.PrcntLoc)
+				ELSE NULL
+			END
+		FROM dbo.FN_SPLITWITHID(pcf.CustomFieldValue, CHAR(10))
+		CROSS APPLY (SELECT
+				PrcntLoc = CHARINDEX('%', LEFT([VALUE], 10))) p) pc
+	WHERE cf.CustomFieldType = 'Charging Percentage'
+	AND NOT pc.PercentValue IS NULL) pv
+	ON pv.ProfileId = e.ProfileId
+GO

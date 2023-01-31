@@ -1,0 +1,124 @@
+SET NOCOUNT ON
+/*start deleting existing menu configs*/
+DELETE FROM admin.MenuMenu WHERE MenuMenuId = 10161
+DELETE FROM admin.SecurityMapping WHERE MenuMenuId = 10161
+DELETE FROM security.Module_Forms WHERE ModuleFormId = 10600
+/*end deleting existing menu configs*/
+
+/* start insert data to admin.MenuMenu */
+SET IDENTITY_INSERT [admin].[MenuMenu] ON
+INSERT [admin].[MenuMenu] ([MenuMenuId],[MenuModuleId],[MenuName],[MenuIcon],[MenuLink],[SortOrder],[Hidden],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES(10161,15,'Paysheet File','','',18,0,NULL,NULL,NULL,NULL)
+SET IDENTITY_INSERT [admin].[MenuMenu] OFF
+/* end insert data to admin.MenuMenu */
+
+/* start insert data to admin.SecurityMapping */
+INSERT [admin].[SecurityMapping] ([MenuMenuId],[MenuSubMenuId],[SecurityFormId],[AccessTypeId],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES(10161,151,10600,'1',NULL,NULL,NULL,NULL)
+/* end insert data to admin.SecurityMapping */
+
+/* start insert data to security.Module_Forms */
+SET IDENTITY_INSERT [security].[Module_Forms] ON
+INSERT [security].[Module_Forms] ([ModuleFormId],[ModuleId],[Name],[Form],[AccessTypeId],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES(10600,14,'Invoice Upload File List','Invoice Upload File List','1,5,25,26',NULL,NULL,NULL,NULL)
+SET IDENTITY_INSERT [security].[Module_Forms] OFF
+/* end insert data to security.Module_Forms */
+/*start insert data to security.Role_FormAccess*/
+INSERT INTO security.Role_FormAccess([RoleId],[ModuleId],[ModuleFormId],[AccessTypeId]) 
+				SELECT 
+				[RoleId] = 1,
+				[ModuleId] = F.ModuleId,
+				[ModuleFormId] = F.ModuleFormId,
+				[AccessTypeId] = F.AccessTypeId
+				FROM security.Module_Forms F
+				
+				WHERE F.ModuleFormId = 10600
+				
+/*end insert data to security.Role_FormAccess*/
+
+/*start insert data to security.UserSecurity_Detail*/
+INSERT INTO security.UserSecurity_Detail([UserSecurityId],[ModuleFormId],[AccessTypeId],[ModuleId])
+				SELECT
+				[UserSecurityId] = US.UserSecurityId
+				,[ModuleFormId] = F.ModuleFormId
+				,[AccessTypeId] = F.AccessTypeId
+				,[ModuleId] = F.ModuleId
+				FROM security.Module_Forms F
+				
+				CROSS APPLY (SELECT DISTINCT USD.UserSecurityId FROM security.UserSecurity_Detail USD JOIN security.UserSecurity US ON US.UserSecurityId = USD.UserSecurityId WHERE USD.ModuleId = 14 AND US.RoleId = 1	AND US.UserSecurityId IS NOT NULL) US
+				WHERE F.ModuleFormId = 10600
+				AND US.UserSecurityId NOT IN (SELECT UserSecurityId FROM security.UserSecurity_Detail WHERE ModuleFormId = 10600 AND UserSecurityId IS NOT NULL)
+/*end insert data to security.UserSecurity_Detail*/
+
+SET NOCOUNT OFF;
+
+
+SET NOCOUNT ON
+/*start deleting existing menu configs*/
+DELETE FROM admin.MenuSubMenu WHERE MenuSubMenuId = 151
+DELETE FROM admin.SecurityMapping WHERE MenuSubMenuId = 151
+DELETE FROM security.Module_Forms WHERE ModuleFormId = 10600
+/*end deleting existing menu configs*/
+
+/* start insert data to admin.MenuSubMenu */
+SET IDENTITY_INSERT [admin].[MenuSubMenu] ON
+INSERT [admin].[MenuSubMenu] ([MenuSubMenuId],[MenuMenuId],[SubMenuName],[SubMenuIcon],[SubMenuLink],[SortOrder],[Hidden],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES(151,10161,'Invoice Upload File','','/FileGenerator/Form?TemplateCode=InvoiceUploadFile&Extension=xlsx',NULL,0,NULL,NULL,NULL,NULL)
+SET IDENTITY_INSERT [admin].[MenuSubMenu] OFF
+/* end insert data to admin.MenuSubMenu */
+  
+/* start insert data to admin.SecurityMapping */
+INSERT [admin].[SecurityMapping] ([MenuMenuId],[MenuSubMenuId],[SecurityFormId],[AccessTypeId],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES(10161,151,10600,'1',NULL,NULL,NULL,NULL)
+/* end insert data to admin.SecurityMapping */
+  
+/* start insert data to security.Module_Forms */
+SET IDENTITY_INSERT [security].[Module_Forms] ON
+INSERT [security].[Module_Forms] ([ModuleFormId],[ModuleId],[Name],[Form],[AccessTypeId],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES(10600,14,'Invoice Upload File List','Invoice Upload File List','1,5,25,26',NULL,NULL,NULL,NULL)
+SET IDENTITY_INSERT [security].[Module_Forms] OFF
+/* end insert data to security.Module_Forms */
+  
+/*start insert data to security.Role_FormAccess*/
+INSERT INTO security.Role_FormAccess([RoleId],[ModuleId],[ModuleFormId],[AccessTypeId])       SELECT       [RoleId] = RF.RoleId,      [ModuleId] = F.ModuleId,      [ModuleFormId] = F.ModuleFormId,      [AccessTypeId] = F.AccessTypeId      FROM security.Module_Forms F      OUTER APPLY (SELECT DISTINCT RoleId FROM security.Role_FormAccess WHERE ModuleId = 14) RF      WHERE F.ModuleFormId = 10600      AND RF.RoleId NOT IN (SELECT DISTINCT RoleId FROM security.Role_FormAccess WHERE ModuleFormId = 10600)
+/*end insert data to security.Role_FormAccess*/
+  
+/*start insert data to security.UserSecurity_Detail*/
+INSERT INTO security.UserSecurity_Detail([UserSecurityId],[ModuleFormId],[AccessTypeId],[ModuleId])      SELECT      [UserSecurityId] = US.UserSecurityId      ,[ModuleFormId] = F.ModuleFormId      ,[AccessTypeId] = F.AccessTypeId      ,[ModuleId] = F.ModuleId      FROM security.Module_Forms F      OUTER APPLY (SELECT DISTINCT UserSecurityId FROM security.UserSecurity_Detail WHERE ModuleId = 14) US      WHERE F.ModuleFormId = 10600      AND US.UserSecurityId NOT IN (SELECT UserSecurityId FROM security.UserSecurity_Detail WHERE ModuleFormId = 10600 AND UserSecurityId IS NOT NULL)
+/*end insert data to security.UserSecurity_Detail*/
+SET NOCOUNT OFF;
+
+/*ADDTIONAL MODULE FORM*/
+DELETE FROM security.Module_Forms WHERE ModuleFormId = 10586
+
+SET NOCOUNT ON
+SET IDENTITY_INSERT [security].[Module_Forms] ON
+INSERT [security].[Module_Forms] ([ModuleFormId],[ModuleId],[Name],[Form],[AccessTypeId],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate])VALUES(10586,40,'Invoice Upload File','InvoiceUploadFile','1,5,25,26',NULL,NULL,NULL,NULL)
+SET IDENTITY_INSERT [security].[Module_Forms] OFF
+SET NOCOUNT OFF
+
+
+
+DECLARE @MasterRole BIGINT = (SELECT TOP 1 RoleId FROM security.Role WHERE Role.Role = 'Master')
+DECLARE @ModuleFormId BIGINT = 10586
+
+DELETE FROM security.Role_FormAccess WHERE ModuleFormId = @ModuleFormId AND RoleId = @MasterRole
+DELETE FROM security.UserSecurity_Detail WHERE ModuleFormId = @ModuleFormId AND UserSecurityId IN (SELECT UserSecurityId FROM security.UserSecurity WHERE RoleId = @MasterRole)
+
+/* Role Form Access */
+INSERT INTO security.Role_FormAccess([RoleId],[ModuleId],[ModuleFormId],[AccessTypeId])
+SELECT 
+[RoleId] = @MasterRole
+,[ModuleId]
+,[ModuleFormId]
+,[AccessTypeId]
+FROM security.Module_Forms WHERE ModuleFormId = @ModuleFormId
+
+
+/* Role Form Access */
+INSERT INTO security.UserSecurity_Detail([UserSecurityId],[ModuleFormId],[AccessTypeId],[ModuleId])
+SELECT 
+[UserSecurityId] = US.UserSecurityId
+,F.[ModuleFormId]
+,F.[AccessTypeId]
+,F.[ModuleId]
+FROM security.Module_Forms F
+JOIN security.UserSecurity US ON US.RoleId = @MasterRole
+WHERE F.ModuleFormId = @ModuleFormId
+
+
+

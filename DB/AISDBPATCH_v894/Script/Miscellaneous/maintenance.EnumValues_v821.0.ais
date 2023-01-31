@@ -1,0 +1,10 @@
+DELETE FROM maintenance.EnumValues WHERE SourceName = 'PEProcessType' AND DisplayText IN('IndividualObjectives','EvaluationQuestionnaire','EvaluationReview','NarrativeSection','Acknowledgement')
+
+GO
+INSERT [maintenance].[EnumValues] ([SourceName], [DisplayText], [Value], [OrderNumber], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate], [Status]) VALUES ( 'PEProcessType', 'IndividualObjectives', '1', 1, NULL, NULL, NULL, NULL, 1)
+INSERT [maintenance].[EnumValues] ([SourceName], [DisplayText], [Value], [OrderNumber], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate], [Status]) VALUES ( 'PEProcessType', 'EvaluationQuestionnaire', '2', 2, NULL, NULL, NULL, NULL, 1)
+INSERT [maintenance].[EnumValues] ([SourceName], [DisplayText], [Value], [OrderNumber], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate], [Status]) VALUES ( 'PEProcessType', 'EvaluationReview', '3', 3, NULL, NULL, NULL, NULL, 1)
+INSERT [maintenance].[EnumValues] ([SourceName], [DisplayText], [Value], [OrderNumber], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate], [Status]) VALUES ( 'PEProcessType', 'NarrativeSection', '4', 4, NULL, NULL, NULL, NULL, 1)
+INSERT [maintenance].[EnumValues] ([SourceName], [DisplayText], [Value], [OrderNumber], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate], [Status]) VALUES ( 'PEProcessType', 'Acknowledgement', '5', 5, NULL, NULL, NULL, NULL, 1)
+
+

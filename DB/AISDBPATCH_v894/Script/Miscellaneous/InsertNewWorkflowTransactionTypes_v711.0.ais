@@ -1,0 +1,37 @@
+SET IDENTITY_INSERT workflow.TransactionType ON
+
+IF NOT EXISTS (SELECT * FROM workflow.TransactionType TT WHERE TransactionTypeId = 40)
+BEGIN
+	INSERT INTO workflow.TransactionType (
+		TransactionTypeId, 
+		Name, 
+		TransactionTypeEQ,
+		TransactionTypePrimaryEQ,
+		TransactionTypeStatusEQ,
+		TransactionTypeURL)
+	VALUES (40, 
+		'Salary Batch Update',
+		'[compben].[SalaryBatchUpdate]',
+		'[SalaryBatchUpdateId]',
+		'SalaryBatchUpdate.StatusId',
+		'/SalaryBatchUpdate/Form?id=')
+END
+
+IF NOT EXISTS (SELECT * FROM workflow.TransactionType TT WHERE TransactionTypeId = 41)
+BEGIN
+	INSERT INTO workflow.TransactionType (
+		TransactionTypeId, 
+		Name, 
+		TransactionTypeEQ,
+		TransactionTypePrimaryEQ,
+		TransactionTypeStatusEQ,
+		TransactionTypeURL)
+	VALUES (41, 
+		'Benefit Issuance',
+		'[compben].[BenefitIssuance]',
+		'[BenefitIssuanceId]',
+		'BenefitIssuance.StatusId',
+		'/BenefitIssuance/Form?BenefitIssuanceId=')
+END
+
+SET IDENTITY_INSERT workflow.TransactionType OFF

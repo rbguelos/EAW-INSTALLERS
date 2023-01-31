@@ -1,0 +1,22 @@
+/*
+Missing Index Details from SQLQuery15.sql - DATABASE-SERVER\SQLDEVELOPER2019.PROD_IBIDEN (aisapp)
+The Query Processor estimates that implementing the following index could improve the query cost by 95.9885%.
+*/
+
+IF NOT EXISTS(SELECT index_id FROM SYS.indexes WHERE name = 'IX_PaySheetHeaderDetailPaySheetHeaderIdAndOthers' AND object_id = object_id('[payroll].[PaySheetHeaderDetail]'))
+CREATE NONCLUSTERED INDEX [IX_PaySheetHeaderDetailPaySheetHeaderIdAndOthers]
+ON [payroll].[PaySheetHeaderDetail] ([PaySheetHeaderId])
+INCLUDE ([ProfileId],[IssuedDate],[PeriodStartDate],[PeriodEndDate],[BranchId],[DepartmentId],[OfficeId],[UnitId],[DivisionId],[GroupId],[DistrictId],[LocationId],[ProjectProfileId],[CostCenterId],[LineId],[TeamId],[EmployeeTypeId],[JobRankId],[JobGradeId],[JobLevelId],[PositionId],[SalaryRate],[SalaryType],[SalaryTypeDescription],[HourlyRate],[DailyRate],[MonthlyRate],[YearlyRate],[PhilhealthBracketId],[SSSBracketId],[PagibigBracketId],[WHTBracketId],[MWE],[CompanyId],[CurrencyId],[ExchangeRate],[ManPowerClassificationId],[SalaryInformationId],[TaxExemptionStatusId],[ApplicableTaxId],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate],[Remarks])
+GO
+
+IF NOT EXISTS(SELECT index_id FROM SYS.indexes WHERE name = 'IX_TimeEntryDetailTimeEntryHeaderDetailIdWorkDate' AND object_id = object_id('[attendance].[TimeEntryDetail]'))
+CREATE NONCLUSTERED INDEX [IX_TimeEntryDetailTimeEntryHeaderDetailIdWorkDate]
+ON [attendance].[TimeEntryDetail] ([TimeEntryHeaderDetailId],[WorkDate])
+INCLUDE ([ProfileId],[Type],[Value])
+GO
+
+IF NOT EXISTS(SELECT index_id FROM SYS.indexes WHERE name = 'IX_TimeEntryHeaderDetailWorkDate' AND object_id = object_id('[attendance].[TimeEntryHeaderDetail]'))
+CREATE NONCLUSTERED INDEX [IX_TimeEntryHeaderDetailWorkDate]
+ON [attendance].[TimeEntryHeaderDetail] ([WorkDate])
+INCLUDE ([TimeEntryHeaderId],[ProfileId])
+GO

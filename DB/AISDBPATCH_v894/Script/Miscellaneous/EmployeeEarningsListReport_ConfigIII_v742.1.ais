@@ -1,0 +1,266 @@
+SET NOCOUNT ON
+/*start deleting existing report configs*/
+DELETE FROM report.Report WHERE ReportId IN (176)
+DELETE FROM report.ReportData WHERE ReportId IN (176)
+DELETE FROM report.ReportParameter WHERE ReportCode IN ('EmployeeEarningsListReport')
+DELETE FROM report.ReportSubReport WHERE ReportCode  IN ('EmployeeEarningsListReport')
+/*end deleting existing report configs*/
+
+/*start insert data to report.Report*/
+SET IDENTITY_INSERT [report].[Report] ON
+INSERT [report].[Report] ([ReportId],[ReportCode],[ReportName],[ReportFile],[ReportExcelFile],[EmploymentStatus],[TableSPUsed],[SPUsed],[NoOrderBy],[QueryType],[InsertToReportTempTable],[Description],[ImageFile],[SortFields],[Event],[ExportFormat],[CreateId],[Createdate],[LastUpdateId],[LastUpdateDate],[UseExportToExcelAPI],[DetailColStartPos],[DetailRowStartPos],[HeaderRowStartPos],[IncludeColHeader],[InsertNewRowAtRowPos],[Template],[SourceName],[ShowGrandTotals],[RepeatColumnHeaderOnHeaderGroup],[RepeatColumnHeaderOnGroupLevel],[AutoSizeColumn],[MaxRowPerPage],[DisplayReportHeader])VALUES(176,'EmployeeEarningsListReport','Employee Earnings List Report','\Reports\AllowanceOtherEarnings\EmployeeEarningsListReport.rpt',NULL,NULL,'SELECT               
+	E.DepartmentName
+	,EmployeeNumber = ISNULL(E.EmployeeNo,'''')
+	,E.LastFirstMIName
+	,EAD.EarningType
+	,EarningCode = EAD.Code
+	,ReferenceNo = EAD.ReferenceNumber
+	,EffectiveDate = EAD.EffectiveDate 
+	,AmountBasis = EAD.AmountBasis
+	,Currency = EAD.Currency
+	,Amount = EAD.Amount
+	,Frequency = EAD.Frequency
+	,MaximumLimit = EAD.MaximumLimit
+	,EndDate = EAD.EndDate
+	,[Status] = EAD.Status
+	,Remarks = EAD.Remarks
+	,E.CompanyId
+	,ExtraSpace1 = ''''
+	,EmployeeId = E.ProfileId
+	,EarningTypeVal = EAD.TypeId
+	,EAD.StatusId
+	,EAD.Code
+FROM dbo.fnProfileInfo(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0) E 
+INNER JOIN 
+(
+	SELECT 
+		Code                    = ISNULL(EAD.Code,'''')
+		,Amount                 = COALESCE(AO.Amount,DED.Amount,LOAN.Amount,0)
+		,FIELDS.EarningType
+		,FIELDS.TypeId
+		,ProfileId              = COALESCE(AO.ProfileId,DED.ProfileId,LOAN.ProfileId,0)
+		,PaySheetHeaderDetailId = COALESCE(AO.PaySheetHeaderDetailId,DED.PaySheetHeaderDetailId,LOAN.PaySheetHeaderDetailId,0)
+		,ReferenceNumber        = COALESCE(AO.OENumber,DED.DeductionNumber,LOAN.ReferenceNumber,'''')
+		,StatusId               = COALESCE(AO.StatusId,DED.StatusId,LOAN.StatusId,0)
+		,[Status]               = ISNULL(STAT.Name,'''')
+		,EffectiveDate          = COALESCE(AO.EffectiveDate,DED.EffectiveDate,LOAN.EffectiveDate,''1/1/1900'')
+		,CurrencyId             = COALESCE(AO.CurrencyId,DED.CurrencyId,LOAN.CurrencyId,0)
+		,Currency               = ISNULL(CUR.Code,'''')
+		,FrequencyId            = COALESCE(AO.FrequencyId,DED.FrequencyId,LOAN.FrequencyId,0)
+		,Frequency              = ISNULL(FREQ.DisplayText,'''')
+		,MaximumLimit           = COALESCE(AO.MaximumLimit,DED.MaximumLimit,LOAN.MaximumLimit,0)
+		,Remarks                = COALESCE(AO.Remarks,DED.Remarks,LOAN.Remarks,'''')
+		,EndDate                = COALESCE(AO.EndDate,DED.EndDate,LOAN.EndDate,''1/1/1900'')
+		,AmountBasisId          = COALESCE(AO.AmountBasisId,DED.AmountBasisId,LOAN.AmountBasisId,0)
+		,AmountBasis            = ISNULL(AmountBasis.DisplayText,'''')
+		,EarningDeductionId		= COALESCE(AO.EarningDeductionId, DED.EarningDeductionId, EAD.EarningDeductionId, LOAN.EarningDeductionId, 0)
+	FROM payroll.vwCOMPBEN EAD
+
+	/*ALLOWANCE OTHER*/
+	LEFT JOIN 
+	(
+		SELECT 
+			AO.OENumber
+			,AO.EffectiveDate
+			,AO.StatusId
+			,AO.CurrencyId
+			,AO.FrequencyId
+			,MaximumLimit = AO.MaximumLimit
+			,AO.Remarks
+			,AO.EndDate
+			,AO.AmountBasisId
+			,AO.IsOtherDeduction
+			,AO.ProfileId
+			,AO.EarningDeductionId
+			,AO.Amount
+			,PA.PaySheetHeaderDetailId
+		FROM payroll.AllowanceOther AO
+		LEFT JOIN payroll.PaysheetAllowance PA  ON  PA.TransactionId =  AO.AllowanceOtherId
+	)AO ON AO.EarningDeductionId = EAD.EarningDeductionId
+
+	/*DEDUCTION*/
+	LEFT JOIN 
+	(
+		SELECT
+			DED.DeductionNumber
+			,EffectiveDate = DED.DeductionDate  
+			,DED.StatusId
+			,CurrencyId = 0
+			,FrequencyId = DED.PaymentFrequencyId
+			,MaximumLimit = 0
+			,DED.Remarks
+			,EndDate = ''1/1/1900''
+			,AmountBasisId = NULL
+			,DED.ProfileId
+			,DED.EarningDeductionId
+			,DED.Amount
+			,PD.PaySheetHeaderDetailId
+			
+		FROM payroll.Deduction DED  
+		LEFT JOIN payroll.PaysheetDeduction PD ON PD.TransactionId =  DED.DeductionId
+	)DED ON DED.EarningDeductionId = EAD.EarningDeductionId
+
+	/*LOAN REQUEST*/
+	LEFT JOIN 
+	(
+		SELECT
+		 LOAN.ReferenceNumber
+		  ,LOAN.StatusId
+		  ,EffectiveDate = LOAN.DateOfApproval
+		  ,CurrencyId = 0
+		  ,FrequencyId = LOAN.PaymentFrequencyId
+		  ,MaximumLimit = 0
+		  ,LOAN.Remarks
+		  ,EndDate = ''1/1/1900''
+		  ,AmountBasisId = NULL
+		  ,LOAN.ProfileId
+		  ,LTS.EarningDeductionId
+		  ,Amount = LOAN.ActualLoanAmount
+		  ,PL.PaySheetHeaderDetailId
+		FROM payroll.LoanRequest LOAN 
+		LEFT JOIN  payroll.PaysheetLoan PL  ON PL.TransactionId = LOAN.LoanRequestId 
+		INNER JOIN maintenance.LoanTypeSetup LTS ON LTS.LoanTypeSetupId = LOAN.LoanTypeSetupId
+	)LOAN ON LOAN.EarningDeductionId = EAD.EarningDeductionId
+	OUTER APPLY
+	(
+		SELECT TOP 1 
+			EV.DisplayText
+			,EV.Value 
+		FROM maintenance.EnumValues EV WHERE EV.Value = EAD.TypeId AND EV.SourceName = ''EarningsDeductionType''
+	)EADType
+	OUTER APPLY
+	(
+		SELECT TOP 1 
+			ev.DisplayText 
+			,EADType.Value
+		FROM maintenance.EnumValues ev WHERE ev.Value = COALESCE(AO.AmountBasisId,DED.AmountBasisId,LOAN.AmountBasisId,0) 
+		AND ev.SourceName = ''EarningsDeductionAmountBasis''
+	)AmountBasis
+	OUTER APPLY
+	(
+		SELECT TOP 1 
+			ev.DisplayText 
+			,ev.Value
+		FROM maintenance.EnumValues ev 
+		WHERE ev.Value = COALESCE(AO.FrequencyId,DED.FrequencyId,LOAN.FrequencyId,0) 
+		AND ev.SourceName = ''AllowanceOtherEarningFrequency''
+	)FREQ
+	OUTER APPLY
+	(
+		SELECT TOP 1 
+			S.Name 
+		FROM maintenance.Status S WHERE S.Value = COALESCE(AO.StatusId,DED.StatusId,LOAN.StatusId,0)
+	)STAT
+	OUTER APPLY
+	(
+		SELECT TOP 1 
+			C.Code 
+		FROM maintenance.Currency C 
+		WHERE C.CurrencyId = COALESCE(AO.CurrencyId,DED.CurrencyId,LOAN.CurrencyId,0)
+	)CUR
+	CROSS APPLY
+	(
+		SELECT
+			[EarningType] = CASE WHEN ISNULL(AO.IsOtherDeduction,0) = 1 THEN ''Other Deduction'' ELSE EADType.DisplayText END
+			,TypeId = CASE WHEN ISNULL(AO.IsOtherDeduction,0) = 1 THEN 8 ELSE EAD.TypeId END
+	)FIELDS
+	WHERE ISNULL(EAD.MappedToId,0) = 0
+)EAD ON EAD.ProfileId = E.ProfileId
+
+
+LEFT JOIN payroll.PaySheetHeaderDetail PHD ON PHD.PaySheetHeaderDetailId = EAD.PaySheetHeaderDetailId
+
+WHERE 
+1=1
+AND
+(
+	CAST(COALESCE(@PeriodStartDate,''1/1/1900'') as DATETIME) <= CAST(''1/1/1900'' AS DATETIME) OR
+	(EAD.EffectiveDate >= CAST(@PeriodStartDate as DATETIME))
+)
+AND
+(
+	CAST(COALESCE(@PeriodEndDate,''1/1/1900'') as DATETIME) <= CAST(''1/1/1900'' AS DATETIME) OR
+	(EAD.EffectiveDate <= CAST(@PeriodEndDate as DATETIME))
+)
+AND
+(
+	CAST(ISNULL(@PaysheetHeaderId,0) AS BIGINT) = 0 OR (PHD.PaySheetHeaderId = CAST(@PaysheetHeaderId AS BIGINT))
+)
+AND 
+((COALESCE(@EarningDeductionIds, '''') = '''') OR  (CHARINDEX('''''''' + CAST(EAD.EarningDeductionId AS VARCHAR) + '''''''', @EarningDeductionIds) > 0))
+AND 
+((COALESCE(@StatusId, '''') = '''') OR  (CHARINDEX('''''''' + CAST(EAD.StatusId AS VARCHAR) + '''''''', @StatusId) > 0))
+
+GROUP BY E.DepartmentName
+		,E.LastFirstMIName
+		,EAD.EarningType
+		,EAD.Code
+		,EAD.ReferenceNumber
+		,EAD.EffectiveDate
+		,EAD.AmountBasis
+		,EAD.Currency
+		,EAD.Amount
+		,EAD.Frequency
+		,EAD.MaximumLimit
+		,EAD.EndDate
+		,EAD.Status
+		,EAD.Remarks
+		,E.CompanyId
+		,E.ProfileId
+		,EAD.TypeId
+		,EAD.StatusId
+		,E.EmployeeNo
+		',NULL,NULL,'QUERY',1,'This report will show the earnings/allowances or will be issued to each employee. This is basically a list report of the Allowances and Other Earnings form.','\Payroll\EmployeeEarningsListReport.png',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+SET IDENTITY_INSERT [report].[Report] OFF
+/*end insert data to report.Report*/
+
+/*start insert data to report.ReportData*/
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(176,'DEPARTMENT','DepartmentName','string','','',NULL,1,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(176,'EMPLOYEE','LastFirstMIName','string','','',NULL,2,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(176,'Earning Type','EarningType','string','','',NULL,3,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(176,'Earning Code','EarningCode','string','','',NULL,4,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(176,'Reference No','ReferenceNo','string','','',NULL,5,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(176,'Effective Date','EffectiveDate','date','','',NULL,6,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(176,'Amount Basis','AmountBasis','string','','',NULL,7,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(176,'Currency','Currency','string','','',NULL,8,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(176,'Amount','Amount','decimal','','',NULL,9,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(176,'Frequency','Frequency','string','','',NULL,10,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(176,'MaximumLimit','MaximumLimit','decimal','','',NULL,11,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(176,'End Date','EndDate','date','','',NULL,12,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(176,'Status','Status','string','','',NULL,13,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(176,'Remarks','Remarks','string','','',NULL,14,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportData] ([ReportId],[ReportColumn],[ReportDataValue],[ReportDataType],[DataSection],[DataAlignment],[LineNumber],[ColumnOrderNumber],[SourceTable],[CreateId],[Createdate],[LastUpdateId],[LastUpdatedate],[IsFix],[RowPos],[DisplayFormat],[DefaultValue],[Hidden],[IsFormula],[ShowSummary],[SummaryFormula],[SuppressIfDuplicate],[IsGroup],[CriteriaColPos],[GroupColPos],[GroupLabel],[GroupLevel],[GroupName],[GroupRowPos],[GroupSummaryRowPos],[RepeatOnEachGroup],[ShowInHeader],[Summarize],[SummaryLabel])VALUES(176,'Employee No.','EmployeeNumber','string','','',NULL,15,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+/*end insert data to report.ReportData*/
+
+/*start insert data to report.ReportParameter*/
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat])VALUES('EmployeeEarningsListReport','@PeriodStartDate,@PeriodEndDate','Period','daterange','','',1,'','Param1','Stored','>=,<=','date',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat])VALUES('EmployeeEarningsListReport','@CompanyId','Company','dropdownList','$table:maintenance.Company,CompanyId,Name','$table:maintenance.Branch WHERE CompanyId =  ,BranchId,Name|BranchId,',2,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat])VALUES('EmployeeEarningsListReport','@BranchId','Branch','dropdownList','$table:maintenance.Branch,BranchId,Name','',3,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat])VALUES('EmployeeEarningsListReport','@DepartmentId','Department','dropdownList','$table:maintenance.Department,DepartmentId,DepartmentName','',4,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat])VALUES('EmployeeEarningsListReport','@EarningTypeVal','Earning Type','dropdownList','$enum:EarningsDeductionType','',4,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat])VALUES('EmployeeEarningsListReport','@StatusId','Status','checkboxList','$table:maintenance.Status WHERE Value = 13 
+OR Value = 12
+OR Value = 9 
+OR Value = 3 
+OR Value = 1 
+OR Value = 2 
+OR Value = -2 
+OR Value = -5
+OR Value = 21,Value,Name','',5,'','Param1','Stored','IN','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat])VALUES('EmployeeEarningsListReport','@CostCenterId','Cost Center','dropdownList','$table:maintenance.CostCenter,CostCenterId,Description','',5,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat])VALUES('EmployeeEarningsListReport','EmployeeId','Employee','checkboxList','$table:dbo.fnProfileInfo,ProfileId,[LastFirstMIName]','',7,'','Param1','Stored','IN','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat])VALUES('EmployeeEarningsListReport','@PaysheetHeaderId','ID','textbox','','',8,'','Param1','Stored','=','',1,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat])VALUES('EmployeeEarningsListReport','@IncludeInactiveEmployees','Include Inactive Employees','checkbox','','',6,'','Param1','Stored','=','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+INSERT [report].[ReportParameter] ([ReportCode],[ParameterName],[LabelName],[Type],[Source],[ChildSource],[SortOrder],[Alignment],[ReferenceField],[ParameterType],[ConditionalOperator],[DataType],[Hidden],[Required],[Extra],[DefaultValue],[ParameterField],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate],[DisplayLocation],[DisplayType],[DisplayOption],[ColPos],[RowPos],[DisplayFormat])VALUES('EmployeeEarningsListReport','@EarningDeductionIds','Earning/Deduction','checkboxList','$table:compben.vwRetrieveEarningDeductionWithoutHoursInCode WHERE MappedToId = 0,EarningDeductionId,Description','',9,'','Param1','Stored','IN','',NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL,NULL)
+/*end insert data to report.ReportParameter*/
+
+/*start insert data to report.ReportSubReport*/
+/*end insert data to report.ReportSubReport*/
+
+/*start insert data to report.ReportMenu*/
+/*end insert data to report.ReportMenu*/
+
+/*start insert data to security.Module_Forms*/
+/*end insert data to security.Module_Forms*/
+
+SET NOCOUNT OFF

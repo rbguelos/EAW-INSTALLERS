@@ -1,0 +1,41 @@
+UPDATE report.Report SET TableSPUsed = 
+'SELECT 
+    BF.AccountNo
+    ,BF.LastFirstMIName
+    /*,[NetPay] = CAST(ROUND(BF.NetPay, 2, 1) AS DECIMAL(18,2))*/
+	,[NetPay] = CAST(ROUND(BF.NetPay,2) AS DECIMAL(18,2))
+    ,BF.FirstMILastName
+    ,BF.CompanyId
+    ,BF.PayrollTypeId
+    ,BF.PayrollDate
+    ,[CutOffPeriod] = FORMAT(BF.CutOffStartDate, ''MM/dd/yyyy'') + '' - '' + FORMAT(BF.CutOffEndDate, ''MM/dd/yyyy'')
+    ,BF.CompanyAccountNo
+    ,[CompanyName] = COALESCE((SELECT TOP 1 Name FROM maintenance.Company WHERE CompanyId = CASE WHEN COALESCE(@CompanyId,0) = 0 THEN '''' ELSE @CompanyId END),'''')
+    ,[BankName] = COALESCE((SELECT TOP 1 Name FROM maintenance.Bank WHERE BankId = CASE WHEN COALESCE(@BankId,0) = 0 THEN '''' ELSE @BankId END),'''')
+    ,[BranchName] = COALESCE((SELECT TOP 1 Name FROM maintenance.Branch WHERE BranchId = CASE WHEN COALESCE(@BranchId,0) = 0 THEN '''' ELSE @BranchId END),'''')
+FROM bankfile.fnBankFileDetail(@CompanyId, @BranchId, @StartPayrollDate, @EndPayrollDate, @PayrollTypeIds, @BankId, @MBankAccountId, @UserSecurityId,@BankFileHeaderId,@GenerationType,@PayGroupIds) BF
+OUTER APPLY
+(
+   SELECT DISTINCT
+   PayrollTypeIds = 
+       STUFF((SELECT 
+       '','' + CAST(PayrollTypeId AS VARCHAR)
+       FROM payroll.PayrollType
+       ORDER BY PayrollTypeId
+       FOR XML PATH('''')),1,1,'''') 
+   FROM payroll.PayrollType
+)PT
+
+
+GROUP BY
+	   BF.AccountNo
+	   ,BF.LastFirstMIName
+	   ,BF.NetPay
+	   ,BF.FirstMILastName
+	   ,BF.CompanyId
+	   ,BF.PayrollTypeId
+	   ,BF.PayrollDate
+	   ,FORMAT(BF.CutOffStartDate, ''MM/dd/yyyy'') + '' - '' + FORMAT(BF.CutOffEndDate, ''MM/dd/yyyy'')
+	   ,BF.CompanyAccountNo
+'
+WHERE ReportCode = 'BankFileDetailsReport'

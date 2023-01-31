@@ -1,0 +1,9 @@
+UPDATE maintenance.JQListColumns 
+SET FormatterOption = '',
+Others = 'cellattr: MBankAccount.formatAutoEllipsis'
+WHERE ListType = 'MBankAccountListColumn'
+AND Name = 'Company'
+
+
+UPDATE maintenance.MBankAccount
+SET CompanyIds = CompanyId 

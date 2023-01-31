@@ -1,0 +1,5 @@
+IF NOT EXISTS 
+(SELECT * FROM maintenance.ReferenceNumberLookUp WHERE [Transaction] = 'ViolationReportNumber' )
+INSERT INTO maintenance.ReferenceNumberLookUp ([Transaction],[Prefix],[Sequence],[Format],[Length])
+VALUES ('ViolationReportNumber','','0','MMYYYY|SEQUENCE','4')
+

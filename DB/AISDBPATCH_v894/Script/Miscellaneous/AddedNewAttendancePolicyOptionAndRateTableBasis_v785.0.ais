@@ -1,0 +1,27 @@
+﻿  --  INSERT NEW ATTENDANCE POLICY OPTION
+
+  DELETE FROM maintenance.ConfigSetupDetail 
+  WHERE ConfigSetupDetailId = 248
+  AND PropertyName = 'Auto_Calculation_Of_OB_Allowances'
+
+  SET IDENTITY_INSERT maintenance.ConfigSetupDetail ON
+  GO
+  
+  INSERT INTO maintenance.ConfigSetupDetail (
+    ConfigSetupDetailId, ConfigSetupHeaderId, PropertyName, LabelName, 
+    PropertyValue, Type, Source, [Group], SubGroup, SortOrder, Alignment)
+  VALUES (248, 1, 'Auto_Calculation_Of_OB_Allowances', 'Auto-calculation of OB Allowances',
+    '', 'checkbox', '', 6, 0, 2, '')
+
+  SET IDENTITY_INSERT maintenance.ConfigSetupDetail OFF
+  GO
+
+  -- INSERT NEW RATE TABLE BASIS
+
+  DELETE FROM maintenance.EnumValues 
+  WHERE SourceName = 'RateTableBasis' 
+  AND DisplayText = 'Official Business'
+  AND Value = 7
+
+  INSERT INTO maintenance.EnumValues (SourceName, DisplayText, Value, OrderNumber, Status)
+  VALUES ('RateTableBasis', 'Official Business', 7, 7, 1)

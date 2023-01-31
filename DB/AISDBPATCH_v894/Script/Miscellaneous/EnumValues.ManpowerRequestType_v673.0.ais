@@ -1,0 +1,11 @@
+EXEC spInsertTableData 
+@SCHEMA = 'maintenance'
+,@TABLENAME = 'EnumValues'
+,@COLUMNS = '[SourceName],[DisplayText],[Value],[OrderNumber],[Status]'
+,@VALUETOINSERT = 'ManpowerRequestType|Gender|5|5|1
+ManpowerRequestType|Educational Attainment|6|6|1
+ManpowerRequestType|Academic Background|7|7|1
+ManpowerRequestType|Years of Experience|8|8|1'
+,@COLUMNSEPARATOR = '|'
+,@ROWSEPARATATOR = '
+'

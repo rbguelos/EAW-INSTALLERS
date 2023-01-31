@@ -1,0 +1,5 @@
+UPDATE performanceappraisal.PAConfiguration_Frequency
+SET FrequencyMonthlyPA = 0, MonthlyPAScheduleBasisId = 0,
+MonthlyPAMultipleAppraisal = 0, MonthlyPAStartDate = '1900-01-01',
+MonthlyPAEndDate = '1900-01-01', MonthlyPAEmpSpecificDateId = 0,
+MonthlyPAType = ''

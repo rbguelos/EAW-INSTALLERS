@@ -1,0 +1,58 @@
+DECLARE
+@TEMPTABLE TABLE
+(
+	ROWID INT IDENTITY(1,1)
+	,StartTime DATETIME
+	,OfficialBusinessDate DATETIME
+	,EndTime DATETIME
+	,StartTimePreviousDay BIT
+	,EndTimeNextDay BIT
+	,OfficialBusinessId BIGINT
+)
+
+INSERT INTO @TEMPTABLE
+SELECT 
+	OB.StartTime /* mababa S1E0 */
+	,OB.OfficialBusinessDate /* equal S0E0 */
+	,OB.EndTime /* mataas S0E1 */
+	,StartTimePreviousDay = 
+	(
+		CASE 
+			WHEN (COLS.StartTime = COLS.OfficialBusinessDate AND COLS.EndTime = COLS.OfficialBusinessDate) THEN 0 
+			WHEN (COLS.StartTime = CAST('1/1/1900' AS DATE)) THEN 0 /*NULL DATE*/
+			WHEN (COLS.StartTime < COLS.OfficialBusinessDate) THEN 1
+			ELSE 0 
+		END
+	)
+	,EndTimeNextDay = 
+	(
+		CASE 
+			WHEN (COLS.StartTime = COLS.OfficialBusinessDate AND COLS.EndTime = COLS.OfficialBusinessDate) THEN 0 
+			WHEN (COLS.EndTime = CAST('1/1/1900' AS DATE)) THEN 0 /*NULL DATE*/
+			WHEN (COLS.EndTime > COLS.OfficialBusinessDate) THEN 1
+			ELSE 0 
+		END
+	)
+	,OB.OfficialBusinessId
+FROM schedule.OfficialBusiness OB
+CROSS APPLY
+(
+	SELECT
+		StartTime = CAST(ISNULL(OB.StartTime,'1/1/1900') AS DATE)
+		,OfficialBusinessDate = CAST(ISNULL(OB.OfficialBusinessDate,'1/1/1900') AS DATE)
+		,EndTime = CAST(ISNULL(OB.EndTime,'1/1/1900') AS DATE)
+)COLS
+/*WHERE YEAR(OB.OfficialBusinessDate) NOT IN (2015, 2016)*/
+
+/*SELECT * FROM @TEMPTABLE;RETURN*/
+
+UPDATE schedule.OfficialBusiness
+SET
+	StartTimePreviousDay = T.StartTimePreviousDay
+	,EndTimeNextDay = T.EndTimeNextDay
+FROM @TEMPTABLE T
+WHERE 
+OfficialBusiness.OfficialBusinessId = T.OfficialBusinessId
+
+
+SELECT * FROM schedule.OfficialBusiness

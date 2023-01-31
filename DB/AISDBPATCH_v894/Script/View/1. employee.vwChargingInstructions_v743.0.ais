@@ -1,0 +1,46 @@
+IF NOT OBJECT_ID('[employee].[vwChargingInstructions]') IS NULL
+DROP VIEW [employee].[vwChargingInstructions]
+GO
+  
+CREATE VIEW [employee].[vwChargingInstructions]  
+AS
+SELECT CI.ProfileId, CI.ChargeCodeId, [Code] = CI.ChargeCodes, [Description] = CI.ChargeCodes, PercentValue = CAST(isnull(CASE WHEN ISNUMERIC(CI.PercentValue) = 1 THEN CI.PercentValue ELSE '100' END,100) AS DECIMAL(18,2))
+,[Company] = ltrim(CASE WHEN PrcntLoc > 0 THEN SUBSTRING([Company],PrcntLoc + 1,100) ELSE [CI].[Company] END)
+,[Budget Holder], [Account Code], [Beneficiary], [Objective], [Spare 1], [Spare 2]/*charging instructions*/
+--,[Project No.]
+,[Project No.] = ltrim(CASE WHEN PrcntLoc > 0 THEN SUBSTRING([Project No.],PrcntLoc + 1,100) ELSE [CI].[Project No.] END)
+,[Task No.],[Exp Type],[Exp org]/*project codes*/
+,[ACC NUMBER] = ''
+,[Account Name] = ''
+,[BANK] = ''
+,[Other information] = ''
+FROM(
+SELECT ei.ProfileId, cc.ChargeCodeId, 
+c.Code,
+ch.ChargeCodes, pc.PercentValue, p.PrcntLoc 
+,ChargeType = CASE [c].[ROWID]
+		WHEN 1 THEN CASE WHEN f.IsChargeInst = 0 THEN 'Project No.' ELSE 'Company' END
+		WHEN 2 THEN CASE WHEN f.IsChargeInst = 0 THEN 'Task No.'	ELSE 'Budget Holder' END
+		WHEN 3 THEN CASE WHEN f.IsChargeInst = 0 THEN 'Exp Type'	ELSE 'Account Code'  END
+		WHEN 4 THEN CASE WHEN f.IsChargeInst = 0 THEN 'Exp org'		ELSE 'Beneficiary'	  END
+		WHEN 5 THEN 'Objective'
+		WHEN 6 THEN 'Spare 1'
+		WHEN 7 THEN 'Spare 2'
+		ELSE NULL END
+FROM 
+employee.EmploymentInformation ei join
+maintenance.ChargeCode cc on cc.ChargeCodeId = ei.ChargeCodeId
+/*charge inst will be split by row*/CROSS APPLY(SELECT ChargeCodes = [VALUE] FROM dbo.FN_SPLITWITHID(cc.[Description],char(10))) ch
+/*will use to get percentage values*/CROSS APPLY (SELECT PrcntLoc = CHARINDEX('%', LEFT(ch.ChargeCodes, 10))) p
+/*get percentage values*/CROSS APPLY (SELECT PercentValue = CASE WHEN p.PrcntLoc > 0 THEN SUBSTRING(ch.ChargeCodes, 0, p.PrcntLoc) ELSE NULL END)pc
+CROSS APPLY(SELECT IsChargeInst = CASE WHEN CHARINDEX('/',ch.ChargeCodes) > 0 THEN 0 ELSE 1 END) as f
+CROSS APPLY(SELECT ROWID,Code = [VALUE] FROM dbo.FN_SPLITWITHID(ChargeCodes,(CASE WHEN f.IsChargeInst = 0 THEN '/' ELSE '-' END))) as c
+	
+--/*FOR TEST DATA ONLY*/WHERE cc.ChargeCodeId IN (262,280,96)
+)T
+PIVOT (MAX([Code]) FOR [ChargeType] IN (
+[Company], [Budget Holder], [Account Code], [Beneficiary], [Objective], [Spare 1], [Spare 2]/*charging instructions*/
+,[Project No.],[Task No.],[Exp Type],[Exp org]/*project codes*/
+)) AS CI
+
+GO

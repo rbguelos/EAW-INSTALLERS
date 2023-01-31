@@ -1,0 +1,283 @@
+IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[report].[spWorkflowScopeEmployeeOrganization]') AND type in (N'P', N'PC'))
+BEGIN
+EXEC dbo.sp_executesql @statement = N'CREATE PROCEDURE [report].[spWorkflowScopeEmployeeOrganization] AS' 
+END
+GO
+
+--=============================================
+--Author:      AGC
+--Create date: 05082019
+--Description: For Scope with filter columns report 
+--=============================================
+
+ALTER PROCEDURE [report].[spWorkflowScopeEmployeeOrganization]
+--DECLARE
+@CompanyId BIGINT = 0
+,@BranchId BIGINT = 0
+,@DepartmentId BIGINT = 0
+,@UnitId BIGINT = 0
+,@JobRankId BIGINT = 0
+,@JobLevelId BIGINT = 0
+,@JobPositionId BIGINT = 0
+,@ScopeId VARCHAR(MAX) = ''
+,@SortBy INT = 4
+,@UserSecurityId BIGINT = 10165
+AS
+BEGIN
+
+SET NOCOUNT ON;
+
+
+DECLARE @ReportId BIGINT = (SELECT TOP 1 ReportId FROM report.Report WHERE ReportCode = 'WorkflowScopeReportWithEmployeeOrg')
+DECLARE @TMPTABLENAME VARCHAR(MAX) = 'report.TMPWorkflowScopeEmployeeOrganization'
+
+/*DROP TEMP TABLE IF EXISTS*/
+IF EXISTS(SELECT * FROM sys.tables WHERE object_id = object_id(@TMPTABLENAME))
+EXEC('DROP TABLE ' + @TMPTABLENAME)
+
+
+--===================================================================================================================================
+--GET THE ACTUAL FILTER COLUMN VALUES ON SCOPE TABLE
+--===================================================================================================================================
+IF OBJECT_ID('tempdb..#TABLEOFVALUES') IS NOT NULL
+DROP TABLE #TABLEOFVALUES
+
+CREATE TABLE #TABLEOFVALUES 
+(
+ROWID INT IDENTITY(1,1),
+ScopeId BIGINT,
+ScopeName VARCHAR(500),
+ScopeDescription VARCHAR(1000),
+ScopeNameDescription VARCHAR(MAX),
+ProfileId BIGINT,
+EmployeeName VARCHAR(1000)
+)
+
+INSERT INTO #TABLEOFVALUES
+SELECT 
+	SC.ScopeId
+	,SC.ScopeName
+	,SC.Remarks
+	,ScopeNameDescription = CONCAT(SC.ScopeName,(CASE WHEN ISNULL(SC.Remarks,'') <> '' THEN ' - ' + SC.Remarks ELSE '' END)) 
+	,EMP.ProfileId
+	,EMP.EmployeeName
+FROM workflow.Scope SC
+CROSS APPLY
+(
+	SELECT 
+		EmployeeName = CONCAT(EP.LastName, ', ', EP.FirstName,(CASE WHEN ISNULL(EP.MiddleName,'') <> '' THEN ' ' + SUBSTRING(EP.MiddleName,1,1) + '.' ELSE '' END))
+		,EmployeeNo = EI.CJI_EmployeeNo
+		,EP.ProfileId
+	FROM employee.Profile EP
+	INNER JOIN employee.EmploymentInformation EI ON EI.ProfileId = EP.ProfileId
+	CROSS APPLY
+	(
+		SELECT 
+			ScopeId
+		FROM workflow.ScopeDetail SCD
+		WHERE
+		(
+			(CHARINDEX(',' + CAST(EP.ProfileId AS VARCHAR(MAX)) + ',', ',' + (SCD.Members) + ',', 0) > 0)
+			
+			OR
+			(
+				COALESCE(SCD.Members, '') = ''
+				/*CONFUSED IF 0 NOT IN || PROFILEID IN*/
+				AND 0 NOT IN (SELECT T.ProfileId FROM report.vwWorkflowScopeProfile T WHERE T.ScopeId = SC.ScopeId)
+				/*AND	0 NOT IN (SELECT * FROM workflow.fnCheckIfEmployeeIsInScope(SC.ScopeFilters, EP.ProfileId))*/
+			)
+		)
+	)SCD
+	WHERE 1=1
+	AND ISNULL(EI.CJI_EmploymentStatus,0) = 1
+	AND SCD.ScopeId = SC.ScopeId
+	/*
+	AND ((ISNULL(@CompanyId,0) = 0) OR (EI.AOA_Company = @CompanyId))
+	AND ((ISNULL(@BranchId,0) = 0) OR (EI.AOA_Branch = @BranchId))
+	AND ((ISNULL(@DepartmentId,0) = 0) OR (EI.AOA_Department = @DepartmentId))
+	AND ((ISNULL(@UnitId,0) = 0) OR (EI.AOA_Unit = @UnitId))
+	AND ((ISNULL(@JobRankId,0) = 0) OR (EI.CJI_JobRank = @JobRankId))
+	AND ((ISNULL(@JobLevelId,0) = 0) OR (EI.CJI_JobLevel = @JobLevelId))
+	AND ((ISNULL(@JobPositionId,0) = 0) OR (EI.CJI_Position = @JobPositionId))
+	*/
+)EMP
+WHERE 1=1
+AND ((ISNULL(@ScopeId,'') = '') OR (CHARINDEX('''' + CAST(SC.ScopeId AS VARCHAR) + '''', @ScopeId) > 0))
+
+
+/*SELECT * FROM #TABLEOFVALUES;RETURN;*/
+
+--===================================================================================================================================
+--CREATE ORGANIZATION
+--===================================================================================================================================
+IF OBJECT_ID('tempdb..#ORGANIZATION') IS NOT NULL
+DROP TABLE #ORGANIZATION
+
+CREATE TABLE #ORGANIZATION 
+(
+ROWID INT IDENTITY(1,1),
+DisplayText VARCHAR(300),
+OrgId VARCHAR(500),
+OrgType INT,
+ColumnName VARCHAR(100),
+ProfileId BIGINT
+)
+
+INSERT INTO #ORGANIZATION
+SELECT 
+	COLS.DisplayText
+	,COLS.Id
+	,COLS.OrgType
+	,COLS.ColName
+	,E.ProfileId
+/*FROM dbo.fnProfileInfo(0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0) E*/
+FROM employee.FN_GETEmployeeInformation() E
+CROSS APPLY
+(
+SELECT DisplayText = E.Company, Id = E.CompanyId, OrgType = 1,ColName = 'Company'
+UNION ALL
+SELECT DisplayText = E.Branch, Id = E.BranchId, OrgType = 2,ColName = 'Branch'
+UNION ALL
+SELECT DisplayText = E.Department, Id = E.DepartmentId, OrgType = 3,ColName = 'Department'
+UNION ALL
+SELECT DisplayText = E.Office, Id = E.OfficeId, OrgType = 4,ColName = 'Office' 
+UNION ALL			
+SELECT DisplayText = E.UnitCode, Id = E.UnitId, OrgType = 5,ColName = 'Unit'
+UNION ALL			
+SELECT DisplayText = E.ProjectName, Id = E.ProjectProfileId, OrgType = 6,ColName = 'Project'
+UNION ALL			
+SELECT DisplayText = E.JobLevelCode, Id = E.JobLevelId, OrgType = 7,ColName = 'Job Level'
+UNION ALL
+SELECT DisplayText = E.Position, Id = E.PositionId, OrgType = 8,ColName = 'Job Position'
+UNION ALL
+SELECT DisplayText = E.GroupsCode, Id = E.GroupsId, OrgType = 9,ColName = 'Group'
+UNION ALL
+SELECT DisplayText = E.TeamCode, Id = E.TeamId, OrgType = 10,ColName = 'Team' 
+UNION ALL
+SELECT DisplayText = E.DistrictCode, Id = E.DistrictId, OrgType = 11,ColName = 'District'
+UNION ALL
+SELECT DisplayText = E.JobRankCode, Id = E.JobRankId, OrgType = 12,ColName = 'Job Rank'
+UNION ALL
+SELECT DisplayText = E.DivisionCode, Id = E.DivisionId, OrgType = 13,ColName = 'Division'
+UNION ALL
+SELECT DisplayText = E.LineIdCode, Id = E.LineId, OrgType = 14,ColName = 'Line'
+UNION ALL
+SELECT DisplayText = E.JobGradeCode, Id = E.JobGradeId, OrgType = 15,ColName = 'Job Grade'
+UNION ALL
+SELECT DisplayText = E.CostCenterCode, Id = E.CostCenterId, OrgType = 16,ColName = 'Cost Center'
+UNION ALL
+SELECT DisplayText = E.[Location], Id = E.LocationId, OrgType = 17,ColName = 'Location'
+)COLS
+
+
+/*SELECT * FROM #ORGANIZATION O;RETURN;*/
+
+--===================================================================================================================================
+--CREATE COLUMNS TO BE DISPLAYED
+--===================================================================================================================================
+DECLARE @DISPLAYCOLS VARCHAR(MAX) = 
+STUFF((
+	SELECT 
+		',' + Col2.COLNAME
+	FROM workflow.ScopeFilter SCF
+	CROSS APPLY
+	(
+		SELECT
+		COLNAME = QUOTENAME(SCF.FilterName)
+	)Col2
+	WHERE SCF.ToggleFilter = 1 ORDER BY SCF.SortOrder
+	
+FOR XML PATH(''), ROOT ('MyString'), TYPE)
+.value('/MyString[1]', 'varchar(max)'), 1, 1, '')
+
+
+DECLARE @DISPLAYCOLUMNS VARCHAR(MAX) = 
+STUFF((
+	SELECT 
+		',' + CONCAT(Col2.COLNAME,'=','ISNULL(DISPLAYCOLS.',Col2.COLNAME,','''')')
+	FROM workflow.ScopeFilter SCF
+	CROSS APPLY
+	(
+		SELECT
+		COLNAME = QUOTENAME(SCF.FilterName)
+	)Col2
+	WHERE SCF.ToggleFilter = 1 ORDER BY SCF.SortOrder
+	
+FOR XML PATH(''), ROOT ('MyString'), TYPE)
+.value('/MyString[1]', 'varchar(max)'), 1, 1, '')
+
+DECLARE @DISPLAYCOLUMNSQRY VARCHAR(MAX) = 
+'
+SELECT 
+	ProfileId
+	,ScopeNameDescription
+	,EmployeeName 
+	,'+@DISPLAYCOLS+'
+FROM
+(
+	SELECT 
+		T.ScopeId
+		,T.ScopeNameDescription
+		,T.ProfileId
+		,T.EmployeeName
+		,ColumnName = ISNULL(O.ColumnName,'''')
+		,DisplayText = ISNULL(O.DisplayText,'''')
+	FROM #TABLEOFVALUES T
+	INNER JOIN #ORGANIZATION O ON O.ProfileId = T.ProfileId
+)T
+PIVOT(MAX(DisplayText) FOR ColumnName IN
+('+@DISPLAYCOLS+')) AS PVT
+'
+
+/*
+SELECT @DISPLAYCOLUMNSQRY;RETURN;
+EXEC(@DISPLAYCOLUMNSQRY);
+*/
+
+--===================================================================================================================================
+--CREATE MAIN QUERY
+--===================================================================================================================================
+DECLARE @MAINQRY VARCHAR(MAX) =
+'
+SELECT 
+	RowId = (ROW_NUMBER() OVER 	(ORDER BY DISPLAYCOLS.ScopeNameDescription,'+
+	(
+		CASE @SortBy 
+		WHEN 2 THEN 'DISPLAYCOLS.EmployeeName,DISPLAYCOLS.[Company]' 
+		WHEN 3 THEN 'DISPLAYCOLS.[Company],DISPLAYCOLS.[Branch],DISPLAYCOLS.[Department],DISPLAYCOLS.EmployeeName' 
+		WHEN 4 THEN 'DISPLAYCOLS.[Company],DISPLAYCOLS.[Department],DISPLAYCOLS.EmployeeName' 
+		ELSE 'DISPLAYCOLS.[Company],DISPLAYCOLS.EmployeeName'
+		END
+	)
+	+'))
+	,[Scope Name] =  ISNULL(DISPLAYCOLS.ScopeNameDescription,'''')
+	'+CASE WHEN ISNULL(@DISPLAYCOLUMNS,'') <> '' THEN ',' + @DISPLAYCOLUMNS ELSE '' END+'
+	,[Employee No.] = ISNULL(EI.CJI_EmployeeNo,'''')
+	,[Employee Name] = ISNULL(DISPLAYCOLS.EmployeeName,'''')
+	,CompanyId = EI.AOA_Company
+INTO '+@TMPTABLENAME+'
+FROM employee.EmploymentInformation EI
+'+CASE WHEN ISNULL(@DISPLAYCOLUMNSQRY,'') <> '' THEN 'INNER JOIN ('+@DISPLAYCOLUMNSQRY+') DISPLAYCOLS ON DISPLAYCOLS.ProfileId = EI.ProfileId' ELSE '' END +'
+WHERE 1=1 '
++CASE WHEN ISNULL(@CompanyId,0) <> 0 THEN ' AND EI.AOA_Company =' + CAST(@CompanyId AS VARCHAR) ELSE '' END
++CASE WHEN ISNULL(@BranchId,0) <> 0 THEN ' AND EI.AOA_Branch = ' + CAST(@BranchId AS VARCHAR) ELSE '' END
++CASE WHEN ISNULL(@DepartmentId,0) <> 0 THEN ' AND EI.AOA_Department = ' + CAST(@DepartmentId AS VARCHAR) ELSE '' END
++CASE WHEN ISNULL(@UnitId,0) <> 0 THEN ' AND EI.AOA_Unit = ' + CAST(@UnitId AS VARCHAR) ELSE '' END
++CASE WHEN ISNULL(@JobRankId,0) <> 0 THEN ' AND EI.CJI_JobRank = ' + CAST(@JobRankId AS VARCHAR) ELSE '' END
++CASE WHEN ISNULL(@JobLevelId,0) <> 0 THEN ' AND EI.CJI_JobLevel = ' + CAST(@JobRankId AS VARCHAR) ELSE '' END
++CASE WHEN ISNULL(@JobPositionId,0) <> 0 THEN ' AND EI.CJI_Position = ' + CAST(@JobPositionId AS VARCHAR) ELSE '' END
+
+
+/*SELECT @MAINQRY;RETURN;*/
+
+EXEC(@MAINQRY);
+
+
+--===================================================================================================================================
+--GET THE TMP TABLE COLUMNS, INSERT INTO REPORTDATA TABLE
+--===================================================================================================================================
+
+
+EXEC [report].[spCreateReportColumn] @TMPTABLENAME, @ReportId, 'CompanyId,RowId'
+
+END

@@ -1,0 +1,4 @@
+DELETE FROM employee.CustomField WHERE CustomFieldType = 'RDO number'
+INSERT INTO employee.CustomField(CustomFieldType, DataType, [DataLength], ControlType)
+VALUES
+('RDO number','4','250','1')

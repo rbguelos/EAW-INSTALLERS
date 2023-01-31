@@ -1,0 +1,23 @@
+/*admin.MenuSubMenu*/
+SET IDENTITY_INSERT [admin].[MenuSubMenu] ON 
+IF NOT EXISTS(SELECT MenuSubMenuId FROM admin.MenuSubMenu WHERE MenuSubMenuId = 149)
+INSERT [admin].[MenuSubMenu] ([MenuSubMenuId],[MenuMenuId],[SubMenuName],[SubMenuIcon],[SubMenuLink],[SortOrder],[Hidden],[CreateId],[CreateDate],[LastUpdateId],[LastUpdateDate]) 
+VALUES (149, 87, N'BDO (Old File)', N'', N'/BankFile/List?TemplateCode=BDO_OLDFILE&Extension=txt', 17, 0, NULL, NULL, NULL, NULL)
+SET IDENTITY_INSERT [admin].[MenuSubMenu] OFF
+
+/* Insert to admin.SecurityMapping */
+IF NOT EXISTS(SELECT * FROM admin.SecurityMapping WHERE MenuMenuId = 87 AND MenuSubMenuId = 149)
+INSERT INTO admin.SecurityMapping([MenuMenuId],[MenuSubMenuId],[SecurityFormId],[AccessTypeId]) SELECT 
+[MenuMenuId] = 87
+,[MenuSubMenuId] = 149
+,[SecurityFormId] = 222
+,[AccessTypeId] = 1
+/* Automatically add access to the user with Master Role */
+IF NOT EXISTS (SELECT * FROM security.UserSecurity_Detail WHERE ModuleFormId = 222)
+INSERT INTO security.UserSecurity_Detail([UserSecurityId],[ModuleFormId],[AccessTypeId],[ModuleId]) SELECT
+[UserSecurityId] = US.UserSecurityId
+,[ModuleFormId] = 222
+,[AccessTypeId] = '1,2,3,4,5,25,26'
+,[ModuleId] = 40
+FROM security.UserSecurity US
+WHERE US.RoleId = 1

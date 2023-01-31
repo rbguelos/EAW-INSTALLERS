@@ -1,0 +1,7 @@
+
+/*update import overtime request duplicate checking*/
+DECLARE @FileImportCfgHdrId bigint
+SELECT TOP 1 @FileImportCfgHdrId = FileImportCfgHdrId FROM fileimport.FileImportCfgHdr WHERE FileImportCode = 'OvertimeRequest';
+IF NOT @FileImportCfgHdrId IS NULL
+UPDATE fileimport.FileImportCfgDetail SET CheckDuplicate = 1 WHERE FileImportCfgHdrId = @FileImportCfgHdrId AND DestinationColumnField IN('PreShiftOT','ProfileId','OvertimeDate');
+RETURN;

@@ -1,0 +1,3 @@
+UPDATE report.ReportParameter SET DataType = 'DATE' 
+WHERE ReportCode = 'NewHiresReport'
+AND ParameterName = 'PeriodStartDate,PeriodEndDate'

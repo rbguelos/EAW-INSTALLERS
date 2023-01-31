@@ -1,0 +1,12 @@
+
+
+DELETE FROM report.ReportMenu WHERE  FileGeneratorHdrId IN (91,92)
+
+IF NOT EXISTS(SELECT * FROM maintenance.Company WHERE Code = 'GBPI')
+BEGIN
+INSERT INTO report.ReportMenu (ReportId,AdminMenuModuleId,MenuModuleId,ReportGroupId,ModuleFormId,FileGeneratorHdrId,XMLReportId) 
+VALUES
+(0,0,0,NULL,242,92,0)
+SELECT ReportId,AdminMenuModuleId,MenuModuleId,ReportGroupId,ModuleFormId,FileGeneratorHdrId,XMLReportId FROM report.ReportMenu WHERE FileGeneratorHdrId IN (91,92)
+END
+

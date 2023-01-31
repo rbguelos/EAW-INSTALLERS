@@ -1,0 +1,68 @@
+UPDATE report.Report SET TableSPUsed =
+'SELECT             
+    EmployeeName = E.LastFirstMIName
+    ,E.EmployeeNo
+    ,E.EmployeeTypeCode
+    ,IssueDate = PD.IssuedDate
+    ,BasicPay = SUM(ISNULL(PD.BasicPay,0))
+    ,OTHOLRENS = SUM(ISNULL(PD.TotalOTPay,0) + ISNULL(PD.TotalHolidayPay,0) + ISNULL(PD.REPay,0) + ISNULL(PD.NightDiffPay,0))
+    ,LeavePay = SUM(ISNULL(PD.LeavePay,0))
+    ,COLA = SUM(ISNULL(PD.COLA,0))
+    ,Allowance = SUM(ISNULL(PD.Allowance,0))
+    ,Benefits = SUM(ISNULL(PD.Benefit,0))
+    ,OtherTaxable = SUM(ISNULL(PD.TaxableOther,0))
+    ,OtherNonTaxable = SUM(ISNULL(PD.NonTaxableOther,0))
+    ,GrossPay = SUM(ISNULL(PD.GrossPay,0))
+    ,SSS = SUM(ISNULL(PD.SSS,0))
+    ,SSSES = SUM(ISNULL(PD.SSSES,0))
+    ,SSSEC = SUM(ISNULL(PD.SSSEC,0))
+    ,PHILHEALTH = SUM(ISNULL(PD.PhilHealth,0))
+    ,PHILHEALTHES = SUM(ISNULL(PD.PhilHealthES,0))
+    ,PAGIBIG = SUM(ISNULL(PD.PAGIBIG,0))
+    ,PAGIBIGES = SUM(ISNULL(PD.PAGIBIGES,0))
+    ,WTAX = SUM(ISNULL(PD.WHT,0))
+    ,DEDUCTION = SUM(ISNULL(PD.Deduction,0))
+    ,OTHERDEDUCTION = SUM(ISNULL(PD.OtherDeduction,0))
+    ,LOANPAYMENTS = SUM(ISNULL(PD.Loan,0))
+    ,TAXABLEINCOME = SUM(ISNULL(PD.TaxableIncome,0) + ISNULL(PD.CompanyTaxable,0))
+    ,NETPAY = SUM(ISNULL(PD.NetPay,0))
+    ,E.CompanyId
+FROM vwPaysheetDetail PD
+
+CROSS APPLY
+(
+    SELECT TOP 1 
+	   E.LastFirstMIName
+	   ,E.EmployeeNo
+	   ,E.CompanyId
+	   ,E.EmployeeTypeCode
+	   ,E.BranchId
+	   ,E.DepartmentId
+	   ,E.JobLevelId
+	   ,E.PositionId
+	   ,E.ProfileId
+    FROM dbo.fnProfileInfo(@CompanyId,@BranchId,@DepartmentId,0,@JobLevelId,0,0,0,@CostCenterId,0,@PositionId,0,0,@UnitId,0,@DivisionId,@GroupId,0,0,2,PD.PaySheetHeaderDetailId) E 
+    WHERE E.ProfileId = PD.ProfileId
+) E
+WHERE
+(
+    (
+	   CAST(ISNULL(@IssueStartDate,''1/1/1900'') AS DATETIME) <= CAST(''1/1/1900'' AS DATETIME) OR 
+	   PD.IssuedDate >= CAST(@IssueStartDate AS DATETIME)
+    )
+    AND
+    (
+	   CAST(ISNULL(@IssueEndDate,''1/1/1900'') AS DATETIME) <= CAST(''1/1/1900'' AS DATETIME)  OR 
+	   PD.IssuedDate <= CAST(@IssueEndDate AS DATETIME)
+    )
+    AND
+    (@EmployeeId = '''' OR CHARINDEX('''''''' + CAST(PD.ProfileId as VARCHAR) + '''''''',@EmployeeId) > 0)
+)
+GROUP BY 
+		E.LastFirstMIName
+		,E.EmployeeNo
+		,E.EmployeeTypeCode
+		,PD.IssuedDate
+		,E.CompanyId'
+
+WHERE ReportCode = 'EmployeePayrollDetailReport'

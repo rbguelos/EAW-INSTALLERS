@@ -1,0 +1,11 @@
+INSERT INTO security.FieldLookUp (FormName, [Table], TableFieldName, FormFieldName, HideTag, RequiredTag)
+VALUES ('Screening Type', 'ScreeningType', 'PositionAllowEmail', 'optPositionAllowEmail', 1, 0)
+
+INSERT INTO security.FieldLookUp (FormName, [Table], TableFieldName, FormFieldName, HideTag, RequiredTag)
+VALUES ('Screening Type', 'ScreeningType', 'PositionAllowSMS', 'optPositionAllowSMS', 1, 0)
+
+INSERT INTO security.FieldLookUp (FormName, [Table], TableFieldName, FormFieldName, HideTag, RequiredTag)
+VALUES ('Screening Type', 'ScreeningType', 'PICAllowEmail', 'optPICAllowEmail', 1, 0)
+
+INSERT INTO security.FieldLookUp (FormName, [Table], TableFieldName, FormFieldName, HideTag, RequiredTag)
+VALUES ('Screening Type', 'ScreeningType', 'PICAllowSMS', 'optPICAllowSMS', 1, 0)

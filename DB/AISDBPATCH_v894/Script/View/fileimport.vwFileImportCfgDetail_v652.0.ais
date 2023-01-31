@@ -1,0 +1,524 @@
+/****** Object:  View [fileimport].[vwFileImportCfgDetail]    Script Date: 3/5/2018 5:03:45 PM ******/
+IF NOT OBJECT_ID('[fileimport].[vwFileImportCfgDetail]') IS NULL
+DROP VIEW [fileimport].[vwFileImportCfgDetail]
+GO
+
+/****** Object:  View [fileimport].[vwFileImportCfgDetail]    Script Date: 3/5/2018 5:03:45 PM ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+/*===========================================*
+**	   Last Update Date: 01/25/2019
+**	   Last Update By: Ronald
+**	   Last DBVersion executed: v652
+\*===========================================*/
+CREATE VIEW [fileimport].[vwFileImportCfgDetail]
+AS
+
+SELECT
+	[FileImportCfgDetailId] =
+	CASE
+		WHEN T.SourceConfig = 1 THEN T.FileImportCfgDetailId
+		ELSE (ROW_NUMBER() OVER (ORDER BY hdr.FileImportCfgHdrId, T.FileImportCfgDetailId) + lstid.LASTID)
+	END
+   ,[FileImportCfgHdrId] = hdr.FileImportCfgHdrId
+   ,[SourceColumn] =
+	CASE
+		WHEN T.[SourceColumn] = T.DestinationColumnField THEN T.[SourceColumn] + ' '
+		ELSE T.[SourceColumn]
+	END
+   ,T.[DestinationColumnField]
+   ,T.[DataType]
+   ,T.[SourceDataType]
+   ,[MaxLength] = ISNULL((CASE WHEN isnull(InsertSourceIfNotExist,0) = 1 and isnull([SourceLinkTable],'') <> '' THEN (SELECT TOP 1 c.max_length FROM sys.columns c WHERE c.object_id = OBJECT_ID([SourceLinkTable]) and [c].[name] = 'Code') ELSE NULL END),ISNULL(cl.FldLength, T.[MaxLength]))
+   ,T.[ValidateDataType]
+   ,T.[AllowEmpty]
+   ,T.[CheckDuplicate]
+   ,T.[DefaultValue]
+   ,T.[IsFormula]
+   ,T.[FieldDescription]
+   ,T.[SourceColNum]
+   ,T.[SourceLinkTable]
+   ,T.[SourceLinkTableDesc]
+   ,T.[LinkTableFields]
+   ,T.[GetValueField]
+   ,T.[Position]
+   ,T.[FixLength]
+   ,T.[DataFormat]
+
+   ,T.[NoDuplicatePivotEntry]
+   ,T.[IsPivot]
+   ,T.[GetFieldAfterSourceCol]
+   ,T.[PivotTable]
+   ,T.[PivotLinkField]
+   ,T.[PivotGetField]
+   ,T.[PivotFieldType]
+   ,T.[PivotDestinationField]
+   ,[ReplicatePrevIf] = '..'
+   ,T.[FieldSourceList]
+   ,T.[SourceConfig]
+	/*new columns added 10.31.2018*/
+   ,T.DestinationTable
+   ,T.LinkToDestination
+   ,T.ImportOption
+   ,T.SourceType
+   ,T.IgnoreEmpty
+   ,[InsertSourceIfNotExist] = ISNULL(T.[InsertSourceIfNotExist],0)
+FROM (SELECT
+		[FileImportCfgDetailId]
+	   ,[FileImportCfgHdrId]
+	   ,[FileImportCode] = (SELECT TOP 1
+				FileImportCode
+			FROM fileimport.FileImportCfgHdr
+			WHERE FileImportCfgHdrId = SRC.FileImportCfgHdrId)
+	   ,[SourceColumn]
+	   ,[DestinationColumnField]
+	   ,[DataType]
+	   ,[SourceDataType]
+	   ,[MaxLength]
+	   ,[ValidateDataType]
+	   ,[AllowEmpty]
+	   ,[CheckDuplicate]
+	   ,[DefaultValue]
+	   ,[IsFormula]
+	   ,[FieldDescription]
+	   ,[SourceColNum]
+	   ,[SourceLinkTable]
+	   ,[SourceLinkTableDesc]
+	   ,[LinkTableFields]
+	   ,[GetValueField]
+	   ,[DataFormat]
+
+	   ,[NoDuplicatePivotEntry]
+	   ,[IsPivot]
+	   ,[GetFieldAfterSourceCol]
+	   ,[PivotTable]
+	   ,[PivotLinkField]
+	   ,[PivotGetField]
+	   ,[PivotFieldType]
+	   ,[PivotDestinationField]
+
+	   ,[FieldSourceList] =
+		CASE
+			WHEN LNKFLD.FIELD IS NULL THEN ''
+			ELSE CONCAT('SELECT GetValue = ', QUOTENAME(SRC.GetValueField), ', CheckValue = ', QUOTENAME(LNKFLD.FIELD), ' FROM ', SRC.[SourceLinkTable], ' WHERE 1=1 ', LNK.SRCFILTER)
+		END
+	   ,[Position] = 0
+	   ,[FixLength] = 0
+	   ,SRC.DestinationTable
+	   ,SRC.LinkToDestination
+	   ,SRC.ImportOption
+	   ,SRC.SourceType
+	   ,SRC.IgnoreEmpty
+	   ,[SourceConfig] = 1
+	   ,InsertSourceIfNotExist
+	FROM [fileimport].[FileImportCfgDetail] SRC
+	OUTER APPLY (SELECT
+			SRCFILTER = (SELECT
+					' AND ' + [VALUE]
+				FROM dbo.FN_SPLITWITHID(SRC.LinkTableFields, '|')
+				WHERE CHARINDEX('=', [VALUE]) > 0
+				FOR XML PATH (''))) LNK
+	OUTER APPLY (SELECT TOP 1
+			FIELD = [VALUE]
+		FROM dbo.FN_SPLITWITHID(SRC.LinkTableFields, '|')
+		WHERE CHARINDEX('=', [VALUE]) = 0) LNKFLD
+	UNION ALL /* Import Tool for E@work */
+	SELECT
+		[FileImportCfgDetailId] = FileImportDtlId
+	   ,[FileImportCfgHdrId] = FileImportDtl.FileImportHeaderId
+	   ,[FileImportCode] = FileConfigurationCode
+	   ,[SourceColumn] =
+		CASE
+			WHEN SRCTBL.SourceColumn = 'Earning Code' AND
+				FileConfigurationCode = 'AllowanceAndOtherEarning' THEN 'Earning/Deduction'
+			ELSE [SRCTBL].[SourceColumn]
+		END
+	   ,[DestinationColumnField] = FileImportDtl.TableFieldName
+	   ,[DataType] = SRCTBL.DataType
+	   ,[SourceDataType] =
+		CASE
+			WHEN ISNULL(FileImportDtl.FieldSourceTable, '') = '' THEN CASE FileImportDtl.DataType
+					WHEN 1 THEN 'Bigint'
+					WHEN 2 THEN 'Int'
+					WHEN 3 THEN 'SmallInt'
+					WHEN 4 THEN 'Varchar'
+					WHEN 5 THEN 'Nvarchar'
+					WHEN 6 THEN 'Char'
+					WHEN 7 THEN 'DateTime'
+					WHEN 8 THEN 'Time'
+					WHEN 9 THEN 'Date'
+					WHEN 10 THEN 'Decimal'
+					WHEN 11 THEN 'Double'
+					ELSE ''
+				END
+			ELSE 'Varchar'
+		END
+	   ,[MaxLength] =
+		CASE
+			WHEN CHARINDEX('char', SRCTBL.DataType) > 0 THEN c.max_length
+			ELSE 0
+		END--[Length]
+	   ,[ValidateDataType] = 1
+	   ,[AllowEmpty] =
+		CASE
+			WHEN IsRequired = 1 THEN 0
+			ELSE 1
+		END
+	   ,[CheckDuplicate] =
+		CASE
+			WHEN TableFieldName IN ('ProfileId', 'EarningDeductionId', 'EffectiveDate') AND
+				FileImportDtl.FileImportHeaderId = (SELECT
+						FileImportHeaderId
+					FROM admin.FileImportHeader
+					WHERE FileConfigurationCode = 'AllowanceAndOtherEarning') THEN 1
+			ELSE IsKeyField
+		END
+	   ,[DefaultValue] = FixValue --NULL
+	   ,[IsFormula] = 0
+	   ,[FieldDescription] = SRCTBL.SourceColumn
+	   ,[SourceColNum] = ColumnNumber
+	   ,[SourceLinkTable] = SRCTBL.FieldSourceTable
+	   ,[SourceLinkTableDesc] = ''
+	   ,[LinkTableFields] = SRCTBL.FilterQry
+	   ,[GetValueField] = FieldSourceName
+	   ,[DataFormat] = ''
+
+	   ,[NoDuplicatePivotEntry] = NULL
+	   ,[IsPivot] = NULL
+	   ,[GetFieldAfterSourceCol] = NULL
+	   ,[PivotTable] = NULL
+	   ,[PivotLinkField] = NULL
+	   ,[PivotGetField] = NULL
+	   ,[PivotFieldType] = NULL
+	   ,[PivotDestinationField] = NULL
+
+	   ,[FieldSourceList] =
+		CASE
+			WHEN ISNULL(SRCTBL.FieldSourceTable, '') <> '' THEN CONCAT('SELECT GetValue = ', QUOTENAME(admin.FileImportDtl.FieldSourceName), ',CheckValue = ', CASE
+					WHEN SRCTBL.FieldSourceTable = 'maintenance.EnumValues' THEN 'DisplayText'
+					ELSE WhereClauseSourceName
+				END, ' FROM ', SRCTBL.FieldSourceTable, ' WHERE 1=1 ', CASE
+					WHEN CHARINDEX('=', SRCTBL.FilterQry) > 0 THEN ' AND ' + SRCTBL.FilterQry
+					ELSE ''
+				END)
+			ELSE ''
+		END
+	   ,[Position] = Position
+	   ,[FixLength] = [Length]
+	   ,DestinationTable = ''
+	   ,LinkToDestination = ''
+	   ,ImportOption = 0
+	   ,SourceType = 0
+	   ,IgnoreEmpty = 0
+	   ,[SourceConfig] = 2
+	   ,InsertSourceIfNotExist = 0
+	FROM admin.FileImportDtl
+	INNER JOIN admin.FileImportHeader
+		ON FileImportDtl.FileImportHeaderId = FileImportHeader.FileImportHeaderId
+	LEFT JOIN sys.columns c
+		ON c.name = TableFieldName
+		AND c.object_id = OBJECT_ID(TableDetailName)
+	OUTER APPLY (SELECT
+			[SourceColumn] =
+			CASE
+				WHEN admin.FileImportHeader.FileType IN (3/*excel*/) THEN 'F' + CAST(ColumnNumber AS VARCHAR)
+				ELSE CASE
+						WHEN ISNULL(FileImportDtl.Label, '') <> '' THEN FileImportDtl.Label
+						ELSE CASE
+								WHEN ISNULL(ColumnNumber, 0) <> 0 THEN 'COLUMN' + CAST(ColumnNumber AS VARCHAR)
+								ELSE ''
+							END
+					END
+			END
+		   ,FieldSourceTable =
+			CASE admin.FileImportDtl.FieldSourceTable
+				WHEN 'func:maintenance.fnConvertDaysToNumber' THEN 'maintenance.EnumValues'
+				WHEN 'func:maintenance.fnRetrieveGenderValues' THEN 'maintenance.EnumValues'
+				WHEN 'func:maintenance.fnRetrieveYesNoValue' THEN 'maintenance.EnumValues'
+				ELSE FieldSourceTable
+			END
+		   ,FilterQry =
+			CASE admin.FileImportDtl.FieldSourceTable
+				WHEN
+					'func:maintenance.fnConvertDaysToNumber' THEN 'SourceName = ''DaysOfWeek'''
+				WHEN 'func:maintenance.fnRetrieveGenderValues' THEN 'SourceName = ''Gender'''
+				WHEN 'func:maintenance.fnRetrieveYesNoValue' THEN 'SourceName = ''YesNo'''
+				ELSE WhereClauseSourceName
+			END
+		   ,DataType = TYPE_NAME(c.user_type_id)) SRCTBL
+	WHERE NOT FileConfigurationCode IN (SELECT
+			fileimport.FileImportCfgHdr.FileImportCode
+		FROM fileimport.FileImportCfgHdr)
+	AND admin.FileImportDtl.TableFieldName <> 'ImportStatusId'
+	AND NOT FileConfigurationCode IN ('FileImportSetup', 'JobPositionDetail', 'ApplicantProfile', 'ApplicantProfileGeneralInformation', 'ApplicantProfileEducationalBackground', 'EmployeeProfileMainInformation')
+	/* import time entry log config */
+	UNION ALL
+	SELECT
+		[FileImportCfgDetailId] = ti.TimeEntryLogFileImportDetailId
+	   ,[FileImportCfgHdrId] = tih.TimeEntryLogFileImportHeaderId
+	   ,[FileImportCode] = tih.FileConfigurationCode
+	   ,[SourceColumn] = ti.Label
+	   ,[DestinationColumnField] =
+		CASE
+			WHEN ISNULL(te.TimeEntryField, 0) = 1 THEN ''
+			ELSE ti.TableFieldName
+		END -- 'date to be included in formula for time entry'
+	   ,[DataType] = d.DataType
+	   ,[SourceDataType] =
+		CASE
+			WHEN d.DataType IN ('int', 'bigint', 'smallint', '', '') THEN 'varchar'
+			ELSE d.DataType
+		END
+	   ,[MaxLength] =
+		CASE
+			WHEN CHARINDEX('char', d.DataType) > 0 THEN c.max_length
+			ELSE 0
+		END
+	   ,[ValidateDataType] = 1
+	   ,[AllowEmpty] = 1
+	   ,[CheckDuplicate] =
+		CASE
+			WHEN ti.TableFieldName IN ('ProfileId', 'TimeEntry', 'Type') THEN 1
+			ELSE 0
+		END
+	   ,[DefaultValue] =
+		CASE
+			WHEN ISNULL(te.TimeEntryField, 0) = 2 THEN
+				/* create a formula to concatenate the date and time values of time entry */
+				CONCAT('CASE WHEN year(s.', QUOTENAME(ti.Label), ') <= 1901 THEN CONVERT(VARCHAR,s.', QUOTENAME(de.SourceColumn), ',101)', ' + '' '' + ', 'CONVERT(VARCHAR,s.', QUOTENAME(ti.Label), ',108) ELSE s.', QUOTENAME(ti.Label), ' END')
+			ELSE ti.FixValue
+		END
+	   ,[IsFormula] =
+		CASE
+			WHEN ISNULL(te.TimeEntryField, 0) = 2 THEN 1
+			ELSE 0
+		END
+	   ,[FieldDescription] = ti.Label
+	   ,[SourceColNum] = ti.ColumnNumber
+	   ,[SourceLinkTable] =
+		CASE sl.SourceLinkTableCode
+			WHEN 1 THEN 'employee.EmploymentInformation'
+			WHEN 2 THEN CONCAT('fileimport.fnTimeEntryLogType(', tih.TimeEntryLogFileImportHeaderId, ')')
+			ELSE ''
+		END
+	   ,[SourceLinkTableDesc] =
+		CASE sl.SourceLinkTableCode
+			WHEN 1 THEN 'Employment Information'
+			WHEN 2 THEN 'Log Type'
+			ELSE ''
+		END
+	   ,[LinkTableFields] =
+		CASE sl.SourceLinkTableCode
+			WHEN 1 THEN CASE ti.IdentifierType
+					WHEN 'Access Id' THEN 'CJI_AccessId'
+					WHEN 'Employee No' THEN 'CJI_EmployeeNo'
+					ELSE ''
+				END
+			WHEN 2 THEN 'DisplayText'
+			ELSE ''
+		END
+	   ,[GetValueField] =
+		CASE sl.SourceLinkTableCode
+			WHEN 1 THEN 'ProfileId'
+			WHEN 2 THEN 'Value'
+			ELSE ''
+		END
+	   ,[DataFormat] =
+		CASE
+			WHEN ISNULL(ti.DateFormat, '') <> '' THEN ti.DateFormat
+			ELSE ti.TimeFormat
+		END
+
+	   ,[NoDuplicatePivotEntry] = pvt.NoDuplicatePivotEntry
+	   ,[IsPivot] = pvt.IsPivot
+	   ,[GetFieldAfterSourceCol] = NULL
+	   ,[PivotTable] = pvt.PivotTable
+	   ,[PivotLinkField] = pvt.PivotLinkField
+	   ,[PivotGetField] = pvt.PivotGetField
+	   ,[PivotFieldType] = pvt.PivotFieldType
+	   ,[PivotDestinationField] = pvt.PivotDestinationField
+
+	   ,[FieldSourceList] = NULL
+	   ,[Position] = ti.Position
+	   ,[FixLength] = ti.[Length]
+	   ,DestinationTable = ''
+	   ,LinkToDestination = ''
+	   ,ImportOption = 0
+	   ,SourceType = 0
+	   ,IgnoreEmpty = 0
+	   ,[SourceConfig] = 3
+	   ,InsertSourceIfNotExist = 0
+	FROM (SELECT
+			[TimeEntryLogFileImportDetailId]
+		   ,[TimeEntryLogFileImportHeaderId]
+		   ,[TableFieldName]
+		   ,[TableFieldLabel]
+		   ,[IdentifierType]
+		   ,[DateFormat]
+		   ,[TimeFormat]
+		   ,[ColumnNumber]
+		   ,[RecordOrder]
+		   ,[Position]
+		   ,[Length]
+		   ,[IsFixValue]
+		   ,[FixValue]
+		   ,[Label]
+		   ,[PaddingFieldLength]
+		   ,[UsePadding]
+		   ,[Padding]
+		   ,[RightToLeftPadding]
+		   ,[TimeInEquivalentValue]
+		   ,[TimeOutEquivalentValue]
+		   ,[BreakInEquivalentValue]
+		   ,[BreakOutEquivalentValue]
+		FROM attendance.TimeEntryLogFileImportDetail
+		WHERE NOT ISNULL(TableFieldName, '') IN ('Source','StatusId')
+		UNION ALL
+		SELECT
+			[TimeEntryLogFileImportDetailId] = NULL
+		   ,fil.[TimeEntryLogFileImportHeaderId]
+		   ,[TableFieldName] = 'StatusId'
+		   ,[TableFieldLabel] = 'Status'
+		   ,[IdentifierType] = NULL
+		   ,[DateFormat] = NULL
+		   ,[TimeFormat] = NULL
+		   ,[ColumnNumber] = 0
+		   ,[RecordOrder] = 0
+		   ,[Position] = 0
+		   ,[Length] = 0
+		   ,[IsFixValue] = 1
+		   ,[FixValue] = '0'
+		   ,[Label] = ''
+		   ,[PaddingFieldLength] = 0
+		   ,[UsePadding] = 0
+		   ,[Padding] = NULL
+		   ,[RightToLeftPadding] = 0
+		   ,[TimeInEquivalentValue] = NULL
+		   ,[TimeOutEquivalentValue] = NULL
+		   ,[BreakInEquivalentValue] = NULL
+		   ,[BreakOutEquivalentValue] = NULL
+		FROM attendance.TimeEntryLogFileImportDetail fil
+		INNER JOIN (SELECT
+				TimeEntryLogFileImportDetailId = MIN(TimeEntryLogFileImportDetailId)
+			   ,TimeEntryLogFileImportHeaderId
+			FROM attendance.TimeEntryLogFileImportDetail
+			GROUP BY TimeEntryLogFileImportHeaderId) T
+			ON t.TimeEntryLogFileImportDetailId = fil.TimeEntryLogFileImportDetailId) ti
+	INNER JOIN attendance.TimeEntryLogFileImportHeader tih
+		ON tih.TimeEntryLogFileImportHeaderId = ti.TimeEntryLogFileImportHeaderId
+	LEFT JOIN sys.columns c
+		ON c.name = ti.TableFieldName
+		AND c.object_id = OBJECT_ID('attendance.TimeentryLog')
+	CROSS APPLY (SELECT
+			DataType = TYPE_NAME(c.user_type_id)) d
+	CROSS APPLY (SELECT
+			SourceLinkTableCode =
+			CASE
+				WHEN ti.IdentifierType IN ('Employee No', 'Access Id') THEN 1 /* EMPLOYEE */
+				WHEN ti.TableFieldName = 'Type' THEN 2/* LOG TYPE */
+				ELSE ''
+			END) sl
+	/* time in and time out in separate columns */
+	OUTER APPLY (SELECT TOP 1
+			IsPivot = 1
+		   ,PivotTable = '(SELECT DisplayText = tld.Label,[Value] = t.[VALUE] FROM attendance.TimeEntryLogFileImportDetail tld join(SELECT [CODE] = [VALUE],[VALUE] = CASE [VALUE] WHEN ''Date/Time Entry(In)'' THEN ''In'' WHEN ''Time Entry(In)'' THEN ''In'' WHEN ''Date/Time Entry(Out)'' THEN ''Out'' WHEN ''Time Entry(Out)'' THEN ''Out'' ELSE '''' END FROM dbo.SplitStrings_XML(''Date/Time Entry(In),Date/Time Entry(Out),Time Entry(In),Time Entry(Out)'','',''))t on t.[CODE] = tld.[TableFieldLabel] UNION ALL SELECT DisplayText,[Value] FROM maintenance.EnumValues WHERE SourceName = ''TimeEntryLogType'')LogType'--'(SELECT DisplayText = CASE DisplayText WHEN ''In'' THEN ''Time In'' WHEN ''Out'' THEN ''Time Out'' ELSE DisplayText END,[Value] FROM maintenance.EnumValues WHERE SourceName = ''TimeEntryLogType'')LogType'
+		   ,PivotLinkField = 'DisplayText'
+		   ,PivotGetField = 'Value'
+		   ,PivotFieldType = 'varchar'
+		   ,PivotDestinationField = 'Type'
+		   ,[NoDuplicatePivotEntry] = 1
+		FROM attendance.TimeEntryLogFileImportDetail
+		WHERE TimeEntryLogFileImportDetailId = ti.TimeEntryLogFileImportDetailId
+		AND ISNULL(tih.SameLineTimeEntryType, 1) = 1
+		AND ti.TableFieldLabel IN ('Date/Time Entry(In)', 'Time Entry(In)')) pvt
+	OUTER APPLY (SELECT
+			d.TimeEntryLogFileImportDetailId
+		   ,[SourceColumn] = d.Label
+		   ,[DestinationColumnField] = d.TableFieldName
+		   ,HasDateEntry = 1
+		FROM attendance.TimeEntryLogFileImportHeader h
+		INNER JOIN attendance.TimeEntryLogFileImportDetail d
+			ON d.TimeEntryLogFileImportHeaderId = h.TimeEntryLogFileImportHeaderId
+		WHERE ISNULL(h.CombineDateTime, 0) = 0
+		AND d.TableFieldName = 'TimeEntry'
+		AND CHARINDEX('date', d.TableFieldLabel) > 0
+		AND d.TimeEntryLogFileImportHeaderId = ti.TimeEntryLogFileImportHeaderId) de
+	CROSS APPLY (SELECT
+			TimeEntryField =
+			CASE
+				WHEN de.TimeEntryLogFileImportDetailId = ti.TimeEntryLogFileImportDetailId THEN 1 /* date field */
+				WHEN de.DestinationColumnField = ti.TableFieldName THEN 2 /* time field */
+				ELSE 0
+			END) te
+	WHERE NOT ti.TableFieldLabel IN ('Date/Time Entry(Out)', 'Time Entry(Out)')
+	UNION ALL
+	/* time entry log type with SameLineTimeEntryType = 1 (time in and time out on same row) */
+	SELECT
+		[FileImportCfgDetailId] = 0
+	   ,[FileImportCfgHdrId] = h.TimeEntryLogFileImportHeaderId
+	   ,[FileImportCode] = h.FileConfigurationCode
+	   ,[SourceColumn] = ''
+	   ,[DestinationColumnField] = 'Source'
+	   ,[DataType] = 'varchar'
+	   ,[SourceDataType] = 'varchar'
+	   ,[MaxLength] = '20'
+	   ,[ValidateDataType] = 0
+	   ,[AllowEmpty] = 0
+	   ,[CheckDuplicate] = 0
+	   ,[DefaultValue] =
+		CASE h.FileType
+			WHEN 1 THEN 'EXCEL'
+			WHEN 2 THEN 'TEXT'
+			WHEN 3 THEN 'CSV'
+			ELSE ' '
+		END
+	   ,[IsFormula] = 0
+	   ,[FieldDescription] = 'Source'
+	   ,[SourceColNum] = 0
+	   ,[SourceLinkTable] = ''
+	   ,[SourceLinkTableDesc] = ''
+	   ,[LinkTableFields] = ''
+	   ,[GetValueField] = ''
+	   ,[DataFormat] = ''
+	   ,[NoDuplicatePivotEntry] = 0
+	   ,[IsPivot] = 0
+	   ,[GetFieldAfterSourceCol] = ''
+	   ,[PivotTable] = ''
+	   ,[PivotLinkField] = ''
+	   ,[PivotGetField] = ''
+	   ,[PivotFieldType] = ''
+	   ,[PivotDestinationField] = ''
+	   ,[FieldSourceList] = ''
+	   ,[Position] = 0
+	   ,[FixLength] = 0
+	   ,DestinationTable = ''
+	   ,LinkToDestination = ''
+	   ,ImportOption = 0
+	   ,SourceType = 0
+	   ,IgnoreEmpty = 0
+	   ,[SourceConfig] = 3
+	   ,InsertSourceIfNotExist = 0
+	FROM attendance.TimeEntryLogFileImportHeader h
+	JOIN attendance.TimeEntryLogFileImportDetail d
+		ON d.TimeEntryLogFileImportHeaderId = h.TimeEntryLogFileImportHeaderId
+	WHERE ISNULL(d.TableFieldName, '') <> 'Source'
+	GROUP BY h.TimeEntryLogFileImportHeaderId
+			,h.FileConfigurationCode
+			,h.FileType) T
+INNER JOIN fileimport.vwFileImportCfgHdr hdr
+	ON hdr.FileImportCode = t.FileImportCode
+OUTER APPLY (SELECT
+		LASTID = MAX(FileImportCfgDetailId)
+	FROM fileimport.FileImportCfgDetail) lstid
+OUTER APPLY (SELECT TOP 1
+		FldLength = c.max_length
+	FROM sys.columns c
+	WHERE c.object_id = OBJECT_ID(ISNULL(CONCAT(hdr.DestinationSchema, '.', hdr.DestinationTable), t.DestinationTable))
+	AND [name] = t.DestinationColumnField
+	AND t.DataType = 'varchar') cl
+
+
+GO

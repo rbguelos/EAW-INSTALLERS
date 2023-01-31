@@ -1,0 +1,2 @@
+UPDATE maintenance.TableLink SET LinkTableField = 'LoanTypeSetupId' 
+WHERE TableName = 'LoanTypeSetup' AND LinkTableName = 'payroll.LoanRequest' 

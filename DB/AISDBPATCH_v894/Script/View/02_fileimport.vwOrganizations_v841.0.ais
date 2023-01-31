@@ -1,0 +1,159 @@
+
+/****** Object:  View [fileimport].[vwOrganizations]    Script Date: 2/26/2020 3:51:39 PM ******/
+IF NOT OBJECT_ID('[fileimport].[vwOrganizations]') IS NULL
+DROP VIEW [fileimport].[vwOrganizations]
+GO
+
+/****** Object:  View [fileimport].[vwOrganizations]    Script Date: 2/26/2020 3:51:39 PM ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE VIEW [fileimport].[vwOrganizations]
+AS
+SELECT
+	Id = [EmploymentTypeId]
+   ,Code = [Code]
+   ,GroupCode = 'CJI_EmployeeType'
+   ,GroupId = 0
+   ,ParentId = EmploymentTypeGroupId
+FROM [maintenance].[EmploymentType] UNION ALL
+SELECT
+	Id = [JobLevelId]
+   ,Code = [Code]
+   ,GroupCode = 'CJI_JobLevel'
+   ,GroupId = 15
+   ,ParentId = JobGradeId
+FROM [maintenance].[JobLevel] UNION ALL
+SELECT
+	Id = [JobGradeId]
+   ,Code = [Code]
+   ,GroupCode = 'CJI_JobGrade'
+   ,GroupId = 13
+   ,ParentId = JobRankId
+FROM [maintenance].[JobGrade] UNION ALL
+SELECT
+	Id = [JobRankId]
+   ,Code = [Code]
+   ,GroupCode = 'CJI_JobRank'
+   ,GroupId = 12
+   ,ParentId = 0
+FROM [maintenance].[JobRank] UNION ALL
+SELECT
+	Id = [JobPositionId]
+   ,Code = [Code]
+   ,GroupCode = 'CJI_Position'
+   ,GroupId = 14
+   ,ParentId = JobLevelId
+FROM [maintenance].[JobPosition] UNION ALL
+SELECT
+	Id = [ManpowerClassificationId]
+   ,Code = [Code]
+   ,GroupCode = 'CJI_ManpowerClassification'
+   ,GroupId = 0
+   ,ParentId = ParentManpowerClassificationId
+FROM [maintenance].[ManpowerClassification] UNION ALL
+SELECT
+	Id = [CompanyId]
+   ,Code = [Code]
+   ,GroupCode = 'AOA_Company'
+   ,GroupId = 1
+   ,ParentId = 0
+FROM [maintenance].[Company] UNION ALL
+SELECT
+	Id = [BranchId]
+   ,Code = [Code]
+   ,GroupCode = 'AOA_Branch'
+   ,GroupId = 2
+   ,ParentId = CompanyId
+FROM [maintenance].[Branch] UNION ALL
+SELECT
+	Id = [DepartmentId]
+   ,Code = [Code]
+   ,GroupCode = 'AOA_Department'
+   ,GroupId = 3
+   ,ParentId = DepartmentId
+FROM [maintenance].[Department] UNION ALL
+SELECT
+	Id = [OfficeTypeId]
+   ,Code = [Code]
+   ,GroupCode = ''
+   ,GroupId = 5
+   ,ParentId = 0
+FROM [maintenance].[OfficeType] UNION ALL
+SELECT
+	Id = [OfficeId]
+   ,Code = [Code]
+   ,GroupCode = 'AOA_Office'
+   ,GroupId = 6
+   ,ParentId = OfficeLevel
+FROM [maintenance].[Office] UNION ALL
+SELECT
+	Id = [UnitId]
+   ,Code = [Code]
+   ,GroupCode = 'AOA_Unit'
+   ,GroupId = 4
+   ,ParentId = ParentUnit
+FROM [maintenance].[Unit] UNION ALL
+SELECT
+	Id = [DistrictId]
+   ,Code = [Code]
+   ,GroupCode = 'AOA_District'
+   ,GroupId = 11
+   ,ParentId = 0
+FROM [maintenance].[District] UNION ALL
+SELECT
+	Id = [ProjectLocationId]
+   ,Code = [LocationCode]
+   ,GroupCode = 'AOA_Location'
+   ,GroupId = 0
+   ,ParentId = 0
+FROM [projecttracking].[ProjectLocation] UNION ALL
+SELECT
+	Id = [ProjectProfileId]
+   ,Code = [ProjectCode]
+   ,GroupCode = 'AOA_Project'
+   ,GroupId = 0
+   ,ParentId = 0
+FROM [projecttracking].[ProjectProfile] UNION ALL
+SELECT
+	Id = [CostCenterId]
+   ,Code = [Code]
+   ,GroupCode = 'AOA_CostCenter'
+   ,GroupId = 0
+   ,ParentId = CostCenterGroupId
+FROM [maintenance].[CostCenter] UNION ALL
+SELECT
+	Id = [DivisionId]
+   ,Code = [Code]
+   ,GroupCode = 'AOA_Division'
+   ,GroupId = 7
+   ,ParentId = 0
+FROM [maintenance].[Division] UNION ALL
+SELECT
+	Id = [GroupsId]
+   ,Code = [Code]
+   ,GroupCode = 'AOA_Groups'
+   ,GroupId = 8
+   ,ParentId = 0
+FROM [maintenance].[Groups] UNION ALL
+SELECT
+	Id = [TeamId]
+   ,Code = [Code]
+   ,GroupCode = 'AOA_Team'
+   ,GroupId = 9
+   ,ParentId = 0
+FROM [maintenance].[Team] UNION ALL
+SELECT
+	Id = [LineId]
+   ,Code = [Code]
+   ,GroupCode = 'AOA_Line'
+   ,GroupId = 10
+   ,ParentId = 0
+FROM [maintenance].[Line]
+
+GO
+
+

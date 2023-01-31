@@ -1,0 +1,157 @@
+﻿/*===========================================*\
+**	   Last Update Date: 10/14/2019
+**	   Last Update By: John
+**	   Last DBVersion executed: 
+\*===========================================*/
+
+ALTER PROCEDURE compben.spRateTableDtlList 
+(
+	@RateTableHdrId BIGINT = 0	
+)
+AS
+BEGIN
+SET NOCOUNT ON;
+
+--=================================================
+--SOURCE NAME IN maintenance.EnumValues
+--=================================================
+DECLARE @SourceName_Basis VARCHAR(50)= 'RateTableBasis';
+DECLARE @SourceName_RateType VARCHAR(50)= 'RateTableRateType';
+	
+DECLARE @SourceName_RateTableDtlBasisAttendance VARCHAR(50)= 'RateTableBasisAttendance';
+DECLARE @SourceName_RateTableDtlBasisOTHours VARCHAR(50)= 'RateTableBasisOTHours';
+DECLARE @SourceName_RateTableDtlBasisSalaryRate VARCHAR(50)= 'RateTableBasisSalaryRate';
+DECLARE @SourceName_EarningsDeductionRoundingType VARCHAR(50)= 'EarningsDeductionRoundingType';
+DECLARE @SourceName_OfficialBusinessType VARCHAR(50)= 'OfficialBusinessType';
+
+--====================================
+--CONSTANTS
+--====================================
+DECLARE @JobLevelId BIGINT = 1;
+DECLARE @AttendanceId BIGINT = 2;
+DECLARE @OTHoursId BIGINT = 3;
+DECLARE @SalaryRate BIGINT = 4;
+DECLARE @JobPositionId BIGINT = 5;
+DECLARE @OfficialBusinessId BIGINT = 7;
+--====================================
+
+
+
+SELECT
+    --RateTableDtlId
+    RateTableDtlId = RateTableDtl.RateTableDtlId
+
+    --RateTableHdrId
+   ,RateTableHdrId = RateTableDtl.RateTableHdrId
+
+    --cmbBasisId
+   ,cmbBasisId = COALESCE(RateTableDtl.BasisId, 0)
+
+    --RateTableBasisDesc
+   ,RateTableBasisDesc = COALESCE(RateTableDtlBasis.DisplayText, '')
+
+    --cmbValueId
+   ,cmbValueId = COALESCE(RateTableDtl.ValueId, 0)
+
+    --ValueDesc
+   ,ValueDesc =
+    (
+    COALESCE(
+    CASE RateTableDtl.BasisId
+	   WHEN @JobLevelId THEN --==GET THE **Code** IN [maintenance.JobLevel]
+		  (SELECT TOP 1
+				JobLevel.Code
+			 FROM maintenance.JobLevel
+			 WHERE JobLevel.JobLevelId = RateTableDtl.ValueId)
+	   WHEN @JobPositionId THEN --==GET THE **Code** IN [maintenance.JobPosition]
+		  (SELECT TOP 1
+				JobPosition.Code
+			 FROM maintenance.JobPosition
+			 WHERE JobPosition.JobPositionId = RateTableDtl.ValueId)
+
+	   WHEN @AttendanceId THEN --==GET THE DESCRIPTION IN [maintenance.EnumValues] where SourceName = @SourceName_RateTableDtlBasisAttendance
+		  (SELECT TOP 1
+				EnumValues.DisplayText
+			 FROM maintenance.EnumValues
+			 WHERE (CAST(EnumValues.value AS BIGINT) = RateTableDtl.ValueId)
+			 AND (EnumValues.SourceName = @SourceName_RateTableDtlBasisAttendance))
+	   WHEN @OTHoursId THEN --==GET THE DESCRIPTION IN [maintenance.EnumValues] where SourceName =@SourceName_RateTableDtlBasisOTHours
+		  (SELECT TOP 1
+				EnumValues.DisplayText
+			 FROM maintenance.EnumValues
+			 WHERE (CAST(EnumValues.value AS BIGINT) = RateTableDtl.ValueId)
+			 AND (EnumValues.SourceName = @SourceName_RateTableDtlBasisOTHours))
+	   WHEN @SalaryRate THEN --==GET THE DESCRIPTION IN [maintenance.EnumValues] where SourceName =@SourceName_RateTableDtlBasisSalaryRate
+		  (SELECT TOP 1
+				EnumValues.DisplayText
+			 FROM maintenance.EnumValues
+			 WHERE (CAST(EnumValues.value AS BIGINT) = RateTableDtl.ValueId)
+			 AND (EnumValues.SourceName = @SourceName_RateTableDtlBasisSalaryRate))
+      WHEN @OfficialBusinessId THEN --==GET THE DESCRIPTION IN [maintenance.EnumValues] where SourceName =@SourceName_OfficialBusinessType
+		  (SELECT TOP 1
+				EnumValues.DisplayText
+			 FROM maintenance.EnumValues
+			 WHERE (CAST(EnumValues.value AS BIGINT) = RateTableDtl.ValueId)
+			 AND (EnumValues.SourceName = @SourceName_OfficialBusinessType))
+	   ELSE ''
+    END
+    , '')
+
+    )
+    --txtMin
+   ,txtMin = COALESCE(RateTableDtl.[Min], 0)
+
+    --txtMax
+   ,txtMax = COALESCE(RateTableDtl.[Max], 0)
+
+    --cmbRateTypeId
+   ,cmbRateTypeId = COALESCE(RateTableDtl.RateTypeId, 0)
+
+    --RateTableRateTypeDesc
+   ,RateTableRateTypeDesc = COALESCE(RateTableDtlRateType.DisplayText, '')
+
+    --txtRate
+   ,txtRate = COALESCE(RateTableDtl.Rate, 0)
+
+    --txtEmployerShare
+   ,txtEmployerShare = COALESCE(RateTableDtl.EmployerShare, 0)
+
+    --RoundingType
+   ,RoundingType = CAST(COALESCE(RateTableDtl.RoundingType,0) AS TINYINT)
+
+    --RateTableRateTypeDesc
+   ,RoundingTypeDesc = COALESCE(EarningsDeductionRoundingType.DisplayText, '')
+
+    --Divisor
+   ,Divisor = COALESCE(RateTableDtl.Divisor, 0)
+
+    --Divisor
+   ,xTenure = CAST(COALESCE(RateTableDtl.xTenure, 0) AS BIT)
+
+    --Divisor
+   ,xTenureDesc =
+    CASE
+	   WHEN COALESCE(RateTableDtl.xTenure, 0) = 1 THEN 'Yes'
+	   ELSE 'No'
+    END
+
+
+FROM compben.RateTableDtl
+--RateTableDtlBasis
+LEFT JOIN maintenance.EnumValues RateTableDtlBasis
+    ON RateTableDtl.BasisId = CAST(RateTableDtlBasis.value AS BIGINT)
+	   AND RateTableDtlBasis.SourceName = @SourceName_Basis
+--RateTableDtlRateType
+LEFT JOIN maintenance.EnumValues RateTableDtlRateType
+    ON RateTableDtl.RateTypeId = CAST(RateTableDtlRateType.value AS BIGINT)
+	   AND RateTableDtlRateType.SourceName = @SourceName_RateType
+
+--EarningsDeductionRoundingType
+LEFT JOIN maintenance.EnumValues EarningsDeductionRoundingType
+    ON RateTableDtl.RoundingType = CAST(EarningsDeductionRoundingType.value AS BIGINT)
+	   AND EarningsDeductionRoundingType.SourceName = @SourceName_EarningsDeductionRoundingType
+
+WHERE RateTableDtl.RateTableHdrId = COALESCE(@RateTableHdrId, 0)
+
+END
+GO

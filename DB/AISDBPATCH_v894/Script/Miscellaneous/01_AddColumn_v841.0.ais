@@ -1,0 +1,4 @@
+/*added by RME.02.26.2020 - this will validate csv values from source data */
+EXEC AddColumn @TABLENAME = 'FileImportCfgDetail', @SCHEMA = 'fileimport', @COLUMNNAME = 'SplitValueBy', @DATATYPE = 'varchar(5)';
+EXEC AddColumn @TABLENAME = 'FileImportCfgDetail', @SCHEMA = 'fileimport', @COLUMNNAME = 'JoinSeparator', @DATATYPE = 'varchar(5)';
+EXEC AddColumn @TABLENAME = 'FileImportCfgDetail', @SCHEMA = 'fileimport', @COLUMNNAME = 'ParamField', @DATATYPE = 'varchar(50)';

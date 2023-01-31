@@ -1,0 +1,846 @@
+
+/****** Object:  StoredProcedure [fileimport].[spGenerateBulkInsertCmd]    Script Date: 12/22/2017 2:00:54 PM ******/
+IF NOT OBJECT_ID('[fileimport].[spGenerateBulkInsertCmd]') IS NULL
+DROP PROCEDURE [fileimport].[spGenerateBulkInsertCmd]
+GO
+
+/****** Object:  StoredProcedure [fileimport].[spGenerateBulkInsertCmd]    Script Date: 12/22/2017 2:00:54 PM ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+/*===========================================*\
+**	Last Update Date: 02/20/2019
+**	Last Update By: Alexis
+**	Last DBVersion executed: v671
+\*===========================================*/
+-- =============================================
+-- Author:		RME
+-- Create date: 12/22/2017
+-- Description:	this will generate the bulk insert script that will be use to import data from file using table valued parameter
+-- Update date: 8/16/2018 - added validation based on validation configuration fields (ValidationFormula,ValidationMessage)
+-- Update date: 11/6/2018 - allow import on multiple tables
+-- =============================================
+CREATE PROCEDURE [fileimport].[spGenerateBulkInsertCmd] 
+--	 Add the parameters for the stored procedure here
+--DECLARE
+	@SOURCETABLE VARCHAR(150) = '@tmpTVP'
+	,@TMPTABLENAME VARCHAR(150) = 'tmpTVP'
+	,@SourceConfigDtl [fileimport].[SourceCfgDtl] readonly
+	,@FileImportCfgHdrId bigint = NULL
+	,@UserId bigint = 999
+	,@TVPName varchar(150) = ''
+	,@SourceFileName varchar(250) = 'sourcefile.xls'
+	,@SourceSheet varchar(250) = 'sheetname'
+	,@FileLogId bigint = 0
+	,@SourceDataCnt int = 0
+	,@ImportOption smallint = 3/*Delete = 1, DeleteReseed = 2, Append = 3, AppendIdentityInsert = 4, Update = 5,InsertUpdate = 6, None = 0*/
+	,@TriggerName varchar(150) = 'trgUpdateInsert'
+	--,@CMDTYPE smallint = 1 /* 1 - query (default), 4 - stored proc*/
+AS
+BEGIN
+	-- SET NOCOUNT ON added to prevent extra result sets from
+	-- interfering with SELECT statements.
+	SET NOCOUNT ON;
+	--SET ANSI_PADDING ON;
+
+	/*for testing only*/
+	--INSERT INTO @SourceConfigDtl
+	--SELECT FileImportCfgDetailId,SourceColumn,DestinationColumnField,SourceColNum,CheckDuplicate = CheckDuplicate FROM fileimport.vwFileImportCfgDetail WHERE FileImportCfgHdrId = @FileImportCfgHdrId and sourcecolumn not in ('Applicable Tax')
+	--return
+
+	/*VARIABLE AND INITIALIZATIONS*/
+BEGIN
+	DECLARE 
+	@CMDQRY VARCHAR(MAX) = ''
+	,@FINALQRY VARCHAR(MAX)
+	--,@FIELDS VARCHAR(MAX) = NULL
+	,@CMDSELECT VARCHAR(MAX) = ''
+	,@CMDINSERTUPDATE VARCHAR(MAX) = ''
+	,@CMDVALIDATE VARCHAR(MAX) = ''
+	,@DESTINATIONTABLE VARCHAR(150)
+	,@DESTINATIONSCHEMA VARCHAR(50)
+	,@TABLEDESCRIPTION VARCHAR(250)
+	,@SOURCEDATA VARCHAR(150)
+	,@LINKFLDS VARCHAR(MAX)
+	,@DUPLICATEDATAFLDS VARCHAR(MAX)
+	,@EXISTDATAFLDS VARCHAR(MAX)
+	,@DUPLICATECHECK VARCHAR(MAX)
+	,@REQUIREDFIELDCHECK VARCHAR(MAX)
+	,@messagelog varchar(max)
+	,@DESTINATIONFLDS VARCHAR(MAX)
+	,@AUDITTRAILFLDS VARCHAR(100)
+	,@AUDITTRAILVALUES VARCHAR(100)
+	,@INSERTEDCOLUMNS VARCHAR(MAX)
+	,@INSERTEDFIELDSANDTYPES VARCHAR(MAX)
+	,@CMDQRYTOEXECUTE VARCHAR(MAX)
+	,@QUERYTYPE TINYINT
+	,@FIXQRYFILTER varchar(MAX)
+	,@VALIDATIONFORMULA varchar(MAX)
+	,@VALIDATIONMESSAGE varchar(MAX)
+
+	DECLARE @REQUIREDFIELDS TABLE
+(	
+	FLDID				INT IDENTITY(1,1),
+	SOURCEFLDNAME		VARCHAR(150),
+	DESTINATIONFLDNAME	VARCHAR(150),
+	SOURCENAME			VARCHAR(150),
+	DEFAULTVALUE		VARCHAR(20),
+	WITHSOURCELINK		BIT,
+	ISHEADER			BIT
+)
+
+	DECLARE @DUPLICATEDATAFLD TABLE
+	(	
+		FLDID INT IDENTITY(1,1),
+		SOURCEFLDNAME VARCHAR(150),
+		DESTINATIONFLDNAME VARCHAR(150),
+		DESTINATIONTABLE VARCHAR(250),
+		ISHEADER BIT
+	)
+
+	DECLARE @WITHSOURCELINK TABLE
+	(	
+		FLDID INT IDENTITY(1,1),
+		SOURCEFLDNAME VARCHAR(150),
+		SOURCEFLDDESC VARCHAR(150),
+		DESTINATIONFLDNAME VARCHAR(150)
+		,GETFIELD VARCHAR(150)
+		,SOURCETABLE VARCHAR(2000)
+		,TABLEALIAS VARCHAR(30)
+		,SOURCETABLEDESC VARCHAR(250)
+		,DEFAULTVALUE VARCHAR(2000)
+	)
+
+	DECLARE @SOURCETBLOBJECT TABLE
+	(
+		FileImportCfgDetailId bigint
+		,DestinationColumnField varchar(150)
+		,SourceColumnField varchar(MAX)
+		,FIELD VARCHAR(2000)
+		,CheckDuplicate bit
+		,LINKFLD VARCHAR(2000)
+		,IsHeader bit
+	)
+
+	/* handle source config details */
+	DECLARE @SOURCECFGDETAIL TABLE(
+	[FileImportCfgDetailId] [bigint] NOT NULL,
+	[FileImportCfgHdrId] [int] NULL,						
+	[FileImportCode] varchar(150),							
+	[SourceColumn] [varchar](max) NULL,						
+	[OriginalSourceColumn] [varchar](250) NULL,						
+	[DestinationColumnField] [varchar](100) NULL,
+
+	[DestinationTable] [varchar](150) NULL,
+	[LinkToDestination] [varchar](5000) NULL,
+
+	[DataType] [varchar](20) NULL,							
+	[SourceDataType] [varchar](20) NULL,					
+	[MaxLength] [bigint] NULL,								
+	[ValidateDataType] [bit] NULL,							
+	[AllowEmpty] [bit] NULL,								
+	[CheckDuplicate] [bit] NULL,							
+	[DefaultValue] [varchar](max) NULL,					
+	[IsFormula] [bit] NULL,									
+	[FieldDescription] [varchar](255) NULL,					
+	[SourceColNum] [smallint] NULL,							
+	[SourceLinkTable] [varchar](5000) NULL,					
+	[SourceLinkTableDesc] [varchar](255) NULL,				
+	[LinkTableFields] [varchar](500) NULL,					
+	[GetValueField] [varchar](100) NULL,					
+	[Position] [int] NULL,									
+	[FixLength] [int] NULL,									
+	[DataFormat] [varchar](50) NULL,						
+	[NoDuplicatePivotEntry] [bit] NULL,						
+	[IsPivot] [bit] NULL,									
+	[GetFieldAfterSourceCol] [varchar](255) NULL,			
+	[PivotTable] [varchar](5000) NULL,						
+	[PivotLinkField] [varchar](255) NULL,					
+	[PivotGetField] [varchar](255) NULL,					
+	[PivotFieldType] [varchar](20) NULL,					
+	[PivotDestinationField] [varchar](255) NULL,			
+	[FieldSourceList] [varchar](5000) NULL,					
+	[SourceConfig] [tinyint] NULL,
+	[IsHeader] [bit] NULL,
+	[IgnoreEmpty] [bit] NULL
+	--[Update] [bit] NULL
+	)
+
+	/* pre-defined validation (validation formula)*/
+	DECLARE @VALIDATIONS TABLE
+	(
+		ROWID INT IDENTITY(1,1)
+		,CONDITION VARCHAR(max)
+		,VALIDATIONMESSAGE VARCHAR(max)
+	)
+
+END
+
+	/*get import config*/
+
+
+BEGIN /* GET CONFIG */
+	SELECT 
+	@CMDQRY = isnull(T.BulkInsertCmd,''),
+	@TMPTABLENAME = '#'+@TMPTABLENAME,
+	@DESTINATIONTABLE = CONCAT(QUOTENAME(T.DestinationSchema),'.',QUOTENAME(T.DestinationTable)), 
+	@DESTINATIONSCHEMA = T.DestinationSchema,
+	@SOURCEDATA = t.SourceTableName, @TABLEDESCRIPTION = CASE WHEN T.SourceConfig = 1 THEN T.[Description] ELSE t.SourceTableName END
+	,@CMDQRYTOEXECUTE = t.QueryToExecute
+	,@QUERYTYPE = T.QueryType
+	,@FIXQRYFILTER = CONCAT(T.FixQryFilter,' ',ff.FIXQRYFILTER/* do not include cancelled,disapproved or deleted status in checking*/)
+	,@VALIDATIONFORMULA = CASE WHEN @ImportOption = 5 THEN '' ELSE ISNULL(T.ValidationFormula,'') END/*disregard when updating*/
+	,@VALIDATIONMESSAGE = ISNULL(T.ValidationMessage,'')
+	FROM fileimport.vwFileImportCfgHdr T 
+	OUTER APPLY(select top 1 FIXQRYFILTER = 'AND d.[StatusId] NOT IN (-1/*deleted*/,-2/*cancelled*/,9/*Disapproved*/)'
+		FROM sys.columns c where c.object_id = OBJECT_ID(CONCAT(QUOTENAME(T.DestinationSchema),'.',QUOTENAME(T.DestinationTable))) and c.[name] = 'StatusId')ff
+	WHERE FileImportCfgHdrId = @FileImportCfgHdrId
+
+	INSERT INTO @SOURCECFGDETAIL(
+	[FileImportCfgDetailId],[FileImportCfgHdrId],[SourceColumn],[OriginalSourceColumn],[DestinationColumnField],[DestinationTable],[LinkToDestination],[DataType],[SourceDataType],[MaxLength],[ValidateDataType],[AllowEmpty],[CheckDuplicate],[DefaultValue],[IsFormula],[FieldDescription]
+	,[SourceColNum],[SourceLinkTable],[SourceLinkTableDesc],[LinkTableFields],[GetValueField],[Position],[FixLength],[DataFormat],[NoDuplicatePivotEntry],[IsPivot],[GetFieldAfterSourceCol],[PivotTable]
+	,[PivotLinkField],[PivotGetField],[PivotFieldType],[PivotDestinationField],[FieldSourceList],[SourceConfig],[IsHeader],IgnoreEmpty)
+
+	SELECT  
+	[FileImportCfgDetailId],[FileImportCfgHdrId]
+	--,[SourceColumn],[DestinationColumnField],[DestinationTable],[LinkToDestination],[DataType],[SourceDataType],[MaxLength],[ValidateDataType]
+   ,[SourceColumn]			 = ISNULL([SourceColumn],'')
+   ,[OriginalSourceColumn]	= ISNULL([OriginalSourceColumn],'')
+   ,[DestinationColumnField] = ISNULL([DestinationColumnField],'')
+   ,[DestinationTable]		 = ISNULL([DestinationTable],'')
+   ,[LinkToDestination]		 = ISNULL([LinkToDestination],'')
+   ,[DataType]				 = ISNULL([DataType],'')
+   ,[SourceDataType]		 = ISNULL([SourceDataType],'')
+   ,[MaxLength]				 = ISNULL([MaxLength],'')
+   ,[ValidateDataType]		 = ISNULL([ValidateDataType],'')
+	,[AllowEmpty]= CASE WHEN @ImportOption = 5 AND ISNULL(T.CheckDuplicate,0) = 0 THEN 1 ELSE [AllowEmpty] END  ,[CheckDuplicate],[DefaultValue],[IsFormula],[FieldDescription]
+	,[SourceColNum],[SourceLinkTable],[SourceLinkTableDesc],[LinkTableFields],[GetValueField],[Position],[FixLength],[DataFormat],[NoDuplicatePivotEntry],[IsPivot],[GetFieldAfterSourceCol],[PivotTable]
+	,[PivotLinkField],[PivotGetField],[PivotFieldType],[PivotDestinationField],[FieldSourceList],[SourceConfig],[IsHeader],[IgnoreEmpty]
+
+	FROM(
+	SELECT fcd.[FileImportCfgDetailId]
+		  ,fcd.[FileImportCfgHdrId]
+		  ,[SourceColumn] = CASE WHEN ISNULL(sc.SourceColumn,'') = '' AND ISNULL(fcd.DefaultValue,'') <> '' THEN fcd.DefaultValue ELSE sc.SourceColumn END--sc.[SourceColumn]--CASE WHEN ISNULL(SourceColumn,'') = '' AND ISNULL(DefaultValue,'') <> '' THEN DestinationColumnField ELSE SourceColumn END
+		  ,[OriginalSourceColumn] = sc.SourceColumn
+		  ,fcd.[DestinationColumnField]
+		  ,fcd.[DataType]
+		  ,fcd.[SourceDataType]
+		  ,fcd.[MaxLength]
+		  ,fcd.[ValidateDataType]
+		  ,fcd.[AllowEmpty]
+		  ,[CheckDuplicate] = isnull(sc.[CheckDuplicate],fcd.[CheckDuplicate])
+		  ,fcd.[DefaultValue]
+		  ,fcd.[IsFormula]
+		  ,fcd.[FieldDescription]
+		  ,fcd.[SourceColNum]
+		  ,fcd.[SourceLinkTable]
+		  ,fcd.[SourceLinkTableDesc]
+		  ,fcd.[LinkTableFields]
+		  ,fcd.[GetValueField]
+		  ,fcd.[Position]
+		  ,fcd.[FixLength]
+		  ,fcd.[DataFormat]
+		  ,fcd.[NoDuplicatePivotEntry]
+		  ,fcd.[IsPivot]
+		  ,fcd.[GetFieldAfterSourceCol]
+		  ,fcd.[PivotTable]
+		  ,fcd.[PivotLinkField]
+		  ,fcd.[PivotGetField]
+		  ,fcd.[PivotFieldType]
+		  ,fcd.[PivotDestinationField]
+		  ,fcd.[FieldSourceList]
+		  ,fcd.[SourceConfig] 
+		  ,[DestinationTable] = h.DestinationTable
+		  ,fcd.[LinkToDestination]
+		  ,IsHeader = CASE WHEN fcd.DestinationTable = h.DestinationTable THEN 0 ELSE 1 END
+		  ,isnull(fcd.IgnoreEmpty,0)IgnoreEmpty
+		  --,[Update] = ISNULL(sc.[Update],0)
+		  FROM fileimport.vwFileImportCfgDetail fcd 
+		  join fileimport.vwFileImportCfgHdr hdr on hdr.FileImportCfgHdrId = fcd.FileImportCfgHdrId
+		  join @SourceConfigDtl sc on sc.FileimportCfgDetailId = fcd.FileImportCfgDetailId
+		  cross apply(SELECT DestinationTable = CASE WHEN ISNULL(fcd.DestinationTable,'') <> '' THEN fcd.DestinationTable ELSE CONCAT(QUOTENAME(HDR.DestinationSchema),'.',QUOTENAME(HDR.DestinationTable)) END)h
+		  WHERE hdr.FileImportCfgHdrId = @FileImportCfgHdrId
+		  UNION ALL /* pivot fields */
+		SELECT [FileImportCfgDetailId] = 0
+			  ,[FileImportCfgHdrId]
+			  ,[SourceColumn] = PivotDestinationField
+			  ,[OriginalSourceColumn] = PivotDestinationField
+			  ,[DestinationColumnField] = PivotDestinationField
+			  ,[DataType] = PivotFieldType
+			  ,[SourceDataType] = 'varchar'
+			  ,[MaxLength]
+			  ,[ValidateDataType] = 1
+			  ,[AllowEmpty]
+			  ,[CheckDuplicate] = NoDuplicatePivotEntry
+			  ,[DefaultValue] = concat('s.',quotename(PivotDestinationField))
+			  ,[IsFormula] = 1
+			  ,[FieldDescription] = PivotDestinationField
+			  ,[SourceColNum] = 0
+			  ,[SourceLinkTable] = ''
+			  ,[SourceLinkTableDesc] = ''
+			  ,[LinkTableFields] = ''
+			  ,[GetValueField] = ''
+			  ,[Position] = 0
+			  ,[FixLength] = 0
+			  ,[DataFormat] = ''
+			  ,[NoDuplicatePivotEntry] = ''
+			  ,[IsPivot] = 0
+			  ,[GetFieldAfterSourceCol] = ''
+			  ,[PivotTable] = ''
+			  ,[PivotLinkField] = ''
+			  ,[PivotGetField] = ''
+			  ,[PivotFieldType] = ''
+			  ,[PivotDestinationField] = ''
+			  ,[FieldSourceList] = ''
+			  ,[SourceConfig]
+			  ,[DestinationTable] = @DESTINATIONTABLE
+			  ,[LinkToDestination],[IsHeader] = 1
+			  ,IgnoreEmpty = 0
+			  --,[Update] = 0
+			  FROM fileimport.vwFileImportCfgDetail
+			  WHERE IsPivot = 1 AND FileImportCfgHdrId = @FileImportCfgHdrId)T
+			  LEFT JOIN sys.columns c on c.object_id = object_id(t.DestinationTable)
+				and c.collation_name = T.DestinationColumnField
+			  order by c.object_id, c.column_id
+
+END
+
+
+	/* this will set all missing columns from config to its default values */
+	DECLARE @COLDEFAULTS TABLE (COLNAME VARCHAR(150), DATATYPE VARCHAR(30), DEFAULTVALUE VARCHAR(15))
+	INSERT INTO @COLDEFAULTS
+	SELECT quotename([name]) colname, dt.datatype, 
+	defaultvalue = case when not fk.ColumnName is NULL THEN 'NULL' /*set default value to null if foreign key*/
+		ELSE case when charindex('char',dt.datatype) >  0 THEN ''''''
+	/*--when charindex('binary',dt.datatype) > 0 THEN ''*/
+		when dt.datatype in ('tinyint','smallint','int','real','money','float','bit','decimal','numeric','smallmoney','bigint') THEN 
+			CASE WHEN [c].[name] = 'SourceId' THEN '3' ELSE '0' END/* if column is sourceid default value is 3*/ 
+		when CHARINDEX('date',dt.datatype) > 0 THEN '''1/1/1900'''
+		when CHARINDEX('time',dt.datatype) > 0 THEN '''1/1/1900'''
+		ELSE NULL END 
+	END
+	FROM sys.columns c
+	cross APPLY(select datatype = TYPE_NAME(user_type_id))dt
+	OUTER APPLY(
+		select TOP 1 fkcol.parent_column_id,FKTableName = OBJECT_NAME(referenced_object_id),ColumnName = colp.name from sys.foreign_key_columns fkcol
+		join sys.columns col on col.column_id = fkcol.constraint_column_id and col.object_id = fkcol.referenced_object_id
+		join sys.columns colp on colp.column_id = fkcol.parent_column_id and colp.object_id = fkcol.parent_object_id
+		where fkcol.parent_object_id = c.object_id
+		and colp.column_id = c.column_id
+	)fk
+	where object_id = object_id(@DESTINATIONTABLE)
+	AND c.is_identity = 0
+
+	/*SKIP DYNAMIC SCRIPT GENERATOR AND RUN HARD CODED SCRIPT*/
+	IF RTRIM(@CMDQRY) <> '' 
+	BEGIN
+		SELECT CMD = REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(REPLACE(@CMDQRY
+		,'@FileImportCfgHdrId',@FileImportCfgHdrId)
+		,'@UserId',@UserId)
+		,'@TVPName',''''+ ISNULL(@TVPName,'') +'''')
+		,'@SourceFileName',''''+@SourceFileName+'''')
+		,'@SourceSheet',''''+@SourceSheet+'''')
+		,'@FileLogId',@FileLogId)
+		,'@SourceDataCnt',@SourceDataCnt)
+		,'@DESTINATIONTABLE',''''+@DESTINATIONTABLE+'''');
+		
+		RETURN
+	END
+
+
+	/*source and destination fields*/
+	--SET @FIELDS = ISNULL(@FIELDS,STUFF((SELECT ',' + QUOTENAME(SourceColumn) FROM @SOURCECFGDETAIL WHERE FileImportCfgHdrId = @FileImportCfgHdrId AND isnull(SourceColumn,'') <> ''
+	/*AND (ISNULL(@TABLEFIELDS,'') = '' OR CHARINDEX(''''+REPLACE(SourceColumn,' ','')+'''',@TABLEFIELDS) > 0 AND isnull(SourceColumn,'') <> '')  */
+	--FOR XML PATH(''), ROOT ('MyString'), TYPE).value('/MyString[1]', 'varchar(max)'),1,1,''))
+	SET @DESTINATIONFLDS = STUFF((SELECT CONCAT(',',QUOTENAME(DestinationColumnField)) FROM @SOURCECFGDETAIL WHERE FileImportCfgHdrId = @FileImportCfgHdrId AND isnull(SourceColumn,'') <> ''  AND isnull(DestinationColumnField,'') <> '' GROUP BY DestinationColumnField FOR XML PATH(''), ROOT ('MyString'), TYPE).value('/MyString[1]', 'varchar(max)'),1,1,'')
+	--print @FIELDS;return
+	--SELECT ',' + QUOTENAME(SourceColumn) FROM @SOURCECFGDETAIL WHERE FileImportCfgHdrId = @FileImportCfgHdrId ;return--AND isnull(SourceColumn,'') <> '';return
+
+	/*will check for duplicate/existing record*/
+	INSERT INTO @DUPLICATEDATAFLD 
+	SELECT quotename(D.SourceColumn),CASE WHEN ISNULL(D.DestinationColumnField,'') <> '' THEN quotename(D.DestinationColumnField) ELSE '' END
+	, D.DestinationTable
+	, D.IsHeader FROM @SOURCECFGDETAIL D 
+	WHERE D.CheckDuplicate = 1 
+	AND D.FileImportCfgHdrId = @FileImportCfgHdrId 
+	AND ISNULL(D.SourceColumn,'') <> ''
+	--AND CHARINDEX(QUOTENAME(D.SourceColumn),@FIELDS) > 0 --AND ISNULL(D.DestinationColumnField,'') <> '' 
+	--AND ISNULL(D.IsHeader,0) = 1 /*FOR HEADER ONLY*/
+	SET @DUPLICATEDATAFLDS = STUFF((SELECT ',' + SOURCEFLDNAME FROM @DUPLICATEDATAFLD WHERE NOT ISNULL(SOURCEFLDNAME,'') IN ('','[]') AND ISHEADER = 1/*FOR HEADER TABLE ONLY*/ FOR XML PATH(''), ROOT ('MyString'), TYPE).value('/MyString[1]', 'varchar(max)'),1,1,'')
+	set @DUPLICATECHECK = CONCAT('DetailNo = ROW_NUMBER() OVER(PARTITION BY ',@DUPLICATEDATAFLDS,' ORDER BY ',@DUPLICATEDATAFLDS,')')
+	SET @EXISTDATAFLDS = STUFF((SELECT CONCAT(CHAR(10),'AND d.',DESTINATIONFLDNAME,' IS NULL') FROM @DUPLICATEDATAFLD WHERE ISNULL(DESTINATIONFLDNAME,'') <> '' AND ISHEADER = 1/*MAIN TABLE ONLY*/  FOR XML PATH(''), ROOT ('MyString'), TYPE).value('/MyString[1]', 'varchar(max)'),1,1,'')
+
+
+	--SELECT * FROM @SOURCECFGDETAIL WHERE CheckDuplicate = 1 OR ISNULL(LinkToDestination,'') <> '';RETURN
+
+	/*will check for required fields*/
+	INSERT INTO @REQUIREDFIELDS (SOURCEFLDNAME,DESTINATIONFLDNAME,SOURCENAME,DEFAULTVALUE, WITHSOURCELINK,ISHEADER)
+	SELECT quotename(D.SourceColumn)
+	,CASE WHEN ISNULL(D.DestinationColumnField,'') <> '' THEN quotename(D.DestinationColumnField) ELSE '' END
+	, D.SourceColumn
+	, DefaultValue  = CASE WHEN ISNULL(D.DefaultValue ,'') <> '' THEN D.DefaultValue 
+				ELSE CASE WHEN D.SourceDataType IN ('decimal','numeric','float','money','smallmoney','smallint','bigint','int','tinyint') THEN '0'
+					--CASE WHEN D.DestinationColumnField = 'SourceId' THEN '3' ELSE '0' END/* if column is sourceid default value is 3*/ 
+				ELSE '' END END
+	, WithSourceLink = CASE WHEN ISNULL(D.GetValueField,'') <> '' THEN 1 ELSE 0 END
+	, IsHeader
+	FROM @SOURCECFGDETAIL D WHERE isnull(D.AllowEmpty,0) = 0 AND D.FileImportCfgHdrId = @FileImportCfgHdrId 
+	--AND CHARINDEX(QUOTENAME(D.SourceColumn),@FIELDS) > 0
+	AND ISNULL(D.DefaultValue ,'') = ''
+	AND ISNULL(D.SourceColumn,'') <> '' /*EXCLUDE NO SOURCE COLUMN RME.11.06.2018*/;
+
+	SET @REQUIREDFIELDCHECK = STUFF((SELECT CONCAT(char(10),' AND ','ISNULL(s.',SOURCEFLDNAME,','''+ DEFAULTVALUE +''') <> '''+ DEFAULTVALUE +'''') 
+	+ CASE WHEN WITHSOURCELINK = 1 THEN CONCAT(char(10),' AND NOT s.',DESTINATIONFLDNAME,' IS NULL ') ELSE '' END /* get value from source link found */
+	FROM @REQUIREDFIELDS WHERE ISHEADER = 1 /*FOR MAIN TABLE ONLY*/ FOR XML PATH(''), ROOT ('MyString'), TYPE).value('/MyString[1]', 'varchar(max)'),1,1,'')
+	
+
+	/*get fields with outside source or with link table*/
+	INSERT INTO @WITHSOURCELINK 
+	SELECT quotename(D.SourceColumn),D.SourceColumn,quotename(D.DestinationColumnField),QUOTENAME(D.GetValueField),D.SourceLinkTable,TABLEALIAS =  CONCAT('T',D.FileImportCfgDetailId) 
+	,SOURCETABLEDESC = D.SourceLinkTableDesc
+	,DEFAULTVALUE = CASE WHEN ISNULL(D.DefaultValue ,'') <> '' THEN D.DefaultValue 
+				ELSE CASE WHEN D.DataType IN ('decimal','numeric','float','money','smallmoney') THEN '0' ELSE '' END END /* this will prevent error when using isnull function */
+	FROM @SOURCECFGDETAIL D WHERE isnull(D.SourceLinkTable,'') <> '' AND D.DestinationColumnField <> '' AND D.FileImportCfgHdrId = @FileImportCfgHdrId 
+		AND ISNULL(D.SourceColumn,'') <> ''--AND CHARINDEX(QUOTENAME(D.SourceColumn),@FIELDS) > 0
+	--SELECT * FROM @WITHSOURCELINK;RETURN
+
+
+
+	/*retrieve source table fields*/
+	INSERT INTO @SOURCETBLOBJECT
+	SELECT 
+	D.FileImportCfgDetailId
+	,D.DestinationColumnField
+	,SourceColumn = DF.DEFAULTVALUE
+	,FIELD = 
+			CASE WHEN ISNULL(D.DestinationColumnField,'') <> '' THEN CONCAT(QUOTENAME(D.DestinationColumnField),'=') 
+				+ CASE WHEN ISNULL(D.GetValueField,'') <> '' THEN CONCAT('t',D.FileImportCfgDetailId,'.',QUOTENAME(D.GetValueField)) ELSE 
+						CASE WHEN isnull(d.IsFormula,'0') = 1 and isnull(d.DefaultValue,'') <> '' THEN d.DefaultValue ELSE
+							CASE WHEN ISNULL(d.OriginalSourceColumn,'') <> '' THEN QUOTENAME(d.SourceColumn) ELSE DF.DEFAULTVALUE END END
+						END 
+					ELSE '' END
+				+ CASE WHEN (D.DestinationColumnField <> d.SourceColumn AND ISNULL(D.OriginalSourceColumn,'') <> '') THEN  CONCAT((CASE WHEN D.DestinationColumnField <> '' THEN ',' ELSE '' END),'s.',QUOTENAME(d.SourceColumn)) ELSE '' END
+	,D.CheckDuplicate
+	,LINKFLD = CASE WHEN ISNULL(D.GetValueField,'') <> '' THEN CONCAT('OUTER APPLY (SELECT TOP 1 ',QUOTENAME(D.GetValueField),'  FROM ',D.SourceLinkTable,' WHERE 1=1 ',FLDLINK.LinkTableFields,') AS T',D.FileImportCfgDetailId,'') ELSE '' END
+	,D.IsHeader
+	from @SOURCECFGDETAIL D
+	INNER JOIN fileimport.vwFileImportCfgHdr H ON H.FileImportCfgHdrId = D.FileImportCfgHdrId
+	LEFT JOIN (SELECT T.FileImportCfgDetailId,
+				LinkTableFields = FLDLINK
+			FROM @SOURCECFGDETAIL T
+			CROSS APPLY (SELECT FLDLINK = (SELECT ' AND '+ CASE WHEN (CHARINDEX('=',[VALUE])=0 AND CHARINDEX('IN(',[VALUE])=0) THEN CONCAT('REPLACE(',[VALUE],','' '','''') = REPLACE(s.',QUOTENAME(T.SourceColumn),','' '','''')') ELSE [VALUE] END FROM DBO.FN_SPLITWITHID((SELECT TOP 1 LinkTableFields FROM @SOURCECFGDETAIL WHERE FileImportCfgDetailId = T.FileImportCfgDetailId),'|') FOR XML PATH(''), ROOT ('MyString'), TYPE).value('/MyString[1]', 'varchar(max)'))A
+					WHERE ISNULL(GetValueField,'') <> '' )FLDLINK
+	ON FLDLINK.FileImportCfgDetailId = D.FileImportCfgDetailId
+	CROSS APPLY(SELECT DEFAULTVALUE = CAST((CASE WHEN ISNULL (D.OriginalSourceColumn,'') <> '' THEN D.OriginalSourceColumn ELSE CASE WHEN cast(ISNULL(D.DefaultValue,'') as VARBINARY) <> cast('' as VARBINARY) THEN CASE WHEN ISNULL(D.IsFormula,0) = 1 THEN REPLACE(D.DefaultValue,'[','s.[') ELSE ''''+ D.DefaultValue + '''' END ELSE D.DefaultValue END END) AS VARCHAR(MAX)) )DF
+	WHERE H.FileImportCfgHdrId = @FileImportCfgHdrId
+	--AND D.DestinationColumnField <> ''
+	AND ISNULL(D.SourceColumn,'') <> '' --AND CHARINDEX(QUOTENAME(D.SourceColumn),@FIELDS) > 0
+
+
+
+	/*source and destination table linking*/
+	SELECT @LINKFLDS = (SELECT char(10) + ' AND ' + concat('d.',QUOTENAME(DestinationColumnField),' = s.',QUOTENAME(DestinationColumnField)) FROM @SOURCETBLOBJECT WHERE CheckDuplicate = 1 AND IsHeader = 1/*header table only RME.11.06.2018*/ AND ISNULL(DestinationColumnField,'') <> '' FOR XML PATH(''), ROOT ('MyString'), TYPE).value('/MyString[1]', 'varchar(max)')
+
+	/*INSERT SOURCE DATA TO TEMP TABLE*/
+	SET @CMDQRY = CONCAT('SELECT s.[RowId],s.[DataValidationRemarks_],s.[RowNum_],',
+	@DUPLICATECHECK,
+	(SELECT ',' + char(10) + FIELD FROM @SOURCETBLOBJECT FOR XML PATH(''), ROOT ('MyString'), TYPE).value('/MyString[1]', 'varchar(max);'),
+	' INTO ',@TMPTABLENAME,
+	' FROM ',@SOURCETABLE,' s',
+	(SELECT char(10) + LINKFLD FROM @SOURCETBLOBJECT FOR XML PATH(''), ROOT ('MyString'), TYPE).value('/MyString[1]', 'varchar(max);')
+	--,char(10),';ALTER TABLE #tmpTVP ADD CONSTRAINT pk_tmpTVPRowID PRIMARY KEY (RowId)'
+	)
+
+	/*AUDIT TRAIL*/
+	IF EXISTS(SELECT name FROM SYS.columns WHERE object_id = object_id(@DESTINATIONTABLE) AND name IN ('CreateId','CreatedId'))
+	BEGIN
+		set @AUDITTRAILFLDS = (SELECT ','+ QUOTENAME(name) FROM SYS.columns WHERE object_id = object_id(@DESTINATIONTABLE) AND name IN ('CreateId','CreateDate','CreatedId','CreatedDate') FOR XML PATH(''), ROOT ('MyString'), TYPE).value('/MyString[1]', 'varchar(max)')
+		set @AUDITTRAILVALUES = (SELECT ','+ concat(QUOTENAME([name]),' = ',CASE WHEN [name] in ('CreateId','CreatedId') THEN CAST(@UserId AS VARCHAR) ELSE 'GETDATE()' END) FROM SYS.columns WHERE object_id = object_id(@DESTINATIONTABLE) AND name IN ('CreateId','CreateDate','CreatedId','CreatedDate') FOR XML PATH(''), ROOT ('MyString'), TYPE).value('/MyString[1]', 'varchar(max)')
+	END
+
+
+/*GENERATE VALIDATION QUERY*/	
+BEGIN
+	/* VALIDATION FORMULA - 08.16.2018*/
+	IF @VALIDATIONFORMULA <> ''
+	BEGIN
+		INSERT INTO @VALIDATIONS
+		SELECT cond.[VALUE],isnull(msg.[VALUE],'') FROM dbo.FN_SPLITWITHID(@VALIDATIONFORMULA,'|')cond
+		OUTER APPLY(SELECT * FROM dbo.FN_SPLITWITHID(@VALIDATIONMESSAGE,'|') WHERE ROWID = cond.ROWID)msg
+	END
+
+
+	/*GET DEFINED VALIDATION*/
+	DECLARE @VALIDATIONDEFINED VARCHAR(MAX)
+	,@VALIDATIONFILTER VARCHAR(MAX)
+	SET @VALIDATIONDEFINED = (SELECT CONCAT(CHAR(10),'+ CASE WHEN ', CONDITION,' THEN CONCAT(''Row '',s.[RowNum_],'' - Data is not valid. '',''', REPLACE(VALIDATIONMESSAGE,'''',''''''), ''',char(10)) ELSE '''' END') FROM @VALIDATIONS  FOR XML PATH(''), ROOT ('MyString'), TYPE).value('/MyString[1]', 'varchar(max)')
+	SET @VALIDATIONFILTER = (SELECT CONCAT(CHAR(10),'AND NOT(', CONDITION,')') FROM @VALIDATIONS  FOR XML PATH(''), ROOT ('MyString'), TYPE).value('/MyString[1]', 'varchar(max)')
+
+
+	/*VALIDATION QUERY*/
+	set @CMDVALIDATE = CONCAT('DECLARE @ValidationLog VARCHAR(MAX) = '''';'+CHAR(10),
+	 ';',
+	'UPDATE #tmpTVP SET [DataValidationRemarks_] = T.[DataValidationRemarks_] FROM (',
+	'SELECT [RowId],[DataValidationRemarks_] = ''''
+	',/*validates existing data*/
+	(SELECT --TOP 1 
+	CASE WHEN @ImportOption IN (5,6)/* UPDATE ONLY */ THEN
+		(CASE WHEN ISNULL(DESTINATIONFLDNAME,'') <> '' AND ISHEADER = 1/*FOR MAIN TABLE ONLY*/ THEN CONCAT('+ CASE WHEN ',t.DestinationFld,' IS NULL THEN CONCAT(''Row '',s.[RowNum_],'' - Could not find the ',replace(t.SourceFld,'s.',''),' on the record to be updated.'', CHAR(10)) ELSE '''' END') ELSE '' END)
+		--+(CASE WHEN ISNULL(DESTINATIONFLDNAME,'') <> '' AND ISHEADER = 1/*FOR MAIN TABLE ONLY*/ THEN CONCAT('+ CASE WHEN d.',DESTINATIONFLDNAME,' IS NULL THEN CONCAT(''Row '',s.[RowNum_],'' - Source data do not exist on ',@TABLEDESCRIPTION,'.'', CHAR(10)) ELSE '''' END') ELSE '' END)
+	ELSE
+		(CASE WHEN ISNULL(DESTINATIONFLDNAME,'') <> '' AND ISHEADER = 1/*FOR MAIN TABLE ONLY*/ THEN CONCAT('+ CASE WHEN NOT ',t.DestinationFld,' IS NULL THEN CONCAT(''Row '',s.[RowNum_],'' - Source data already exist on ',@TABLEDESCRIPTION,'.'', CHAR(10)) ELSE '''' END') ELSE '' END) 
+	END
+	
+	/*validates duplicate source entry*/
+	+CHAR(10) + CONCAT('+ CASE WHEN s.DetailNo > 1 THEN CONCAT(''Row '',s.[RowNum_],'' - "',@TABLEDESCRIPTION,'" was duplicated from the source data.'', CHAR(10)) ELSE '''' END') from @DUPLICATEDATAFLD OUTER APPLY (SELECT SourceFld = 's.'+ SOURCEFLDNAME,DestinationFld = 'd.'+ DESTINATIONFLDNAME)t WHERE isnull(DESTINATIONFLDNAME,'') <> '' AND ISHEADER = 1/*FOR MAIN TABLE ONLY*/  FOR XML PATH(''), ROOT ('MyString'), TYPE).value('/MyString[1]', 'varchar(max)'),--FLDID = 1)
+	/*validates required field with source default data*/
+	(SELECT CHAR(10) + CONCAT('+ CASE WHEN s.',quotename(t.DestinationColumnField),' IS NULL THEN CONCAT(''Row '',s.[RowNum_],'' - No "',t.FieldDescription,'" found from the source table.'',CHAR(10)) ELSE '''' END') FROM @SOURCECFGDETAIL t WHERE ISNULL(AllowEmpty,0) = 0 AND ISNULL(DestinationColumnField,'') <> '' AND IsFormula = 1 FOR XML PATH(''), ROOT ('MyString'), TYPE).value('/MyString[1]', 'varchar(max)')
+	/*validates required fields*/
+	,(SELECT CHAR(10) + '+ '+ CONCAT('CASE WHEN charindex('' is not a valid '',s.[DataValidationRemarks_]) > 0 AND charindex(''',R.SOURCENAME,''',s.[DataValidationRemarks_]) > 0 THEN '''' ELSE ','CASE WHEN ISNULL(s.',R.SOURCEFLDNAME,','''+ R.DEFAULTVALUE +''') = '''+ R.DEFAULTVALUE +''' THEN CONCAT(''Row '',s.[RowNum_],'' - "',R.SOURCENAME,'" cannot be blank.'',CHAR(10)) ELSE '''' END END ') FROM @REQUIREDFIELDS R FOR XML PATH(''), ROOT ('MyString'), TYPE).value('/MyString[1]', 'varchar(max)')
+	/*validates invalid source link*/
+	--,(select CHAR(10) + '+ '+ CONCAT('CASE WHEN s.',A.DESTINATIONFLDNAME,' IS NULL ','AND ISNULL(s.',A.SOURCEFLDNAME,',''',A.DEFAULTVALUE,''') <> ''',A.DEFAULTVALUE,''' THEN ','CONCAT(''Row '',s.[RowNum_],'' - The ',A.SOURCEFLDDESC,': "'',s.',A.SOURCEFLDNAME,',''" is not valid or do not exist on source data '',''',A.SOURCETABLEDESC,'.'', CHAR(10)) ELSE '''' END') 
+	,(select CHAR(10) + '+ '+ CONCAT('CASE WHEN charindex(''is not a valid'',s.[DataValidationRemarks_]) > 0 AND charindex(''',A.SOURCEFLDDESC,''',s.[DataValidationRemarks_]) > 0 THEN '''' ELSE ','CASE WHEN s.',A.DESTINATIONFLDNAME,' IS NULL ','AND ISNULL(s.',A.SOURCEFLDNAME,',''',A.DEFAULTVALUE,''') <> ''',A.DEFAULTVALUE,''' THEN ','CONCAT(''Row '',s.[RowNum_],'' - ',': "'',s.',A.SOURCEFLDNAME,',''" is not a valid '',''',A.SOURCEFLDDESC,'.'', CHAR(10)) ELSE '''' END END') 
+	FROM @WITHSOURCELINK A 
+	OUTER APPLY (SELECT SourceFld = 's.'+ SOURCEFLDNAME,DestinationFld = 'd.'+ DESTINATIONFLDNAME)t WHERE t.DestinationFld not in (SELECT DestinationColumnField FROM @SOURCECFGDETAIL WHERE FileImportCfgHdrId = @FileImportCfgHdrId AND ISNULL(AllowEmpty,0) = 1)
+	FOR XML PATH(''), ROOT ('MyString'), TYPE).value('/MyString[1]', 'varchar(max)')
+	/*validates invalid data type*/
+	,' + CASE WHEN ISNULL(s.[DataValidationRemarks_],'''') <> '''' THEN s.[DataValidationRemarks_] ELSE '''' END'
+	,ISNULL(@VALIDATIONDEFINED,'')
+	,' FROM ',@TMPTABLENAME,' s' /*select data from tmp table*/
+	,CHAR(10),' LEFT JOIN ',@DESTINATIONTABLE,' d ON 1=1',@LINKFLDS/* links of source table and destination table*/
+	 + ISNULL(@FIXQRYFILTER,'')/* fix filter from destination table */
+	,') T WHERE T.[RowId] = #tmpTVP.[RowId];'
+
+	,CHAR(10),'SELECT @ValidationLog = (SELECT [DataValidationRemarks_] FROM #tmpTVP ORDER BY RowId '
+	,'FOR XML PATH(''''), ROOT (''MyString''), TYPE).value(''/MyString[1]'', ''varchar(max)'')'
+	,';') 
+
+END
+
+
+	/* will be use to create temp table that will handle the inserted records on the destination table*/
+	IF NOT OBJECT_ID(@DESTINATIONTABLE) IS NULL AND ISNULL(@CMDQRYTOEXECUTE,'') <> ''
+	BEGIN
+	 	SET @INSERTEDCOLUMNS =  STUFF((SELECT ',' + QUOTENAME([name]) FROM sys.columns WHERE object_id = OBJECT_ID(@DESTINATIONTABLE)
+			AND ([name] IN (SELECT DestinationColumnField FROM @SOURCECFGDETAIL WHERE FileImportCfgHdrId = @FileImportCfgHdrId) OR is_identity = 1)FOR XML PATH(''), ROOT ('MyString'), TYPE).value('/MyString[1]', 'varchar(max)'),1,1,'')
+
+	 	SET @INSERTEDFIELDSANDTYPES =  STUFF((SELECT ',' + CONCAT(QUOTENAME([name]),' ',dt.DataType,
+		CASE WHEN CHARINDEX('char',dt.DataType) > 0 THEN CONCAT('(',case when max_length = -1 THEN 'max' ELSE cast(max_length as varchar) END,')')
+		 WHEN CHARINDEX('date',dt.DataType) > 0 OR CHARINDEX('time',dt.DataType) > 0 THEN ''
+		 WHEN dt.DataType IN ('decimal','money') THEN concat('(',[precision],',',scale,')')
+		 ELSE '' END /* datatype length */
+		 ,case when is_identity = 1 THEN ' PRIMARY KEY' ELSE '' END) 
+		FROM sys.columns 
+		CROSS APPLY(SELECT DataType = TYPE_NAME(user_type_id))dt
+		WHERE object_id = OBJECT_ID(@DESTINATIONTABLE)
+			AND ([name] IN (SELECT DestinationColumnField FROM @SOURCECFGDETAIL 
+			WHERE FileImportCfgHdrId = @FileImportCfgHdrId) OR is_identity = 1)FOR XML PATH(''), ROOT ('MyString'), TYPE).value('/MyString[1]', 'varchar(max)'),1,1,'')
+	END
+
+	DECLARE @CREATETABLEINSERTEDCMD VARCHAR(MAX)
+	SET @CREATETABLEINSERTEDCMD = ';DECLARE @INSERTED TABLE (' + @INSERTEDFIELDSANDTYPES + ');'
+
+
+	DECLARE @AUDITSCRIPT VARCHAR(1000)
+	DECLARE @PRIMARYKEYFIELD VARCHAR(250)
+	;SELECT @PRIMARYKEYFIELD = QUOTENAME(COLUMN_NAME) FROM INFORMATION_SCHEMA.KEY_COLUMN_USAGE WHERE CONCAT(QUOTENAME(TABLE_SCHEMA),'.',QUOTENAME(TABLE_NAME)) = @DESTINATIONTABLE
+	SET @AUDITSCRIPT = CONCAT('
+	/* AUDIT TRAIL */
+	DECLARE @LOGID  BIGINT
+	;DECLARE @INSERTEDROWS INT
+	;INSERT INTO [fileimport].[FileImportLog]'
+	,'([Filename],[SourceSheet],[DestinationTable],[ImportCount],[SourceDataCnt],[ImportedKeyIds],[ImportFileId],[ProcessedById],[ProcessedDate])'
+	,' VALUES(''',@SourceFileName,''',''',@SourceSheet,''',''',@DESTINATIONTABLE,''',0,',@SourceDataCnt,',null,',@FileLogId,',',@UserId,',GETDATE())'
+	,';SET @LOGID = SCOPE_IDENTITY();')
+
+
+	/* SET MISSING FIELDS WITH DEFAULT VALUES */
+	DECLARE @MISSINGFLDS VARCHAR(MAX)
+	,@MISSINGFLDSDEFAULTS VARCHAR(MAX)
+	SELECT @MISSINGFLDS = ISNULL(@MISSINGFLDS,'') + ',' + COLNAME, 
+	@MISSINGFLDSDEFAULTS = ISNULL(@MISSINGFLDSDEFAULTS,'') + ',' + DEFAULTVALUE FROM @COLDEFAULTS WHERE CHARINDEX(COLNAME,@DESTINATIONFLDS+ISNULL(@AUDITTRAILFLDS,'')) = 0
+	--select @MISSINGFLDS,@MISSINGFLDSDEFAULTS
+
+	DECLARE @INSERTVALUES VARCHAR(MAX)
+	SET @INSERTVALUES = STUFF((SELECT CONCAT(',','isnull(s.',DF.COLNAME,',',DF.DEFAULTVALUE,')') FROM dbo.SplitStrings_XML(@DESTINATIONFLDS,',') C
+	JOIN @COLDEFAULTS DF ON DF.COLNAME = C.[VALUE] FOR XML PATH(''), ROOT ('MyString'), TYPE).value('/MyString[1]', 'varchar(max)'),1,1,'')
+	--SELECT @INSERTVALUES
+
+
+
+/*GET MAIN AND CHIDLD TABLES*/
+BEGIN
+	DECLARE @TABLES TABLE(TABLEID INT IDENTITY(1,1), TABLENAME VARCHAR(250), UPDATEINSERTCMD VARCHAR(MAX), COLUMNNAMES VARCHAR(MAX), ISHEADER BIT,OUTPUTRESULTCMD varchar(max))
+
+	/*generate insert/update command*/
+	INSERT INTO @TABLES
+	SELECT  
+		DTL.DestinationTable
+		,updateinsertcmd = replace(max(CASE WHEN h.IsHeader = 1 THEN ahc.CREATETMPTABLEPKHANDLER + ';' + CHAR(10) ELSE '' END + uic.UPDATEINSERTCMD) + case WHEN @ImportOption = 5 THEN max(replace(' WHERE '+cdup.CHECKDUPLICATE,'||',',')) ELSE '' END,'[KEYTABLEJOIN]',(max(pkt.JOINTBL)))
+		,col.DestinationColumns
+		,h.IsHeader
+		,OUTPUTCMD = oc.OUTPUTCMD
+
+		--,hk.HEADERKEY
+		--,pcol.CHECKDUPLICATECOLUMNS
+		----,CREATETMPTABLEPKHANDLER
+		--,MAX(PKT.JOINTBL)
+		--,ucol.UpdateColumns
+	FROM @SOURCECFGDETAIL DTL
+	JOIN fileimport.FileImportCfgHdr HDR ON HDR.FileImportCfgHdrId = DTL.FileImportCfgHdrId
+	CROSS APPLY(SELECT IsHeader = DTL.IsHeader)h
+
+	CROSS APPLY(SELECT DestinationColumns = stuff((SELECT ','+ quotename(c.DestinationColumnField) FROM @SOURCECFGDETAIL c 
+		--join sys.columns cl on cl.object_id = OBJECT_ID(c.DestinationTable)
+		--	and cl.[name] = c.DestinationColumnField
+		WHERE c.DestinationColumnField <> '' 
+		and DestinationTable = DTL.DestinationTable 
+		--and cl.is_identity = 0
+		FOR XML PATH(''), ROOT ('MyString'), TYPE).value('/MyString[1]', 'varchar(max)'),1,1,''))col
+	--CROSS APPLY(SELECT UpdateColumns = stuff((SELECT concat(',',quotename(c.DestinationColumnField),' = ', (case when isnull(c.LinkToDestination,'') <> '' THEN 'p.'+quotename(c.LinkToDestination) ELSE 's.'+quotename(c.DestinationColumnField) END)) 
+	/*get identity column*/
+	CROSS APPLY(SELECT top 1 IdentityColumn = cl.[name] from sys.columns cl where cl.object_id = OBJECT_ID(dtl.DestinationTable))icol
+	CROSS APPLY(SELECT UpdateColumns = stuff((SELECT concat(',',quotename(c.DestinationColumnField),' = ', (case when isnull(c.LinkToDestination,'') <> '' THEN 'p.'+quotename(c.LinkToDestination) ELSE 
+		CASE WHEN c.IgnoreEmpty = 1 and @ImportOption in (5,6) /*skip update if empty field*/
+			THEN CONCAT('CASE WHEN ISNULL( s.',quotename(c.DestinationColumnField),',',dv.DefaultValue,') = ',dv.DefaultValue,' THEN ',c.DestinationTable,'.',quotename(c.DestinationColumnField),' ELSE s.',quotename(c.DestinationColumnField),' END') 
+				ELSE  CONCAT('ISNULL(','s.'+quotename(c.DestinationColumnField),',',dv.DefaultValue,')') END END)) 
+				FROM @SOURCECFGDETAIL c 
+				OUTER APPLY(SELECT TOP 1 datatype = TYPE_NAME(sc.user_type_id),sc.is_identity FROM sys.columns sc where sc.object_id = OBJECT_ID(c.DestinationTable) and sc.[name] = c.DestinationColumnField)cl
+				outer APPLY(select DefaultValue = case when cl.datatype IN ('tinyint','smallint','int','real','money','float','bit','decimal','numeric','smallmoney','bigint') THEN '0' else '''''' END)dv
+				WHERE c.DestinationColumnField <> '' AND c.DestinationTable = DTL.DestinationTable 
+				AND cl.is_identity = 0 /*do not include identity column*/
+				--AND ISNULL(c.LinkToDestination,'') = ''/*ADDED 11.09.2018*/
+				FOR XML PATH(''), ROOT ('MyString'), TYPE).value('/MyString[1]', 'varchar(max)'),1,1,''))ucol
+	CROSS APPLY(SELECT SourceColumns = stuff((SELECT ',s.'+ quotename(c.DestinationColumnField) FROM @SOURCECFGDETAIL c WHERE DestinationTable = DTL.DestinationTable for xml PATH('')),1,1,''))scol
+	CROSS APPLY(SELECT MissingColumns = stuff((SELECT ','+ quotename(name) FROM sys.columns c WHERE isnull(c.is_identity,0) = 0 AND c.object_id = object_id(DTL.DestinationTable) AND charindex(quotename(c.[name]),col.DestinationColumns) = 0 FOR XML PATH(''), ROOT ('MyString'), TYPE).value('/MyString[1]', 'varchar(max)'),1,1,''))mcol
+	CROSS APPLY(SELECT MissingColumnsValues = stuff((SELECT ','+ 
+					case 
+					when CHARINDEX('date',tn.typename) > 0 THEN 
+						CASE WHEN c.[name] = 'CreateDate' AND @ImportOption <> 5 THEN concat('''',CURRENT_TIMESTAMP,'''') 
+							WHEN c.[name] = 'LastUpdateDate' AND @ImportOption = 5 THEN concat('''',CURRENT_TIMESTAMP,'''') 
+							ELSE '''1/1/1900''' END
+					WHEN CHARINDEX('time',tn.typename) > 0 THEN '''1/1/1900'''
+					when tn.typename in ('tinyint','smallint','int','real','money','float','bit','decimal','numeric','smallmoney','bigint') THEN 
+							CASE WHEN c.[name] = 'CreateId' AND @ImportOption <> 5 THEN cast(@UserId as varchar)
+							WHEN c.[name] = 'LastUpdateDate' AND @ImportOption = 5 THEN cast(@UserId as varchar) 
+							ELSE 
+								CASE WHEN c.[name] = 'SourceId' THEN '3'/*indicate source is from import*/ ELSE '0' END 
+							END
+					ELSE '''''' END
+					FROM sys.columns c
+					cross apply(select typename = TYPE_NAME(c.system_type_id))tn
+					WHERE isnull(c.is_identity,0) = 0 AND c.object_id = object_id(DTL.DestinationTable) AND charindex(quotename(c.[name]),col.DestinationColumns) = 0 FOR XML PATH(''), ROOT ('MyString'), TYPE).value('/MyString[1]', 'varchar(max)'),1,1,''))mcolval
+	CROSS APPLY(SELECT ValidateFilter = concat(' AND ','CONCAT(',scol.SourceColumns,') <> '''''))flt
+	CROSS APPLY(SELECT HEADERKEY = STUFF((SELECT ',s.' + QUOTENAME(A.DestinationColumnField) FROM @SOURCECFGDETAIL A WHERE a.DestinationColumnField <> '' AND IsHeader = 1 AND CheckDuplicate = 1 FOR XML PATH(''), ROOT ('MyString'), TYPE).value('/MyString[1]', 'varchar(max)'),1,1,''))hk
+	CROSS APPLY(SELECT LINKTODESTINATIONCOLS = stuff((SELECT ',s.'+ quotename(c.LinkToDestination) FROM @SOURCECFGDETAIL c WHERE isnull(c.LinkToDestination,'') <> '' GROUP BY c.LinkToDestination FOR XML PATH(''), ROOT ('MyString'), TYPE).value('/MyString[1]', 'varchar(max)'),1,1,''))pkcol
+	CROSS APPLY(SELECT SOURCEDESTINATIONLINKS = stuff((SELECT concat(' AND ',c.DestinationTable,'.',c.DestinationColumnField,' = p.', c.LinkToDestination) FROM @SOURCECFGDETAIL c WHERE isnull(c.LinkToDestination,'') <> '' and c.DestinationTable = dtl.DestinationTable GROUP BY c.DestinationTable,c.LinkToDestination,c.DestinationColumnField FOR XML PATH(''), ROOT ('MyString'), TYPE).value('/MyString[1]', 'varchar(max)'),1,1,''))sdlnk
+	CROSS APPLY(SELECT CHECKDUPLICATECOLUMNS = stuff((SELECT '||s.'+ quotename(c.DestinationColumnField) FROM @SOURCECFGDETAIL c WHERE c.DestinationColumnField <> '' AND isnull(c.CheckDuplicate,0) = 1 AND DestinationTable = DTL.DestinationTable FOR XML PATH(''), ROOT ('MyString'), TYPE).value('/MyString[1]', 'varchar(max)'),1,2,''))pcol
+	CROSS APPLY(SELECT OUTPUTCMD = CASE WHEN h.IsHeader = 1 THEN concat(' OUTPUT INSERTED.',@PRIMARYKEYFIELD,REPLACE(',' + pkcol.LINKTODESTINATIONCOLS,'s.[','INSERTED.['),REPLACE(REPLACE(',' + pcol.CHECKDUPLICATECOLUMNS,'s.[','INSERTED.['),'||',','),' INTO #TABLEKEYS') ELSE '' END)oc
+	CROSS APPLY(SELECT JOINTBL = (case when isnull(h.IsHeader,0) = 0 AND ISNULL(DTL.LinkToDestination,'') <> '' THEN CONCAT(' JOIN #TABLEKEYS p ON p.',DTL.LinkToDestination,' = ',CONCAT('(SELECT TOP 1 ',DTL.LinkToDestination,' FROM ',@DESTINATIONTABLE,' hdr WHERE CONCAT(',replace(hk.HEADERKEY,'s.[','hdr.['),','''')',' = ', 'CONCAT(',hk.HEADERKEY,','''')' ,')')) ELSE '' END)
+	)pkt
+		CROSS APPLY(SELECT CHECKDUPLICATE = CASE WHEN ISNULL(pcol.CHECKDUPLICATECOLUMNS,'') <> '' THEN concat(' CONCAT(',REPLACE(pcol.CHECKDUPLICATECOLUMNS,'s.[',DTL.DestinationTable+'.['),','''') = ','CONCAT(',pcol.CHECKDUPLICATECOLUMNS,','''')') ELSE 
+		CASE WHEN h.IsHeader = 0 THEN concat(' WHERE 1=1 ',sdlnk.SOURCEDESTINATIONLINKS) ELSE '' END
+	END)cdup
+	CROSS APPLY(SELECT DESTINATIONCOLS = STUFF(replace(',' + col.DestinationColumns,',' + quotename(icol.IdentityColumn),''),1,1,'')) dc
+
+	CROSS APPLY(SELECT UPDATEINSERTCMD = 
+			CASE 
+			WHEN @ImportOption = 5/*update*/ 
+				THEN concat('UPDATE ',DTL.DestinationTable,' SET ',ucol.UpdateColumns,CASE WHEN H.IsHeader = 1 THEN oc.OUTPUTCMD ELSE '' END,' FROM ',@TMPTABLENAME,' s ')
+			WHEN @ImportOption = 6/*update or insert if not exists*/ 
+
+				THEN CONCAT('MERGE INTO ',DTL.DestinationTable,' USING(SELECT ',col.DestinationColumns,' FROM ',@TMPTABLENAME
+				,' as s [KEYTABLEJOIN]',CASE WHEN DTL.IsHeader = 1 THEN
+						CONCAT(CHAR(10),' WHERE DetailNo = 1',@REQUIREDFIELDCHECK /*exclude required fields with blank or null values*/
+						,CHAR(10),' AND ISNULL(s.[DataValidationRemarks_],'''') = ''''' /*exclude with error remarks (invalid data)*/)
+						ELSE '' END
+				,') s ON ',replace(cdup.CHECKDUPLICATE,'||',','),char(10),' WHEN MATCHED THEN UPDATE SET ',REPLACE(ucol.UpdateColumns,'p.[','s.['),char(10),' WHEN NOT MATCHED THEN INSERT (',dc.DESTINATIONCOLS,case when ISNULL(mcol.MissingColumns,'') <> '' THEN ',' ELSE '' END,mcol.MissingColumns,') VALUES (s.',replace(dc.DESTINATIONCOLS,',[',',s.['),case when ISNULL(mcol.MissingColumns,'') <> '' THEN ',' ELSE '' END,mcolval.MissingColumnsValues,') ',char(10),oc.OUTPUTCMD,';')
+
+			ELSE concat('INSERT INTO ',DTL.DestinationTable,'(',col.DestinationColumns,ISNULL(','+mcol.MissingColumns,''),')',(CASE WHEN isnull(h.IsHeader,0) = 1 THEN oc.OUTPUTCMD ELSE '' END),' SELECT ', ucol.UpdateColumns,ISNULL(','+mcolval.MissingColumnsValues,''),' FROM ',@TMPTABLENAME,' s', 
+			CASE WHEN ISNULL(h.IsHeader,0) = 0 AND ISNULL(pcol.CHECKDUPLICATECOLUMNS,'') <> ''
+				THEN CONCAT(' LEFT JOIN ',DTL.DestinationTable,' d ON CONCAT(',REPLACE(pcol.CHECKDUPLICATECOLUMNS,'s.[','d.['),','''') = CONCAT(',pcol.CHECKDUPLICATECOLUMNS,','''')') 
+				ELSE '' END) 
+			END 
+			+ CASE WHEN @ImportOption = 6 THEN '' ELSE pkt.JOINTBL END
+			)uic
+	CROSS APPLY(SELECT CREATETMPTABLEPKHANDLER = CASE WHEN h.IsHeader = 1 THEN 
+			'CREATE TABLE #TABLEKEYS([PRIMARYKEYFLD] [VARCHAR](50),'  
+			+ STUFF((SELECT concat(',',QUOTENAME(c.COLUMN_NAME),' ',quotename(c.DATA_TYPE)
+						,case when CHARINDEX('char',c.DATA_TYPE) > 0 THEN concat('(',c.CHARACTER_MAXIMUM_LENGTH,')')
+						when c.DATA_TYPE in ('decimal','money') THEN concat('(',c.NUMERIC_PRECISION,',',c.NUMERIC_SCALE,')')
+						ELSE '' END,case when c.IS_NULLABLE = 'YES' THEN ' NULL' ELSE ' NOT NULL' END
+						)
+					FROM INFORMATION_SCHEMA.COLUMNS c
+					JOIN dbo.SplitStrings_XML(REPLACE(CONCAT(pkcol.LINKTODESTINATIONCOLS,'||',pcol.CHECKDUPLICATECOLUMNS),'s.[','['),'||') T ON T.[VALUE] = quotename(c.[COLUMN_NAME])
+					where c.TABLE_SCHEMA = hdr.DestinationSchema and c.TABLE_NAME = hdr.DestinationTable
+					--AND CHARINDEX(QUOTENAME(c.COLUMN_NAME),REPLACE(CONCAT(pkcol.LINKTODESTINATIONCOLS,',',pcol.CHECKDUPLICATECOLUMNS),'s.[','[')) > 0
+					ORDER BY T.ROWID
+					FOR XML PATH(''), ROOT ('MyString'), TYPE).value('/MyString[1]', 'varchar(max)'),1,1,'') + ')'
+					else '' END
+
+	)ahc
+	WHERE NOT DTL.DestinationTable IS NULL/*ERROR ON PIVOT INSERT*/
+
+	group by 
+		h.IsHeader
+		,DTL.DestinationTable
+		,ucol.UpdateColumns
+		,col.DestinationColumns
+		,scol.SourceColumns
+		,mcol.MissingColumns
+		,mcolval.MissingColumnsValues
+		,flt.ValidateFilter
+		,oc.OUTPUTCMD
+		,CONCAT(pkcol.LINKTODESTINATIONCOLS,',',pcol.CHECKDUPLICATECOLUMNS)
+		,ahc.CREATETMPTABLEPKHANDLER
+		,pcol.CHECKDUPLICATECOLUMNS
+
+END
+
+--SELECT * FROM @SOURCECFGDETAIL
+
+--select @REQUIREDFIELDCHECK
+	IF @ImportOption = 5 and (select count(*) from @TABLES) <= 1
+	BEGIN/*UPDATE ONLY (IMPORTOPTION = 5)*/
+		/* get link to source data */
+		/* validate values with invalid source data */
+		/* get duplicate record validation */
+		/* validate duplicate record */ 
+		--DECLARE @UPDATEFLDS VARCHAR(MAX)
+		
+		SET @CMDINSERTUPDATE = CONCAT(@AUDITSCRIPT,CHAR(10),'UPDATE ',@DESTINATIONTABLE,' SET ',
+		STUFF((SELECT CONCAT(',',CHAR(10),quotename(DestinationColumnField),' = s.',quotename(DestinationColumnField)) FROM @SourceConfigDtl WHERE ISNULL(DestinationColumnField,'') <> '' FOR XML PATH(''), ROOT ('MyString'), TYPE).value('/MyString[1]', 'varchar(max)'),1,1,'')
+		,CHAR(10),'OUTPUT @LOGID,''',@ImportOption,''', INSERTED.',@PRIMARYKEYFIELD,' INTO fileimport.ImportLogDtl(FileimportLogId,LogStatus,ImportKeyValue)'/* AUDIT TRAIL OF IMPORTED DATA */
+		,CHAR(10),' FROM ',@TMPTABLENAME,' s WHERE 1=1 '
+		,REPLACE(CONCAT(@LINKFLDS
+		,CHAR(10),@FIXQRYFILTER /* fix condition on destination table */
+		,CHAR(10),' AND s.DetailNo = 1',@REQUIREDFIELDCHECK /*exclude required fields with blank or null values*/
+		,CHAR(10),' AND ISNULL(s.[DataValidationRemarks_],'''') = ''''' /*exclude with error remarks (invalid data)*/
+		,@VALIDATIONFILTER /* validation condition on destination table */),'d.[',@DESTINATIONTABLE + '.[')
+		--,CHAR(10),@EXISTDATAFLDS /*exclude existing data*/
+		,CHAR(10),CHAR(10),'; SET @INSERTEDROWS = @@rowcount;'
+		,CHAR(10),'INSERT INTO @LOGDETAIL SELECT fileimport.ImportLogDtl.ImportLogDtlId FROM fileimport.ImportLogDtl WHERE FileimportLogId = @LOGID;/* get key values of the inserted records*/'
+		--,CHAR(10),@CMDQRYTOEXECUTE,';' /* include cmdquery to be executed along after the insert process */
+		,CHAR(10),'UPDATE fileimport.FileImportLog SET ImportCount = @INSERTEDROWS WHERE FileimportLogId = @LOGID;' 
+		,CHAR(10),'/*output result*/'
+		,CASE WHEN @QUERYTYPE = 5/*after insert or update*/ THEN CONCAT(CHAR(10),@CMDQRYTOEXECUTE,';') ELSE '' END /* include cmdquery to be executed along after the insert process */
+
+		,CHAR(10),'SELECT ImportedRecord = @INSERTEDROWS, [Log] = @ValidationLog;'/*output result*/
+		,CHAR(10),'DROP TABLE ',@TMPTABLENAME,';/*drop created tmp table*/') 
+
+	END
+	ELSE
+	BEGIN/*CREATE INSERT QUERY*/
+
+BEGIN/*all insert on multiple table destination*/
+
+	--DECLARE @UPDATEINSERTCMD VARCHAR(MAX)
+	--print @EXISTDATAFLDS;return
+
+
+
+	IF EXISTS(SELECT TABLEID FROM @TABLES)
+	BEGIN
+		if @ImportOption = 5
+		BEGIN
+
+		SET @CMDINSERTUPDATE = CONCAT((SELECT CHAR(10)+';'+ UPDATEINSERTCMD 
+		+ CASE WHEN isnull(ISHEADER,0) = 1 THEN concat(
+		--CHAR(10),' LEFT JOIN ',@DESTINATIONTABLE,' d ON 1=1',@LINKFLDS /* links of source table and destination table*/
+		--,CHAR(10),@FIXQRYFILTER /* fix condition on destination table */,
+		CHAR(10),' AND DetailNo = 1',@REQUIREDFIELDCHECK /*exclude required fields with blank or null values*/
+		,CHAR(10),' AND ISNULL(s.[DataValidationRemarks_],'''') = ''''' /*exclude with error remarks (invalid data)*/
+		--,CHAR(10),@VALIDATIONFILTER /* validation condition on destination table */
+		--,CHAR(10),@FIELDSOURCELINKCONDITION /* condition on fields with source links (invalid source link will be excluded) */
+		--,CHAR(10),@EXISTDATAFLDS /*exclude existing data*/
+		) else '' END
+		--+CHAR(10),';INSERT INTO fileimport.ImportLogDtl(FileimportLogId,LogStatus,ImportKeyValue) SELECT @LOGID,NULL,[PRIMARYKEYFLD] FROM #TABLEKEYS;'/* AUDIT TRAIL OF IMPORTED DATA */
+		--,CHAR(10),'IF NOT OBJECT_ID(''tempdb..#TABLEKEYS'') IS NULL DROP TABLE tempdb..#TABLEKEYS;'
+		FROM @TABLES order by (case when isnull(ISHEADER,0) = 1 THEN 1 ELSE 2 END) FOR XML PATH(''), ROOT ('MyString'), TYPE).value('/MyString[1]', 'varchar(max)'),CHAR(10)
+		,CHAR(10),'INSERT INTO fileimport.ImportLogDtl(FileimportLogId,LogStatus,ImportKeyValue) SELECT @LOGID,NULL,[PRIMARYKEYFLD] FROM #TABLEKEYS;'/* AUDIT TRAIL OF IMPORTED DATA */
+		)
+
+
+		END
+		ELSE
+		BEGIN
+
+		SET @CMDINSERTUPDATE = CONCAT((SELECT CHAR(10)+';'+ UPDATEINSERTCMD 
+		+ CASE WHEN isnull(ISHEADER,0) = 1 AND @ImportOption <> 6 THEN concat(
+		CHAR(10),' LEFT JOIN ',@DESTINATIONTABLE,' d ON 1=1',@LINKFLDS /* links of source table and destination table*/
+		,CHAR(10),@FIXQRYFILTER /* fix condition on destination table */
+		,CHAR(10),' WHERE DetailNo = 1',@REQUIREDFIELDCHECK /*exclude required fields with blank or null values*/
+		,CHAR(10),' AND ISNULL(s.[DataValidationRemarks_],'''') = ''''' /*exclude with error remarks (invalid data)*/
+		,CHAR(10),@VALIDATIONFILTER /* validation condition on destination table */
+		--,CHAR(10),@FIELDSOURCELINKCONDITION /* condition on fields with source links (invalid source link will be excluded) */
+		,CHAR(10),@EXISTDATAFLDS /*exclude existing data*/) else '' END
+		--+CHAR(10),';INSERT INTO fileimport.ImportLogDtl(FileimportLogId,LogStatus,ImportKeyValue) SELECT @LOGID,NULL,[PRIMARYKEYFLD] FROM #TABLEKEYS;'/* AUDIT TRAIL OF IMPORTED DATA */
+		--,CHAR(10),'IF NOT OBJECT_ID(''tempdb..#TABLEKEYS'') IS NULL DROP TABLE tempdb..#TABLEKEYS;'
+		FROM @TABLES order by (case when isnull(ISHEADER,0) = 1 THEN 1 ELSE 2 END) FOR XML PATH(''), ROOT ('MyString'), TYPE).value('/MyString[1]', 'varchar(max)'),CHAR(10)
+		,CHAR(10),'INSERT INTO fileimport.ImportLogDtl(FileimportLogId,LogStatus,ImportKeyValue) SELECT @LOGID,NULL,[PRIMARYKEYFLD] FROM #TABLEKEYS;'/* AUDIT TRAIL OF IMPORTED DATA */
+		)
+		end
+	END
+	ELSE
+		SET @CMDINSERTUPDATE = CONCAT(CHAR(10),'INSERT INTO ',@DESTINATIONTABLE,CONCAT('(',@DESTINATIONFLDS,@AUDITTRAILFLDS,@MISSINGFLDS,')') /*the insert into statement*/
+		,CHAR(10),'OUTPUT @LOGID,NULL, INSERTED.',@PRIMARYKEYFIELD,' INTO fileimport.ImportLogDtl(FileimportLogId,LogStatus,ImportKeyValue)'/* AUDIT TRAIL OF IMPORTED DATA */
+		,CHAR(10),'SELECT ',CONCAT(@INSERTVALUES,ISNULL(@AUDITTRAILVALUES,''),@MISSINGFLDSDEFAULTS),' FROM ',@TMPTABLENAME,' s' /*select data from tmp table*/
+		,CHAR(10),' LEFT JOIN ',@DESTINATIONTABLE,' d ON 1=1',@LINKFLDS /* links of source table and destination table*/
+		,CHAR(10),@FIXQRYFILTER /* fix condition on destination table */
+		,CHAR(10),' WHERE DetailNo = 1',@REQUIREDFIELDCHECK /*exclude required fields with blank or null values*/
+		,CHAR(10),' AND ISNULL(s.[DataValidationRemarks_],'''') = ''''' /*exclude with error remarks (invalid data)*/
+		,CHAR(10),@VALIDATIONFILTER /* validation condition on destination table */
+		,CHAR(10),@EXISTDATAFLDS /*exclude existing data*/)
+	END
+
+
+
+	/*NORMAL INSERT COMMAND - SINGLE TABLE*/
+		SET @CMDINSERTUPDATE = CONCAT(@AUDITSCRIPT
+		,CHAR(10),ISNULL(@CREATETABLEINSERTEDCMD,'') /* handle sucessfully inserted records */
+		,CASE WHEN @QUERYTYPE = 1 THEN CONCAT(CHAR(10),@CMDQRYTOEXECUTE,';') ELSE '' END /* include cmdquery to be executed before the insert process */
+		,@CMDINSERTUPDATE
+		,CHAR(10),CHAR(10),';SET @INSERTEDROWS = @@rowcount;'
+		,CHAR(10),'INSERT INTO @LOGDETAIL SELECT fileimport.ImportLogDtl.ImportLogDtlId FROM fileimport.ImportLogDtl WHERE FileimportLogId = @LOGID;/* get key values of the inserted records*/'
+		,CASE WHEN @QUERYTYPE IN (2,5)/*after insert or update*/ THEN CONCAT(CHAR(10),@CMDQRYTOEXECUTE,';') ELSE '' END /* include cmdquery to be executed along after the insert process */
+		,CHAR(10),'UPDATE fileimport.FileImportLog SET ImportCount = @INSERTEDROWS WHERE FileimportLogId = @LOGID;' 
+		,CHAR(10),'/*output result*/'
+		,CHAR(10),'SELECT ImportedRecord = @INSERTEDROWS, [Log] = @ValidationLog;'/*output result*/
+		,CHAR(10),'IF NOT OBJECT_ID(''tempdb..',@TMPTABLENAME,''') IS NULL DROP TABLE tempdb..',@TMPTABLENAME,';'/*drop created tmp table*/ 
+		,CHAR(10),'IF NOT OBJECT_ID(''tempdb..#TABLEKEYS'') IS NULL DROP TABLE tempdb..#TABLEKEYS;')
+
+	END
+
+	--PRINT @CMDINSERTUPDATE;RETURN
+	
+	SET @CMDQRY = CONCAT('SET NOCOUNT ON;'
+	,CHAR(10),'DECLARE @LOGDETAIL AS TABLE(ImportLogDtlId bigint primary key);'/* to be use when getting the key values of the inserted data */
+	,CHAR(10),'BEGIN TRY'
+	--,CHAR(10),CONCAT('ALTER TABLE ',@DESTINATIONTABLE,' NOCHECK CONSTRAINT all;','')/*temporary disable foreign key constraint*/
+	,CHAR(10),@CMDQRY,CHAR(10),@CMDVALIDATE,CHAR(10),@CMDINSERTUPDATE,CHAR(10)
+	--,CHAR(10),CONCAT('ALTER TABLE ',@DESTINATIONTABLE,' WITH CHECK CHECK CONSTRAINT all;','')/*re-enable foreign key constraint*/
+	,CHAR(10),'END TRY',CHAR(10),'BEGIN CATCH',CHAR(10),'SELECT ImportedRecord = 0, [Log] = ERROR_MESSAGE()',CHAR(10),'END CATCH')
+	--PRINT @CMDQRY;RETURN
+
+	SET @CMDQRY = REPLACE(@CMDQRY,'@FileImportCfgHdrId',@FileImportCfgHdrId) /* use in import timelogs for retrieving user defined log type values */
+	
+	/* supply parameter values */
+	IF RTRIM(@CMDQRY) <> '' 
+	BEGIN
+		SELECT CMD = REPLACE(REPLACE(REPLACE(@CMDQRY,'@FileImportCfgHdrId',@FileImportCfgHdrId),'@UserId',@UserId),'@TVPName',''''+ ISNULL(@TVPName,'') +'''')
+		,CREATETRIGGER = '' --@CMDCREATETRIGGER 
+		/*+ CONCAT(' ;DROP TRIGGER '*/;
+		--PRINT @CMDQRY
+		RETURN
+	END
+	ELSE
+		SELECT CMD = '',CREATETRIGGER = ''
+
+
+END
+
+GO
+
+

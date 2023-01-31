@@ -1,0 +1,2 @@
+UPDATE admin.XMLReportHeader SET FileNameFormat = '1$<FileNameFormatInternal>' WHERE ReportName IN ('BIR2316','BIR2316_v2018')
+

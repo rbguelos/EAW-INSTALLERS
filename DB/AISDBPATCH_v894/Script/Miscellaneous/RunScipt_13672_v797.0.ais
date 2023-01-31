@@ -1,0 +1,18 @@
+IF NOT EXISTS(SELECT * FROM maintenance.ConfigSetupDetail WHERE PropertyName = 'DeductFlexiTardinessLimit')
+BEGIN
+	INSERT INTO maintenance.ConfigSetupDetail(
+		ConfigSetupHeaderId, PropertyName, LabelName, PropertyValue, Type, Source, [Group], Subgroup, SortOrder, Alignment)
+	SELECT 
+	ConfigSetupHeaderId = 1, 
+	PropertyName = 'DeductFlexiTardinessLimit', 
+	LabelName = 'Disable Deduct Flexible Time Limit from Tardiness Rule if Tardiness >= [4.00] hrs', 
+	PropertyValue = '', 
+	Type = 'checkbox', 
+	Source = '', 
+	[Group] = 1, 
+	Subgroup = 0, 
+	SortOrder = 25, 
+	Alignment = ''
+END
+
+UPDATE maintenance.ConfigSetupHeader SET Panel1 = 'Time Entry;25;2' WHERE ConfigSetupHeaderId = 1

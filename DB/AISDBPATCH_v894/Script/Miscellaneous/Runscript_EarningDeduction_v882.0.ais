@@ -1,0 +1,3 @@
+UPDATE compben.EarningDeduction 
+SET PreProcessBeforePayroll = 0
+WHERE PreProcessBeforePayroll IS NULL

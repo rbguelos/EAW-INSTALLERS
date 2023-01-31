@@ -1,0 +1,10 @@
+/*
+Missing Index Details from SQLQuery2.sql - SQLDEVELOPER2014.EatWork_ReportProd (aisapp)
+The Query Processor estimates that implementing the following index could improve the query cost by 32.6959%.
+*/
+
+IF NOT EXISTS(SELECT index_id FROM SYS.indexes WHERE name = 'IX_EmploymentInformationCJI_EmploymentStatus' AND object_id = object_id('[employee].[EmploymentInformation]'))
+CREATE NONCLUSTERED INDEX [IX_EmploymentInformationCJI_EmploymentStatus]
+ON [employee].[EmploymentInformation] ([CJI_EmploymentStatus])
+INCLUDE ([ProfileId],[CJI_EmployeeNo])
+GO

@@ -1,0 +1,45 @@
+IF NOT OBJECT_ID('[payroll].[trgBackupDeletedAllowanceOtherPayment]') IS NULL
+DROP TRIGGER [payroll].[trgBackupDeletedAllowanceOtherPayment]
+GO
+
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+-- =============================================
+-- Author:		RME
+-- Create date: 2/7/2020
+-- Description:	backup deleted allowance from backgroud
+-- =============================================
+CREATE TRIGGER [payroll].[trgBackupDeletedAllowanceOtherPayment] 
+   ON  [payroll].[AllowanceOtherPayment] 
+   AFTER DELETE
+AS 
+BEGIN
+	-- SET NOCOUNT ON added to prevent extra result sets from
+	-- interfering with SELECT statements.
+	SET NOCOUNT ON;
+		IF OBJECT_ID('[payroll].[AllowanceOtherPayment_Deleted]') IS NULL
+		BEGIN
+			SELECT *,[TransactionDate] = GETDATE() INTO [payroll].[AllowanceOtherPayment_Deleted] FROM DELETED
+			UNION ALL SELECT *,[TransactionDate] = GETDATE() FROM DELETED WHERE 1=0/*this will ignore saving of identiy propery of identity column*/
+		END
+		ELSE
+		BEGIN
+			/*
+				NOTE: ERROR WILL OCCUR IF NEW COLUMNS WAS ADDED TO THE SOURCE TABLE [payroll].[AllowanceOtherPayment]
+				ALL NEW COLUMNS ADDED TO  [payroll].[AllowanceOtherPayment]  MUST BE ADDED TO [payroll].[AllowanceOtherPayment_Deleted]
+			*/
+			INSERT INTO [payroll].[AllowanceOtherPayment_Deleted]
+				SELECT *,[TransactionDate] = GETDATE() FROM DELETED
+		END
+		
+END
+GO
+
+ALTER TABLE [payroll].[AllowanceOtherPayment] ENABLE TRIGGER [trgBackupDeletedAllowanceOtherPayment]
+GO
+
+

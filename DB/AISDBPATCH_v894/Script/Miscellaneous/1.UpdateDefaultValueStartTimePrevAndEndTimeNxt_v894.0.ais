@@ -1,0 +1,9 @@
+DECLARE @FileImportCfgHdrId bigint = ( SELECT TOP 1
+		FileImportCfgHdrId
+	FROM fileimport.FileImportCfgHdr
+	WHERE FileImportCode = 'Shift');
+
+UPDATE fileimport.FileImportCfgDetail
+SET DefaultValue = 'No'
+WHERE FileImportCfgHdrId = @FileImportCfgHdrId
+AND DestinationColumnField IN ('StartTimePreviousDay', 'EndTimeNextDay');

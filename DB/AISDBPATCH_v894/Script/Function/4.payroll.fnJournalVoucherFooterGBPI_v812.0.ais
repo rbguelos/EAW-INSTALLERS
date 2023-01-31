@@ -1,0 +1,29 @@
+IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[payroll].[fnJournalVoucherFooterGBPI]') AND type in (N'FN', N'IF', N'TF', N'FS', N'FT'))
+DROP FUNCTION [payroll].[fnJournalVoucherFooterGBPI]
+GO
+
+ --=============================================
+ --Author:      Jomari Rimbao
+ --Create date: 11/04/2019
+ --Description: For JV File Generator File
+ --=============================================
+
+CREATE FUNCTION [payroll].[fnJournalVoucherFooterGBPI]
+(
+	--DECLARE
+	 @JVHeaderId BIGINT = 7
+	,@UserSecurityId BIGINT = 0
+)
+RETURNS TABLE 
+AS
+RETURN
+(
+	SELECT 
+		 TotalDR = SUM(ISNULL(T.DR,0))
+		,TotalCR = SUM(ISNULL(T.CR,0))
+		--,Variance = 0 /*SUM(CASE WHEN ISNULL(COA.AccountTitle,'') = 'SSS PREMIUM PAYABLE' THEN (Detail.Amount) ELSE 0 END) */
+	FROM payroll.fnJournalVoucherDetailByCostCenterGBPI(@JVHeaderId,@UserSecurityId) T
+
+)
+
+

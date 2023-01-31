@@ -1,0 +1,3 @@
+;UPDATE admin.FileImportDtl SET IsRequired = 1, IsKeyField = 1 WHERE FileImportHeaderId = (SELECT TOP 1 FileImportHeaderId FROM admin.FileImportHeader WHERE FileConfigurationCode = 'AllowanceAndOtherEarning') AND TableFieldName IN ('ProfileId','EarningDeductionId','EffectiveDate')
+;UPDATE admin.FileImportDtl SET FieldSourceTable = '(SELECT [Value], [Name] FROM maintenance.Status WHERE [Name] IN (''Draft'',''Approved'')) Status' WHERE FileImportHeaderId = (SELECT TOP 1 FileImportHeaderId FROM admin.FileImportHeader WHERE FileConfigurationCode = 'AllowanceAndOtherEarning') AND TableFieldName = 'StatusId'
+

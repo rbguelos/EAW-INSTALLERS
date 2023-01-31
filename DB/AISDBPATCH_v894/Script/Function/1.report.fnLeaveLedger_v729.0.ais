@@ -1,0 +1,373 @@
+IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[report].[fnLeaveLedger]') AND type in (N'FN', N'IF', N'TF', N'FS', N'FT'))
+DROP FUNCTION [report].[fnLeaveLedger]
+GO
+
+ --=============================================
+ --Author:		Abdiel Corda
+ --Create date: 06.27.2019
+ --Description:	Running balance for payslip
+ --=============================================
+
+CREATE FUNCTION [report].[fnLeaveLedger] 
+(
+--DECLARE
+@ProfileId BIGINT = 0 --5195
+,@PeriodStartDate DATETIME = '1/1/1900'
+,@PeriodEnDate DATETIME = '1/1/1900'
+)
+RETURNS
+--DECLARE
+@RESULT TABLE
+(
+	DETAILID INT IDENTITY(1,1),
+	LeaveTypeSetUpId BIGINT,
+	ProfileId BIGINT,
+	TransactionDate DATETIME,
+	PreviousBalance DECIMAL(18,4),
+	EarnedHours DECIMAL(18,4),
+	UsedHours DECIMAL(18,4),
+	Expired DECIMAL(18,4),
+	TransferredFrom DECIMAL(18,4),
+	TransferredTo DECIMAL(18,4),
+	Converted DECIMAL(18,4),
+	Adjustment DECIMAL(18,4),
+	CurrentBalance DECIMAL(18,4),
+	UNIQUE CLUSTERED (LeaveTypeSetUpId,ProfileId, TransactionDate, DETAILID)
+)
+
+AS 
+BEGIN
+
+
+SET @PeriodStartDate = (CASE WHEN ISNULL(@PeriodStartDate,'1/1/1900') = '1/1/1900' THEN FORMAT(GETDATE(),N'01/01/yyyy') ELSE @PeriodStartDate END)
+SET @PeriodEnDate  = (CASE WHEN ISNULL(@PeriodEnDate,'1/1/1900') = '1/1/1900' THEN FORMAT(GETDATE(),N'MM/dd/yyyy') ELSE @PeriodEnDate END)
+
+DECLARE
+@TABLE TABLE
+(
+	ROWID INT IDENTITY(1,1),
+	LeaveTypeSetUpId BIGINT,
+	ProfileId BIGINT,
+	StartingBalance DECIMAL(18,4),
+	EarnedHours DECIMAL(18,4),
+	TransactionDate DATETIME,
+	UsedDisplay DECIMAL(18,4),
+	UsedHours DECIMAL(18,4),
+
+	Expired DECIMAL(18,4),
+	TransferredFrom DECIMAL(18,4),
+	TransferredTo DECIMAL(18,4),
+	Converted DECIMAL(18,4),
+	Adjustment DECIMAL(18,4),
+	ConversionBalance DECIMAL(18,4),
+	/*TypeId INT,*/
+	UNIQUE CLUSTERED (LeaveTypeSetUpId,ProfileId, TransactionDate, ROWID)
+)
+
+INSERT INTO @TABLE
+SELECT 
+	T.LeaveTypeSetupId
+	,T.ProfileId
+	,StartingBalance = 
+	(
+		SELECT TOP 1 
+			DTL.EarnedHours 
+		FROM leave.LeaveBalanceDetail DTL 
+		JOIN leave.LeaveBalanceHeader LBH ON LBH.LeaveBalanceHeaderId = DTL.LeaveBalanceHeaderId 
+		WHERE LBH.ProfileId = T.ProfileId
+		AND LBH.LeaveTypeSetupId = T.LeaveTypeSetupId
+		AND DTL.StatusId IN (10)
+		AND DTL.EarnedHours <> 0
+		AND (CAST(DTL.[PostedDate] AS DATE) = (CAST(T.PostedDate AS DATE)))
+		ORDER BY DTL.PostedDate
+	)
+	,EarnedHours = SUM(ISNULL(EarnedHours,0))
+	,PostedDate = PostedDate 
+	,UsedDisplay = SUM(ISNULL(UsedDisplay,0))
+	,Used = SUM(ISNULL(Used,0))
+
+	,Expired = SUM(ISNULL(T.Expired,0))
+	,TransferredFrom = SUM(ISNULL(T.TransferredFrom,0))
+	,TransferredTo = SUM(ISNULL(T.TransferredTo,0))
+	,Converted = SUM(ISNULL(T.Converted,0))
+	,Adjustment = SUM(ISNULL(T.Adjustment,0))
+	,ConversionBalance = SUM(ISNULL(T.ConversionBalance,0))
+	/*,T.TypeId*/
+FROM leave.LeaveBalanceHeader LBH
+INNER JOIN 
+(
+	
+	SELECT 
+		LBH.LeaveTypeSetupId
+		,LBH.ProfileId
+		,EarnedHours = LBD.EarnedHours
+		,PostedDate = CAST(LBD.PostedDate AS DATE) 
+		,UsedDisplay = 0
+		,Used = 0
+
+		,Expired = 0
+		,TransferredFrom = 0
+		,TransferredTo = 0
+		,Converted = 0
+		,Adjustment = 0
+		,ConversionBalance = 0
+		,TypeId = 2
+	FROM leave.LeaveBalanceHeader LBH
+	LEFT JOIN leave.LeaveBalanceDetail LBD ON LBD.LeaveBalanceHeaderId = LBH.LeaveBalanceHeaderId
+	WHERE 1=1
+	AND LBD.StatusId IN (10) /*POSTED*/
+	AND ISNULL(LBD.EarnedHours,0) > 0
+	AND (CAST(LBD.PostedDate AS DATE) <= CAST(@PeriodEnDate AS DATE))
+	AND LBH.ProfileId = @ProfileId
+
+	UNION ALL
+
+	/*EXPIRATION*/
+	SELECT 
+		LBH.LeaveTypeSetupId
+		,LBH.ProfileId
+		,EarnedHours = 0
+		,PostedDate = CAST(LBD.PostedDate AS DATE) 
+		,UsedDisplay = 0
+		,Used = 0
+
+		,Expired = (CASE WHEN ISNULL(LBD.UseExpiration,0) = 1 AND LBD.ExpiryDate <= @PeriodEnDate THEN LBD.EarnedHours ELSE 0 END)
+		,TransferredFrom = 0
+		,TransferredTo = 0
+		,Converted = 0
+		,Adjustment = 0
+		,ConversionBalance = 0
+		,TypeId = 4
+	FROM leave.LeaveBalanceHeader LBH
+	LEFT JOIN leave.LeaveBalanceDetail LBD ON LBD.LeaveBalanceHeaderId = LBH.LeaveBalanceHeaderId
+	WHERE 1=1
+	AND LBD.StatusId IN (10) /*POSTED*/
+	AND ISNULL(LBD.EarnedHours,0) > 0
+	AND (CAST(LBD.PostedDate AS DATE) <= CAST(@PeriodEnDate AS DATE))
+	AND LBH.ProfileId = @ProfileId
+	
+	UNION ALL
+	
+	/*ADJUSTMENT*/
+	SELECT 
+		LBH.LeaveTypeSetupId
+		,LBH.ProfileId
+		,EarnedHours =  
+		(
+			CASE 
+				WHEN CHARINDEX('Converted to Cash',LBD.Remarks) > 0 THEN 0 
+				WHEN CHARINDEX('Transfered to',LBD.Remarks) > 0 THEN 0 
+				ELSE LBD.EarnedHours 
+			END
+		)
+		,PostedDate = CAST(LBD.IssuedDate AS DATE)
+		,UsedDisplay = 0
+		,Used = 0
+
+		,Expired = 0
+		,TransferredFrom = 0
+		,TransferredTo = 0
+		,Converted = 0
+		,Adjustment = 0
+		,ConversionBalance = 0
+		,TypeId = 8
+	FROM leave.LeaveBalanceHeader LBH
+	LEFT JOIN leave.LeaveBalanceDetail LBD ON LBD.LeaveBalanceHeaderId = LBH.LeaveBalanceHeaderId
+	WHERE LBD.StatusId IN (14) /*ADJUSTMENT*/
+	AND (CAST(LBD.PostedDate AS DATE) <= CAST(@PeriodEnDate AS DATE))
+	AND
+	(
+		(LBD.UseExpiration = 1 AND LBD.ExpiryDate >= @PeriodEnDate) 
+		OR
+		(LBD.UseExpiration = 0)
+	)
+	AND LBH.ProfileId = @ProfileId
+	
+	UNION ALL
+
+	/*LEAVE CREDITS USED WITHIN THE DATE*/
+	SELECT 
+		LeaveTypeSetupId = LR.LeaveTypeId
+		,LR.ProfileId
+		,EarnedHours = 0
+		,PostedDate = CAST(LR.InclusiveStartDate AS DATE)
+		,UsedDisplay = LR.NoOfHours
+		,Used = 0
+
+		,Expired = 0 	
+		,TransferredFrom = 0
+		,TransferredTo = 0
+		,Converted = 0
+		,Adjustment = 0
+		,ConversionBalance = 0
+		,TypeId = 3
+	FROM leave.LeaveRequest LR
+	WHERE LR.StatusId IN (21,2) /*PAID AND APPROVED*/
+	AND /*(LR.InclusiveStartDate <= @PeriodEnDate)*/
+	(
+		((ISNULL(@PeriodStartDate,'1/1/1900') = '1/1/1900') OR (LR.InclusiveStartDate >= @PeriodStartDate))
+		AND 
+		((ISNULL(@PeriodEnDate,'1/1/1900') = '1/1/1900') OR (LR.InclusiveStartDate <= @PeriodEnDate))
+	)
+	AND LR.ProfileId = @ProfileId
+
+	UNION ALL
+
+	SELECT 
+		LeaveTypeSetupId = LR.LeaveTypeId
+		,LR.ProfileId
+		,EarnedHours = 0
+		,PostedDate = CAST(LR.InclusiveStartDate AS DATE)
+		,UsedDisplay = 0
+		,Used = (CASE WHEN ((ISNULL(LRB.UseExpiration,0) = 1 AND LRB.ExpiryDate >= @PeriodEnDate) OR LRB.UseExpiration = 0) THEN LR.NoOfHours ELSE 0 END)
+
+		,Expired = 0 
+		,TransferredFrom = 0
+		,TransferredTo = 0
+		,Converted = 0
+		,Adjustment = 0
+		,ConversionBalance = 0
+		,TypeId = 3
+	FROM leave.LeaveRequest LR
+	CROSS APPLY
+	(
+		SELECT TOP 1 
+			LBD.ExpiryDate
+			,LBD.UseExpiration
+			,LRB.LeaveRequestId
+		FROM leave.LeaveRequestBalance LRB 
+		INNER JOIN leave.LeaveBalanceDetail LBD 
+			ON LBD.LeaveBalanceDetailId = LRB.LeaveBalanceDetailId /*AND LRB.IsReturned = 0*/
+		WHERE LRB.LeaveRequestId = LR.LeaveRequestId
+	)LRB
+	WHERE LR.StatusId IN (21,2) /*PAID AND APPROVED*/
+	AND (LR.InclusiveStartDate <= @PeriodEnDate)
+	AND LR.ProfileId = @ProfileId
+
+	UNION ALL
+
+	/*TRANSFERRED FROM*/
+	SELECT 
+		LeaveTypeSetupId = LC.TransferToLeaveTypeSetupId
+		,ProfileId = LC.ProfileId
+		,EarnedHours = 0
+		,PostedDate = ISNULL(LC.EffectiveDate,'1/1/1900')
+		,UsedDisplay = 0
+		,Used = 0
+
+		,Expired = 0 
+		,TransferredFrom = (LC.BalanceToConvert)
+		,TransferredTo = 0
+		,Converted = 0
+		,Adjustment = 0
+		,ConversionBalance = LC.Balance
+		,TypeId = 6
+	FROM leave.LeaveConversion LC
+	/*FROM report.TEMPLeaveConversion LC*/
+	WHERE 1=1
+	AND LC.LeaveConversionType = 2 /*LEAVE TYPE*/
+	AND LC.StatusId = 2 /*APPROVED*/
+	AND LC.ProfileId = @ProfileId
+
+	UNION ALL
+
+	/*TRANSFERRED TO*/
+	SELECT 
+		LeaveTypeSetupId = LC.LeaveTypeSetupId
+		,ProfileId = LC.ProfileId
+		,EarnedHours = 0
+		,PostedDate = ISNULL(LC.EffectiveDate,'1/1/1900')
+		,UsedDisplay = 0
+		,Used = 0
+
+		,Expired = 0 
+		,TransferredFrom = 0
+		,TransferredTo = LC.BalanceToConvert
+		,Converted = 0
+		,Adjustment = 0
+		,ConversionBalance = LC.Balance
+		,TypeId = 7
+	FROM leave.LeaveConversion LC
+	/*FROM report.TEMPLeaveConversion LC*/
+	WHERE 1=1
+	AND LC.LeaveConversionType = 2 /*LEAVE TYPE*/
+	AND LC.StatusId = 2 /*APPROVED*/
+	AND LC.ProfileId = @ProfileId
+
+	UNION ALL
+
+	/*CASH CONVERSION*/
+	SELECT 
+		LeaveTypeSetupId = LC.LeaveTypeSetupId
+		,ProfileId = LC.ProfileId
+		,EarnedHours = 0
+		,PostedDate = LC.EffectiveDate
+		,UsedDisplay = 0
+		,Used = 0
+
+		,Expired = 0 
+		,TransferredFrom = 0
+		,TransferredTo = 0
+		,Converted = LC.BalanceToConvert
+		,Adjustment = 0
+		,ConversionBalance = LC.Balance
+		,TypeId = 5
+	FROM leave.LeaveConversion LC
+	/*FROM report.TEMPLeaveConversion LC*/
+	WHERE 1=1
+	AND LC.LeaveConversionType = 1 /*CASH*/
+	AND LC.StatusId = 2 /*APPROVED*/
+	AND LC.ProfileId = @ProfileId
+)T ON LBH.ProfileId = T.ProfileId AND T.LeaveTypeSetupId = LBH.LeaveTypeSetupId
+
+
+WHERE ((ISNULL(@ProfileId,0) = 0) OR (T.ProfileId = @ProfileId))
+
+
+GROUP BY T.LeaveTypeSetupId,T.ProfileId,PostedDate,T.TypeId
+
+/*SELECT * FROM @TABLE;RETURN;*/
+
+INSERT INTO @RESULT
+SELECT 
+	T1.LeaveTypeSetUpId
+	,T1.ProfileId
+	,COLS.TransactionDate
+	,PreviousBalance = (COLS.PreviousBalance)
+	,EarnedHours = (T1.EarnedHours)
+	,UsedHours = (T1.UsedDisplay)
+	,Expired = T1.Expired
+	,TransferredFrom = T1.TransferredFrom
+	,TransferredTo = T1.TransferredTo
+	,Converted = T1.Converted
+	,Adjustment = T1.Adjustment
+	,CurrentBalance = (T2.CurrentBalance)
+FROM @TABLE T1
+CROSS APPLY
+(
+	SELECT 
+		CurrentBalance = SUM((T2.EarnedHours - T2.UsedHours - T2.Expired - T2.Converted - T2.TransferredTo) + T2.TransferredFrom)
+	FROM @TABLE T2 
+	WHERE 1=1
+	AND (T2.ProfileId = T1.ProfileId)
+	AND (T2.LeaveTypeSetUpId = T1.LeaveTypeSetUpId)
+	AND (T2.ROWID <= T1.ROWID)
+)T2
+CROSS APPLY
+(
+	SELECT
+	TransactionDate = CAST(T1.TransactionDate AS DATE)
+	/*,PreviousBalance = COALESCE(T2.CurrentBalance,T1.StartingBalance,T1.ConversionBalance,0) + (T1.UsedDisplay + T1.Expired + T1.Converted + T1.TransferredTo) - T1.TransferredFrom */
+	,PreviousBalance = (COALESCE(T2.CurrentBalance,0) + (T1.UsedDisplay + T1.Expired + T1.Converted + T1.TransferredTo) - T1.TransferredFrom) - T1.EarnedHours
+)COLS
+WHERE 1=1
+
+/*SELECT * FROM @RESULT;*/
+
+/*SELECT * FROM @RESULT T WHERE T.LeaveTypeSetUpId = 3;*/
+
+RETURN
+
+END
+
+;

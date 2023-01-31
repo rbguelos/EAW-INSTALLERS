@@ -1,0 +1,12 @@
+UPDATE admin.ReportMasterDetail SET [DataField] = 'DateOfMarriageString',[FieldType] = 'string',[DataFormat] ='' WHERE [FieldDisplay] = 'Date Of Marriage' AND [ReportMasterHeaderId]  = '7'
+UPDATE admin.ReportMasterDetail SET [DataField] = 'BirthDateString',[FieldType] = 'string' ,[DataFormat] ='' WHERE [FieldDisplay] = 'BirthDate'  AND [ReportMasterHeaderId]  = '7'
+UPDATE admin.ReportMasterDetail SET [DataField] = 'HireDateString',[FieldType] = 'string',[DataFormat] ='' WHERE [FieldDisplay] = 'Hire Date'  AND [ReportMasterHeaderId]  = '7'
+UPDATE admin.ReportMasterDetail SET [DataField] = 'RegularizationDateString',[FieldType] = 'string',[DataFormat] ='' WHERE [FieldDisplay] = 'Regularization Date'  AND [ReportMasterHeaderId]  = '7'
+UPDATE admin.ReportMasterDetail SET [DataField] = 'EndOfContractDateString',[FieldType] = 'string',[DataFormat] ='' WHERE [FieldDisplay] = 'End of Contract Date'  AND [ReportMasterHeaderId]  = '7'
+UPDATE admin.ReportMasterDetail SET [DataField] = 'ClearanceDateString',[FieldType] = 'string',[DataFormat] ='' WHERE [FieldDisplay] = 'Clearance Date'  AND [ReportMasterHeaderId]  = '7'
+UPDATE admin.ReportMasterDetail SET [DataField] = 'SeparationDateString',[FieldType] = 'string',[DataFormat] ='' WHERE [FieldDisplay] = 'Separation Date'  AND [ReportMasterHeaderId]  = '7'
+UPDATE admin.ReportMasterDetail SET [DataField] = 'RehireDateString',[FieldType] = 'string',[DataFormat] ='' WHERE [FieldDisplay] = 'Rehire Date'  AND [ReportMasterHeaderId]  = '7'
+UPDATE admin.ReportMasterDetail SET [DataField] = 'RetirementDateString',[FieldType] = 'string',[DataFormat] ='' WHERE [FieldDisplay] = 'Retirement Date'  AND [ReportMasterHeaderId]  = '7'
+
+
+

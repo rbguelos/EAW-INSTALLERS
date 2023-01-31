@@ -1,0 +1,836 @@
+/*
+ * Double holiday payroll policy config
+ */
+
+IF NOT EXISTS(SELECT * FROM maintenance.ConfigSetupDetail WHERE PropertyName = 'DoubleHoliday')
+BEGIN
+	INSERT INTO maintenance.ConfigSetupDetail(
+		ConfigSetupHeaderId, PropertyName, LabelName, PropertyValue, Type, Source, [Group], Subgroup, SortOrder, Alignment)
+	SELECT 
+	ConfigSetupHeaderId = 3, 
+	PropertyName = 'DoubleHoliday', 
+	LabelName = 'Double Holiday (DH)', 
+	PropertyValue = '', 
+	Type = 'number', 
+	Source = '', 
+	[Group] = 3, 
+	Subgroup = 0, 
+	SortOrder = 28, 
+	Alignment = ''
+END
+
+IF NOT EXISTS(SELECT * FROM maintenance.ConfigSetupDetail WHERE PropertyName = 'DoubleHolidayOT')
+BEGIN
+	INSERT INTO maintenance.ConfigSetupDetail(
+		ConfigSetupHeaderId, PropertyName, LabelName, PropertyValue, Type, Source, [Group], Subgroup, SortOrder, Alignment)
+	SELECT 
+	ConfigSetupHeaderId = 3, 
+	PropertyName = 'DoubleHolidayOT', 
+	LabelName = 'Double Holiday OT (DHOT)', 
+	PropertyValue = '', 
+	Type = 'number', 
+	Source = '', 
+	[Group] = 3, 
+	Subgroup = 0, 
+	SortOrder = 29, 
+	Alignment = ''
+END
+
+IF NOT EXISTS(SELECT * FROM maintenance.ConfigSetupDetail WHERE PropertyName = 'DoubleHolidayNS')
+BEGIN
+	INSERT INTO maintenance.ConfigSetupDetail(
+		ConfigSetupHeaderId, PropertyName, LabelName, PropertyValue, Type, Source, [Group], Subgroup, SortOrder, Alignment)
+	SELECT 
+	ConfigSetupHeaderId = 3, 
+	PropertyName = 'DoubleHolidayNS', 
+	LabelName = 'Double Holiday Nightshift (DHNS)', 
+	PropertyValue = '', 
+	Type = 'number', 
+	Source = '', 
+	[Group] = 3, 
+	Subgroup = 0, 
+	SortOrder = 30, 
+	Alignment = ''
+END
+
+IF NOT EXISTS(SELECT * FROM maintenance.ConfigSetupDetail WHERE PropertyName = 'DoubleHolidayNSOT')
+BEGIN
+	INSERT INTO maintenance.ConfigSetupDetail(
+		ConfigSetupHeaderId, PropertyName, LabelName, PropertyValue, Type, Source, [Group], Subgroup, SortOrder, Alignment)
+	SELECT 
+	ConfigSetupHeaderId = 3, 
+	PropertyName = 'DoubleHolidayNSOT', 
+	LabelName = 'Double Holiday Nightshift OT (DHNSOT)', 
+	PropertyValue = '', 
+	Type = 'number', 
+	Source = '', 
+	[Group] = 3, 
+	Subgroup = 0, 
+	SortOrder = 31, 
+	Alignment = ''
+END
+
+IF NOT EXISTS(SELECT * FROM maintenance.ConfigSetupDetail WHERE PropertyName = 'DoubleHolidayRestday')
+BEGIN
+	INSERT INTO maintenance.ConfigSetupDetail(
+		ConfigSetupHeaderId, PropertyName, LabelName, PropertyValue, Type, Source, [Group], Subgroup, SortOrder, Alignment)
+	SELECT 
+	ConfigSetupHeaderId = 3, 
+	PropertyName = 'DoubleHolidayRestday', 
+	LabelName = 'Double Holiday Restday (DR)', 
+	PropertyValue = '', 
+	Type = 'number', 
+	Source = '', 
+	[Group] = 3, 
+	Subgroup = 0, 
+	SortOrder = 32, 
+	Alignment = ''
+END
+
+IF NOT EXISTS(SELECT * FROM maintenance.ConfigSetupDetail WHERE PropertyName = 'DoubleHolidayRestdayOT')
+BEGIN
+	INSERT INTO maintenance.ConfigSetupDetail(
+		ConfigSetupHeaderId, PropertyName, LabelName, PropertyValue, Type, Source, [Group], Subgroup, SortOrder, Alignment)
+	SELECT 
+	ConfigSetupHeaderId = 3, 
+	PropertyName = 'DoubleHolidayRestdayOT', 
+	LabelName = 'Double Holiday Restday OT (DROT)', 
+	PropertyValue = '', 
+	Type = 'number', 
+	Source = '', 
+	[Group] = 3, 
+	Subgroup = 0, 
+	SortOrder = 33, 
+	Alignment = ''
+END
+
+IF NOT EXISTS(SELECT * FROM maintenance.ConfigSetupDetail WHERE PropertyName = 'DoubleHolidayRestdayNS')
+BEGIN
+	INSERT INTO maintenance.ConfigSetupDetail(
+		ConfigSetupHeaderId, PropertyName, LabelName, PropertyValue, Type, Source, [Group], Subgroup, SortOrder, Alignment)
+	SELECT 
+	ConfigSetupHeaderId = 3, 
+	PropertyName = 'DoubleHolidayRestdayNS', 
+	LabelName = 'Double Holiday Restday Nightshift (DRNS)', 
+	PropertyValue = '', 
+	Type = 'number', 
+	Source = '', 
+	[Group] = 3, 
+	Subgroup = 0, 
+	SortOrder = 34, 
+	Alignment = ''
+END
+
+IF NOT EXISTS(SELECT * FROM maintenance.ConfigSetupDetail WHERE PropertyName = 'DoubleHolidayRestdayNSOT')
+BEGIN
+	INSERT INTO maintenance.ConfigSetupDetail(
+		ConfigSetupHeaderId, PropertyName, LabelName, PropertyValue, Type, Source, [Group], Subgroup, SortOrder, Alignment)
+	SELECT 
+	ConfigSetupHeaderId = 3, 
+	PropertyName = 'DoubleHolidayRestdayNSOT', 
+	LabelName = 'Double Holiday Restday Nightshift OT (DRNSOT)', 
+	PropertyValue = '', 
+	Type = 'number', 
+	Source = '', 
+	[Group] = 3, 
+	Subgroup = 0, 
+	SortOrder = 35, 
+	Alignment = ''
+END
+
+UPDATE maintenance.ConfigSetupHeader SET Panel3 = 'Rates;37;2' WHERE ConfigSetupHeaderId = 3
+
+/*
+ * Double holiday hrs time entry columns
+ */
+
+IF NOT EXISTS(SELECT * FROM maintenance.TimeSheetColumns WHERE Name = 'DoubleHolidayHrs')
+BEGIN
+	INSERT INTO maintenance.TimeSheetColumns(
+		ColumnType, Name, Label, Width, Align, Editable, EditType, Formatter, FormatterOption, Others, Type, SortOrder, [Group])
+	SELECT 
+	ColumnType = 'amount',
+	Name = 'DoubleHolidayHrs', 
+	Label = 'Double Holiday Hrs', 
+	Width = 50, 
+	Align = 'left',
+	Editable = 'TRUE', 
+	EditType = '', 
+	Formatter = '',
+	FormatterOption = '',
+	Others = '',
+	Type = 'D',
+	SortOrder = 105, 
+	[Group] = 'TimeEntry'
+END
+
+IF NOT EXISTS(SELECT * FROM maintenance.TimeSheetColumns WHERE Name = 'DoubleHolidayOTHrs')
+BEGIN
+	INSERT INTO maintenance.TimeSheetColumns(
+		ColumnType, Name, Label, Width, Align, Editable, EditType, Formatter, FormatterOption, Others, Type, SortOrder, [Group])
+	SELECT 
+	ColumnType = 'amount',
+	Name = 'DoubleHolidayOTHrs', 
+	Label = 'Double Holiday OT Hrs', 
+	Width = 50, 
+	Align = 'left',
+	Editable = 'TRUE', 
+	EditType = '', 
+	Formatter = '',
+	FormatterOption = '',
+	Others = '',
+	Type = 'D',
+	SortOrder = 106, 
+	[Group] = 'TimeEntry'
+END
+
+IF NOT EXISTS(SELECT * FROM maintenance.TimeSheetColumns WHERE Name = 'DoubleHolidayNSHrs')
+BEGIN
+	INSERT INTO maintenance.TimeSheetColumns(
+		ColumnType, Name, Label, Width, Align, Editable, EditType, Formatter, FormatterOption, Others, Type, SortOrder, [Group])
+	SELECT 
+	ColumnType = 'amount',
+	Name = 'DoubleHolidayNSHrs', 
+	Label = 'Double Holiday NS Hrs', 
+	Width = 50, 
+	Align = 'left',
+	Editable = 'TRUE', 
+	EditType = '', 
+	Formatter = '',
+	FormatterOption = '',
+	Others = '',
+	Type = 'D',
+	SortOrder = 107, 
+	[Group] = 'SpecialNSHours'
+END
+
+IF NOT EXISTS(SELECT * FROM maintenance.TimeSheetColumns WHERE Name = 'DoubleHolidayNSOTHrs')
+BEGIN
+	INSERT INTO maintenance.TimeSheetColumns(
+		ColumnType, Name, Label, Width, Align, Editable, EditType, Formatter, FormatterOption, Others, Type, SortOrder, [Group])
+	SELECT 
+	ColumnType = 'amount',
+	Name = 'DoubleHolidayNSOTHrs', 
+	Label = 'Double Holiday NSOT Hrs', 
+	Width = 50, 
+	Align = 'left',
+	Editable = 'TRUE', 
+	EditType = '', 
+	Formatter = '',
+	FormatterOption = '',
+	Others = '',
+	Type = 'D',
+	SortOrder = 108, 
+	[Group] = 'SpecialNSHours'
+END
+
+IF NOT EXISTS(SELECT * FROM maintenance.TimeSheetColumns WHERE Name = 'DoubleHolidayRestdayHrs')
+BEGIN
+	INSERT INTO maintenance.TimeSheetColumns(
+		ColumnType, Name, Label, Width, Align, Editable, EditType, Formatter, FormatterOption, Others, Type, SortOrder, [Group])
+	SELECT 
+	ColumnType = 'amount',
+	Name = 'DoubleHolidayRestdayHrs', 
+	Label = 'Double Holiday Restday Hrs', 
+	Width = 50, 
+	Align = 'left',
+	Editable = 'TRUE', 
+	EditType = '', 
+	Formatter = '',
+	FormatterOption = '',
+	Others = '',
+	Type = 'D',
+	SortOrder = 109, 
+	[Group] = 'TimeEntry'
+END
+
+IF NOT EXISTS(SELECT * FROM maintenance.TimeSheetColumns WHERE Name = 'DoubleHolidayRestdayOTHrs')
+BEGIN
+	INSERT INTO maintenance.TimeSheetColumns(
+		ColumnType, Name, Label, Width, Align, Editable, EditType, Formatter, FormatterOption, Others, Type, SortOrder, [Group])
+	SELECT 
+	ColumnType = 'amount',
+	Name = 'DoubleHolidayRestdayOTHrs', 
+	Label = 'Double Holiday Restday OT Hrs', 
+	Width = 50, 
+	Align = 'left',
+	Editable = 'TRUE', 
+	EditType = '', 
+	Formatter = '',
+	FormatterOption = '',
+	Others = '',
+	Type = 'D',
+	SortOrder = 110, 
+	[Group] = 'TimeEntry'
+END
+
+IF NOT EXISTS(SELECT * FROM maintenance.TimeSheetColumns WHERE Name = 'DoubleHolidayRestdayNSHrs')
+BEGIN
+	INSERT INTO maintenance.TimeSheetColumns(
+		ColumnType, Name, Label, Width, Align, Editable, EditType, Formatter, FormatterOption, Others, Type, SortOrder, [Group])
+	SELECT 
+	ColumnType = 'amount',
+	Name = 'DoubleHolidayRestdayNSHrs', 
+	Label = 'Double Holiday Restday NS Hrs', 
+	Width = 50, 
+	Align = 'left',
+	Editable = 'TRUE', 
+	EditType = '', 
+	Formatter = '',
+	FormatterOption = '',
+	Others = '',
+	Type = 'D',
+	SortOrder = 111, 
+	[Group] = 'SpecialNSHours'
+END
+
+IF NOT EXISTS(SELECT * FROM maintenance.TimeSheetColumns WHERE Name = 'DoubleHolidayRestdayNSOTHrs')
+BEGIN
+	INSERT INTO maintenance.TimeSheetColumns(
+		ColumnType, Name, Label, Width, Align, Editable, EditType, Formatter, FormatterOption, Others, Type, SortOrder, [Group])
+	SELECT 
+	ColumnType = 'amount',
+	Name = 'DoubleHolidayRestdayNSOTHrs', 
+	Label = 'Double Holiday Restday NSOT Hrs', 
+	Width = 50, 
+	Align = 'left',
+	Editable = 'TRUE', 
+	EditType = '', 
+	Formatter = '',
+	FormatterOption = '',
+	Others = '',
+	Type = 'D',
+	SortOrder = 112, 
+	[Group] = 'SpecialNSHours'
+END
+
+/*
+ * Double holiday hrs paysheet columns
+ */
+
+IF NOT EXISTS(SELECT * FROM maintenance.PaySheetColumns WHERE Name = 'DoubleHolidayHrs')
+BEGIN
+	INSERT INTO maintenance.PaySheetColumns(
+		ColumnType, Name, Label, Width, Align, Editable, EditType, Formatter, FormatterOption, Others, Type, SortOrder, DecimalPlaces)
+	SELECT 
+	ColumnType = 'amount',
+	Name = 'DoubleHolidayHrs', 
+	Label = 'Double Holiday Hrs', 
+	Width = 75, 
+	Align = 'left',
+	Editable = 'TRUE', 
+	EditType = '', 
+	Formatter = '',
+	FormatterOption = '',
+	Others = '',
+	Type = 'D',
+	SortOrder = 141, 
+	DecimalPlaces = 4
+END
+
+IF NOT EXISTS(SELECT * FROM maintenance.PaySheetColumns WHERE Name = 'DoubleHolidayOTHrs')
+BEGIN
+	INSERT INTO maintenance.PaySheetColumns(
+		ColumnType, Name, Label, Width, Align, Editable, EditType, Formatter, FormatterOption, Others, Type, SortOrder, DecimalPlaces)
+	SELECT 
+	ColumnType = 'amount',
+	Name = 'DoubleHolidayOTHrs', 
+	Label = 'Double Holiday OT Hrs', 
+	Width = 75, 
+	Align = 'left',
+	Editable = 'TRUE', 
+	EditType = '', 
+	Formatter = '',
+	FormatterOption = '',
+	Others = '',
+	Type = 'D',
+	SortOrder = 142, 
+	DecimalPlaces = 4
+END
+
+IF NOT EXISTS(SELECT * FROM maintenance.PaySheetColumns WHERE Name = 'DoubleHolidayNSHrs')
+BEGIN
+	INSERT INTO maintenance.PaySheetColumns(
+		ColumnType, Name, Label, Width, Align, Editable, EditType, Formatter, FormatterOption, Others, Type, SortOrder, DecimalPlaces)
+	SELECT 
+	ColumnType = 'amount',
+	Name = 'DoubleHolidayNSHrs', 
+	Label = 'Double Holiday NS Hrs', 
+	Width = 75, 
+	Align = 'left',
+	Editable = 'TRUE', 
+	EditType = '', 
+	Formatter = '',
+	FormatterOption = '',
+	Others = '',
+	Type = 'D',
+	SortOrder = 143, 
+	DecimalPlaces = 4
+END
+
+IF NOT EXISTS(SELECT * FROM maintenance.PaySheetColumns WHERE Name = 'DoubleHolidayNSOTHrs')
+BEGIN
+	INSERT INTO maintenance.PaySheetColumns(
+		ColumnType, Name, Label, Width, Align, Editable, EditType, Formatter, FormatterOption, Others, Type, SortOrder, DecimalPlaces)
+	SELECT 
+	ColumnType = 'amount',
+	Name = 'DoubleHolidayNSOTHrs', 
+	Label = 'Double Holiday NSOT Hrs', 
+	Width = 75, 
+	Align = 'left',
+	Editable = 'TRUE', 
+	EditType = '', 
+	Formatter = '',
+	FormatterOption = '',
+	Others = '',
+	Type = 'D',
+	SortOrder = 144, 
+	DecimalPlaces = 4
+END
+
+IF NOT EXISTS(SELECT * FROM maintenance.PaySheetColumns WHERE Name = 'DoubleHolidayRestdayHrs')
+BEGIN
+	INSERT INTO maintenance.PaySheetColumns(
+		ColumnType, Name, Label, Width, Align, Editable, EditType, Formatter, FormatterOption, Others, Type, SortOrder, DecimalPlaces)
+	SELECT 
+	ColumnType = 'amount',
+	Name = 'DoubleHolidayRestdayHrs', 
+	Label = 'Double Holiday Restday Hrs', 
+	Width = 75, 
+	Align = 'left',
+	Editable = 'TRUE', 
+	EditType = '', 
+	Formatter = '',
+	FormatterOption = '',
+	Others = '',
+	Type = 'D',
+	SortOrder = 145, 
+	DecimalPlaces = 4
+END
+
+IF NOT EXISTS(SELECT * FROM maintenance.PaySheetColumns WHERE Name = 'DoubleHolidayRestdayOTHrs')
+BEGIN
+	INSERT INTO maintenance.PaySheetColumns(
+		ColumnType, Name, Label, Width, Align, Editable, EditType, Formatter, FormatterOption, Others, Type, SortOrder, DecimalPlaces)
+	SELECT 
+	ColumnType = 'amount',
+	Name = 'DoubleHolidayRestdayOTHrs', 
+	Label = 'Double Holiday Restday OT Hrs', 
+	Width = 75, 
+	Align = 'left',
+	Editable = 'TRUE', 
+	EditType = '', 
+	Formatter = '',
+	FormatterOption = '',
+	Others = '',
+	Type = 'D',
+	SortOrder = 146, 
+	DecimalPlaces = 4
+END
+
+IF NOT EXISTS(SELECT * FROM maintenance.PaySheetColumns WHERE Name = 'DoubleHolidayRestdayNSHrs')
+BEGIN
+	INSERT INTO maintenance.PaySheetColumns(
+		ColumnType, Name, Label, Width, Align, Editable, EditType, Formatter, FormatterOption, Others, Type, SortOrder, DecimalPlaces)
+	SELECT 
+	ColumnType = 'amount',
+	Name = 'DoubleHolidayRestdayNSHrs', 
+	Label = 'Double Holiday Restday NS Hrs', 
+	Width = 75, 
+	Align = 'left',
+	Editable = 'TRUE', 
+	EditType = '', 
+	Formatter = '',
+	FormatterOption = '',
+	Others = '',
+	Type = 'D',
+	SortOrder = 147, 
+	DecimalPlaces = 4
+END
+
+IF NOT EXISTS(SELECT * FROM maintenance.PaySheetColumns WHERE Name = 'DoubleHolidayRestdayNSOTHrs')
+BEGIN
+	INSERT INTO maintenance.PaySheetColumns(
+		ColumnType, Name, Label, Width, Align, Editable, EditType, Formatter, FormatterOption, Others, Type, SortOrder, DecimalPlaces)
+	SELECT 
+	ColumnType = 'amount',
+	Name = 'DoubleHolidayRestdayNSOTHrs', 
+	Label = 'Double Holiday Restday NSOT Hrs', 
+	Width = 75, 
+	Align = 'left',
+	Editable = 'TRUE', 
+	EditType = '', 
+	Formatter = '',
+	FormatterOption = '',
+	Others = '',
+	Type = 'D',
+	SortOrder = 148, 
+	DecimalPlaces = 4
+END
+
+
+IF NOT EXISTS(SELECT * FROM maintenance.PaySheetColumns WHERE Name = 'DoubleHolidayNS2Hrs')
+BEGIN
+	INSERT INTO maintenance.PaySheetColumns(
+		ColumnType, Name, Label, Width, Align, Editable, EditType, Formatter, FormatterOption, Others, Type, SortOrder, DecimalPlaces)
+	SELECT 
+	ColumnType = 'amount',
+	Name = 'DoubleHolidayNS2Hrs', 
+	Label = 'Double Holiday NS2 Hrs', 
+	Width = 75, 
+	Align = 'left',
+	Editable = 'TRUE', 
+	EditType = '', 
+	Formatter = '',
+	FormatterOption = '',
+	Others = '',
+	Type = 'D',
+	SortOrder = 149, 
+	DecimalPlaces = 4
+END
+
+IF NOT EXISTS(SELECT * FROM maintenance.PaySheetColumns WHERE Name = 'DoubleHolidayNSOT2Hrs')
+BEGIN
+	INSERT INTO maintenance.PaySheetColumns(
+		ColumnType, Name, Label, Width, Align, Editable, EditType, Formatter, FormatterOption, Others, Type, SortOrder, DecimalPlaces)
+	SELECT 
+	ColumnType = 'amount',
+	Name = 'DoubleHolidayNSOT2Hrs', 
+	Label = 'Double Holiday NSOT2 Hrs', 
+	Width = 75, 
+	Align = 'left',
+	Editable = 'TRUE', 
+	EditType = '', 
+	Formatter = '',
+	FormatterOption = '',
+	Others = '',
+	Type = 'D',
+	SortOrder = 150, 
+	DecimalPlaces = 4
+END
+
+IF NOT EXISTS(SELECT * FROM maintenance.PaySheetColumns WHERE Name = 'DoubleHolidayRestdayNS2Hrs')
+BEGIN
+	INSERT INTO maintenance.PaySheetColumns(
+		ColumnType, Name, Label, Width, Align, Editable, EditType, Formatter, FormatterOption, Others, Type, SortOrder, DecimalPlaces)
+	SELECT 
+	ColumnType = 'amount',
+	Name = 'DoubleHolidayRestdayNS2Hrs', 
+	Label = 'Double Holiday Restday NS2 Hrs', 
+	Width = 75, 
+	Align = 'left',
+	Editable = 'TRUE', 
+	EditType = '', 
+	Formatter = '',
+	FormatterOption = '',
+	Others = '',
+	Type = 'D',
+	SortOrder = 151, 
+	DecimalPlaces = 4
+END
+
+IF NOT EXISTS(SELECT * FROM maintenance.PaySheetColumns WHERE Name = 'DoubleHolidayRestdayNSOT2Hrs')
+BEGIN
+	INSERT INTO maintenance.PaySheetColumns(
+		ColumnType, Name, Label, Width, Align, Editable, EditType, Formatter, FormatterOption, Others, Type, SortOrder, DecimalPlaces)
+	SELECT 
+	ColumnType = 'amount',
+	Name = 'DoubleHolidayRestdayNSOT2Hrs', 
+	Label = 'Double Holiday Restday NSOT2 Hrs', 
+	Width = 75, 
+	Align = 'left',
+	Editable = 'TRUE', 
+	EditType = '', 
+	Formatter = '',
+	FormatterOption = '',
+	Others = '',
+	Type = 'D',
+	SortOrder = 152, 
+	DecimalPlaces = 4
+END
+
+
+/*
+ * Double Holiday pay paysheet columns
+ */
+
+IF NOT EXISTS(SELECT * FROM maintenance.PaySheetColumns WHERE Name = 'DoubleHolidayPay')
+BEGIN
+	INSERT INTO maintenance.PaySheetColumns(
+		ColumnType, Name, Label, Width, Align, Editable, EditType, Formatter, FormatterOption, Others, Type, SortOrder, DecimalPlaces)
+	SELECT 
+	ColumnType = 'amount',
+	Name = 'DoubleHolidayPay', 
+	Label = 'Double Holiday Pay', 
+	Width = 120, 
+	Align = 'left',
+	Editable = 'TRUE', 
+	EditType = '', 
+	Formatter = '',
+	FormatterOption = '',
+	Others = '',
+	Type = 'D',
+	SortOrder = 153, 
+	DecimalPlaces = 2
+END
+
+IF NOT EXISTS(SELECT * FROM maintenance.PaySheetColumns WHERE Name = 'DoubleHolidayOTPay')
+BEGIN
+	INSERT INTO maintenance.PaySheetColumns(
+		ColumnType, Name, Label, Width, Align, Editable, EditType, Formatter, FormatterOption, Others, Type, SortOrder, DecimalPlaces)
+	SELECT 
+	ColumnType = 'amount',
+	Name = 'DoubleHolidayOTPay', 
+	Label = 'Double Holiday OT Pay', 
+	Width = 120, 
+	Align = 'left',
+	Editable = 'TRUE', 
+	EditType = '', 
+	Formatter = '',
+	FormatterOption = '',
+	Others = '',
+	Type = 'D',
+	SortOrder = 154, 
+	DecimalPlaces = 2
+END
+
+IF NOT EXISTS(SELECT * FROM maintenance.PaySheetColumns WHERE Name = 'DoubleHolidayNSPay')
+BEGIN
+	INSERT INTO maintenance.PaySheetColumns(
+		ColumnType, Name, Label, Width, Align, Editable, EditType, Formatter, FormatterOption, Others, Type, SortOrder, DecimalPlaces)
+	SELECT 
+	ColumnType = 'amount',
+	Name = 'DoubleHolidayNSPay', 
+	Label = 'Double Holiday NS Pay', 
+	Width = 120, 
+	Align = 'left',
+	Editable = 'TRUE', 
+	EditType = '', 
+	Formatter = '',
+	FormatterOption = '',
+	Others = '',
+	Type = 'D',
+	SortOrder = 155, 
+	DecimalPlaces = 2
+END
+
+IF NOT EXISTS(SELECT * FROM maintenance.PaySheetColumns WHERE Name = 'DoubleHolidayNSOTPay')
+BEGIN
+	INSERT INTO maintenance.PaySheetColumns(
+		ColumnType, Name, Label, Width, Align, Editable, EditType, Formatter, FormatterOption, Others, Type, SortOrder, DecimalPlaces)
+	SELECT 
+	ColumnType = 'amount',
+	Name = 'DoubleHolidayNSOTPay', 
+	Label = 'Double Holiday NSOT Pay', 
+	Width = 120, 
+	Align = 'left',
+	Editable = 'TRUE', 
+	EditType = '', 
+	Formatter = '',
+	FormatterOption = '',
+	Others = '',
+	Type = 'D',
+	SortOrder = 156, 
+	DecimalPlaces = 2
+END
+
+IF NOT EXISTS(SELECT * FROM maintenance.PaySheetColumns WHERE Name = 'DoubleHolidayRestdayPay')
+BEGIN
+	INSERT INTO maintenance.PaySheetColumns(
+		ColumnType, Name, Label, Width, Align, Editable, EditType, Formatter, FormatterOption, Others, Type, SortOrder, DecimalPlaces)
+	SELECT 
+	ColumnType = 'amount',
+	Name = 'DoubleHolidayRestdayPay', 
+	Label = 'Double Holiday Restday Pay', 
+	Width = 120, 
+	Align = 'left',
+	Editable = 'TRUE', 
+	EditType = '', 
+	Formatter = '',
+	FormatterOption = '',
+	Others = '',
+	Type = 'D',
+	SortOrder = 157, 
+	DecimalPlaces = 2
+END
+
+IF NOT EXISTS(SELECT * FROM maintenance.PaySheetColumns WHERE Name = 'DoubleHolidayRestdayOTPay')
+BEGIN
+	INSERT INTO maintenance.PaySheetColumns(
+		ColumnType, Name, Label, Width, Align, Editable, EditType, Formatter, FormatterOption, Others, Type, SortOrder, DecimalPlaces)
+	SELECT 
+	ColumnType = 'amount',
+	Name = 'DoubleHolidayRestdayOTPay', 
+	Label = 'Double Holiday Restday OT Pay', 
+	Width = 120, 
+	Align = 'left',
+	Editable = 'TRUE', 
+	EditType = '', 
+	Formatter = '',
+	FormatterOption = '',
+	Others = '',
+	Type = 'D',
+	SortOrder = 158, 
+	DecimalPlaces = 2
+END
+
+IF NOT EXISTS(SELECT * FROM maintenance.PaySheetColumns WHERE Name = 'DoubleHolidayRestdayNSPay')
+BEGIN
+	INSERT INTO maintenance.PaySheetColumns(
+		ColumnType, Name, Label, Width, Align, Editable, EditType, Formatter, FormatterOption, Others, Type, SortOrder, DecimalPlaces)
+	SELECT 
+	ColumnType = 'amount',
+	Name = 'DoubleHolidayRestdayNSPay', 
+	Label = 'Double Holiday Restday NS Pay', 
+	Width = 120, 
+	Align = 'left',
+	Editable = 'TRUE', 
+	EditType = '', 
+	Formatter = '',
+	FormatterOption = '',
+	Others = '',
+	Type = 'D',
+	SortOrder = 159, 
+	DecimalPlaces = 2
+END
+
+IF NOT EXISTS(SELECT * FROM maintenance.PaySheetColumns WHERE Name = 'DoubleHolidayRestdayNSOTPay')
+BEGIN
+	INSERT INTO maintenance.PaySheetColumns(
+		ColumnType, Name, Label, Width, Align, Editable, EditType, Formatter, FormatterOption, Others, Type, SortOrder, DecimalPlaces)
+	SELECT 
+	ColumnType = 'amount',
+	Name = 'DoubleHolidayRestdayNSOTPay', 
+	Label = 'Double Holiday Restday NSOT Pay', 
+	Width = 120, 
+	Align = 'left',
+	Editable = 'TRUE', 
+	EditType = '', 
+	Formatter = '',
+	FormatterOption = '',
+	Others = '',
+	Type = 'D',
+	SortOrder = 160, 
+	DecimalPlaces = 2
+END
+
+IF NOT EXISTS(SELECT * FROM maintenance.PaySheetColumns WHERE Name = 'PrevNTDoubleHolidayPay')
+BEGIN
+	INSERT INTO maintenance.PaySheetColumns(
+		ColumnType, Name, Label, Width, Align, Editable, EditType, Formatter, FormatterOption, Others, Type, SortOrder, DecimalPlaces)
+	SELECT 
+	ColumnType = 'amount',
+	Name = 'PrevNTDoubleHolidayPay', 
+	Label = 'Previous - NT - Double Holiday Pay', 
+	Width = 120, 
+	Align = 'left',
+	Editable = 'TRUE', 
+	EditType = '', 
+	Formatter = '',
+	FormatterOption = '',
+	Others = '',
+	Type = 'D',
+	SortOrder = 161, 
+	DecimalPlaces = 2
+END
+
+IF NOT EXISTS(SELECT * FROM maintenance.PaySheetColumns WHERE Name = 'PrevNTDoubleHolidayRestdayPay')
+BEGIN
+	INSERT INTO maintenance.PaySheetColumns(
+		ColumnType, Name, Label, Width, Align, Editable, EditType, Formatter, FormatterOption, Others, Type, SortOrder, DecimalPlaces)
+	SELECT 
+	ColumnType = 'amount',
+	Name = 'PrevNTDoubleHolidayRestdayPay', 
+	Label = 'Previous - NT - Double Holiday Restday Pay', 
+	Width = 120, 
+	Align = 'left',
+	Editable = 'TRUE', 
+	EditType = '', 
+	Formatter = '',
+	FormatterOption = '',
+	Others = '',
+	Type = 'D',
+	SortOrder = 162, 
+	DecimalPlaces = 2
+END
+
+IF NOT EXISTS(SELECT * FROM maintenance.PaySheetColumns WHERE Name = 'DoubleHolidayNS2Pay')
+BEGIN
+	INSERT INTO maintenance.PaySheetColumns(
+		ColumnType, Name, Label, Width, Align, Editable, EditType, Formatter, FormatterOption, Others, Type, SortOrder, DecimalPlaces)
+	SELECT 
+	ColumnType = 'amount',
+	Name = 'DoubleHolidayNS2Pay', 
+	Label = 'Double Holiday NS2 Pay', 
+	Width = 120, 
+	Align = 'left',
+	Editable = 'TRUE', 
+	EditType = '', 
+	Formatter = '',
+	FormatterOption = '',
+	Others = '',
+	Type = 'D',
+	SortOrder = 163, 
+	DecimalPlaces = 2
+END
+
+IF NOT EXISTS(SELECT * FROM maintenance.PaySheetColumns WHERE Name = 'DoubleHolidayNSOT2Pay')
+BEGIN
+	INSERT INTO maintenance.PaySheetColumns(
+		ColumnType, Name, Label, Width, Align, Editable, EditType, Formatter, FormatterOption, Others, Type, SortOrder, DecimalPlaces)
+	SELECT 
+	ColumnType = 'amount',
+	Name = 'DoubleHolidayNSOT2Pay', 
+	Label = 'Double Holiday NSOT2 Pay', 
+	Width = 120, 
+	Align = 'left',
+	Editable = 'TRUE', 
+	EditType = '', 
+	Formatter = '',
+	FormatterOption = '',
+	Others = '',
+	Type = 'D',
+	SortOrder = 164, 
+	DecimalPlaces = 2
+END
+
+
+IF NOT EXISTS(SELECT * FROM maintenance.PaySheetColumns WHERE Name = 'DoubleHolidayRestdayNS2Pay')
+BEGIN
+	INSERT INTO maintenance.PaySheetColumns(
+		ColumnType, Name, Label, Width, Align, Editable, EditType, Formatter, FormatterOption, Others, Type, SortOrder, DecimalPlaces)
+	SELECT 
+	ColumnType = 'amount',
+	Name = 'DoubleHolidayRestdayNS2Pay', 
+	Label = 'Double Holiday Restday NS2 Pay', 
+	Width = 120, 
+	Align = 'left',
+	Editable = 'TRUE', 
+	EditType = '', 
+	Formatter = '',
+	FormatterOption = '',
+	Others = '',
+	Type = 'D',
+	SortOrder = 163, 
+	DecimalPlaces = 2
+END
+
+IF NOT EXISTS(SELECT * FROM maintenance.PaySheetColumns WHERE Name = 'DoubleHolidayRestdayNSOT2Pay')
+BEGIN
+	INSERT INTO maintenance.PaySheetColumns(
+		ColumnType, Name, Label, Width, Align, Editable, EditType, Formatter, FormatterOption, Others, Type, SortOrder, DecimalPlaces)
+	SELECT 
+	ColumnType = 'amount',
+	Name = 'DoubleHolidayRestdayNSOT2Pay', 
+	Label = 'Double Holiday Restday NSOT2 Pay', 
+	Width = 120, 
+	Align = 'left',
+	Editable = 'TRUE', 
+	EditType = '', 
+	Formatter = '',
+	FormatterOption = '',
+	Others = '',
+	Type = 'D',
+	SortOrder = 164, 
+	DecimalPlaces = 2
+END

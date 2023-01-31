@@ -1,0 +1,61 @@
+--SELECT * FROM security.FieldLookUp
+
+IF NOT EXISTS (SELECT * FROM security.FieldLookUp WHERE [Table] = 'ApplicantProfile' AND FormFieldName = 'txtApplicantCityBarangay')
+					INSERT INTO security.FieldLookUp (ModuleId, ConfigLabel, FormLabel, FormPlaceHolder, FormName, [Table], TableFieldName, FormFieldName, HideTag, RequiredTag, ShowInConfig)
+					VALUES
+					(1,'Barangay','','','Applicant Profile','ApplicantProfile','CityBarangay','txtApplicantCityBarangay',0,0,0)
+
+IF NOT EXISTS (SELECT * FROM security.FieldLookUp WHERE [Table] = 'ApplicantProfile' AND FormFieldName = 'txtApplicantCityCity')
+					INSERT INTO security.FieldLookUp (ModuleId, ConfigLabel, FormLabel, FormPlaceHolder, FormName, [Table], TableFieldName, FormFieldName, HideTag, RequiredTag, ShowInConfig)
+					VALUES
+					(1,'City','','','Applicant Profile','ApplicantProfile','CityCity','txtApplicantCityCity',0,0,0)
+
+IF NOT EXISTS (SELECT * FROM security.FieldLookUp WHERE [Table] = 'ApplicantProfile' AND FormFieldName = 'txtApplicantCityProvince')
+					INSERT INTO security.FieldLookUp (ModuleId, ConfigLabel, FormLabel, FormPlaceHolder, FormName, [Table], TableFieldName, FormFieldName, HideTag, RequiredTag, ShowInConfig)
+					VALUES
+					(1,'Province','','','Applicant Profile','ApplicantProfile','CityProvince','txtApplicantCityProvince',0,0,0)
+
+IF NOT EXISTS (SELECT * FROM security.FieldLookUp WHERE [Table] = 'ApplicantProfile' AND FormFieldName = 'txtApplicantCityZipCode')
+					INSERT INTO security.FieldLookUp (ModuleId, ConfigLabel, FormLabel, FormPlaceHolder, FormName, [Table], TableFieldName, FormFieldName, HideTag, RequiredTag, ShowInConfig)
+					VALUES
+					(1,'Zipcode','','','Applicant Profile','ApplicantProfile','CityZipCode','txtApplicantCityZipCode',0,0,0)
+
+IF NOT EXISTS (SELECT * FROM security.FieldLookUp WHERE [Table] = 'ApplicantProfile' AND FormFieldName = 'txtApplicantProvincialAddress1')
+					INSERT INTO security.FieldLookUp (ModuleId, ConfigLabel, FormLabel, FormPlaceHolder, FormName, [Table], TableFieldName, FormFieldName, HideTag, RequiredTag, ShowInConfig)
+					VALUES
+					(1,'Secondary Address','','','Applicant Profile','ApplicantProfile','ProvincialAddress1','txtApplicantProvincialAddress1',0,0,0)
+
+IF NOT EXISTS (SELECT * FROM security.FieldLookUp WHERE [Table] = 'ApplicantProfile' AND FormFieldName = 'txtApplicantProvincialAddress2')
+					INSERT INTO security.FieldLookUp (ModuleId, ConfigLabel, FormLabel, FormPlaceHolder, FormName, [Table], TableFieldName, FormFieldName, HideTag, RequiredTag, ShowInConfig)
+					VALUES
+					(1,'Subdivision','','','Applicant Profile','ApplicantProfile','ProvincialAddress2','txtApplicantProvincialAddress2',0,0,0)
+
+IF NOT EXISTS (SELECT * FROM security.FieldLookUp WHERE [Table] = 'ApplicantProfile' AND FormFieldName = 'txtApplicantProvincialBarangay')
+					INSERT INTO security.FieldLookUp (ModuleId, ConfigLabel, FormLabel, FormPlaceHolder, FormName, [Table], TableFieldName, FormFieldName, HideTag, RequiredTag, ShowInConfig)
+					VALUES
+					(1,'Barangay','','','Applicant Profile','ApplicantProfile','ProvincialBarangay','txtApplicantProvincialBarangay',0,0,0)
+
+IF NOT EXISTS (SELECT * FROM security.FieldLookUp WHERE [Table] = 'ApplicantProfile' AND FormFieldName = 'txtApplicantProvincialCityMunicipality')
+					INSERT INTO security.FieldLookUp (ModuleId, ConfigLabel, FormLabel, FormPlaceHolder, FormName, [Table], TableFieldName, FormFieldName, HideTag, RequiredTag, ShowInConfig)
+					VALUES
+					(1,'City','','','Applicant Profile','ApplicantProfile','ProvincialCityMunicipality','txtApplicantProvincialCityMunicipality',0,0,0)
+
+IF NOT EXISTS (SELECT * FROM security.FieldLookUp WHERE [Table] = 'ApplicantProfile' AND FormFieldName = 'txtApplicantProvincialProvince')
+					INSERT INTO security.FieldLookUp (ModuleId, ConfigLabel, FormLabel, FormPlaceHolder, FormName, [Table], TableFieldName, FormFieldName, HideTag, RequiredTag, ShowInConfig)
+					VALUES
+					(1,'Province','','','Applicant Profile','ApplicantProfile','ProvincialProvince','txtApplicantProvincialProvince',0,0,0)
+
+IF NOT EXISTS (SELECT * FROM security.FieldLookUp WHERE [Table] = 'ApplicantProfile' AND FormFieldName = 'txtApplicantProvincialZipCode')
+					INSERT INTO security.FieldLookUp (ModuleId, ConfigLabel, FormLabel, FormPlaceHolder, FormName, [Table], TableFieldName, FormFieldName, HideTag, RequiredTag, ShowInConfig)
+					VALUES
+					(1,'Zipcode','','','Applicant Profile','ApplicantProfile','ProvincialZipCode','txtApplicantProvincialZipCode',0,0,0)
+
+IF NOT EXISTS (SELECT * FROM security.FieldLookUp WHERE [Table] = 'ApplicantProfile' AND FormFieldName = 'AttachmentName')
+					INSERT INTO security.FieldLookUp (ModuleId, ConfigLabel, FormLabel, FormPlaceHolder, FormName, [Table], TableFieldName, FormFieldName, HideTag, RequiredTag, ShowInConfig)
+					VALUES
+					(1,'Resume','','','Applicant Profile','ApplicantProfile','AttachmentName','AttachmentName',1,0,0)
+
+IF NOT EXISTS (SELECT * FROM security.FieldLookUp WHERE [Table] = 'ManpowerRequest' AND ConfigLabel = 'Currency')
+					INSERT INTO security.FieldLookUp (ModuleId, ConfigLabel, FormLabel, FormPlaceHolder, FormName, [Table], TableFieldName, FormFieldName, HideTag, RequiredTag, ShowInConfig)
+					VALUES
+					(1,'Currency','','','Manpower Request','ManpowerRequest','','',0,0,0)

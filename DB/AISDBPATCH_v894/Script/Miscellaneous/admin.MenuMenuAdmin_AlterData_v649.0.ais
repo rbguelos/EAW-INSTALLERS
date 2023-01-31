@@ -1,0 +1,10 @@
+UPDATE admin.MenuMenuAdmin SET SortOrder = 9 WHERE MenuName = 'Email Setting'
+
+UPDATE admin.MenuMenuAdmin SET SortOrder = 10 WHERE MenuName = 'Employee Module Eligibility'
+
+UPDATE admin.MenuMenuAdmin SET SortOrder = 7 WHERE MenuName = 'User Status'
+
+UPDATE admin.MenuMenuAdmin SET SortOrder = 11 WHERE MenuName = 'Invalid Login Attempts'
+
+INSERT INTO admin.MenuMenuAdmin (MenuModuleId, MenuName, MenuIcon, MenuLink, SortOrder, [Hidden])
+VALUES (1, 'User Time Zone', 'menu-icon fa fa-caret-right', '/UserTimeZone/List', 8, 0)

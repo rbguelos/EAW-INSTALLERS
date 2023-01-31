@@ -1,0 +1,261 @@
+/*===========================================*
+**	   Author:      JPR
+**	   Update date: 05/13/2020
+**	   Description: Earnings Per Work Date
+\*===========================================*/
+
+ALTER VIEW [report].[vwEarningsPerWorkDate]
+AS
+
+SELECT 
+	ProfileId = ISNULL(TD.ProfileId,0)
+	,WorkDate = ISNULL(TD.WorkDate,'1/1/1900')
+	,DisplayText = 
+	ISNULL((
+		CASE TD.DisplayText
+		WHEN 'RegularOT' THEN 'Basic OT'
+		WHEN 'RestdayOT' THEN 'Rest Day OT'
+		WHEN 'HolidayOT' THEN 'Regular Holiday OT'
+		WHEN 'SpecialOT' THEN 'Special Holiday OT'
+		WHEN 'HolidayRestdayOT' THEN 'Holiday Restday OT'
+		WHEN 'SpecialRestdayOT' THEN 'Special Restday OT'
+		WHEN 'DoubleHolidayOTHrs' THEN 'Double Holiday OT'
+
+		WHEN 'RegularNightshiftOT' THEN 'Basic NSOT'
+		WHEN 'RestdayNightshiftOT' THEN 'Rest Day NSOT'
+		WHEN 'HolidayNightshiftOT' THEN 'Holiday NSOT'
+		WHEN 'SpecialNightshiftOT' THEN 'Special Holiday NSOT'
+		WHEN 'HolidayRestdayNightshiftOT' THEN 'Holiday Rest Day NSOT'
+		WHEN 'SpecialRestdayNightshiftOT' THEN 'Special Rest Day NSOT'
+		WHEN 'DoubleHolidayNSOTHrs' THEN 'Double Holiday NSOT'
+		WHEN 'DoubleHolidayRestdayNSOTHrs' THEN 'Double Holiday Rest Day NSOT'
+
+
+		WHEN 'Restday' THEN 'Rest Day'
+		WHEN 'Holiday' THEN 'Regular Holiday'
+		WHEN 'Special' THEN 'Special Holiday'
+		WHEN 'HolidayRestday' THEN 'Holiday Restday'
+		WHEN 'SpecialRestday' THEN 'Special Restday'
+		WHEN 'DoubleHolidayHrs' THEN 'Double Holiday'
+		WHEN 'DoubleHolidayRestdayHrs' THEN 'Double Holiday Rest Day'
+
+		WHEN 'RestdayNightshift' THEN 'Rest Day NS'
+		WHEN 'HolidayNightshift' THEN 'Regular Holiday NS'
+		WHEN 'SpecialNightshift' THEN 'Special Holiday NS'
+		WHEN 'HolidayRestdayNightshift' THEN 'Holiday Rest Day NS'
+		WHEN 'SpecialRestdayNightshift' THEN 'Special Rest Day NS'
+		WHEN 'DoubleHolidayNSHrs' THEN 'Double Holiday NS'
+		WHEN 'DoubleHolidayRestdayNSHrs' THEN 'Double Holiday Rest Day NS'
+
+		ELSE TD.DisplayText END
+	),'')
+	,[HOURS] = ISNULL(TD.[Hours],0)
+FROM attendance.TimeEntryHeader TH WITH (NOLOCK) 
+INNER JOIN
+(
+	SELECT 
+		DisplayText = 
+		(
+			CASE 
+			WHEN ISNULL(TD.Type,'') = ISNULL(COLS.OTCOLS,'') AND ISNULL(THD.RegularOTStatusId,0) IN (2,98) THEN TD.Type 
+			WHEN ISNULL(TD.Type,'') = ISNULL(COLS.OTNSCOLS,'') AND ISNULL(THD.NightShiftOTStatusId,0) IN (2,98) THEN TD.Type 
+			WHEN ISNULL(TD.Type,'') = ISNULL(COLS.REGCOLS,'') AND ISNULL(THD.RegularStatusId,0) IN (2,98) THEN TD.Type 
+			WHEN ISNULL(TD.Type,'') = ISNULL(COLS.NSCOLS,'') AND ISNULL(THD.NightShiftStatusId,0) IN (2,98) THEN TD.Type 
+			ELSE ''
+			END
+		)
+		,[Hours] = 
+		(
+			CASE 
+			WHEN ISNULL(TD.Type,'') = ISNULL(COLS.OTCOLS,'') AND ISNULL(THD.RegularOTStatusId,0) IN (2,98) THEN TD.Value 
+			WHEN ISNULL(TD.Type,'') = ISNULL(COLS.OTNSCOLS,'') AND ISNULL(THD.NightShiftOTStatusId,0) IN (2,98) THEN TD.Value 
+			WHEN ISNULL(TD.Type,'') = ISNULL(COLS.REGCOLS,'') AND ISNULL(THD.RegularStatusId,0) IN (2,98) THEN TD.Value 
+			WHEN ISNULL(TD.Type,'') = ISNULL(COLS.NSCOLS,'') AND ISNULL(THD.NightShiftStatusId,0) IN (2,98) THEN TD.Value 
+			ELSE 0
+			END
+		)
+		,THD.TimeEntryHeaderId
+		,THD.TimeEntryHeaderDetailId
+		,THD.WorkDate
+		,THD.ProfileId
+	FROM attendance.TimeEntryHeaderDetail THD WITH (NOLOCK) 
+	LEFT JOIN 
+	(
+		SELECT
+			[Type] = TD.[Type]
+			,[Value] = SUM(TD.Value)
+			,TimeEntryHeaderDetailId
+		FROM attendance.TimeEntryDetail TD WITH (NOLOCK)
+		GROUP BY TimeEntryHeaderDetailId,TD.[Type]
+	)TD ON TD.TimeEntryHeaderDetailId = THD.TimeEntryHeaderDetailId
+	CROSS APPLY
+	(
+		SELECT
+		OTCOLS = CASE WHEN TD.[Type] IN 
+		(
+			'RegularOT'
+			,'RestdayOT'
+			,'HolidayOT'
+			,'SpecialOT'
+			,'HolidayRestdayOT'
+			,'SpecialRestdayOT'
+			,'DoubleHolidayOTHrs'
+		) THEN TD.Type ELSE NULL END
+
+		,OTNSCOLS = CASE WHEN TD.[Type] IN
+		(
+			'RegularNightshiftOT'
+			,'RestdayNightshiftOT'
+			,'HolidayNightshiftOT'
+			,'SpecialNightshiftOT'
+			,'HolidayRestdayNightshiftOT'
+			,'SpecialRestdayNightshiftOT'
+			,'DoubleHolidayNSOTHrs'
+			,'DoubleHolidayRestdayNSOTHrs'
+		) THEN TD.Type ELSE NULL END
+
+		,REGCOLS = CASE WHEN TD.[Type] IN
+		(
+			'Restday'
+			,'Holiday'
+			,'Special'
+			,'HolidayRestday'
+			,'SpecialRestday'
+			,'DoubleHolidayHrs'
+			,'DoubleHolidayRestdayHrs'
+		) THEN TD.Type ELSE NULL END
+
+		,NSCOLS = CASE WHEN TD.[Type] IN
+		(
+			'RestdayNightshift'
+			,'HolidayNightshift'
+			,'SpecialNightshift'
+			,'HolidayRestdayNightshift'
+			,'SpecialRestdayNightshift'
+			,'DoubleHolidayNSHrs'
+			,'DoubleHolidayRestdayNSHrs'
+			/*,'RegularNightshift'*/
+		) THEN TD.Type ELSE NULL END
+	)COLS
+
+	/*LEAVES HERE */
+	UNION ALL
+
+	SELECT
+		DisplayText = TD.[Type]
+		,[Hours] = ISNULL(TD.[Value],0)
+		,THD.TimeEntryHeaderId
+		,THD.TimeEntryHeaderDetailId
+		,THD.WorkDate
+		,THD.ProfileId
+	FROM attendance.TimeEntryHeaderDetail THD WITH (NOLOCK) 
+	INNER JOIN
+	(
+		SELECT 
+			[Type] = COLS.[Type]
+			,[Value] = SUM(TD.LeaveHours)
+			,TimeEntryHeaderDetailId
+		FROM attendance.TimeEntryLeaveDetail TD
+		INNER JOIN leave.LeaveTypeSetup LTS ON LTS.LeaveTypeSetupId = TD.LeaveTypeId
+		CROSS APPLY
+		(
+			SELECT
+			/*[Type] = CONCAT(LTS.Code,' (',(CASE WHEN ISNULL(LTS.LeaveWithPay,0) = 1 THEN 'with pay' ELSE 'without pay' END),')')*/
+			[Type] = LTS.Description
+		)COLS
+		WHERE 1=1 
+		AND ISNULL(LTS.LeaveWithPay,0) = 1
+		GROUP BY TimeEntryHeaderDetailId,COLS.Type
+	)TD ON TD.TimeEntryHeaderDetailId = THD.TimeEntryHeaderDetailId
+
+)TD ON TD.TimeEntryHeaderId = TH.TimeEntryHeaderId
+
+WHERE 1=1
+AND TH.StatusId = 2
+AND ISNULL(TD.Hours,0) <> 0
+AND ISNULL(TH.AdjustmentAttendance,0) = 0
+
+
+/*COMMENTED BY AGC 05.26.2020
+SELECT ProfileId
+      ,WorkDate
+	  ,DisplayText = CASE 
+					 WHEN Earnings.DisplayText = 'ApprovedOROT' THEN 'Basic OT'
+					 WHEN Earnings.DisplayText = 'ApprovedREOT' THEN 'Rest Day OT'
+					 WHEN Earnings.DisplayText = 'ApprovedHOOT' THEN 'Regular Holiday OT'
+					 WHEN Earnings.DisplayText = 'ApprovedSPOT' THEN 'Special Holiday OT'					 
+					 WHEN Earnings.DisplayText = 'ApprovedHROT' THEN 'Holiday Restday OT'
+					 WHEN Earnings.DisplayText = 'ApprovedSROT' THEN 'Special Rest Day OT'
+					 WHEN Earnings.DisplayText = 'ApprovedDOUBLEHOLIDAYOTHRS' THEN 'Double Holiday OT'
+
+					 WHEN Earnings.DisplayText = 'ApprovedORNSOT' THEN 'Basic NSOT'
+					 WHEN Earnings.DisplayText = 'ApprovedRENSOT' THEN 'Restday NSOT'
+					 WHEN Earnings.DisplayText = 'ApprovedSPNSOT' THEN 'Special Holiday NSOT'
+					 WHEN Earnings.DisplayText = 'ApprovedHONSOT' THEN 'Holiday NSOT'
+					 WHEN Earnings.DisplayText = 'ApprovedSRNSOT' THEN 'Special Rest Day NSOT'
+					 WHEN Earnings.DisplayText = 'ApprovedHRNSOT' THEN 'Holiday Rest Day NSOT'
+					 WHEN Earnings.DisplayText = 'ApprovedDOUBLEHOLIDAYNSOTHRS' THEN 'Double Holiday NSOT'
+					 WHEN Earnings.DisplayText = 'ApprovedDOUBLEHOLIDAYRESTDAYNSOTHRS' THEN 'DOUBLEHOLIDAYRESTDAYNSOTHRS'
+
+					 WHEN Earnings.DisplayText = 'ApprovedRE' THEN 'Rest Day'
+					 WHEN Earnings.DisplayText = 'ApprovedHO' THEN 'Regular Holiday'
+					 WHEN Earnings.DisplayText = 'ApprovedSP' THEN 'Special Holiday'
+					 WHEN Earnings.DisplayText = 'ApprovedHR' THEN 'Holiday Restday'
+					 WHEN Earnings.DisplayText = 'ApprovedSR' THEN 'Special Restday'
+					 WHEN Earnings.DisplayText = 'ApprovedDoubleHolidayHrs' THEN 'Double Holiday'
+					 WHEN Earnings.DisplayText = 'ApprovedDoubleHolidayRestdayHrs' THEN 'Double Holiday Rest Day'
+
+					 WHEN Earnings.DisplayText = '	' THEN 'Basic NS'
+					 WHEN Earnings.DisplayText = 'ApprovedRENS' THEN 'Rest Day NS'
+					 WHEN Earnings.DisplayText = 'ApprovedHONS' THEN 'Regular Holiday NS'
+					 WHEN Earnings.DisplayText = 'ApprovedSPNS' THEN 'Special Holiday NS'
+					 WHEN Earnings.DisplayText = 'ApprovedHRNS' THEN 'Holiday Rest Day NS'
+					 WHEN Earnings.DisplayText = 'ApprovedSRNS' THEN 'Special Rest Day NS'
+					 WHEN Earnings.DisplayText = 'ApprovedDoubleHolidayNSHrs' THEN 'Double Holiday NS'
+					 WHEN Earnings.DisplayText = 'ApprovedDoubleHolidayRestdayNSHrs' THEN 'Double Holiday Rest Day NS'
+					 ELSE  REPLACE(Earnings.DisplayText,'Approved','')  END
+	  ,Earnings.HOURS
+FROM dbo.vwEmployeeTimeEntry
+UNPIVOT
+(
+	HOURS
+	FOR DisplayText in ( 
+ApprovedRE
+,ApprovedHO
+,ApprovedSP
+,ApprovedHR
+,ApprovedSR
+,ApprovedDoubleHolidayHrs
+,ApprovedDoubleHolidayRestdayHrs
+/*,ApprovedORNS */
+,ApprovedRENS
+,ApprovedHONS
+,ApprovedSPNS
+,ApprovedHRNS
+,ApprovedSRNS
+,ApprovedDoubleHolidayNSHrs
+,ApprovedDoubleHolidayRestdayNSHrs
+,ApprovedOROT
+,ApprovedREOT
+,ApprovedHOOT
+,ApprovedSPOT
+,ApprovedHROT
+,ApprovedSROT
+,ApprovedDoubleHolidayOTHrs
+,ApprovedDoubleHolidayRestdayOTHrs
+,ApprovedORNSOT
+,ApprovedRENSOT
+,ApprovedHONSOT
+,ApprovedSPNSOT
+,ApprovedHRNSOT
+,ApprovedSRNSOT
+,ApprovedDoubleHolidayRestdayNSOTHrs
+,ApprovedDoubleHolidayNSOTHrs)
+) AS Earnings
+WHERE Earnings.HOURS <> 0
+*/
+
+
+GO
+
+

@@ -1,0 +1,923 @@
+--=============================================
+--Author:      RME
+--Update date: 04.30.2020
+--Description: For Company Payroll Report per Department with Breakdown
+--Updates:	   Add checking if leave is for late,undertime absent
+--=============================================
+
+ALTER VIEW [dbo].[vwPaysheetDetail]
+AS
+
+SELECT
+	--HEADER DETAILS
+	PayGroupId = ISNULL(PH.PayGroupId, 0)
+	,PayGroupCode = ISNULL(PG.Code, '')
+	,PayGroupDescription = ISNULL(PG.Description, '')
+	,ISNULL(PH.PaySheetHeaderId, '') PaySheetHeaderId
+	,ISNULL(PHD.PaySheetHeaderDetailId, '') PaySheetHeaderDetailId
+	,ISNULL(PHD.ProfileId, '') ProfileId
+	,ISNULL(PHD.CompanyId, '') CompanyId
+	,ISNULL(PHD.BranchId, '') BranchId
+	,ISNULL(PHD.DepartmentId, '') DepartmentId
+	,ISNULL(PHD.OfficeId, '') OfficeId
+	,ISNULL(PHD.UnitId, '') UnitId
+	,ISNULL(PHD.DivisionId, '') DivisionId
+	,ISNULL(PHD.GroupId, '') GroupId
+	,ISNULL(PHD.DistrictId, '') DistrictId
+	,ISNULL(PHD.LocationId, '') LocationId
+	,ISNULL(PHD.ProjectProfileId, '') ProjectProfileId
+	,ISNULL(PHD.CostCenterId, '') CostCenterId
+	,ISNULL(PHD.LineId, '') LineId
+	,ISNULL(PHD.TeamId, '') TeamId
+	,ISNULL(PHD.EmployeeTypeId, '') EmployeeTypeId
+	,ISNULL(PHD.JobRankId, '') JobRankId
+	,ISNULL(PHD.JobGradeId, '') JobGradeId
+	,ISNULL(PHD.JobLevelId, '') JobLevelId
+	,ISNULL(PHD.PositionId, '') PositionId
+	,ISNULL(PHD.MWE, 0) MWE
+	,ISNULL(PH.PayrollTypeId, '') PayrollTypeId
+	,[PayrollType] = (SELECT TOP 1
+			payroll.PayrollType.PayrollTypeName
+		FROM payroll.PayrollType
+		WHERE PayrollTypeId = PH.PayrollTypeId)
+	,ISNULL(PH.ReferenceNo, '') ReferenceNo
+	,PH.StatusId
+	,[Status] = ISNULL((SELECT TOP 1
+			maintenance.Status.Name
+		FROM maintenance.Status
+		WHERE Value = CAST(PH.StatusId AS VARCHAR))
+	, '')
+	,ISNULL(PH.MonthYear, '') MonthYear
+	,ISNULL(PHD.PeriodStartDate, '') PeriodStartDate
+	,ISNULL(PHD.PeriodEndDate, '') PeriodEndDate
+	,ISNULL(PH.IssuedDate, '') IssuedDate
+	,ISNULL(PH.IssuedDate, '') IssueDate
+	,ISNULL(PH.CutOffStartDate, '') CutOffStartDate
+	,ISNULL(PH.CutOffEndDate, '') CutOffEndDate
+	,ISNULL(PH.PayrollPeriod, '') PayrollPeriod
+	,ISNULL(PH.EndOfMonth, '') EndOfMonth
+	,ISNULL(PHD.SalaryRate, 0) SalaryRate
+	,ISNULL(PHD.SalaryType, '') SalaryType
+	,SalaryTypeName = ISNULL((SELECT TOP 1
+			DisplayText
+		FROM maintenance.EnumValues
+		WHERE Value = PHD.SalaryType
+		AND SourceName = 'SalaryFactor')
+	, '')
+	,ISNULL(PHD.HourlyRate, 0) HourlyRate
+	,ISNULL(PHD.DailyRate, 0) DailyRate
+	,ISNULL(PHD.MonthlyRate, 0) MonthlyRate
+	,[LateHrs] = (ISNULL([LateHrs], 0))
+	,[UndertimeHrs] = (ISNULL([UndertimeHrs], 0))
+	,[AbsentHrs] = (ISNULL([AbsentHrs], 0))
+	,[LateDays] = (ISNULL([LateDays], 0))
+	,[UndertimeDays] = (ISNULL([UndertimeDays], 0))
+	,[AbsentDays] = (ISNULL([AbsentDays], 0))
+	,[LeaveHrs] = (ISNULL([LeaveHrs], 0))
+	,[OR] = (ISNULL([OR], 0))
+	,[RE] = (ISNULL([RE], 0))
+	,[HO] = (ISNULL([HO], 0))
+	,[SP] = (ISNULL([SP], 0))
+	,[HR] = (ISNULL([HR], 0))
+	,[SR] = (ISNULL([SR], 0))
+	,[ORNS] = (ISNULL([ORNS], 0))
+	,[RENS] = (ISNULL([RENS], 0))
+	,[HONS] = (ISNULL([HONS], 0))
+	,[SPNS] = (ISNULL([SPNS], 0))
+	,[HRNS] = (ISNULL([HRNS], 0))
+	,[SRNS] = (ISNULL([SRNS], 0))
+	,[OROT] = (ISNULL([OROT], 0))
+	,[REOT] = (ISNULL([REOT], 0))
+	,[HOOT] = (ISNULL([HOOT], 0))
+	,[SPOT] = (ISNULL([SPOT], 0))
+	,[HROT] = (ISNULL([HROT], 0))
+	,[SROT] = (ISNULL([SROT], 0))
+	,[ORNSOT] = (ISNULL([ORNSOT], 0))
+	,[RENSOT] = (ISNULL([RENSOT], 0))
+	,[HONSOT] = (ISNULL([HONSOT], 0))
+	,[SPNSOT] = (ISNULL([SPNSOT], 0))
+	,[HRNSOT] = (ISNULL([HRNSOT], 0))
+	,[SRNSOT] = (ISNULL([SRNSOT], 0))
+	,[AbsentAmount] = (ISNULL([AbsentAmount], 0))
+	,[LateAmount] = (ISNULL([LateAmount], 0))
+	,[UndertimeAmount] = (ISNULL([UndertimeAmount], 0))
+	,[OvertimeHrs] = (ISNULL([OvertimeHrs], 0))
+	,[TotalHolidayHrs] = (ISNULL([TotalHolidayHrs], 0))
+	,[NightDiffHrs] = (ISNULL([NightDiffHrs], 0))
+	,[TotalOTHrs] = ISNULL(OvertimeHrs,0)/*(ISNULL([TotalOTHrs], 0))*/
+	,[TotalHoursWorked] = (ISNULL([TotalHoursWorked], 0))
+	,
+	/*--[ORPay] = (ISNULL([ORPay], 0)),*/
+	[REPay] = (ISNULL([REPay], 0))
+	,[HOPay] = (ISNULL([HOPay], 0))
+	,[SPPay] = (ISNULL([SPPay], 0))
+	,[HRPay] = (ISNULL([HRPay], 0))
+	,[SRPay] = (ISNULL([SRPay], 0))
+	,[ORNSPay] = (ISNULL([ORNSPay], 0))
+	,[RENSPay] = (ISNULL([RENSPay], 0))
+	,[HONSPay] = (ISNULL([HONSPay], 0))
+	,[SPNSPay] = (ISNULL([SPNSPay], 0))
+	,[HRNSPay] = (ISNULL([HRNSPay], 0))
+	,[SRNSPay] = (ISNULL([SRNSPay], 0))
+	,[OROTPay] = (ISNULL([OROTPay], 0))
+	,[REOTPay] = (ISNULL([REOTPay], 0))
+	,[HOOTPay] = (ISNULL([HOOTPay], 0))
+	,[SPOTPay] = (ISNULL([SPOTPay], 0))
+	,[HROTPay] = (ISNULL([HROTPay], 0))
+	,[SROTPay] = (ISNULL([SROTPay], 0))
+	,[ORNSOTPay] = (ISNULL([ORNSOTPay], 0))
+	,[RENSOTPay] = (ISNULL([RENSOTPay], 0))
+	,[HONSOTPay] = (ISNULL([HONSOTPay], 0))
+	,[SPNSOTPay] = (ISNULL([SPNSOTPay], 0))
+	,[HRNSOTPay] = (ISNULL([HRNSOTPay], 0))
+	,[SRNSOTPay] = (ISNULL([SRNSOTPay], 0))
+	,[OvertimePay] = (ISNULL([OvertimePay], 0))
+	,[TotalHolidayPay] = (ISNULL([TotalHolidayPay], 0))
+	,[NightDiffPay] = (ISNULL([NightDiffPay], 0))
+	,[TotalOTPay] = ISNULL(OvertimePay,0)/*(ISNULL([TotalOTPay], 0))*/
+	,[SSS] = (ISNULL([SSS], 0))
+	,[SSSES] = (ISNULL([SSSES], 0))
+	,[SSSEC] = (ISNULL([SSSEC], 0))
+	,[GSIS] = (ISNULL([GSIS], 0))
+	,[GSISEC] = (ISNULL([GSISEC], 0))
+	,[PhilHealth] = (ISNULL([PhilHealth], 0))
+	,[PhilHealthES] = (ISNULL([PhilHealthES], 0))
+	,[PAGIBIG] = (ISNULL([PagIbig], 0))
+	,[PAGIBIGES] = (ISNULL([PagIbigES], 0))
+	,[LeavePay] = (ISNULL([LeavePay], 0))
+	,[Allowance] = (ISNULL(PDS.[Allowance], 0))
+	,[Loan] = (ISNULL(PD.[Loan], 0))
+	,[Deduction] = ISNULL(PD.Deduction, 0)
+	,/*--(ISNULL(PDS.[Deduction], 0)),*/
+	[OtherIncome] = (ISNULL(PDS.[OtherIncome], 0))
+	,[OtherDeduction] = (ISNULL(PDS.[OtherDeduction], 0))
+	/*,[TotalDeduction] = (ISNULL(PD.GrossPay, 0) - ISNULL(PD.NetPay, 0))*/
+	,[TotalDeduction] = 
+	(
+		ISNULL(PD.[Loan], 0) + 
+		ISNULL(PD.Deduction, 0) + 
+		ISNULL(PDS.[OtherDeduction], 0) + 
+		ISNULL([SSS], 0) + 
+		ISNULL([GSIS], 0) + 
+		ISNULL([PhilHealth], 0) + 
+		ISNULL([PagIbig], 0) + 
+		ISNULL([WHT], 0)
+	)
+
+	, /*--(ISNULL([TotalDeduction], 0)),*/
+	[BasicPay] = (ISNULL([BasicPay], 0))
+	,[GrossPay] = (ISNULL([GrossPay], 0))
+	,[NetPay] = (ISNULL([NetPay], 0))
+	,[OthersContribution] = (ISNULL([OthersContribution], 0))
+	,[OtherBenefits] = (ISNULL([OtherBenefits], 0))
+	,[DC] = (ISNULL([DC], 0))
+	,[COLA] = (ISNULL([COLA], 0))
+	,[OtherAllowance] = (ISNULL([OtherAllowance], 0))
+	,[EMPSC] = (ISNULL([EMPSC], 0))
+	,[PIRAA] = (ISNULL([PIRAA], 0))
+	,[PIRAAEC] = (ISNULL([PIRAAEC], 0))
+	,[FieldworkUnits] = (ISNULL([FieldworkUnits], 0))
+	,[FieldworkPay] = (ISNULL([FieldworkPay], 0))
+	,[OthersWHT] = (ISNULL([OthersWHT], 0))
+	,[UnionDues] = (ISNULL([UnionDues], 0))
+	,[Representation] = (ISNULL([Representation], 0))
+	,[Transportation] = (ISNULL([Transportation], 0))
+	,[FixedHousingAllowance] = (ISNULL([FixedHousingAllowance], 0))
+	,[Commission] = (ISNULL([Commission], 0))
+	,[ProfitSharing] = (ISNULL([ProfitSharing], 0))
+	,[Fees] = (ISNULL([Fees], 0))
+	,[HazardPay] = (ISNULL([HazardPay], 0))
+	,[Month13Pay] = (ISNULL([Month13Pay], 0))
+	,[TaxableIncome] = (ISNULL([TaxableIncome], 0))
+	,[TaxableBenefit] = (ISNULL([TaxableBenefit], 0))
+	,[Benefit] = (ISNULL([Benefit], 0))
+	,[WHT] = (ISNULL([WHT], 0))
+	,[CompanyWHT] = (ISNULL([CompanyWHT], 0))
+	,[NonTaxable] = (ISNULL([NonTaxable], 0))
+	,[TaxableOther] = ISNULL(PDS.ETaxableOther, 0)
+	,[NonTaxableOther] = ISNULL(PDS.ENonTaxableOther, 0)/*--ISNULL(PDS.NonTaxableOther, 0)*/
+	,/*--(ISNULL([TaxExempt],0)),*/
+	[OriginalWHT] = (ISNULL([OriginalWHT], 0))
+	,[CompanyOtherAmounts] = (ISNULL([CompanyOtherAmounts], 0))
+	,[SIL] = (ISNULL([SIL], 0))
+	,[ProRated13thMonth] = (ISNULL([ProRated13thMonth], 0))
+	,[TaxRefund] = (ISNULL([TaxRefund], 0))
+	,[TaxExempt] = (ISNULL([TaxExempt], 0))
+	,[CompanyOther] = (ISNULL([CompanyOther], 0))
+	,ISNULL(PHD.PagibigBracketId, 0) PagibigBracketId
+	,ISNULL(PHD.SSSBracketId, 0) SSSBracketId
+	,ISNULL(PHD.PhilhealthBracketId, 0) PhilhealthBracketId
+	,ISNULL(PHD.WHTBracketId, 0) WHTBracketId
+	,SSSBasis = (ISNULL([SSSBasis], 0))
+	,PhilHealthBasis = (ISNULL([PhilHealthBasis], 0))
+	,PagibigBasis = (ISNULL([PagibigBasis], 0))
+	,WorkingHrsPerDay = CAST(8 AS DECIMAL(10, 4))
+	,[AccruedThirteenthMonthPay] = (ISNULL([AccruedThirteenthMonthPay], 0))
+	,[AmtIncludeInThirteenthMonthPayCalc] = (ISNULL([AmtIncludeInThirteenthMonthPayCalc], 0))
+	,VL = (ISNULL(LeaveDetail.VL, 0))
+	,SL = (ISNULL(LeaveDetail.SL, 0))
+	,OtherLeave = (ISNULL(LeaveDetail.OtherLeave, 0))
+	,NumberOfPayPeriods = (ISNULL(PG.NumberOfPayPeriods, 0))
+	,[PagIbigTaxLimitExcess] = (ISNULL([PagIbigTaxLimitExcess], 0))
+	/*--ADDED BY AGC: 01/30/2017*/
+	,[CoNonWorking] = ISNULL([CoNonWorking], 0)
+	,[CoNonWorkingPay] = ISNULL([CoNonWorkingPay], 0)
+	,[CoNonWorkingNS] = ISNULL([CoNonWorkingNS], 0)
+	,[CoNonWorkingNSPay] = ISNULL([CoNonWorkingNSPay], 0)
+	,[CoNonWorkingOT] = ISNULL([CoNonWorkingOT], 0)
+	,[CoNonWorkingOTPay] = ISNULL([CoNonWorkingOTPay], 0)
+	,[CoNonWorkingNSOT] = ISNULL([CoNonWorkingNSOT], 0)
+	,[CoNonWorkingNSOTPay] = ISNULL([CoNonWorkingNSOTPay], 0)
+	,ShowPayslipCompanyLogo = (CASE WHEN ISNULL(PTC.Value,'false') = 'false' THEN 0 ELSE 1 END)
+	,TaxExemptionStatusId = ISNULL(TaxExemptionStatusId,0)
+	,ApplicableTaxId = ISNULL(ApplicableTaxId,0)
+	,[CompanyNonWorkingDayHrsPay_NoWork] = ISNULL([CompanyNonWorkingDayHrsPay_NoWork],0)
+	,[TaxAdjustment] = isnull([PD].[TaxAdjustment],0)
+	,[CompanyTaxable] = ISNULL([CompanyTaxable],0)
+
+	/*ADDED BY AGC 12.13.2018*/
+	,DoNotIncludeIn13thMonthComputation = ISNULL(PH.DoNotIncludeIn13thMonthComputation,0)
+
+	/*PREVIOUS PAYROLL EARNINGS*/
+	,[PrevEmployerT13thMonthPayAndOtherBenefits] = ISNULL([PrevEmployerT13thMonthPayAndOtherBenefits],0)
+	,[PrevEmployerTaxWithheld] = ISNULL([PrevEmployerTaxWithheld],0)
+	,[PrevEmployerTCompensationIncome] = ISNULL([PrevEmployerTCompensationIncome],0)
+	,[PrevEmployerTSalariesandOtherFormsofCompensation] = ISNULL([PrevEmployerTSalariesandOtherFormsofCompensation],0)
+	,[PrevNT13thMonthPayAndOtherBenefits] = ISNULL([PrevNT13thMonthPayAndOtherBenefits],0)
+	,[PrevNTBasicSMW] = ISNULL([PrevNTBasicSMW],0)
+	,[PrevNTDeMinimisBenefits] = ISNULL([PrevNTDeMinimisBenefits],0)
+	,[PrevNTHazardPay] = ISNULL([PrevNTHazardPay],0)
+	,[PrevNTHolidayPay] = ISNULL([PrevNTHolidayPay],0)
+	,[PrevNTNightShiftDifferential] = ISNULL([PrevNTNightShiftDifferential],0)
+	,[PrevNTOvertimePay] = ISNULL([PrevNTOvertimePay],0)
+	,[PrevNTSalariesandOtherFormsofCompensation] = ISNULL([PrevNTSalariesandOtherFormsofCompensation],0)
+	,[PrevNTSSSGSISPHICPagibigContributionsandUnionDues] = ISNULL([PrevNTSSSGSISPHICPagibigContributionsandUnionDues],0)
+
+	/*NS2 RATES*/
+	,[BasicNS2Hrs] = ISNULL([BasicNS2Hrs],0)
+	,[BasicNS2Pay] = ISNULL([BasicNS2Pay],0)
+	,[BasicNSOT2Hrs] = ISNULL([BasicNSOT2Hrs],0)
+	,[BasicNSOT2Pay] = ISNULL([BasicNSOT2Pay],0)
+	,[RestdayNS2Hrs] = ISNULL([RestdayNS2Hrs],0)
+	,[RestdayNS2Pay] = ISNULL([RestdayNS2Pay],0)
+	,[RestdayNSOT2Hrs] = ISNULL([RestdayNSOT2Hrs],0)
+	,[RestdayNSOT2Pay] = ISNULL([RestdayNSOT2Pay],0)
+	,[HolidayNS2Hrs] = ISNULL([HolidayNS2Hrs],0)
+	,[HolidayNS2Pay] = ISNULL([HolidayNS2Pay],0)
+	,[HolidayNSOT2Hrs] = ISNULL([HolidayNSOT2Hrs],0)
+	,[HolidayNSOT2Pay] = ISNULL([HolidayNSOT2Pay],0)
+	,[SpecialNS2Hrs] = ISNULL([SpecialNS2Hrs],0)
+	,[SpecialNS2Pay] = ISNULL([SpecialNS2Pay],0)
+	,[SpecialNSOT2Hrs] = ISNULL([SpecialNSOT2Hrs],0)
+	,[SpecialNSOT2Pay] = ISNULL([SpecialNSOT2Pay],0)
+	,[HRNS2Hrs] = ISNULL([HRNS2Hrs],0)
+	,[HRNS2Pay] = ISNULL([HRNS2Pay],0)
+	,[HRNSOT2Hrs] = ISNULL([HRNSOT2Hrs],0)
+	,[HRNSOT2Pay] = ISNULL([HRNSOT2Pay],0)
+	,[SRNS2Hrs] = ISNULL([SRNS2Hrs],0)
+	,[SRNS2Pay] = ISNULL([SRNS2Pay],0)
+	,[SRNSOT2Hrs] = ISNULL([SRNSOT2Hrs],0)
+	,[SRNSOT2Pay] = ISNULL([SRNSOT2Pay],0)
+
+	,[ECompanyTax] = ISNULL(PDS.ECompanyTax,0)
+	,[EarningTaggedAsOthers] = ISNULL(PDS.EarningTaggedAsOthers,0)
+
+	/*DOUBLE HOLIDAY COLUMNS ADDED BY AGC 04.08.2020*/
+	,[DoubleHolidayHrs] = ISNULL([DoubleHolidayHrs],0)
+	,[DoubleHolidayOTHrs] = ISNULL([DoubleHolidayOTHrs],0)
+	,[DoubleHolidayNSHrs] = ISNULL([DoubleHolidayNSHrs],0)
+	,[DoubleHolidayNSOTHrs] = ISNULL([DoubleHolidayNSOTHrs],0)
+	,[DoubleHolidayRestdayHrs] = ISNULL([DoubleHolidayRestdayHrs],0)
+	,[DoubleHolidayRestdayOTHrs] = ISNULL([DoubleHolidayRestdayOTHrs],0)
+	,[DoubleHolidayRestdayNSHrs] = ISNULL([DoubleHolidayRestdayNSHrs],0)
+	,[DoubleHolidayRestdayNSOTHrs] = ISNULL([DoubleHolidayRestdayNSOTHrs],0)
+	,[DoubleHolidayNS2Hrs] = ISNULL([DoubleHolidayNS2Hrs],0)
+	,[DoubleHolidayNSOT2Hrs] = ISNULL([DoubleHolidayNSOT2Hrs],0)
+	,[DoubleHolidayRestdayNS2Hrs] = ISNULL([DoubleHolidayRestdayNS2Hrs],0)
+	,[DoubleHolidayRestdayNSOT2Hrs] = ISNULL([DoubleHolidayRestdayNSOT2Hrs],0)
+	,[DoubleHolidayPay] = ISNULL([DoubleHolidayPay],0)
+	,[DoubleHolidayOTPay] = ISNULL([DoubleHolidayOTPay],0)
+	,[DoubleHolidayNSPay] = ISNULL([DoubleHolidayNSPay],0)
+	,[DoubleHolidayNSOTPay] = ISNULL([DoubleHolidayNSOTPay],0)
+	,[DoubleHolidayRestdayPay] = ISNULL([DoubleHolidayRestdayPay],0)
+	,[DoubleHolidayRestdayOTPay] = ISNULL([DoubleHolidayRestdayOTPay],0)
+	,[DoubleHolidayRestdayNSPay] = ISNULL([DoubleHolidayRestdayNSPay],0)
+	,[DoubleHolidayRestdayNSOTPay] = ISNULL([DoubleHolidayRestdayNSOTPay],0)
+	,[PrevNTDoubleHolidayPay] = ISNULL([PrevNTDoubleHolidayPay],0)
+	,[PrevNTDoubleHolidayRestdayPay] = ISNULL([PrevNTDoubleHolidayRestdayPay],0)
+	,[DoubleHolidayNS2Pay] = ISNULL([DoubleHolidayNS2Pay],0)
+	,[DoubleHolidayNSOT2Pay] = ISNULL([DoubleHolidayNSOT2Pay],0)
+	,[DoubleHolidayRestdayNS2Pay] = ISNULL([DoubleHolidayRestdayNS2Pay],0)
+	,[DoubleHolidayRestdayNSOT2Pay] = ISNULL([DoubleHolidayRestdayNSOT2Pay],0)
+
+	/*LEAVES APPLIED TO*/
+	,LeaveForLate = ISNULL(LeaveDetail.LeaveForLate,0)
+	,LeaveForUndertime = ISNULL(LeaveDetail.LeaveForUndertime,0)
+	,LeaveForAbsent = ISNULL(LeaveDetail.LeaveForAbsent,0)
+
+FROM payroll.PaySheetHeaderDetail PHD
+OUTER APPLY 
+(
+	SELECT 
+		pd.PaysheetHeaderDetailId
+		,[LateHrs] = SUM(CASE WHEN pd.[Type] = 'LateHrs' THEN pd.[Value] ELSE 0 END)
+		,[UndertimeHrs] = SUM(CASE WHEN pd.[Type] = 'UndertimeHrs' THEN pd.[Value] ELSE 0 END)
+		,[AbsentHrs] = SUM(CASE WHEN pd.[Type] = 'AbsentHrs' THEN pd.[Value] ELSE 0 END)
+		,[LateDays] = SUM(CASE WHEN pd.[Type] = 'LateDays' THEN pd.[Value] ELSE 0 END)
+		,[UndertimeDays] = SUM(CASE WHEN pd.[Type] = 'UndertimeDays' THEN pd.[Value] ELSE 0 END)
+		,[AbsentDays] = SUM(CASE WHEN pd.[Type] = 'AbsentDays' THEN pd.[Value] ELSE 0 END)
+		,[LeaveHrs] = SUM(CASE WHEN pd.[Type] = 'LeaveHrs' THEN pd.[Value] ELSE 0 END)
+		,[OR] = SUM(CASE WHEN pd.[Type] = 'BasicHrs' THEN pd.[Value] ELSE 0 END)
+		,[RE] = SUM(CASE WHEN pd.[Type] = 'RestdayHrs' THEN pd.[Value] ELSE 0 END)
+		,[HO] = SUM(CASE WHEN pd.[Type] = 'HolidayHrs' THEN pd.[Value] ELSE 0 END)
+		,[SP] = SUM(CASE WHEN pd.[Type] = 'SpecialHrs' THEN pd.[Value] ELSE 0 END)
+		,[HR] = SUM(CASE WHEN pd.[Type] = 'HRHrs' THEN pd.[Value] ELSE 0 END)
+		,[SR] = SUM(CASE WHEN pd.[Type] = 'SRHRs' THEN pd.[Value] ELSE 0 END)
+		,[ORNS] = SUM(CASE WHEN pd.[Type] = 'BasicNSHrs' THEN pd.[Value] ELSE 0 END)
+		,[RENS] = SUM(CASE WHEN pd.[Type] = 'RestdayNSHrs' THEN pd.[Value] ELSE 0 END)
+		,[HONS] = SUM(CASE WHEN pd.[Type] = 'HolidayNSHrs' THEN pd.[Value] ELSE 0 END)
+		,[SPNS] = SUM(CASE WHEN pd.[Type] = 'SpecialNSHrs' THEN pd.[Value] ELSE 0 END)
+		,[HRNS] = SUM(CASE WHEN pd.[Type] = 'HRNSHrs' THEN pd.[Value] ELSE 0 END)
+		,[SRNS] = SUM(CASE WHEN pd.[Type] = 'SRNSHRs' THEN pd.[Value] ELSE 0 END)
+		,[OROT] = SUM(CASE WHEN pd.[Type] = 'BasicOTHrs' THEN pd.[Value] ELSE 0 END)
+		,[REOT] = SUM(CASE WHEN pd.[Type] = 'RestdayOTHrs' THEN pd.[Value] ELSE 0 END)
+		,[HOOT] = SUM(CASE WHEN pd.[Type] = 'HolidayOTHrs' THEN pd.[Value] ELSE 0 END)
+		,[SPOT] = SUM(CASE WHEN pd.[Type] = 'SpecialOTHrs' THEN pd.[Value] ELSE 0 END)
+		,[HROT] = SUM(CASE WHEN pd.[Type] = 'HROTHrs' THEN pd.[Value] ELSE 0 END)
+		,[SROT] = SUM(CASE WHEN pd.[Type] = 'SROTHRs' THEN pd.[Value] ELSE 0 END)
+		,[ORNSOT] = SUM(CASE WHEN pd.[Type] = 'BasicNSOTHrs' THEN pd.[Value] ELSE 0 END)
+		,[RENSOT] = SUM(CASE WHEN pd.[Type] = 'RestdayNSOTHrs' THEN pd.[Value] ELSE 0 END)
+		,[HONSOT] = SUM(CASE WHEN pd.[Type] = 'HolidayNSOTHrs' THEN pd.[Value] ELSE 0 END)
+		,[SPNSOT] = SUM(CASE WHEN pd.[Type] = 'SpecialNSOTHrs' THEN pd.[Value] ELSE 0 END)
+		,[HRNSOT] = SUM(CASE WHEN pd.[Type] = 'HRNSOTHrs' THEN pd.[Value] ELSE 0 END)
+		,[SRNSOT] = SUM(CASE WHEN pd.[Type] = 'SRNSOTHRs' THEN pd.[Value] ELSE 0 END)
+		,[LateAmount] = SUM(CASE WHEN pd.[Type] = 'LateAmount' THEN pd.[Value] ELSE 0 END)
+		,[UndertimeAmount] = SUM(CASE WHEN pd.[Type] = 'UndertimeAmount' THEN pd.[Value] ELSE 0 END)
+		,[AbsentAmount] = SUM(CASE WHEN pd.[Type] = 'AbsentAmount' THEN pd.[Value] ELSE 0 END)
+		,[ORPay] = SUM(CASE WHEN pd.[Type] = 'ORPay' THEN pd.[Value] ELSE 0 END)
+		,[REPay] = SUM(CASE WHEN pd.[Type] = 'RestdayPay' THEN pd.[Value] ELSE 0 END)
+		,[HOPay] = SUM(CASE WHEN pd.[Type] = 'HolidayPay' THEN pd.[Value] ELSE 0 END)
+		,[SPPay] = SUM(CASE WHEN pd.[Type] = 'SpecialPay' THEN pd.[Value] ELSE 0 END)
+		,[HRPay] = SUM(CASE WHEN pd.[Type] = 'HRPay' THEN pd.[Value] ELSE 0 END)
+		,[SRPay] = SUM(CASE WHEN pd.[Type] = 'SRPay' THEN pd.[Value] ELSE 0 END)
+		,[ORNSPay] = SUM(CASE WHEN pd.[Type] = 'BasicNSPay' THEN pd.[Value] ELSE 0 END)
+		,[RENSPay] = SUM(CASE WHEN pd.[Type] = 'RestdayNSPay' THEN pd.[Value] ELSE 0 END)
+		,[HONSPay] = SUM(CASE WHEN pd.[Type] = 'HolidayNSPay' THEN pd.[Value] ELSE 0 END)
+		,[SPNSPay] = SUM(CASE WHEN pd.[Type] = 'SpecialNSPay' THEN pd.[Value] ELSE 0 END)
+		,[HRNSPay] = SUM(CASE WHEN pd.[Type] = 'HRNSPay' THEN pd.[Value] ELSE 0 END)
+		,[SRNSPay] = SUM(CASE WHEN pd.[Type] = 'SRNSPay' THEN pd.[Value] ELSE 0 END)
+		,[OROTPay] = SUM(CASE WHEN pd.[Type] = 'BasicOTPay' THEN pd.[Value] ELSE 0 END)
+		,[REOTPay] = SUM(CASE WHEN pd.[Type] = 'RestdayOTPay' THEN pd.[Value] ELSE 0 END)
+		,[HOOTPay] = SUM(CASE WHEN pd.[Type] = 'HolidayOTPay' THEN pd.[Value] ELSE 0 END)
+		,[SPOTPay] = SUM(CASE WHEN pd.[Type] = 'SpecialOTPay' THEN pd.[Value] ELSE 0 END)
+		,[HROTPay] = SUM(CASE WHEN pd.[Type] = 'HROTPay' THEN pd.[Value] ELSE 0 END)
+		,[SROTPay] = SUM(CASE WHEN pd.[Type] = 'SROTPay' THEN pd.[Value] ELSE 0 END)
+		,[ORNSOTPay] = SUM(CASE WHEN pd.[Type] = 'BasicNSOTPay' THEN pd.[Value] ELSE 0 END)
+		,[RENSOTPay] = SUM(CASE WHEN pd.[Type] = 'RestdayNSOTPay' THEN pd.[Value] ELSE 0 END)
+		,[HONSOTPay] = SUM(CASE WHEN pd.[Type] = 'HolidayNSOTPay' THEN pd.[Value] ELSE 0 END)
+		,[SPNSOTPay] = SUM(CASE WHEN pd.[Type] = 'SpecialNSOTPay' THEN pd.[Value] ELSE 0 END)
+		,[HRNSOTPay] = SUM(CASE WHEN pd.[Type] = 'HRNSOTPay' THEN pd.[Value] ELSE 0 END)
+		,[SRNSOTPay] = SUM(CASE WHEN pd.[Type] = 'SRNSOTPay' THEN pd.[Value] ELSE 0 END)
+		,[SSS] = SUM(CASE WHEN pd.[Type] = 'SSS' THEN pd.[Value] ELSE 0 END)
+		,[SSSES] = SUM(CASE WHEN pd.[Type] = 'SSSES' THEN pd.[Value] ELSE 0 END)
+		,[SSSEC] = SUM(CASE WHEN pd.[Type] = 'SSSEC' THEN pd.[Value] ELSE 0 END)
+		,[PhilHealth] = SUM(CASE WHEN pd.[Type] = 'PhilHealth' THEN pd.[Value] ELSE 0 END)
+		,[PhilHealthES] = SUM(CASE WHEN pd.[Type] = 'PhilHealthES' THEN pd.[Value] ELSE 0 END)
+		,[PAGIBIG] = SUM(CASE WHEN pd.[Type] = 'PAGIBIG' THEN pd.[Value] ELSE 0 END)
+		,[PAGIBIGES] = SUM(CASE WHEN pd.[Type] = 'PAGIBIGES' THEN pd.[Value] ELSE 0 END)
+		,[WHT] = SUM(CASE WHEN pd.[Type] = 'WHT' THEN pd.[Value] ELSE 0 END)
+		/*,[CompanyWHT] = SUM(CASE WHEN pd.[Type] = 'CompanyWHT' THEN pd.[Value] ELSE 0 END)*/
+		,[CompanyWHT] = SUM(CASE WHEN pd.[Type] = 'CompanyTax' THEN pd.[Value] ELSE 0 END)
+		,[LeavePay] = SUM(CASE WHEN pd.[Type] = 'LeavePay' THEN pd.[Value] ELSE 0 END)
+		,[Allowance] = SUM(CASE WHEN pd.[Type] = 'Allowance' THEN pd.[Value] ELSE 0 END)
+		,[OtherIncome] = SUM(CASE WHEN pd.[Type] = 'OtherIncome' THEN pd.[Value] ELSE 0 END)
+		,[Loan] = SUM(CASE WHEN pd.[Type] = 'Loan' THEN pd.[Value] ELSE 0 END)
+		,[Deduction] = SUM(CASE WHEN pd.[Type] = 'Deduction' THEN pd.[Value] ELSE 0 END)
+		,[BasicPay] = SUM(CASE WHEN pd.[Type] = 'BasicPay' THEN pd.[Value] ELSE 0 END)
+		,[GrossPay] = SUM(CASE WHEN pd.[Type] = 'GrossPay' THEN pd.[Value] ELSE 0 END)
+		,[NetPay] = SUM(CASE WHEN pd.[Type] = 'NetPay' THEN pd.[Value] ELSE 0 END)
+		,[OtherBenefits] = SUM(CASE WHEN pd.[Type] = 'OtherBenefits' THEN pd.[Value] ELSE 0 END)
+		,[DC] = SUM(CASE WHEN pd.[Type] = 'DC' THEN pd.[Value] ELSE 0 END)
+		,[COLA] = SUM(CASE WHEN pd.[Type] = 'COLA' THEN pd.[Value] ELSE 0 END)
+		,[OtherDeduction] = SUM(CASE WHEN pd.[Type] = 'OtherDeduction' THEN pd.[Value] ELSE 0 END)
+		,[OthersContribution] = SUM(CASE WHEN pd.[Type] = 'OthersContribution' THEN pd.[Value] ELSE 0 END)
+		,[OtherAllowance] = SUM(CASE WHEN pd.[Type] = 'OtherAllowance' THEN pd.[Value] ELSE 0 END)
+		,[EMPSC] = SUM(CASE WHEN pd.[Type] = 'EMPSC' THEN pd.[Value] ELSE 0 END)
+		,[PIRAA] = SUM(CASE WHEN pd.[Type] = 'PIRAA' THEN pd.[Value] ELSE 0 END)
+		,[PIRAAEC] = SUM(CASE WHEN pd.[Type] = 'PIRAAEC' THEN pd.[Value] ELSE 0 END)
+		,[FieldworkUnits] = SUM(CASE WHEN pd.[Type] = 'FieldworkUnits' THEN pd.[Value] ELSE 0 END)
+		,[FieldworkPay] = SUM(CASE WHEN pd.[Type] = 'FieldworkPay' THEN pd.[Value] ELSE 0 END)
+		,[OthersWHT] = SUM(CASE WHEN pd.[Type] = 'OthersWHT' THEN pd.[Value] ELSE 0 END)
+		,[UnionDues] = SUM(CASE WHEN pd.[Type] = 'UnionDues' THEN pd.[Value] ELSE 0 END)
+		,[Representation] = SUM(CASE WHEN pd.[Type] = 'Representation' THEN pd.[Value] ELSE 0 END)
+		,[Transportation] = SUM(CASE WHEN pd.[Type] = 'Transportation' THEN pd.[Value] ELSE 0 END)
+		,[FixedHousingAllowance] = SUM(CASE WHEN pd.[Type] = 'FixedHousingAllowance' THEN pd.[Value] ELSE 0 END)
+		,[Commission] = SUM(CASE WHEN pd.[Type] = 'Commission' THEN pd.[Value] ELSE 0 END)
+		,[ProfitSharing] = SUM(CASE WHEN pd.[Type] = 'ProfitSharing' THEN pd.[Value] ELSE 0 END)
+		,[Fees] = SUM(CASE WHEN pd.[Type] = 'Fees' THEN pd.[Value] ELSE 0 END)
+		,[HazardPay] = SUM(CASE WHEN pd.[Type] = 'HazardPay' THEN pd.[Value] ELSE 0 END)
+		,[Month13Pay] = SUM(CASE WHEN pd.[Type] = 'Month13Pay' THEN pd.[Value] ELSE 0 END)
+		,[TaxableIncome] = SUM(CASE WHEN pd.[Type] = 'TaxableIncome' THEN pd.[Value] ELSE 0 END)
+		,[OriginalWHT] = SUM(CASE WHEN pd.[Type] = 'OriginalWHT' THEN pd.[Value] ELSE 0 END)
+		,[CompanyOtherAmounts] = SUM(CASE WHEN pd.[Type] = 'CompanyOtherAmounts' THEN pd.[Value] ELSE 0 END)
+		,[SIL] = SUM(CASE WHEN pd.[Type] = 'SIL' THEN pd.[Value] ELSE 0 END)
+		,[ProRated13thMonth] = SUM(CASE WHEN pd.[Type] = 'ProRated13thMonth' THEN pd.[Value] ELSE 0 END)
+		,[TaxRefund] = SUM(CASE WHEN pd.[Type] = 'TaxRefund' THEN pd.[Value] ELSE 0 END)
+		,[CompanyOther] = SUM(CASE WHEN pd.[Type] = 'CompanyOther' THEN pd.[Value] ELSE 0 END)
+		,[TotalDeduction] = SUM(CASE WHEN pd.[Type] = 'TotalDeduction' THEN pd.[Value] ELSE 0 END)
+		,[GSIS] = SUM(CASE WHEN pd.[Type] = 'GSIS' THEN pd.[Value] ELSE 0 END)
+		,[GSISEC] = SUM(CASE WHEN pd.[Type] = 'GSISEC' THEN pd.[Value] ELSE 0 END)
+		,[ThirteenthMonthPay] = SUM(CASE WHEN pd.[Type] = 'ThirteenthMonthPay' THEN pd.[Value] ELSE 0 END)
+		,[TaxableBenefit] = SUM(CASE WHEN pd.[Type] = 'TaxableBenefit' THEN pd.[Value] ELSE 0 END)
+		,[Benefit] = SUM(CASE WHEN pd.[Type] = 'Benefit' THEN pd.[Value] ELSE 0 END)
+		,[CompanyTax] = SUM(CASE WHEN pd.[Type] = 'CompanyTax' THEN pd.[Value] ELSE 0 END)
+		,[NonTaxable] = SUM(CASE WHEN pd.[Type] = 'NonTaxable' THEN pd.[Value] ELSE 0 END)
+		,[TaxExempt] = SUM(CASE WHEN pd.[Type] = 'TaxExempt' THEN pd.[Value] ELSE 0 END)
+		,[SSSBasis] = SUM(CASE WHEN pd.[Type] = 'SSSBasis' THEN pd.[Value] ELSE 0 END)
+		,[PhilHealthBasis] = SUM(CASE WHEN pd.[Type] = 'PhilHealthBasis' THEN pd.[Value] ELSE 0 END)
+		,[PagibigBasis] = SUM(CASE WHEN pd.[Type] = 'PagibigBasis' THEN pd.[Value] ELSE 0 END)
+		,[AccruedThirteenthMonthPay] = SUM(CASE WHEN pd.[Type] = 'AccruedThirteenthMonthPay' THEN pd.[Value] ELSE 0 END)
+		,[AmtIncludeInThirteenthMonthPayCalc] = SUM(CASE WHEN pd.[Type] = 'AmtIncludeInThirteenthMonthPayCalc' THEN pd.[Value] ELSE 0 END)
+		,[PagIbigTaxLimitExcess] = SUM(CASE WHEN pd.[Type] = 'PagIbigTaxLimitExcess' THEN pd.[Value] ELSE 0 END)
+		,[CoNonWorking] = SUM(CASE WHEN pd.[Type] = 'CompanyNonWorkingDayHrs' THEN pd.[Value] ELSE 0 END)
+		,[CoNonWorkingPay] = SUM(CASE WHEN pd.[Type] = 'CompanyNonWorkingDayHrsPay' THEN pd.[Value] ELSE 0 END)
+		,[CoNonWorkingNS] = SUM(CASE WHEN pd.[Type] = 'CompanyNonWorkingDayNightShiftHrs' THEN pd.[Value] ELSE 0 END)
+		,[CoNonWorkingNSPay] = SUM(CASE WHEN pd.[Type] = 'CompanyNonWorkingDayNightShiftHrsPay' THEN pd.[Value] ELSE 0 END)
+		,[CoNonWorkingOT] = SUM(CASE WHEN pd.[Type] = 'CompanyNonWorkingDayOvertimeHrs' THEN pd.[Value] ELSE 0 END)
+		,[CoNonWorkingOTPay] = SUM(CASE WHEN pd.[Type] = 'CompanyNonWorkingDayOvertimeHrsPay' THEN pd.[Value] ELSE 0 END)
+		,[CoNonWorkingNSOT] = SUM(CASE WHEN pd.[Type] = 'CompanyNonWorkingDayNightShiftOvertimeHrs' THEN pd.[Value] ELSE 0 END)
+		,[CoNonWorkingNSOTPay] = SUM(CASE WHEN pd.[Type] = 'CompanyNonWorkingDayNightShiftOvertimeHrsPay' THEN pd.[Value] ELSE 0 END)
+		,[CompanyNonWorkingDayHrsPay_NoWork] = SUM(CASE WHEN pd.[Type] = 'CompanyNonWorkingDayHrsPay_NoWork' THEN pd.[Value] ELSE 0 END)
+		,[TaxAdjustment] = SUM(CASE WHEN pd.[Type] = 'TaxAdjustment' THEN pd.[Value] ELSE 0 END)
+		,[CompanyTaxable] = SUM(CASE WHEN pd.[Type] = 'CompanyTaxable' THEN pd.[Value] ELSE 0 END)
+
+		/*PREVIOUS PAYROLL ADDED BY AGC 12.17.2018*/
+		,[PrevEmployerT13thMonthPayAndOtherBenefits] = SUM(CASE WHEN PD.Type = 'PrevEmployerT13thMonthPayAndOtherBenefits' THEN PD.Value ELSE 0 END)
+		,[PrevEmployerTaxWithheld] = SUM(CASE WHEN PD.Type = 'PrevEmployerTaxWithheld' THEN PD.Value ELSE 0 END)
+		,[PrevEmployerTCompensationIncome] = SUM(CASE WHEN PD.Type = 'PrevEmployerTCompensationIncome' THEN PD.Value ELSE 0 END)
+		,[PrevEmployerTSalariesandOtherFormsofCompensation] = SUM(CASE WHEN PD.Type = 'PrevEmployerTSalariesandOtherFormsofCompensation' THEN PD.Value ELSE 0 END)
+		,[PrevNT13thMonthPayAndOtherBenefits] = SUM(CASE WHEN PD.Type = 'PrevNT13thMonthPayAndOtherBenefits' THEN PD.Value ELSE 0 END)
+		,[PrevNTBasicSMW] = SUM(CASE WHEN PD.Type = 'PrevNTBasicSMW' THEN PD.Value ELSE 0 END)
+		,[PrevNTDeMinimisBenefits] = SUM(CASE WHEN PD.Type = 'PrevNTDeMinimisBenefits' THEN PD.Value ELSE 0 END)
+		,[PrevNTHazardPay] = SUM(CASE WHEN PD.Type = 'PrevNTHazardPay' THEN PD.Value ELSE 0 END)
+		,[PrevNTHolidayPay] = SUM(CASE WHEN PD.Type = 'PrevNTHolidayPay' THEN PD.Value ELSE 0 END)
+		,[PrevNTNightShiftDifferential] = SUM(CASE WHEN PD.Type = 'PrevNTNightShiftDifferential' THEN PD.Value ELSE 0 END)
+		,[PrevNTOvertimePay] = SUM(CASE WHEN PD.Type = 'PrevNTOvertimePay' THEN PD.Value ELSE 0 END)
+		,[PrevNTSalariesandOtherFormsofCompensation] = SUM(CASE WHEN PD.Type = 'PrevNTSalariesandOtherFormsofCompensation' THEN PD.Value ELSE 0 END)
+		,[PrevNTSSSGSISPHICPagibigContributionsandUnionDues] = SUM(CASE WHEN PD.Type = 'PrevNTSSSGSISPHICPagibigContributionsandUnionDues' THEN PD.Value ELSE 0 END)
+
+		/*NS2 RATES AGC 08.07.2019*/
+		,BasicNS2Hrs = ISNULL(SUM(CASE WHEN PD.Type = 'BasicNS2Hrs' THEN PD.Value ELSE 0 END),0)
+		,BasicNS2Pay = ISNULL(SUM(CASE WHEN PD.Type = 'BasicNS2Pay' THEN PD.Value ELSE 0 END),0)
+		,BasicNSOT2Hrs = ISNULL(SUM(CASE WHEN PD.Type = 'BasicNSOT2Hrs' THEN PD.Value ELSE 0 END),0)
+		,BasicNSOT2Pay = ISNULL(SUM(CASE WHEN PD.Type = 'BasicNSOT2Pay' THEN PD.Value ELSE 0 END),0)
+		,RestdayNS2Hrs = ISNULL(SUM(CASE WHEN PD.Type = 'RestdayNS2Hrs' THEN PD.Value ELSE 0 END),0)
+		,RestdayNS2Pay = ISNULL(SUM(CASE WHEN PD.Type = 'RestdayNS2Pay' THEN PD.Value ELSE 0 END),0)
+		,RestdayNSOT2Hrs = ISNULL(SUM(CASE WHEN PD.Type = 'RestdayNSOT2Hrs' THEN PD.Value ELSE 0 END),0)
+		,RestdayNSOT2Pay = ISNULL(SUM(CASE WHEN PD.Type = 'RestdayNSOT2Pay' THEN PD.Value ELSE 0 END),0)
+		,HolidayNS2Hrs = ISNULL(SUM(CASE WHEN PD.Type = 'HolidayNS2Hrs' THEN PD.Value ELSE 0 END),0)
+		,HolidayNS2Pay = ISNULL(SUM(CASE WHEN PD.Type = 'HolidayNS2Pay' THEN PD.Value ELSE 0 END),0)
+		,HolidayNSOT2Hrs = ISNULL(SUM(CASE WHEN PD.Type = 'HolidayNSOT2Hrs' THEN PD.Value ELSE 0 END),0)
+		,HolidayNSOT2Pay = ISNULL(SUM(CASE WHEN PD.Type = 'HolidayNSOT2Pay' THEN PD.Value ELSE 0 END),0)
+		,SpecialNS2Hrs = ISNULL(SUM(CASE WHEN PD.Type = 'SpecialNS2Hrs' THEN PD.Value ELSE 0 END),0)
+		,SpecialNS2Pay = ISNULL(SUM(CASE WHEN PD.Type = 'SpecialNS2Pay' THEN PD.Value ELSE 0 END),0)
+		,SpecialNSOT2Hrs = ISNULL(SUM(CASE WHEN PD.Type = 'SpecialNSOT2Hrs' THEN PD.Value ELSE 0 END),0)
+		,SpecialNSOT2Pay = ISNULL(SUM(CASE WHEN PD.Type = 'SpecialNSOT2Pay' THEN PD.Value ELSE 0 END),0)
+		,HRNS2Hrs = ISNULL(SUM(CASE WHEN PD.Type = 'HRNS2Hrs' THEN PD.Value ELSE 0 END),0)
+		,HRNS2Pay = ISNULL(SUM(CASE WHEN PD.Type = 'HRNS2Pay' THEN PD.Value ELSE 0 END),0)
+		,HRNSOT2Hrs = ISNULL(SUM(CASE WHEN PD.Type = 'HRNSOT2Hrs' THEN PD.Value ELSE 0 END),0)
+		,HRNSOT2Pay = ISNULL(SUM(CASE WHEN PD.Type = 'HRNSOT2Pay' THEN PD.Value ELSE 0 END),0)
+		,SRNS2Hrs = ISNULL(SUM(CASE WHEN PD.Type = 'SRNS2Hrs' THEN PD.Value ELSE 0 END),0)
+		,SRNS2Pay = ISNULL(SUM(CASE WHEN PD.Type = 'SRNS2Pay' THEN PD.Value ELSE 0 END),0)
+		,SRNSOT2Hrs = ISNULL(SUM(CASE WHEN PD.Type = 'SRNSOT2Hrs' THEN PD.Value ELSE 0 END),0)
+		,SRNSOT2Pay = ISNULL(SUM(CASE WHEN PD.Type = 'SRNSOT2Pay' THEN PD.Value ELSE 0 END),0)
+
+
+		/*DOUBLE HOLIDAY COLUMNS*/
+		,DoubleHolidayHrs =					SUM(CASE WHEN pd.[Type] = 'DoubleHolidayHrs' THEN pd.[Value] ELSE 0 END)
+		,DoubleHolidayOTHrs =				SUM(CASE WHEN pd.[Type] = 'DoubleHolidayOTHrs' THEN pd.[Value] ELSE 0 END)
+		,DoubleHolidayNSHrs =				SUM(CASE WHEN pd.[Type] = 'DoubleHolidayNSHrs' THEN pd.[Value] ELSE 0 END)
+		,DoubleHolidayNSOTHrs =				SUM(CASE WHEN pd.[Type] = 'DoubleHolidayNSOTHrs' THEN pd.[Value] ELSE 0 END)
+		,DoubleHolidayRestdayHrs =			SUM(CASE WHEN pd.[Type] = 'DoubleHolidayRestdayHrs' THEN pd.[Value] ELSE 0 END)
+		,DoubleHolidayRestdayOTHrs =		SUM(CASE WHEN pd.[Type] = 'DoubleHolidayRestdayOTHrs' THEN pd.[Value] ELSE 0 END)
+		,DoubleHolidayRestdayNSHrs =		SUM(CASE WHEN pd.[Type] = 'DoubleHolidayRestdayNSHrs' THEN pd.[Value] ELSE 0 END)
+		,DoubleHolidayRestdayNSOTHrs =		SUM(CASE WHEN pd.[Type] = 'DoubleHolidayRestdayNSOTHrs' THEN pd.[Value] ELSE 0 END)
+		,DoubleHolidayNS2Hrs =				SUM(CASE WHEN pd.[Type] = 'DoubleHolidayNS2Hrs' THEN pd.[Value] ELSE 0 END)
+		,DoubleHolidayNSOT2Hrs =			SUM(CASE WHEN pd.[Type] = 'DoubleHolidayNSOT2Hrs' THEN pd.[Value] ELSE 0 END)
+		,DoubleHolidayRestdayNS2Hrs =		SUM(CASE WHEN pd.[Type] = 'DoubleHolidayRestdayNS2Hrs' THEN pd.[Value] ELSE 0 END)
+		,DoubleHolidayRestdayNSOT2Hrs =		SUM(CASE WHEN pd.[Type] = 'DoubleHolidayRestdayNSOT2Hrs' THEN pd.[Value] ELSE 0 END)
+		,DoubleHolidayPay =					SUM(CASE WHEN pd.[Type] = 'DoubleHolidayPay' THEN pd.[Value] ELSE 0 END)
+		,DoubleHolidayOTPay =				SUM(CASE WHEN pd.[Type] = 'DoubleHolidayOTPay' THEN pd.[Value] ELSE 0 END)
+		,DoubleHolidayNSPay =				SUM(CASE WHEN pd.[Type] = 'DoubleHolidayNSPay' THEN pd.[Value] ELSE 0 END)
+		,DoubleHolidayNSOTPay =				SUM(CASE WHEN pd.[Type] = 'DoubleHolidayNSOTPay' THEN pd.[Value] ELSE 0 END)
+		,DoubleHolidayRestdayPay =			SUM(CASE WHEN pd.[Type] = 'DoubleHolidayRestdayPay' THEN pd.[Value] ELSE 0 END)
+		,DoubleHolidayRestdayOTPay =		SUM(CASE WHEN pd.[Type] = 'DoubleHolidayRestdayOTPay' THEN pd.[Value] ELSE 0 END)
+		,DoubleHolidayRestdayNSPay =		SUM(CASE WHEN pd.[Type] = 'DoubleHolidayRestdayNSPay' THEN pd.[Value] ELSE 0 END)
+		,DoubleHolidayRestdayNSOTPay =		SUM(CASE WHEN pd.[Type] = 'DoubleHolidayRestdayNSOTPay' THEN pd.[Value] ELSE 0 END)
+		,PrevNTDoubleHolidayPay =			SUM(CASE WHEN pd.[Type] = 'PrevNTDoubleHolidayPay' THEN pd.[Value] ELSE 0 END)
+		,PrevNTDoubleHolidayRestdayPay =	SUM(CASE WHEN pd.[Type] = 'PrevNTDoubleHolidayRestdayPay' THEN pd.[Value] ELSE 0 END)
+		,DoubleHolidayNS2Pay =				SUM(CASE WHEN pd.[Type] = 'DoubleHolidayNS2Pay' THEN pd.[Value] ELSE 0 END)
+		,DoubleHolidayNSOT2Pay =			SUM(CASE WHEN pd.[Type] = 'DoubleHolidayNSOT2Pay' THEN pd.[Value] ELSE 0 END)
+		,DoubleHolidayRestdayNS2Pay =		SUM(CASE WHEN pd.[Type] = 'DoubleHolidayRestdayNS2Pay' THEN pd.[Value] ELSE 0 END)
+		,DoubleHolidayRestdayNSOT2Pay =		SUM(CASE WHEN pd.[Type] = 'DoubleHolidayRestdayNSOT2Pay' THEN pd.[Value] ELSE 0 END)
+	
+	FROM payroll.PaysheetDetail pd
+	WHERE pd.PaySheetHeaderDetailId = PHD.PaySheetHeaderDetailId
+	GROUP BY pd.PaysheetHeaderDetailId
+) AS PD
+CROSS APPLY
+(
+	SELECT 
+		[OvertimeHrs] = 
+		ISNULL([OROT], 0) +
+		ISNULL([REOT], 0) +
+		ISNULL([HOOT], 0) +
+		ISNULL([SPOT], 0) +
+		ISNULL([HROT], 0) +
+		ISNULL([SROT], 0) +
+		ISNULL([ORNSOT], 0) +
+		ISNULL([RENSOT], 0) +
+		ISNULL([HONSOT], 0) +
+		ISNULL([SPNSOT], 0) +
+		ISNULL([HRNSOT], 0) +
+		ISNULL([SRNSOT], 0) +
+		ISNULL([CoNonWorkingOT], 0) +
+		ISNULL([CoNonWorkingNSOT], 0) + 
+		ISNULL([BasicNSOT2Hrs],0) + 
+		ISNULL([RestdayNSOT2Hrs],0) +
+		ISNULL([HolidayNSOT2Hrs],0)	+
+		ISNULL([SpecialNSOT2Hrs],0)	+
+		ISNULL([HRNSOT2Hrs],0) +
+		ISNULL([SRNSOT2Hrs],0) +
+		ISNULL([DoubleHolidayOTHrs],0) +
+		ISNULL([DoubleHolidayNSOTHrs],0) +
+		ISNULL([DoubleHolidayRestdayNSOTHrs],0) +
+		ISNULL([DoubleHolidayNSOT2Hrs],0) +
+		ISNULL([DoubleHolidayRestdayNSOT2Hrs],0) +
+		ISNULL([DoubleHolidayRestdayOTHrs],0) 
+
+		,[TotalHolidayHrs] = ISNULL([HO], 0)
+		+ ISNULL([SP], 0)
+		+ ISNULL([HR], 0)
+		+ ISNULL([SR], 0)
+		+ ISNULL([CoNonWorking], 0)
+		+ ISNULL([DoubleHolidayHrs],0)
+		+ ISNULL([DoubleHolidayRestdayHrs],0)
+		
+
+		,[NightDiffHrs] = ISNULL([ORNS], 0) +
+		ISNULL([RENS], 0) +
+		ISNULL([HONS], 0) +
+		ISNULL([SPNS], 0) +
+		ISNULL([HRNS], 0) +
+		ISNULL([SRNS], 0) +
+		ISNULL([CoNonWorkingNS], 0) + 
+		ISNULL([BasicNS2Hrs],0) + 
+		ISNULL([RestdayNS2Hrs],0) +
+		ISNULL([HolidayNS2Hrs],0) +
+		ISNULL([SpecialNS2Hrs],0) +
+		ISNULL([HRNS2Hrs],0) +
+		ISNULL([SRNS2Hrs],0) + 
+		ISNULL([DoubleHolidayNSHrs],0) +
+		ISNULL([DoubleHolidayRestdayNSHrs],0) + 
+		ISNULL([DoubleHolidayNS2Hrs],0) + 
+		ISNULL([DoubleHolidayRestdayNS2Hrs],0)
+
+		,[TotalHoursWorked] = ISNULL([OR], 0) +
+		ISNULL([RE], 0) +
+		ISNULL([HO], 0) +
+		ISNULL([SP], 0) +
+		ISNULL([HR], 0) +
+		ISNULL([SR], 0) +
+		ISNULL([ORNS], 0) +
+		ISNULL([RENS], 0) +
+		ISNULL([HONS], 0) +
+		ISNULL([SPNS], 0) +
+		ISNULL([HRNS], 0) +
+		ISNULL([SRNS], 0) +
+		ISNULL([OROT], 0) +
+		ISNULL([REOT], 0) +
+		ISNULL([HOOT], 0) +
+		ISNULL([SPOT], 0) +
+		ISNULL([HROT], 0) +
+		ISNULL([SROT], 0) +
+		ISNULL([ORNSOT], 0) +
+		ISNULL([RENSOT], 0) +
+		ISNULL([HONSOT], 0) +
+		ISNULL([SPNSOT], 0) +
+		ISNULL([HRNSOT], 0) +
+		ISNULL([SRNSOT], 0) +
+		ISNULL([CoNonWorking], 0) + 
+		ISNULL([CoNonWorkingNS], 0) + 
+		ISNULL([CoNonWorkingOT], 0) + 
+		ISNULL([CoNonWorkingNSOT], 0) + 
+		ISNULL([BasicNS2Hrs],0) + 
+		ISNULL([RestdayNS2Hrs],0) + 
+		ISNULL([HolidayNS2Hrs],0) + 
+		ISNULL([SpecialNS2Hrs],0) + 
+		ISNULL([HRNS2Hrs],0) + 
+		ISNULL([SRNS2Hrs],0) + 
+		ISNULL([BasicNSOT2Hrs],0) + 
+		ISNULL([RestdayNSOT2Hrs],0) + 
+		ISNULL([HolidayNSOT2Hrs],0)	+ 
+		ISNULL([SpecialNSOT2Hrs],0)	+ 
+		ISNULL([HRNSOT2Hrs],0) + 
+		ISNULL([SRNSOT2Hrs],0)
+		
+		,[OvertimePay] = ISNULL([OROTPay], 0) +
+		ISNULL([REOTPay], 0) +
+		ISNULL([HOOTPay], 0) +
+		ISNULL([SPOTPay], 0) +
+		ISNULL([HROTPay], 0) +
+		ISNULL([SROTPay], 0) +
+		ISNULL([ORNSOTPay], 0) +
+		ISNULL([RENSOTPay], 0) +
+		ISNULL([HONSOTPay], 0) +
+		ISNULL([SPNSOTPay], 0) +
+		ISNULL([HRNSOTPay], 0) +
+		ISNULL([SRNSOTPay], 0) +
+		ISNULL([CoNonWorkingOTPay], 0) + 
+		ISNULL([CoNonWorkingNSOTPay], 0) +
+		ISNULL([BasicNSOT2Pay],0) + 
+		ISNULL([RestdayNSOT2Pay],0) +
+		ISNULL([HolidayNSOT2Pay],0) +
+		ISNULL([SpecialNSOT2Pay],0) +
+		ISNULL([HRNSOT2Pay],0) +
+		ISNULL([SRNSOT2Pay],0) +
+		ISNULL([DoubleHolidayOTPay],0) +
+		ISNULL([DoubleHolidayNSOTPay],0) +
+		ISNULL([DoubleHolidayRestdayOTPay],0) +
+		ISNULL([DoubleHolidayRestdayNSOTPay],0) +
+		ISNULL([DoubleHolidayNSOT2Pay],0) +
+		ISNULL([DoubleHolidayRestdayNSOT2Pay],0) 
+
+		,[TotalHolidayPay] = ISNULL([HOPay], 0)
+		+ ISNULL([SPPay], 0)
+		+ ISNULL([HRPay], 0)
+		+ ISNULL([SRPay], 0)
+		+ ISNULL([CoNonWorkingPay], 0)
+		+ ISNULL([DoubleHolidayPay], 0)
+		+ ISNULL([DoubleHolidayRestdayPay], 0)
+
+
+		,[NightDiffPay] = ISNULL([ORNSPay], 0) +
+		ISNULL([RENSPay], 0) +
+		ISNULL([HONSPay], 0) +
+		ISNULL([SPNSPay], 0) +
+		ISNULL([HRNSPay], 0) +
+		ISNULL([SRNSPay], 0) + 
+		ISNULL([CoNonWorkingNSPay], 0) + 
+		ISNULL([BasicNS2Pay],0) + 
+		ISNULL([RestdayNS2Pay],0) +
+		ISNULL([HolidayNS2Pay],0) +
+		ISNULL([SpecialNS2Pay],0) +
+		ISNULL([HRNS2Pay],0) +
+		ISNULL([SRNS2Pay],0) +
+		ISNULL([DoubleHolidayNSPay],0) +
+		ISNULL([DoubleHolidayRestdayNSPay],0) +
+		ISNULL([DoubleHolidayNS2Pay],0) +
+		ISNULL([DoubleHolidayRestdayNS2Pay],0)
+
+		/*
+		,[TotalOTHrs] = 
+		ISNULL([OROT], 0) +
+		ISNULL([REOT], 0) +
+		ISNULL([HOOT], 0) +
+		ISNULL([SPOT], 0) +
+		ISNULL([HROT], 0) +
+		ISNULL([SROT], 0) +
+		ISNULL([ORNSOT], 0) +
+		ISNULL([RENSOT], 0) +
+		ISNULL([HONSOT], 0) +
+		ISNULL([SPNSOT], 0) +
+		ISNULL([HRNSOT], 0) +
+		ISNULL([SRNSOT], 0) +
+		ISNULL([CoNonWorkingOT], 0) +
+		ISNULL([CoNonWorkingNSOT], 0) + 
+		ISNULL([BasicNSOT2Hrs],0) + 
+		ISNULL([RestdayNSOT2Hrs],0) +
+		ISNULL([HolidayNSOT2Hrs],0)	+
+		ISNULL([SpecialNSOT2Hrs],0)	+
+		ISNULL([HRNSOT2Hrs],0) +
+		ISNULL([SRNSOT2Hrs],0) +
+		ISNULL([DoubleHolidayOTHrs],0) +
+		ISNULL([DoubleHolidayNSOTHrs],0) +
+		ISNULL([DoubleHolidayRestdayNSOTHrs],0) +
+		ISNULL([DoubleHolidayNSOT2Hrs],0) +
+		ISNULL([DoubleHolidayRestdayNSOT2Hrs],0) 
+
+		,[TotalOTPay] = ISNULL([OROTPay], 0) +
+		ISNULL([REOTPay], 0) +
+		ISNULL([HOOTPay], 0) +
+		ISNULL([SPOTPay], 0) +
+		ISNULL([HROTPay], 0) +
+		ISNULL([SROTPay], 0) +
+		ISNULL([ORNSOTPay], 0) +
+		ISNULL([RENSOTPay], 0) +
+		ISNULL([HONSOTPay], 0) +
+		ISNULL([SPNSOTPay], 0) +
+		ISNULL([HRNSOTPay], 0) +
+		ISNULL([SRNSOTPay], 0) +
+		ISNULL([CoNonWorkingOTPay], 0) + 
+		ISNULL([CoNonWorkingNSOTPay], 0) +
+		ISNULL([BasicNSOT2Pay],0) + 
+		ISNULL([RestdayNSOT2Pay],0) +
+		ISNULL([HolidayNSOT2Pay],0) +
+		ISNULL([SpecialNSOT2Pay],0) +
+		ISNULL([HRNSOT2Pay],0) +
+		ISNULL([SRNSOT2Pay],0)
+		*/
+		
+)SMRY
+INNER JOIN payroll.PaySheetHeader PH ON PH.PaySheetHeaderId = PHD.PaySheetHeaderId
+OUTER APPLY 
+(
+	SELECT TOP 1
+		Code
+		,Description
+		,NumberOfPayPeriods
+	FROM payroll.PayGroup
+	WHERE PayGroupId = PH.PaygroupId
+) PG
+
+/*Other Earning, Allowance, Deduction, and Loan summary*/
+OUTER APPLY
+(
+	SELECT
+		EAD.PaySheetHeaderDetailId 
+		,EAD.ProfileId
+		,Loan = SUM(ISNULL(COLS.Loan,0))
+		,Deduction = SUM(ISNULL(COLS.Deduction,0))
+		,OtherDeduction = SUM(ISNULL(COLS.OtherDeduction,0))
+		/*,Benefit = SUM(ISNULL(COLS.Benefit,0))*/
+		,ENonTaxableOther = SUM(ISNULL(COLS.ENonTaxableOther,0))
+		,ETaxableOther = SUM(ISNULL(COLS.ETaxableOther,0))
+		,Allowance = SUM(ISNULL(COLS.TaxableOther,0) + ISNULL(COLS.NonTaxableOther,0))
+		,TaxableOther = SUM(ISNULL([TaxableOther], 0))
+		,NonTaxableOther = SUM(ISNULL([NonTaxableOther], 0) + ISNULL([ENonTaxableOther], 0))
+		,Earning = SUM(ISNULL(0, 0))
+		,OtherIncome = SUM(ISNULL(COLS.ETaxableOther,0) + ISNULL(COLS.ENonTaxableOther, 0))
+		,ECompanyTax = SUM(ISNULL(COLS.ECompanyTax,0))
+		,EarningTaggedAsOthers = SUM(ISNULL(COLS.EarningTaggedAsOthers,0))
+	FROM report.vwEaningAndDeductionDetails EAD
+	CROSS APPLY
+	(
+		SELECT
+			Loan = (CASE WHEN EAD.TypeId = 6 THEN EAD.Payment ELSE 0 END)
+			,Deduction = (CASE WHEN EAD.TypeId = 2 THEN EAD.Payment ELSE 0 END)
+			,OtherDeduction = (CASE WHEN EAD.TypeId = 8 THEN EAD.Payment ELSE 0 END)
+			,Benefit = (CASE WHEN EAD.TypeId IN (1,7,3) AND ISNULL(EAD.TaxCategoryId,0) = 3 THEN EAD.Payment ELSE 0 END)
+			,ENonTaxableOther = (CASE WHEN EAD.TypeId IN (1,7) AND ISNULL(EAD.Taxable,0) = 0 THEN EAD.Payment ELSE 0 END)
+			/*
+			,ETaxableOther = (CASE WHEN EAD.TypeId IN (1,7) AND ISNULL(EAD.Taxable,0) <> 0 AND ISNULL(EAD.TaxCategoryId,0) <> 3  THEN EAD.Payment ELSE 0 END)
+			,TaxableOther = (CASE WHEN EAD.TypeId IN (3) AND ISNULL(EAD.Taxable,0) <> 0 AND ISNULL(EAD.TaxCategoryId,0) <> 3  THEN EAD.Payment ELSE 0 END)
+			*/
+			,ETaxableOther = (CASE WHEN EAD.TypeId IN (1,7) AND ISNULL(EAD.Taxable,0) = 1  THEN EAD.Payment ELSE 0 END)
+			,TaxableOther = (CASE WHEN EAD.TypeId IN (3) AND ISNULL(EAD.Taxable,0) = 1 THEN EAD.Payment ELSE 0 END)
+
+			,NonTaxableOther = (CASE WHEN EAD.TypeId IN (3) AND ISNULL(EAD.Taxable,0) = 0 THEN EAD.Payment ELSE 0 END)
+			,ECompanyTax = (CASE WHEN EAD.TypeId IN (1,7,3) AND ISNULL(EAD.TaxCategoryId,0) IN (4) THEN EAD.Payment END)
+			,EarningTaggedAsOthers = (CASE WHEN EAD.TypeId IN (1,7,3) AND ISNULL(EAD.TaxCategoryId,0) IN (5) THEN EAD.Payment END)
+	)COLS
+	WHERE EAD.PaySheetHeaderDetailId = PHD.PaySheetHeaderDetailId
+	GROUP BY EAD.PaySheetHeaderDetailId,EAD.ProfileId
+)PDS
+
+/*
+OUTER APPLY 
+(
+	SELECT
+		PaySheetHeaderDetailId
+		,ProfileId
+		,OtherIncome = ABS(SUM(ISNULL([ETaxableOther], 0) + ISNULL([ENonTaxableOther], 0))) --should be positive in display
+		,OtherDeduction = ABS(SUM(ISNULL(OtherDeduction, 0)))
+		,Allowance = ABS(SUM(ISNULL([TaxableOther], 0) + ISNULL([NonTaxableOther], 0)))--sum(isnull(Allowance,0))
+		,Deduction = SUM(ISNULL(Deduction, 0))
+		,Loan = SUM(ISNULL(Loan, 0))
+		,[TaxableOther] = SUM(ISNULL([TaxableOther], 0))
+		,[NonTaxableOther] = SUM(ISNULL([NonTaxableOther], 0) + ISNULL([ENonTaxableOther], 0))
+		,[Earning] = SUM(ISNULL([Earning], 0))
+		,[ENonTaxableOther] = SUM(ISNULL([ENonTaxableOther], 0))
+		,[ETaxableOther] = SUM(ISNULL([ETaxableOther], 0))
+	FROM (SELECT
+			Type =
+			CASE EAD.TypeId
+				--WHEN 1 THEN 'Earning'
+				WHEN 1 THEN CASE 
+						WHEN ISNULL(TaxCategoryId,0) = 3 THEN 'Benefit' 
+						WHEN Taxable = 0 THEN 'ENonTaxableOther'
+						ELSE 'ETaxableOther'
+					END
+				WHEN 7 THEN CASE
+						WHEN ISNULL(TaxCategoryId,0) = 3 THEN 'Benefit'
+						WHEN Taxable = 0 THEN 'ENonTaxableOther'
+						ELSE 'ETaxableOther'
+					END
+				WHEN 8 THEN 'OtherDeduction'
+				--WHEN 3 THEN 'Allowance'
+				WHEN 2 THEN 'Deduction'
+				WHEN 6 THEN 'Loan'
+				WHEN 3 THEN CASE
+						WHEN ISNULL(TaxCategoryId,0) = 3 THEN 'Benefit'
+						WHEN Taxable = 0 THEN 'NonTaxableOther'
+						ELSE 'TaxableOther'
+					END
+				ELSE ''
+			END
+			,Value = EAD.Payment
+			,EAD.PaySheetHeaderDetailId
+			,EAD.ProfileId
+		FROM report.vwEaningAndDeductionDetails EAD) AS A
+	PIVOT (SUM(Value) FOR Type IN
+	(
+	[Earning],
+	[OtherIncome],
+	[OtherDeduction],
+	[Allowance],
+	[Deduction],
+	[Loan],
+	[NonTaxableOther],
+	[TaxableOther],
+	[ENonTaxableOther],
+	[ETaxableOther]
+	)) AS t
+	WHERE PaySheetHeaderDetailId = PHD.PaySheetHeaderDetailId
+	GROUP BY	PaySheetHeaderDetailId
+			,ProfileId
+) PDS
+*/
+
+/*
+OUTER APPLY 
+(
+	SELECT
+		PaySheetHeaderDetailId
+		,VL = ISNULL(VL, 0)
+		,SL = ISNULL(SL, 0)
+		,OtherLeave = ISNULL(OtherLeave, 0)
+	FROM 
+	(
+		SELECT
+		PaySheetHeaderDetailId
+		,LeaveType =
+			CASE
+				WHEN LEFT(LeaveType, 2) = 'VL' THEN 'VL'
+				WHEN LEFT(LeaveType, 2) = 'SL' THEN 'SL'
+				ELSE 'OtherLeave'
+			END
+		,LeaveHours
+		FROM payroll.PaysheetLeaveDetail
+	) AS L PIVOT (SUM(LeaveHours) FOR LeaveType IN ([VL], [SL], [OtherLeave])) AS t
+	WHERE t.PaySheetHeaderDetailId = PHD.PaySheetHeaderDetailId
+) LeaveDetail
+*/
+
+OUTER APPLY 
+(
+	SELECT
+		PaySheetHeaderDetailId
+		,VL = ISNULL(VL, 0)
+		,SL = ISNULL(SL, 0)
+		,OtherLeave = ISNULL(OtherLeave, 0)
+		,LeaveForLate = ISNULL(LeaveForLate,0)
+		,LeaveForUndertime = ISNULL(LeaveForUndertime,0)
+		,LeaveForAbsent = ISNULL(LeaveForAbsent,0)
+	FROM 
+	(
+		SELECT 
+			PLD.PaySheetHeaderDetailId
+			,VL = SUM((CASE WHEN LEFT(LeaveType, 2) = 'VL' THEN PLD.LeaveHours ELSE 0 END))
+			,SL = SUM((CASE WHEN LEFT(LeaveType, 2) = 'SL' THEN PLD.LeaveHours ELSE 0 END))
+			,OtherLeave = SUM((CASE WHEN LEFT(LeaveType, 2) NOT IN ('SL','VL')  THEN PLD.LeaveHours ELSE 0 END))
+			,LeaveForLate = SUM((CASE WHEN ISNULL(LR.PartialDayApplyTo,0) = 1 THEN PLD.LeaveHours ELSE 0 END))
+			,LeaveForUndertime = SUM((CASE WHEN ISNULL(LR.PartialDayApplyTo,0) = 2 THEN PLD.LeaveHours ELSE 0 END))
+			,LeaveForAbsent = SUM((CASE WHEN ISNULL(LR.PartialDayApplyTo,0) = 0 THEN PLD.LeaveHours ELSE 0 END))
+		FROM payroll.PaysheetLeaveDetail PLD
+		INNER JOIN leave.LeaveRequest LR ON LR.LeaveRequestId = PLD.TransactionId
+		/*INNER JOIN 
+		(
+			SELECT HDR.PartialDayApplyTo,DTL.LeaveRequestId FROM leave.LeaveRequest DTL
+			INNER JOIN leave.LeaveRequestHeader HDR ON HDR.LeaveRequestHeaderId = DTL.LeaveRequestHeaderId
+		) LR ON LR.LeaveRequestId = PLD.TransactionId
+		*/
+		
+		GROUP BY PLD.PaySheetHeaderDetailId
+	)t
+	WHERE t.PaySheetHeaderDetailId = PHD.PaySheetHeaderDetailId
+) LeaveDetail
+
+OUTER APPLY 
+(
+	SELECT TOP 1
+		PTC.Value
+	FROM payroll.PayrollTypeConfigValue PTC
+	WHERE PTC.ConfigSetDetailId = 168
+	AND PTC.PayrollTypeId = PH.PayrollTypeId
+) PTC
+
+
+
+
+GO
+
+

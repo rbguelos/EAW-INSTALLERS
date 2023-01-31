@@ -1,0 +1,45 @@
+IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[employee].[spProfileCustomFieldList]') AND type in (N'P', N'PC'))
+DROP PROCEDURE [employee].[spProfileCustomFieldList]
+GO
+/*===========================================*\
+**	Last Update Date: 02/21/2019
+**	Last Update By: Kris
+**	Last DBVersion executed: v673
+\*===========================================*/
+CREATE PROCEDURE [employee].[spProfileCustomFieldList] 
+(
+	@ProfileId BIGINT = 0
+)
+AS
+BEGIN
+SET NOCOUNT ON;
+
+SELECT
+    --ProfileCustomFieldId
+    ProfileCustomFieldId
+
+    --ProfileId
+   ,ProfileId
+
+    --CustomFieldId
+   ,PCF.CustomFieldId
+
+    --CustomFieldTypeDescription
+   ,CustomFieldTypeDescription = CF.CustomFieldType
+
+    --CustomFieldValue
+   ,CustomFieldValue
+
+    --ControlType
+   ,CF.ControlType 
+
+FROM employee.ProfileCustomField PCF
+
+--CustomField
+JOIN employee.CustomField CF
+    ON PCF.CustomFieldId = cf.CustomFieldId
+
+WHERE PCF.ProfileId = @ProfileId
+
+END
+

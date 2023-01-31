@@ -1,0 +1,11 @@
+EXEC [maintenance].[UpdateJQListColumns]
+	@ListType = 'PerformanceAppraisalColumnList', @ColumnType = 'label', @Name = 'EmployeeName',
+	@Label = 'Employee', @Width = '180', @Align = '', @Formatter = '', @FormatterOption = '',
+	@Others = 'formatter: PerformanceAppraisal.formatEmployeeName, cellattr: PerformanceAppraisal.formatEmployeeTooltip', @Clients = ''
+
+EXEC [maintenance].[UpdateJQListColumns]
+	@ListType = 'PerformanceAppraisalColumnList', @ColumnType = 'label', @Name = 'PAType',
+	@Label = 'Type', @Width = '150', @Align = '', @Formatter = '', @FormatterOption = '',
+	@Others = 'formatter: PerformanceAppraisal.formatPAType, cellattr: PerformanceAppraisal.formatPATypeTooltip', @Clients = ''
+
+UPDATE security.Module_Forms SET AccessTypeId = '1,2,3' WHERE ModuleFormId IN (45)

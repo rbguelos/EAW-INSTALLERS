@@ -1,0 +1,4 @@
+UPDATE employee.CustomField SET DataLength = 250 WHERE CustomFieldType IN ('Project No','Task No','Expense Type','Expense Organization');
+
+IF NOT EXISTS(SELECT CustomFieldId FROM employee.CustomField WHERE CustomFieldType = 'Charging Percentage')
+INSERT INTO employee.CustomField(CustomFieldType,DataType,[DataLength],ControlType) VALUES('Charging Percentage',4,250,1);

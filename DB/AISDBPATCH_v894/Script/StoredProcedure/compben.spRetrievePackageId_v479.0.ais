@@ -1,0 +1,46 @@
+GO
+/****** Object:  StoredProcedure [compben].[spRetrievePackageId]    Script Date: 9/4/2017 3:14:19 PM ******/
+IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[compben].[spRetrievePackageId]') AND type in (N'P', N'PC'))
+DROP PROCEDURE [compben].[spRetrievePackageId]
+GO
+/****** Object:  StoredProcedure [compben].[spRetrievePackageId]    Script Date: 9/4/2017 3:14:19 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+IF NOT EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[compben].[spRetrievePackageId]') AND type in (N'P', N'PC'))
+BEGIN
+EXEC dbo.sp_executesql @statement = N'CREATE PROCEDURE [compben].[spRetrievePackageId] AS' 
+END
+GO
+/*===========================================*\
+**	Last Update Date: 12/06/2017
+**	Last Update By: Bryan
+**	Last DBVersion executed: v479
+\*===========================================*/
+-- =============================================
+-- Author:		Bryan Avellana
+-- Create date: August 17, 2017
+-- =============================================
+ALTER PROCEDURE [compben].[spRetrievePackageId]
+@CompanyId BIGINT = NULL,
+@EmploymentTypeId BIGINT = NULL,
+@JobPositionId BIGINT = NULL,
+@ServerDate DATETIME = NULL
+AS
+BEGIN
+	-- SET NOCOUNT ON added to prevent extra result sets from
+	-- interfering with SELECT statements.
+	SET NOCOUNT ON;
+
+    -- Insert statements for procedure here
+	SELECT TOP 1 PCK.PackageId
+	FROM compben.Package PCK
+	WHERE PCK.CompanyId = @CompanyId
+	AND CHARINDEX(',' + CAST(@EmploymentTypeId AS VARCHAR(MAX)) + ',', ',' + PCK.EmployeeTypeIds + ',') > 0
+	AND CHARINDEX(',' + CAST(@JobPositionId AS VARCHAR(MAX)) + ',', ',' + PCK.JobPositionIds + ',') > 0
+	AND PCK.[Status] = 1
+	AND PCK.EffectiveDate <= @ServerDate
+	ORDER BY PCK.EffectiveDate DESC
+END
+GO

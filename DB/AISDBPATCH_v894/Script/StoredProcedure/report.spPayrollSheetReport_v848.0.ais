@@ -1,0 +1,466 @@
+GO
+/****** Object:  StoredProcedure [report].[spPayrollSheetReport]    Script Date: 2/26/2020 2:03:45 PM ******/
+IF  EXISTS (SELECT * FROM sys.objects WHERE object_id = OBJECT_ID(N'[report].[spPayrollSheetReport]') AND type in (N'P', N'PC'))
+DROP PROCEDURE [report].[spPayrollSheetReport]
+GO
+/****** Object:  StoredProcedure [report].[spPayrollSheetReport]    Script Date: 2/26/2020 2:03:45 PM ******/
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+/*===========================================*\
+**	   Last Update Date: 03.02.2020
+**	   Last Update By: Abdiel
+**	   Last DBVersion executed: v
+**	   Changes: Added YTD Fields
+\*===========================================*/
+
+CREATE PROCEDURE [report].[spPayrollSheetReport] 
+    -- Add the parameters for the stored procedure here
+--DECLARE
+    @PaySheetHeaderId bigint = null,
+    @PaySheetHeaderDetailId bigint = null,
+    @ProfileIds varchar(max) = null,
+    @PayrollTypeId int = NULL,
+    @StatusId int = NULL,
+    @IssuedDateFrom datetime = NULL,
+    @IssuedDateTo datetime = NULL,
+    @PeriodStartDate datetime = NULL,
+    @PeriodEndDate datetime = NULL,
+    @PayrollMonth smallint = NULL,
+    @PayrollYear int = NULL,
+    @CompanyId bigint = 0,
+    @BranchId bigint = 0,
+    @DepartmentId bigint = 0,
+    @Officeid bigint = 0,
+    @JobLevelId bigint = 0,
+    @JobGradeId bigint = 0,
+    @JobRankId bigint = 0,
+    @ProjectProfileId bigint = 0,
+    @CostCenterId bigint = 0,
+    @DistrictId bigint = 0,
+    @PositionId bigint = 0,
+    @EmployeeTypeId bigint = 0,
+    @EmployeeStatusId int = 0,
+    @UnitId bigint = 0,
+    @LocationId bigint = 0,
+    @DivisionId bigint = 0,
+    @GroupId bigint = 0,
+    @TeamId bigint = 0,
+    @LineId bigint = 0,
+    @UserSecurityId bigint = 0
+AS
+BEGIN
+---- SET NOCOUNT ON added to prevent extra result sets from
+---- interfering with SELECT statements.
+--SET NOCOUNT ON;
+---- Insert statements for procedure here
+
+DECLARE @MAINQUERY VARCHAR(MAX) = 
+'
+SELECT
+    E.EmployeeNo
+    ,E.LastName
+    ,E.FirstName
+    ,E.MiddleName
+    ,E.Appellation
+    ,E.LastFirstMIName
+    ,E.FirstMILastName
+    ,E.HireDate
+    ,E.CompanyName
+    ,E.CompanyCode
+    ,E.BranchCode
+    ,E.BranchName
+    ,E.DepartmentName
+    ,E.DepartmentCode
+    ,E.OfficeName
+    ,E.OfficeCode
+    ,E.UnitCode
+    ,E.DivisionCode
+    ,E.GroupsCode
+    ,E.DistrictCode
+    ,E.Location
+    ,E.ProjectCode
+    ,E.ProjectName
+    ,E.CostCenterCode
+    ,E.LineCode
+    ,E.TeamCode
+    ,E.EmployeeTypeCode
+    ,E.JobRank
+    ,E.JobGrade
+    ,E.JobLevel
+    ,E.PositionCode
+    ,E.Position
+    ,E.TaxExemptionStatus
+    ,RP.[PaygroupId]
+    ,RP.[PayGroupCode]
+    ,RP.[PayGroupDescription]
+    ,RP.[PaySheetHeaderId]
+    ,RP.[PaySheetHeaderDetailId]
+    ,RP.[ProfileId] AS EmployeeId
+    ,RP.[CompanyId]
+    ,RP.[BranchId]
+    ,RP.[DepartmentId]
+    ,RP.[OfficeId]
+    ,RP.[UnitId]
+    ,RP.[DivisionId]
+    ,RP.[GroupId]
+    ,RP.[DistrictId]
+    ,RP.[LocationId]
+    ,RP.[ProjectProfileId]
+    ,RP.[CostCenterId]
+    ,RP.[LineId]
+    ,RP.[TeamId]
+    ,RP.[EmployeeTypeId]
+    ,RP.[JobRankId]
+    ,RP.[JobGradeId]
+    ,RP.[JobLevelId]
+    ,RP.[PositionId]
+    ,RP.[PayrollTypeId]
+    ,RP.[PayrollType]
+    ,RP.[ReferenceNo]
+    ,RP.[StatusId]
+    ,RP.[Status]
+    ,RP.[MonthYear]
+    ,RP.[PeriodStartDate]
+    ,RP.[PeriodEndDate]
+    ,RP.[IssuedDate]
+    ,RP.[CutOffStartDate]
+    ,RP.[CutOffEndDate]
+    ,RP.[PayrollPeriod]
+    ,RP.[EndOfMonth]
+    ,RP.[SalaryRate]
+    ,RP.[SalaryType]
+    ,RP.[HourlyRate]
+    ,RP.[DailyRate]
+    ,RP.[MonthlyRate]
+    ,RP.[LateHrs]
+    ,RP.[UndertimeHrs]
+    ,RP.[AbsentHrs]
+    ,RP.[LeaveHrs]
+    ,RP.[OR]
+    ,RP.[RE]
+    ,RP.[HO]
+    ,RP.[SP]
+    ,RP.[HR]
+    ,RP.[SR]
+    ,ORNS = (RP.[ORNS] + RP.BasicNS2Hrs)
+    ,RENS = (RP.[RENS] + RP.RestdayNS2Hrs)
+    ,HONS = (RP.[HONS] + RP.HolidayNS2Hrs)
+    ,SPNS = (RP.[SPNS] + RP.SpecialNS2Hrs)
+    ,HRNS = (RP.[HRNS] + RP.HRNS2Hrs)
+    ,SRNS = (RP.[SRNS] + RP.SRNS2Hrs)
+    ,RP.[OROT]
+    ,RP.[REOT]
+    ,RP.[HOOT]
+    ,RP.[SPOT]
+    ,RP.[HROT]
+    ,RP.[SROT]
+    ,ORNSOT = (RP.[ORNSOT] + RP.BasicNSOT2Hrs)
+    ,RENSOT = (RP.[RENSOT] + RP.RestdayNSOT2Hrs)
+    ,HONSOT = (RP.[HONSOT] + RP.HolidayNSOT2Hrs)
+    ,SPNSOT = (RP.[SPNSOT] + RP.SpecialNSOT2Hrs)
+    ,HRNSOT = (RP.[HRNSOT] + RP.HRNSOT2Hrs)
+    ,SRNSOT = (RP.[SRNSOT] + RP.SRNSOT2Hrs)
+    ,RP.[AbsentAmount]
+    ,RP.[LateAmount]
+    ,RP.[UndertimeAmount]
+    ,RP.TotalHolidayHrs
+    ,RP.OvertimeHrs
+    ,RP.NightDiffHrs
+    ,RP.[TotalOTHrs]
+    ,[ORPay] = RP.BasicPay
+    ,RP.[REPay]
+    ,RP.[HOPay]
+    ,RP.[SPPay]
+    ,RP.[HRPay]
+    ,RP.[SRPay]
+    ,ORNSPay = (RP.[ORNSPay] + RP.BasicNS2Pay)
+    ,RENSPay = (RP.[RENSPay] + RP.RestdayNS2Pay)
+    ,HONSPay = (RP.[HONSPay] + RP.HolidayNS2Pay)
+    ,SPNSPay = (RP.[SPNSPay] + RP.SpecialNS2Pay)
+    ,HRNSPay = (RP.[HRNSPay] + HRNS2Pay)
+    ,SRNSPay = (RP.[SRNSPay] + RP.SRNS2Pay)
+    ,RP.[OROTPay]
+    ,RP.[REOTPay]
+    ,RP.[HOOTPay]
+    ,RP.[SPOTPay]
+    ,RP.[HROTPay]
+    ,RP.[SROTPay]
+    ,ORNSOTPay = (RP.[ORNSOTPay] + RP.BasicNSOT2Pay)
+    ,RENSOTPay = (RP.[RENSOTPay] + RP.RestdayNSOT2Pay)
+    ,HONSOTPay = (RP.[HONSOTPay] + RP.HONSOTPay)
+    ,SPNSOTPay = (RP.[SPNSOTPay] + RP.SpecialNSOT2Pay)
+    ,HRNSOTPay = (RP.[HRNSOTPay] + RP.HRNSOT2Pay)
+    ,SRNSOTPay = (RP.[SRNSOTPay] + RP.SRNSOT2Pay)
+    ,RP.TotalHolidayPay
+    ,RP.OvertimePay
+    ,RP.NightDiffPay
+    ,RP.[TotalOTPay]
+    ,RP.[SSS]
+    ,RP.[SSSES]
+    ,RP.[SSSEC]
+    ,RP.[PhilHealth]
+    ,RP.[PhilHealthES]
+    ,RP.[PAGIBIG]
+    ,RP.[PAGIBIGES]
+    ,RP.[WHT]
+    ,RP.[CompanyWHT]
+    ,RP.[LeavePay]
+    ,RP.[Allowance]
+    ,RP.[Loan]
+    ,RP.[Deduction]
+    ,RP.[OtherIncome]
+    ,RP.[OtherDeduction]
+    ,RP.[BasicPay]
+    ,RP.[GrossPay]
+    ,RP.[TotalDeduction]
+    ,RP.[NetPay]
+    ,RP.[OthersContribution]
+    ,RP.[OtherBenefits]
+    ,RP.[DC]
+    ,RP.[COLA]
+    ,RP.[OtherAllowance]
+    ,RP.[EMPSC]
+    ,RP.[PIRAA]
+    ,RP.[PIRAAEC]
+    ,RP.[FieldworkUnits]
+    ,RP.[FieldworkPay]
+    ,RP.[OthersWHT]
+    ,RP.[UnionDues]
+    ,RP.[Representation]
+    ,RP.[Transportation]
+    ,RP.[FixedHousingAllowance]
+    ,RP.[Commission]
+    ,RP.[ProfitSharing]
+    ,RP.[Fees]
+    ,RP.[HazardPay]
+    ,RP.[Month13Pay]
+    ,RP.[TaxableIncome]
+    ,RP.[OriginalWHT]
+    ,RP.[CompanyOtherAmounts]
+    ,RP.[SIL]
+    ,RP.[ProRated13thMonth]
+    ,RP.[TaxRefund]
+    ,RP.[CompanyOther]
+    ,RP.[PagibigBracketId]
+    ,RP.[SSSBracketId]
+    ,RP.[PhilhealthBracketId]
+    ,RP.[WHTBracketId]
+    ,RP.[WorkingHrsPerDay]
+    ,RP.[TotalHoursWorked]
+    ,E.CompanyAddress
+    ,RP.LateDays
+    ,RP.UndertimeDays
+    ,RP.AbsentDays
+    ,YTDWHT = ISNULL(ytd.YTDWHT, 0)
+    ,YTDGrossPay = ISNULL(ytd.YTDGrossPay, 0)
+    ,YTDNetPay = ISNULL(ytd.YTDNetPay, 0)
+    ,YTDMonth13Pay = ISNULL(YTD13.YTDMonth13Pay,0)
+	,YTDLeavePay = ISNULL(ytd.YTDLeavePay,0)
+	,YTDBasicPay = ISNULL(ytd.YTDBasicPay,0)
+    ,RP.TaxExempt
+    ,E.AccountNo
+    ,RP.SL
+    ,RP.VL
+    ,RP.OtherLeave
+    ,RP.NumberOfPayPeriods
+    ,WDFirstPeriod = COALESCE(WrkDays.WDFirstPeriod, 0)
+    ,WDSecondPeriod = COALESCE(WrkDays.WDSecondPeriod, 0)
+    ,WDTotalDays = COALESCE(WrkDays.WDTotalDays, 0)
+    ,ShowPayslipCompanyLogo = 
+    (
+	   CASE
+		  WHEN ISNULL(PTC.Value, ''false'') = ''false'' THEN 0
+		  ELSE 1
+	   END
+    )
+    ,RegularizationDate = E.RegularizationDate
+    ,SeparationDate = E.SeparationDate
+    ,ReasonOfSeperation = ISNULL
+    (
+	   CASE ISNULL(EI.CJI_DueTo, 0)
+		  WHEN 4 THEN Resign.DisplayText
+		  WHEN 5 THEN Terminate.DisplayText
+		  ELSE ''''
+	   END, ''''
+    )
+    ,CoNonWorking = ISNULL(RP.CoNonWorking,0)
+    ,CoNonWorkingPay = ISNULL(RP.CoNonWorkingPay,0)
+    ,CoNonWorkingNS = ISNULL(RP.CoNonWorkingNS,0)
+    ,CoNonWorkingNSPay = ISNULL(RP.CoNonWorkingNSPay,0)
+    ,CoNonWorkingOT = ISNULL(RP.CoNonWorkingOT,0)
+    ,CoNonWorkingOTPay = ISNULL(RP.CoNonWorkingOTPay,0)
+    ,CoNonWorkingNSOT = ISNULL(RP.CoNonWorkingNSOT,0)
+    ,CoNonWorkingNSOTPay = ISNULL(RP.CoNonWorkingNSOTPay,0)
+    ,RP.SalaryTypeName
+	,BankFileHeaderId = 0 
+	,E.SSSNo
+	,E.PhilHealthNo
+	,E.PagibigNo
+	,E.EmployeeTin
+	,E.CompanyTIN
+	,[DateFormat] = (SELECT TOP 1 ConfigValue FROM report.ReportConfiguration WHERE ConfigName = ''DateFormat'')
+	,TaxAdjustment = ISNULL(RP.TaxAdjustment,0)
+
+	,YTDTaxableIncome = ISNULL(ytd.YTDTaxableIncome,0)
+	,YTDTaxExempt = ISNULL(ytd.YTDTaxExempt,0)
+	,YTDSSS = ISNULL(ytd.YTDSSS,0)
+	,YTDPhilHealth = ISNULL(ytd.YTDPhilHealth,0)
+	,YTDPAGIBIG = ISNULL(ytd.YTDPAGIBIG,0)
+FROM [dbo].[vwPaysheetDetail] RP
+CROSS APPLY 
+(
+    SELECT TOP 1
+	   EmployeeNo
+	   ,LastName
+	   ,FirstName
+	   ,MiddleName
+	   ,Appellation
+	   ,LastFirstMIName
+	   ,FirstMILastName
+	   ,HireDate
+	   ,CompanyName
+	   ,CompanyCode
+	   ,BranchCode
+	   ,BranchName
+	   ,DepartmentName
+	   ,DepartmentCode
+	   ,OfficeName
+	   ,OfficeCode
+	   ,UnitCode
+	   ,DivisionCode
+	   ,GroupsCode
+	   ,DistrictCode
+	   ,Location
+	   ,ProjectCode
+	   ,ProjectName
+	   ,CostCenterCode
+	   ,LineCode
+	   ,TeamCode
+	   ,EmployeeTypeCode
+	   ,JobRank
+	   ,JobGrade
+	   ,JobLevel
+	   ,PositionCode
+	   ,Position
+	   ,TaxExemptionStatus
+	   ,CompanyAddress
+	   ,AccountNo
+	   ,RegularizationDate
+	   ,SeparationDate
+	   ,SSSNo = E.SSS 
+	   ,PhilHealthNo = E.PhilHealth
+	   ,PagibigNo = E.Pagibig
+	   ,EmployeeTin = E.TIN
+	   ,CompanyTIN = E.CompanyTIN 
+    ' 
++
+CASE WHEN ISNULL(@UserSecurityId,0) <> 0 
+THEN 'FROM dbo.fnProfileInfoWithScope('+CAST(@UserSecurityId AS VARCHAR)+',0,0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ''1,2'', 0, 0, 0, 0, 0, 0, 2, RP.[PaySheetHeaderDetailId])E' 
+ELSE 'FROM dbo.fnProfileInfo(0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, ''1,2'', 0, 0, 0, 0, 0, 0, 2, RP.[PaySheetHeaderDetailId])E' 
+END
++ 
+    '
+    WHERE E.ProfileId = RP.ProfileId
+'
++
+CASE WHEN ISNULL(@ProfileIds,'') <> '' 
+THEN ' AND E.ProfileId IN('+@ProfileIds+')' 
+ELSE '' 
+END
++
+'
+
+) E
+OUTER APPLY 
+(
+    SELECT
+	   SUM(vpd.WHT) YTDWHT
+	   ,SUM(vpd.GrossPay) YTDGrossPay
+	   ,SUM(vpd.NetPay) YTDNetPay
+	   ,SUM(vpd.LeavePay) YTDLeavePay
+	   ,SUM(vpd.BasicPay) YTDBasicPay
+	   ,SUM(vpd.TaxableIncome) YTDTaxableIncome
+	   ,SUM(vpd.TaxExempt) YTDTaxExempt
+	   ,SUM(vpd.SSS) YTDSSS
+	   ,SUM(vpd.PhilHealth) YTDPhilHealth
+	   ,SUM(vpd.PAGIBIG) YTDPAGIBIG
+    FROM dbo.vwPaysheetDetail vpd
+    WHERE vpd.ProfileId = RP.ProfileId
+    AND vpd.PeriodEndDate <= RP.PeriodEndDate
+    AND RP.PayrollType NOT IN (''13th-Month-Pay'', ''Separation-Pay'',''Prev-Employer'',''Bonus'')
+) ytd
+
+OUTER APPLY
+(
+    SELECT 
+	   YTDMonth13Pay = SUM(ISNULL(PD.Month13Pay,0)) 
+    FROM dbo.vwPaysheetDetail PD
+    WHERE PD.ProfileId = RP.ProfileId
+    AND PD.PeriodEndDate <= RP.PeriodEndDate
+    AND YEAR(PD.MonthYear) =  YEAR(RP.MonthYear)
+    AND PD.PayrollType IN (''13th-Month-Pay'')
+)YTD13
+
+OUTER APPLY 
+(
+    SELECT TOP 1
+	   WrkDays.WDMonthId
+	   ,WrkDays.MonthId
+	   ,WrkDays.WDYear
+	   ,WrkDays.WDFirstPeriod
+	   ,WrkDays.WDSecondPeriod
+	   ,WrkDays.WDTotalDays
+    FROM attendance.WorkingDaysPerMonth WrkDays
+    WHERE WrkDays.MonthId = MONTH(RP.[MonthYear])
+    AND WrkDays.WDYear = YEAR(RP.[MonthYear])
+) WrkDays
+OUTER APPLY 
+(
+    SELECT TOP 1
+	   PTC.Value
+    FROM payroll.PayrollTypeConfigValue PTC
+    WHERE PTC.ConfigSetDetailId = 168
+    AND PTC.PayrollTypeId = RP.PayrollTypeId
+) PTC
+
+/**ADDED 05/03/2017:ABDIEL**/
+OUTER APPLY 
+(
+SELECT TOP 1
+    ei.CJI_DueTo
+    ,ei.RED_Reason
+FROM employee.EmploymentInformation ei
+WHERE ei.ProfileId = RP.ProfileId
+) EI
+
+OUTER APPLY 
+(
+    SELECT TOP 1
+	   DisplayText
+    FROM maintenance.EnumValues
+    WHERE SourceName = ''RED_Reason_Resignation''
+    AND Value = EI.RED_Reason
+) Resign
+
+OUTER APPLY 
+(
+SELECT TOP 1
+    DisplayText
+FROM maintenance.EnumValues
+WHERE SourceName = ''RED_Reason_Termination''
+AND Value = EI.RED_Reason
+) Terminate
+
+WHERE 1=1
+
+'
++ CASE WHEN ISNULL(@PaySheetHeaderId,0) <> 0 THEN 'AND RP.PaySheetHeaderId=' + CAST(@PaySheetHeaderId AS VARCHAR)  ELSE '' END
++ CASE WHEN ISNULL(@PaySheetHeaderId,0) <> 0 THEN ' AND RP.PaySheetHeaderDetailId=' + CAST(@PaySheetHeaderDetailId AS VARCHAR) ELSE '' END
+
+EXEC(@MAINQUERY);
+
+
+END
+GO

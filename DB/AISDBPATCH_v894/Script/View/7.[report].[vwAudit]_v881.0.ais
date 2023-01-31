@@ -1,0 +1,241 @@
+IF  EXISTS (SELECT * FROM sys.views WHERE object_id = OBJECT_ID(N'[report].[vwAudit]'))
+DROP VIEW [report].[vwAudit]
+GO
+
+SET ANSI_NULLS ON
+GO
+SET QUOTED_IDENTIFIER ON
+GO
+
+/*===========================================*
+**	   Last Update Date: 06/10/2020
+**	   Last Update By: Jomari
+**	   Last DBVersion executed: v
+\*===========================================*/
+CREATE VIEW [report].[vwAudit]
+AS
+SELECT
+	Id
+   ,TableName
+   ,UserId
+   ,Actions
+   ,OldData
+   ,NewData
+   ,TableIdValue
+   ,UpdateDate
+FROM maintenance.Audit WITH (NOLOCK)
+UNION ALL
+
+
+SELECT ID = (SELECT TOP 1 MAX(ID) FROM maintenance.Audit) +  row_number() over (order by (SELECT NULL     )),*  FROM 
+
+(SELECT 
+	TableName = 'TimeEntryLog'
+   ,UserId = (select top 1 Username from security.UserSecurity where UserSecurityId = A.CreateId)
+   ,Actions = 'Added'
+   ,OldData = NULL
+   ,NewData = REPLACE(replace(replace(stuff((SELECT [TimeEntryLogId],[ProfileId],[StatusId],[TimeEntry] = FORMAT([TimeEntry],N'M/d/yyyy h:mm:ss tt'),[Type],[Source],[Location],[MarkCode],[Remark],[CreateDate] = FORMAT([CreateDate],N'M/d/yyyy h:mm:ss tt'),[LastUpdateDate] = FORMAT([LastUpdateDate],N'M/d/yyyy h:mm:ss tt'),[IPAddress],[Latitude],[Longitude] FROM attendance.TimeEntryLog D WHERE D.TimeEntryLogId = A.TimeEntryLogId for xml RAW),1,5,''),'" ',' || '),'="','='),'"/>','')
+   ,TableIdValue = A.TimeEntryLogId
+   ,UpdateDate = A.CreateDate 
+FROM attendance.TimeEntryLog A
+join(
+SELECT LogId = cast(ld.ImportKeyValue as BIGINT) FROM fileimport.FileImportLog l
+join fileimport.ImportLogDtl ld on ld.FileimportLogId = l.FileimportLogId
+WHERE object_id(l.DestinationTable) = OBJECT_ID('attendance.TimeEntryLog'))t on t.logId = A.TimeEntryLogId
+
+UNION ALL
+SELECT 
+	TableName = 'WorkSchedule'
+   ,UserId = (select top 1 Username from security.UserSecurity where UserSecurityId = A.CreateId)
+   ,Actions = 'Added'
+   ,OldData = NULL
+   ,NewData = REPLACE(replace(replace(stuff((SELECT [WorkscheduleId],[WorkDate] = FORMAT([WorkDate],N'M/d/yyyy h:mm:ss tt'),[ProfileId],[ShiftId],[DaysofWeek],[StartTime] = FORMAT([StartTime],N'M/d/yyyy h:mm:ss tt'),[EndTime] = FORMAT([EndTime],N'M/d/yyyy h:mm:ss tt'),[LunchBreakStartTime] = FORMAT([LunchBreakStartTime],N'M/d/yyyy h:mm:ss tt'),[LunchBreakEndTime] = FORMAT([LunchBreakEndTIme],N'M/d/yyyy h:mm:ss tt'),[Break1StartTime] = FORMAT([Break1StartTime],N'M/d/yyyy h:mm:ss tt'),[Break1EndTime] = FORMAT([Break1EndTime],N'M/d/yyyy h:mm:ss tt'),[Break2StartTime] = FORMAT([Break2StartTime],N'M/d/yyyy h:mm:ss tt'),[Break2EndTime] = FORMAT([Break2EndTime],N'M/d/yyyy h:mm:ss tt'),[Break3StartTime] = FORMAT([Break3StartTime],N'M/d/yyyy h:mm:ss tt'),[Break3EndTime] = FORMAT([Break3EndTime],N'M/d/yyyy h:mm:ss tt'),[WorkingHours],[FixedSchedule],[FixedStartDate] = FORMAT([FixedStartDate],N'M/d/yyyy h:mm:ss tt'),[FixedEndDate] = FORMAT([FixedEndDate],N'M/d/yyyy h:mm:ss tt'),[OverrideAttendancePolicyRule],[FlexiTime],[FlexiTimeLimit],[EarlyTimeIn],[EarlyTimeInLimit],[EarlyTimeInOvertime],[DayType],[FlexiBreakTime],[LunchDuration],[Break1Duration],[Break2Duration],[Break3Duration],[CreateDate] = FORMAT([CreateDate],N'M/d/yyyy h:mm:ss tt'),[LastUpdateDate] = FORMAT([LastUpdateDate],N'M/d/yyyy h:mm:ss tt'),[ForOffsetting],[OffsettingExpirationDate] = FORMAT([OffsettingExpirationDate],N'M/d/yyyy h:mm:ss tt'),[SpecialNSRates] FROM schedule.WorkSchedule D WHERE D.WorkScheduleId = A.WorkScheduleId for xml RAW),1,5,''),'" ',' || '),'="','='),'"/>','')
+   ,TableIdValue = A.WorkScheduleId
+   ,UpdateDate = A.CreateDate 
+FROM schedule.WorkSchedule A
+join(
+SELECT LogId = cast(ld.ImportKeyValue as BIGINT) FROM fileimport.FileImportLog l
+join fileimport.ImportLogDtl ld on ld.FileimportLogId = l.FileimportLogId
+WHERE object_id(l.DestinationTable) = OBJECT_ID('schedule.WorkSchedule'))t on t.logId = A.WorkScheduleId
+
+
+UNION ALL
+SELECT 
+	TableName = 'BankAccount'
+   ,UserId = (select top 1 Username from security.UserSecurity where UserSecurityId = A.CreateId)
+   ,Actions = 'Added'
+   ,OldData = NULL
+   ,NewData = REPLACE(replace(replace(stuff((SELECT [BankAccountId],[ProfileId],[BankId],[AccountName],[AccountTypeId],[AccountNo],[DebitFrom],[CurrencyId],[IsMainAccount],[CreateId],[CreateDate] = FORMAT([CreateDate],N'M/d/yyyy h:mm:ss tt'),[LastUpdateId],[LastUpdateDate] FROM employee.BankAccount D WHERE D.BankAccountId = A.BankAccountId for xml RAW),1,5,''),'" ',' || '),'="','='),'"/>','')
+   ,TableIdValue = A.BankAccountId
+   ,UpdateDate = A.CreateDate 
+FROM employee.BankAccount A
+join(
+SELECT LogId = cast(ld.ImportKeyValue as BIGINT) FROM fileimport.FileImportLog l
+join fileimport.ImportLogDtl ld on ld.FileimportLogId = l.FileimportLogId
+WHERE object_id(l.DestinationTable) = OBJECT_ID('employee.BankAccount'))t on t.logId = A.BankAccountId
+
+
+
+UNION ALL
+SELECT 
+	TableName = 'EmploymentInformation'
+   ,UserId = (select top 1 Username from security.UserSecurity where UserSecurityId = A.CreateId)
+   ,Actions = 'Added'
+   ,OldData = NULL
+   ,NewData = REPLACE(replace(replace(stuff((SELECT [EmploymentInformationId],[CJI_EmployeeType],[CJI_EmploymentStatus],[CJI_DueTo],[CJI_EmployeeNo],[CJI_AccessId],[CJI_JobLevel],[CJI_JobGrade],[CJI_JobRank],[CJI_Position],[AOA_Company],[AOA_Branch],[AOA_Department],[AOA_Office],[AOA_Unit],[AOA_District],[AOA_Location],[AOA_Project],[AOA_CostCenter],[AOA_Division],[AOA_Groups],[AOA_Team],[AOA_Line],[RED_HireDate] = FORMAT([RED_HireDate],N'M/d/yyyy h:mm:ss tt'),[RED_ReglarizationDate] = FORMAT([RED_ReglarizationDate],N'M/d/yyyy h:mm:ss tt'),[RED_EndOfContractDate] = FORMAT([RED_EndOfContractDate],N'M/d/yyyy h:mm:ss tt'),[RED_SeparationDate] = FORMAT([RED_SeparationDate],N'M/d/yyyy h:mm:ss tt'),[RED_ClearanceDate] = FORMAT([RED_ClearanceDate],N'M/d/yyyy h:mm:ss tt'),[RED_Reason],[RED_Others],[CreateId],[CreateDate] = FORMAT([CreateDate],N'M/d/yyyy h:mm:ss tt'),[LastUpdateId],[LastUpdateDate] = FORMAT([LastUpdateDate],N'M/d/yyyy h:mm:ss tt'),[CJI_ManpowerClassification],[CJI_ManHourClassification],[ChargeCodeId],[UnionMember] FROM employee.EmploymentInformation D WHERE D.EmploymentInformationId = A.EmploymentInformationId for xml RAW),1,5,''),'" ',' || '),'="','='),'"/>','')
+   ,TableIdValue = A.EmploymentInformationId
+   ,UpdateDate = A.CreateDate 
+FROM employee.EmploymentInformation A
+join(
+SELECT LogId = cast(ld.ImportKeyValue as BIGINT) FROM fileimport.FileImportLog l
+join fileimport.ImportLogDtl ld on ld.FileimportLogId = l.FileimportLogId
+WHERE object_id(l.DestinationTable) = OBJECT_ID('employee.EmploymentInformation'))t on t.logId = A.EmploymentInformationId
+
+UNION ALL
+SELECT 
+	TableName = 'GovernmentDeduction'
+   ,UserId = (select top 1 Username from security.UserSecurity where UserSecurityId = A.CreateId)
+   ,Actions = 'Added'
+   ,OldData = NULL
+   ,NewData = REPLACE(replace(replace(stuff((SELECT [GovernmentDeductionId],[SalaryInformationId],[NameId],[TypeId],[SalaryLimit],[CreateId],[CreateDate] = FORMAT([CreateDate],N'M/d/yyyy h:mm:ss tt'),[LastUpdateId],[LastUpdateDate] = FORMAT([LastUpdateDate],N'M/d/yyyy h:mm:ss tt') FROM employee.GovernmentDeduction D WHERE D.GovernmentDeductionId = A.GovernmentDeductionId for xml RAW),1,5,''),'" ',' || '),'="','='),'"/>','')
+   ,TableIdValue = A.GovernmentDeductionId
+   ,UpdateDate = A.CreateDate 
+FROM employee.GovernmentDeduction A
+join(
+SELECT LogId = cast(ld.ImportKeyValue as BIGINT) FROM fileimport.FileImportLog l
+join fileimport.ImportLogDtl ld on ld.FileimportLogId = l.FileimportLogId
+WHERE object_id(l.DestinationTable) = OBJECT_ID('employee.GovernmentDeduction'))t on t.logId = A.GovernmentDeductionId
+
+UNION ALL
+SELECT 
+	TableName = 'Profile'
+   ,UserId = (select top 1 Username from security.UserSecurity where UserSecurityId = A.CreateId)
+   ,Actions = 'Added'
+   ,OldData = NULL
+   ,NewData = REPLACE(replace(replace(stuff((SELECT [ProfileId],[LastName],[FirstName],[MiddleName],[Appellation],[NickName],[Alias],[Title],[Gender],[CivilStatus],[DateOfMarriage] = FORMAT([DateOfMarriage],N'M/d/yyyy h:mm:ss tt'),[Religion],[BirthDate] = FORMAT([Birthdate],N'M/d/yyyy h:mm:ss tt'),[BirthPlace],[Nationality],[DualNationality],[Weight],[Height],[BloodType],[HairColor],[EyeColor],[CityAddress1],[CityAddress2],[CityAddressBarangay],[CityAddressCity],[CityAddresProvince],[CityAddresZipCode],[ProvincialAddress1],[ProvincialAddress2],[ProvincialBarangay],[ProvincialCityMunipality],[ProvincialProvice],[ProvincialZipCode],[PhoneNumber],[MobileNumber],[EmailAddress],[Twitter],[Facebook],[Skype],[LinkedIn],[GooglePlus],[Instagram],[Youtube],[GoogleMail],[YahooMail],[EmergencyContactName],[EmergencyContactRelationship],[EmergencyContactAddress],[EmergencyContactContactNumber],[EmergencyContactSpecialMedicalNeeds],[EmergencyContactDrugAllergies],[TIN],[SSS],[PhilHealth],[Pagibig],[MinimumWageEarner],[WaiveClaimingOfDependents],[UserSecurityId],[UserAccountId],[EmployeeAssignmentId],[IDCertificate],[ApplicableTaxId],[SoloParent],[SubstitutedFiling],[TaxExemptionStatusId],[CreateId],[CreateDate] = FORMAT([CreateDate],N'M/d/yyyy h:mm:ss tt'),[LastUpdateId],[LastUpdateDate] = FORMAT([LastUpdateDate],N'M/d/yyyy h:mm:ss tt'),[PersonalityType] FROM employee.Profile D WHERE D.ProfileId = A.ProfileId for xml RAW),1,5,''),'" ',' || '),'="','='),'"/>','')
+   ,TableIdValue = A.ProfileId
+   ,UpdateDate = A.CreateDate 
+FROM employee.Profile A
+join(
+SELECT LogId = cast(ld.ImportKeyValue as BIGINT) FROM fileimport.FileImportLog l
+join fileimport.ImportLogDtl ld on ld.FileimportLogId = l.FileimportLogId
+WHERE object_id(l.DestinationTable) = OBJECT_ID('employee.Profile'))t on t.logId = A.ProfileId
+
+UNION ALL
+SELECT 
+	TableName = 'LoanRequest'
+   ,UserId = (select top 1 Username from security.UserSecurity where UserSecurityId = A.CreateId)
+   ,Actions = 'Added'
+   ,OldData = NULL
+   ,NewData = REPLACE(replace(replace(stuff((SELECT [LoanRequestId],[LoanTypeSetupId],[ProfileId],[BranchId],[DepartmentId],[PositionId],[CoMaker1],[CoMaker2],[LoanRequestNumber],[DateRequest] = FORMAT([DateRequest],N'M/d/yyyy h:mm:ss tt'),[ApprovedId],[DateOfApproval] = FORMAT([DateOfApproval],N'M/d/yyyy h:mm:ss tt'),[RequestedAmount],[PrincipalAmount],[OutstandingLoan],[PaymentStatusId],[ResumeDate] = FORMAT([ResumeDate],N'M/d/yyyy h:mm:ss tt'),[IssuanceMethodId],[VoucherNumber],[VoucherDate] = FORMAT([VoucherDate],N'M/d/yyyy h:mm:ss tt'),[ChargeSlipNumber],[ReferenceNumber],[Remarks],[InterestCalculationId],[LoanAmount],[AdvanceInterestPercent],[AdvanceInterestAmount],[AddOnInterestPercent],[AddOnInterestAmount],[ActualLoanAmount],[TotalAmountDue],[AmountPaid],[PenaltyPercent],[PenaltyAmount],[Balance],[NumberOfPayPeriod],[Amortization],[PaymentFrequencyId],[FirstPaymentDate] = FORMAT([FirstPaymentDate],N'M/d/yyyy h:mm:ss tt'),[Purpose],[StatusId],[CreateId],[CreateDate] = FORMAT([CreateDate],N'M/d/yyyy h:mm:ss tt'),[LastUpdateId],[LastUpdateDate] = FORMAT([LastUpdateDate],N'M/d/yyyy h:mm:ss tt'),[OutstandingBal],[AmortizationAmt],[PreviousTakeHome],[PredictedTakeHome],[MinimumTakeHome],[CapacityRemarks],[SourceId] FROM payroll.LoanRequest D WHERE D.LoanRequestId = A.LoanRequestId for xml RAW),1,5,''),'" ',' || '),'="','='),'"/>','')
+   ,TableIdValue = A.LoanRequestId
+   ,UpdateDate = A.CreateDate 
+FROM payroll.LoanRequest A
+join(
+SELECT LogId = cast(ld.ImportKeyValue as BIGINT) FROM fileimport.FileImportLog l
+join fileimport.ImportLogDtl ld on ld.FileimportLogId = l.FileimportLogId
+WHERE object_id(l.DestinationTable) = OBJECT_ID('payroll.LoanRequest'))t on t.logId = A.LoanRequestId
+
+UNION ALL
+SELECT 
+	TableName = 'AllowanceOther'
+   ,UserId = (select top 1 Username from security.UserSecurity where UserSecurityId = A.CreateId)
+   ,Actions = 'Added'
+   ,OldData = NULL
+   ,NewData = REPLACE(replace(replace(stuff((SELECT [AllowanceOtherId],[ProfileId],[EarningDeductionId],[EffectiveDate] = FORMAT([EffectiveDate],N'M/d/yyyy h:mm:ss tt'),[EndDate] = FORMAT([EndDate],N'M/d/yyyy h:mm:ss tt'),[MaximumLimit],[OENumber],[StatusId],[CurrencyId],[Amount],[FrequencyId],[Remarks],[AmountBasisId],[SalaryInformationId],[IsOtherDeduction],[UseRateTable],[SourceId],[CreateId],[CreateDate] = FORMAT([CreateDate],N'M/d/yyyy h:mm:ss tt'),[LastUpdateId],[LastUpdateDate] = FORMAT([LastUpdateDate],N'M/d/yyyy h:mm:ss tt'),[ResumeDate] = FORMAT([ResumeDate],N'M/d/yyyy h:mm:ss tt'),[ReferenceNumber] FROM payroll.AllowanceOther D WHERE D.AllowanceOtherId = A.AllowanceOtherId for xml RAW),1,5,''),'" ',' || '),'="','='),'"/>','')
+   ,TableIdValue = A.AllowanceOtherId
+   ,UpdateDate = A.CreateDate 
+FROM payroll.AllowanceOther A
+join(
+SELECT LogId = cast(ld.ImportKeyValue as BIGINT) FROM fileimport.FileImportLog l
+join fileimport.ImportLogDtl ld on ld.FileimportLogId = l.FileimportLogId
+WHERE object_id(l.DestinationTable) = OBJECT_ID('payroll.AllowanceOther'))t on t.logId = A.AllowanceOtherId
+
+UNION ALL
+SELECT 
+	TableName = 'Deduction'
+   ,UserId = (select top 1 Username from security.UserSecurity where UserSecurityId = A.CreateId)
+   ,Actions = 'Added'
+   ,OldData = NULL
+   ,NewData = REPLACE(replace(replace(stuff((SELECT [DeductionId],[DeductionNumber],[DeductionDate] = FORMAT([DeductionDate],N'M/d/yyyy h:mm:ss tt'),[ChargeSlipNumber],[StatusId],[ProfileId],[EarningDeductionId],[Remarks],[Amount],[AmountPaid],[Balance],[AutoComputeAmortization],[FirstPaymentDate] = FORMAT([FirstPaymentDate],N'M/d/yyyy h:mm:ss tt'),[PaymentFrequencyId],[NoOfPayments],[Amortization],[ResumeDate] = FORMAT([ResumeDate],N'M/d/yyyy h:mm:ss tt'),[Percentage],[CreateId],[CreateDate] = FORMAT([CreateDate],N'M/d/yyyy h:mm:ss tt'),[LastUpdateId],[LastUpdateDate] = FORMAT([LastUpdateDate],N'M/d/yyyy h:mm:ss tt'),[ReferenceNumber] FROM payroll.Deduction D WHERE D.DeductionId = A.DeductionId for xml RAW),1,5,''),'" ',' || '),'="','='),'"/>','')
+   ,TableIdValue = A.DeductionId
+   ,UpdateDate = A.CreateDate 
+FROM payroll.Deduction A
+join(
+SELECT LogId = cast(ld.ImportKeyValue as BIGINT) FROM fileimport.FileImportLog l
+join fileimport.ImportLogDtl ld on ld.FileimportLogId = l.FileimportLogId
+WHERE object_id(l.DestinationTable) = OBJECT_ID('payroll.AllowanceOther'))t on t.logId = A.DeductionId
+
+
+UNION ALL
+SELECT 
+	TableName = 'OfficialBusiness'
+   ,UserId = (select top 1 Username from security.UserSecurity where UserSecurityId = A.CreateId)
+   ,Actions = 'Added'
+   ,OldData = NULL
+   ,NewData = REPLACE(replace(replace(stuff((SELECT [OfficialBusinessId],[TypeId],[ProfileId],[OfficialBusinessDate] = FORMAT([OfficialBusinessDate],N'M/d/yyyy h:mm:ss tt'),[DateFiled] = FORMAT([DateFiled],N'M/d/yyyy h:mm:ss tt'),[ChargeCode],[OBTypeId],[Remarks],[ApplyTo],[StatusId],[ApproverRemarks],[StartTime] = FORMAT([StartTime],N'M/d/yyyy h:mm:ss tt'),[EndTime] = FORMAT([EndTime],N'M/d/yyyy h:mm:ss tt'),[TransactionId],[IsOvertime],[ParentId],[SourceId],[CreateId],[CreateDate] = FORMAT([CreateDate],N'M/d/yyyy h:mm:ss tt'),[LastUpdateId],[LastUpdateDate] = FORMAT([LastUpdateDate],N'M/d/yyyy h:mm:ss tt'),[StartTimePreviousDay],[EndTimeNextDay],[IncludeHolidays],[IncludeRestdays] FROM Schedule.OfficialBusiness D WHERE D.OfficialBusinessId = A.OfficialBusinessId for xml RAW),1,5,''),'" ',' || '),'="','='),'"/>','')
+   ,TableIdValue = A.OfficialBusinessId
+   ,UpdateDate = A.CreateDate 
+FROM schedule.OfficialBusiness A
+join(
+SELECT LogId = cast(ld.ImportKeyValue as BIGINT) FROM fileimport.FileImportLog l
+join fileimport.ImportLogDtl ld on ld.FileimportLogId = l.FileimportLogId
+WHERE object_id(l.DestinationTable) = OBJECT_ID('Schedule.OfficialBusiness'))t on t.logId = A.OfficialBusinessId
+
+UNION ALL
+SELECT 
+	TableName = 'Overtime'
+   ,UserId = (select top 1 Username from security.UserSecurity where UserSecurityId = A.CreateId)
+   ,Actions = 'Added'
+   ,OldData = NULL
+   ,NewData = REPLACE(replace(replace(stuff((SELECT [OverTimeId],[ProfileId],[DateFiled] = FORMAT([DateFiled],N'M/d/yyyy h:mm:ss tt'),[OvertimeDate] = FORMAT([OvertimeDate],N'M/d/yyyy h:mm:ss tt'),[StartTime] = FORMAT([StartTime],N'M/d/yyyy h:mm:ss tt'),[EndTime] = FORMAT([EndTime],N'M/d/yyyy h:mm:ss tt'),[OROTHrs],[NSOTHrs],[Reason],[Remarks],[ApprovedOROTHrs],[ApprovedNSOTHrs],[ApproverRemarks],[ComputeHour],[PreShiftOT],[StatusId],[SourceId],[CreateId],[CreateDate] = FORMAT([CreateDate],N'M/d/yyyy h:mm:ss tt'),[LastUpdateId],[LastUpdateDate] = FORMAT([LastUpdateDate],N'M/d/yyyy h:mm:ss tt'),[ForOffsetting],[OffsettingExpirationDate] = FORMAT([OffsettingExpirationDate],N'M/d/yyyy h:mm:ss tt') FROM Schedule.Overtime D WHERE D.OvertimeId = A.Overtimeid for xml RAW),1,5,''),'" ',' || '),'="','='),'"/>','')
+   ,TableIdValue = A.OvertimeId
+   ,UpdateDate = A.CreateDate 
+FROM schedule.Overtime A
+join(
+SELECT LogId = cast(ld.ImportKeyValue as BIGINT) FROM fileimport.FileImportLog l
+join fileimport.ImportLogDtl ld on ld.FileimportLogId = l.FileimportLogId
+WHERE object_id(l.DestinationTable) = OBJECT_ID('Schedule.Overtime'))t on t.logId = A.OvertimeId
+
+UNION ALL
+SELECT 
+	TableName = 'Restday'
+   ,UserId = (select top 1 Username from security.UserSecurity where UserSecurityId = A.CreateId)
+   ,Actions = 'Added'
+   ,OldData = NULL
+   ,NewData = REPLACE(replace(replace(stuff((SELECT [RestDayId],[ProfileId],[Days],[IsFix],[RestDayDate] = FORMAT([RestDayDate],N'M/d/yyyy h:mm:ss tt'),[Type],[CreateId],[CreateDate] = FORMAT([CreateDate],N'M/d/yyyy h:mm:ss tt'),[LastUpdateId],[LastUpdateDate] = FORMAT([LastUpdateDate],N'M/d/yyyy h:mm:ss tt'),[SourceId] FROM Schedule.RestDay D WHERE D.RestDayId = A.RestDayId for xml RAW),1,5,''),'" ',' || '),'="','='),'"/>','')
+   ,TableIdValue = A.RestDayId
+   ,UpdateDate = A.CreateDate 
+FROM schedule.RestDay A
+join(
+SELECT LogId = cast(ld.ImportKeyValue as BIGINT) FROM fileimport.FileImportLog l
+join fileimport.ImportLogDtl ld on ld.FileimportLogId = l.FileimportLogId
+WHERE object_id(l.DestinationTable) = OBJECT_ID('Schedule.Overtime'))t on t.logId = A.RestDayId
+
+
+UNION ALL
+SELECT 
+	TableName = 'PaySheetHeader'
+   ,UserId = (select top 1 Username from security.UserSecurity where UserSecurityId = A.CreateId)
+   ,Actions = 'Added'
+   ,OldData = NULL
+   ,NewData = REPLACE(replace(replace(stuff((SELECT [PaySheetHeaderId],[PayrollTypeId],[ReferenceNo],[PaygroupId],[CompanyId],[BranchId],[DepartmentId],[UnitId],[ProjectId],[LocationId],[MonthYear] = FORMAT([MonthYear],N'M/d/yyyy h:mm:ss tt'),[IssuedDate] = FORMAT([IssuedDate],N'M/d/yyyy h:mm:ss tt'),[CutOffStartDate] = FORMAT([CutOffStartDate],N'M/d/yyyy h:mm:ss tt'),[CutOffEndDate] = FORMAT([CutOffEndDate],N'M/d/yyyy h:mm:ss tt'),[PayrollPeriod],[EndOfMonth],[PayOutstandingLoan],[ProfileId],[PositionId],[DefaultCurrencyId],[ExchangeRate],[AutoAdjustInsufficientNetPay],[CreateId],[CreateDate] = FORMAT([CreateDate],N'M/d/yyyy h:mm:ss tt'),[LastUpdateId],[LastUpdateDate] = FORMAT([LastUpdateDate],N'M/d/yyyy h:mm:ss tt'),[ComputeGovLocal],[JobRankId],[DoNotIncludeIn13thMonthComputation],[DivisionId],[LineId],[IsPosted] FROM payroll.PaySheetHeader D WHERE D.PaySheetHeaderId = A.PaySheetHeaderId for xml RAW),1,5,''),'" ',' || '),'="','='),'"/>','')
+   ,TableIdValue = A.PaySheetHeaderId
+   ,UpdateDate = A.CreateDate 
+FROM payroll.PaySheetHeader A
+join(
+SELECT LogId = cast(ld.ImportKeyValue as BIGINT) FROM fileimport.FileImportLog l
+join fileimport.ImportLogDtl ld on ld.FileimportLogId = l.FileimportLogId
+WHERE object_id(l.DestinationTable) = OBJECT_ID('payroll.PaysheetHeader'))t on t.logId = A.PaySheetHeaderId
+
+
+
+
+)T
+
+
+GO
+
+
+
+

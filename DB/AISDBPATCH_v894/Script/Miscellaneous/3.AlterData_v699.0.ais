@@ -1,0 +1,1 @@
+UPDATE schedule.Overtime SET ForOffsetting = 0, OffsettingExpirationDate = '1900-01-01'

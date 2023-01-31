@@ -1,0 +1,5 @@
+INSERT INTO security.FieldLookUp (FormName, [Table], TableFieldName, FormFieldName, HideTag, RequiredTag)
+VALUES ('Overtime', 'Overtime', 'ForOffsetting', 'chkForOffsetting', 0, 0)
+
+INSERT INTO security.FieldLookUp (FormName, [Table], TableFieldName, FormFieldName, HideTag, RequiredTag)
+VALUES ('Overtime', 'Overtime', 'OffsettingExpirationDate', 'dtpOffsettingExpirationDate', 0, 0)

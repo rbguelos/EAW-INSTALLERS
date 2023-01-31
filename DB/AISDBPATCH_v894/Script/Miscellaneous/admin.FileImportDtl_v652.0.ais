@@ -1,0 +1,20 @@
+
+DECLARE @SOURCETABLE VARCHAR(1000) = '(SELECT COALESCE([Shift].ShiftId,0) ShiftId, COALESCE([Shift].Code, '''') Code FROM schedule.[Shift]
+UNION ALL SELECT -1 ShiftId,''Others'' Code
+UNION ALL SELECT -1 ShiftId,''Other'' Code
+UNION ALL SELECT -1 ShiftId,'''' Code) Shift';
+
+UPDATE admin.FileImportDtl SET FieldSourceTable = @SOURCETABLE
+FROM(
+SELECT d.FileImportDtlId FROM 
+admin.FileImportDtl d join 
+admin.FileImportHeader h on h.FileImportHeaderId = d.FileImportHeaderId
+where h.FileConfigurationCode in ('WorkSchedule','WorkScheduleShiftCode')
+and d.TableFieldName = 'ShiftId')T where t.FileImportDtlId = FileImportDtl.FileImportDtlId;
+
+UPDATE fileimport.FileImportCfgDetail SET SourceLinkTable = @SOURCETABLE
+FROM(
+SELECT d.FileImportCfgDetailId FROM fileimport.FileImportCfgDetail d join fileimport.FileImportCfgHdr h on h.FileImportCfgHdrId = d.FileImportCfgHdrId
+where h.FileImportCode in ('WorkSchedule','WorkScheduleShiftCode')
+and d.DestinationColumnField = 'ShiftId')T
+where t.FileImportCfgDetailId = FileImportCfgDetail.FileImportCfgDetailId;

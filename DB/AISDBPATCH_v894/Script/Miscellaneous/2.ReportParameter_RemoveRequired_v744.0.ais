@@ -1,0 +1,2 @@
+UPDATE report.ReportParameter SET [Required] = NULL WHERE ReportCode = 'AttendanceSummaryDetailedReport' AND ParameterName = '@CompanyId'
+SELECT * FROM report.ReportParameter WHERE ReportCode = 'AttendanceSummaryDetailedReport'

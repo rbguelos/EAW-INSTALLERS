@@ -1,0 +1,26 @@
+IF OBJECT_ID('fileimport.AISUploaderVersion') IS NULL
+BEGIN
+CREATE TABLE [fileimport].[AISUploaderVersion](
+	[AISUploaderVersionId] [bigint] IDENTITY(1,1) NOT NULL,
+	[VersionNo] [varchar](30) NULL,
+ 	[DateUpdated] [datetime] NULL,
+CONSTRAINT [PK_AISUploaderVersionId] PRIMARY KEY CLUSTERED 
+(
+	[AISUploaderVersionId] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY]
+
+END
+
+
+DECLARE @VERSIONNO VARCHAR(30)
+SET @VERSIONNO = '1.0.0.88'
+IF NOT OBJECT_ID('fileimport.AISUploaderVersion') IS NULL
+BEGIN
+	IF NOT EXISTS(SELECT * FROM [fileimport].[AISUploaderVersion] WHERE VersionNo = @VERSIONNO)
+	BEGIN
+		INSERT INTO [fileimport].[AISUploaderVersion](VersionNo,DateUpdated) VALUES(@VERSIONNO,CURRENT_TIMESTAMP);
+	END
+END
+GO
+

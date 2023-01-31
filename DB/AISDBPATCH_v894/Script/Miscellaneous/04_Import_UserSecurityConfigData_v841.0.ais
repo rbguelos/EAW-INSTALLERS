@@ -1,0 +1,65 @@
+DECLARE @FileImportCfgHdrId bigint
+
+DELETE FROM fileimport.FileImportCfgHdr WHERE FileImportCode IN ('User','Scope');
+DELETE FROM fileimport.FileImportCfgDetail WHERE FileImportCfgHdrId NOT IN (SELECT FileImportCfgHdrId FROM fileimport.FileImportCfgHdr);
+
+IF NOT EXISTS(SELECT FileImportCfgHdrId FROM fileimport.FileImportCfgHdr WHERE FileImportCode = 'User')
+BEGIN
+INSERT [fileimport].[FileImportCfgHdr] ([FileImportCode], [SourceTableName], [DestinationTable], [DestinationSchema], [TableType], [FillTable], [IdentityColumns], [Description], [FileType], [AllowDuplicate], [RowStart], [OrderNo], [QueryToExecute], [QueryType], [QueryParameters], [SystemCode], [ImportType], [BulkInsertCmd], [FixQryFilter], [Delimiter], [FileExtension], [SystemModuleId], [ImportOption], [HeaderRow], [ParentSource], [ParentChildKey], [RequireChild], [ValidationFormula], [ValidationMessage], [TransactionIdColumnName], [InvalidTransactionMsg], [Status]) VALUES (N'User', N'User', N'UserSecurity', N'security', 0, NULL, N'', N'User', 1, 1, 2, 1, N'/*SECURITY DETAILS*/
+INSERT INTO [security].[UserSecurity_Detail] ([UserSecurityId], [ModuleFormId], [AccessTypeId], [ModuleId], [CreateId], [CreateDate], [LastUpdateId], [LastUpdateDate])
+	SELECT
+		[UserSecurityId] = [UserSecurity].[UserSecurityId]
+	   ,[ModuleFormId] = [Role_FormAccess].[ModuleFormId]
+	   ,[AccessTypeId] = [Role_FormAccess].[AccessTypeId]
+	   ,[ModuleId] = Role_FormAccess.ModuleId
+	   ,[CreateId] = UserSecurity.CreateId
+	   ,[CreateDate] = GETDATE()
+	   ,[LastUpdateId] = UserSecurity.LastUpdateId
+	   ,[LastUpdateDate] = UserSecurity.LastUpdateDate
+	FROM fileimport.ImportLogDtl
+	JOIN [security].[UserSecurity]
+		ON CAST(UserSecurityId AS VARCHAR(50)) = ImportKeyValue
+	JOIN [security].[Role_FormAccess]
+		ON Role_FormAccess.RoleId = UserSecurity.RoleId
+	LEFT JOIN [security].[UserSecurity_Detail]
+		ON UserSecurity_Detail.UserSecurityId = UserSecurity.UserSecurityId
+			AND UserSecurity_Detail.ModuleFormId = Role_FormAccess.ModuleFormId
+			AND UserSecurity_Detail.ModuleId = UserSecurity_Detail.ModuleId
+	WHERE FileimportLogId = @LOGID
+	AND UserSecurityDetailId IS NULL;
+/*SET USER SECURITY FOR THE EMPLOYEE*/ 
+UPDATE employee.[Profile]
+SET [UserAccountId] = t.[UserSecurityId]
+FROM (SELECT
+		d.[UserSecurityId]
+	   ,e.[ProfileId]
+	FROM security.UserSecurity d
+	JOIN #tmpTVP s
+		ON s.[Username] = d.[Username]
+	JOIN employee.EmploymentInformation e
+		ON e.CJI_EmployeeNo = s.[Employee Number]) T
+WHERE t.ProfileId = [Profile].[ProfileId];
+
+', 2, NULL, NULL, 1, NULL, NULL, NULL, NULL, NULL, 3, 1, NULL, NULL, 0, NULL, NULL, NULL, NULL, 2);
+	SET @FileImportCfgHdrId = SCOPE_IDENTITY()
+	INSERT [fileimport].[FileImportCfgDetail] ([FileImportCfgHdrId], [SourceColumn], [DestinationColumnField], [DataType], [SourceDataType], [MaxLength], [ValidateDataType], [AllowEmpty], [CheckDuplicate], [DefaultValue], [IsFormula], [FieldDescription], [SourceColNum], [SourceLinkTable], [SourceLinkTableDesc], [LinkTableFields], [GetValueField], [Position], [FixLength], [DataFormat]) VALUES (@FileImportCfgHdrId, N'User Name', N'Username', N'varchar', N'varchar', 50, 1, 0, 1, NULL, NULL, N'Username', 2, N'', NULL, N'', N'', NULL, NULL, NULL);
+	INSERT [fileimport].[FileImportCfgDetail] ([FileImportCfgHdrId], [SourceColumn], [DestinationColumnField], [DataType], [SourceDataType], [MaxLength], [ValidateDataType], [AllowEmpty], [CheckDuplicate], [DefaultValue], [IsFormula], [FieldDescription], [SourceColNum], [SourceLinkTable], [SourceLinkTableDesc], [LinkTableFields], [GetValueField], [Position], [FixLength], [DataFormat]) VALUES (@FileImportCfgHdrId, N'Role', N'RoleId', N'bigint', N'varchar', 0, 1, 0, 0, NULL, NULL, N'RoleId', 0, N'[security].[Role]', NULL, N'Role', N'RoleId', NULL, NULL, NULL);
+	INSERT [fileimport].[FileImportCfgDetail] ([FileImportCfgHdrId], [SourceColumn], [DestinationColumnField], [DataType], [SourceDataType], [MaxLength], [ValidateDataType], [AllowEmpty], [CheckDuplicate], [DefaultValue], [IsFormula], [FieldDescription], [SourceColNum], [SourceLinkTable], [SourceLinkTableDesc], [LinkTableFields], [GetValueField], [Position], [FixLength], [DataFormat]) VALUES (@FileImportCfgHdrId, N'', N'Password', N'varchar', NULL, -1, 1, 1, 0, NULL, NULL, N'Password', 0, N'', NULL, N'', N'', NULL, NULL, N'Encrypt(@User Name@Employee Number)');
+	INSERT [fileimport].[FileImportCfgDetail] ([FileImportCfgHdrId], [SourceColumn], [DestinationColumnField], [DataType], [SourceDataType], [MaxLength], [ValidateDataType], [AllowEmpty], [CheckDuplicate], [DefaultValue], [IsFormula], [FieldDescription], [SourceColNum], [SourceLinkTable], [SourceLinkTableDesc], [LinkTableFields], [GetValueField], [Position], [FixLength], [DataFormat]) VALUES (@FileImportCfgHdrId, N'', N'AdminAccess', N'smallint', NULL, 0, 1, 1, 0, N'CASE WHEN CHARINDEX(''Admin'',s.[Applicable Portal]) > 0 THEN 1 ELSE 0 END', 1, N'AdminAccess', 0, N'', NULL, N'', N'', NULL, NULL, NULL);
+	INSERT [fileimport].[FileImportCfgDetail] ([FileImportCfgHdrId], [SourceColumn], [DestinationColumnField], [DataType], [SourceDataType], [MaxLength], [ValidateDataType], [AllowEmpty], [CheckDuplicate], [DefaultValue], [IsFormula], [FieldDescription], [SourceColNum], [SourceLinkTable], [SourceLinkTableDesc], [LinkTableFields], [GetValueField], [Position], [FixLength], [DataFormat]) VALUES (@FileImportCfgHdrId, N'', N'HRAccess', N'smallint', NULL, 0, 1, 1, 0, N'CASE WHEN CHARINDEX(''HR'',s.[Applicable Portal]) > 0 THEN 1 ELSE 0 END', 1, N'HRAccess', 0, N'', NULL, N'', N'', NULL, NULL, NULL);
+	INSERT [fileimport].[FileImportCfgDetail] ([FileImportCfgHdrId], [SourceColumn], [DestinationColumnField], [DataType], [SourceDataType], [MaxLength], [ValidateDataType], [AllowEmpty], [CheckDuplicate], [DefaultValue], [IsFormula], [FieldDescription], [SourceColNum], [SourceLinkTable], [SourceLinkTableDesc], [LinkTableFields], [GetValueField], [Position], [FixLength], [DataFormat]) VALUES (@FileImportCfgHdrId, N'', N'EmployeeAccess', N'smallint', NULL, 0, 1, 1, 0, N'CASE WHEN CHARINDEX(''Employee'',s.[Applicable Portal]) > 0 THEN 1 ELSE 0 END', 1, N'EmployeeAccess', 0, N'', NULL, N'', N'', NULL, NULL, NULL);
+	INSERT [fileimport].[FileImportCfgDetail] ([FileImportCfgHdrId], [SourceColumn], [DestinationColumnField], [DataType], [SourceDataType], [MaxLength], [ValidateDataType], [AllowEmpty], [CheckDuplicate], [DefaultValue], [IsFormula], [FieldDescription], [SourceColNum], [SourceLinkTable], [SourceLinkTableDesc], [LinkTableFields], [GetValueField], [Position], [FixLength], [DataFormat]) VALUES (@FileImportCfgHdrId, N'Applicable Portal', NULL, N'varchar', N'varchar', NULL, NULL, 0, NULL, NULL, NULL, N'Access Portal', 3, NULL, NULL, NULL, NULL, NULL, NULL, NULL);
+	INSERT [fileimport].[FileImportCfgDetail] ([FileImportCfgHdrId], [SourceColumn], [DestinationColumnField], [DataType], [SourceDataType], [MaxLength], [ValidateDataType], [AllowEmpty], [CheckDuplicate], [DefaultValue], [IsFormula], [FieldDescription], [SourceColNum], [SourceLinkTable], [SourceLinkTableDesc], [LinkTableFields], [GetValueField], [Position], [FixLength], [DataFormat]) VALUES (@FileImportCfgHdrId, N'Employee Number', N'', NULL, N'varchar', NULL, NULL, NULL, NULL, NULL, NULL, NULL, NULL, N'(SELECT Code = EmployeeNo, [Value] = CONCAT(EmployeeNo,FORMAT(Birthdate,N''MMddyyyy'')) FROM VWEMPLOYEEINFO)T', NULL, N'Code', N'Value', NULL, NULL, NULL);
+	INSERT [fileimport].[FileImportCfgDetail] ([FileImportCfgHdrId], [SourceColumn], [DestinationColumnField], [DataType], [SourceDataType], [MaxLength], [ValidateDataType], [AllowEmpty], [CheckDuplicate], [DefaultValue], [IsFormula], [FieldDescription], [SourceColNum], [SourceLinkTable], [SourceLinkTableDesc], [LinkTableFields], [GetValueField], [Position], [FixLength], [DataFormat]) VALUES (@FileImportCfgHdrId, N'', N'UserType', N'bigint', NULL, -1, 1, 1, 0, '1', NULL, N'User Type', 0, N'', NULL, N'', N'', NULL, NULL, NULL);
+END
+
+
+IF NOT EXISTS(SELECT FileImportCfgHdrId FROM fileimport.FileImportCfgHdr WHERE FileImportCode = 'Scope')
+BEGIN
+	INSERT [fileimport].[FileImportCfgHdr] ([FileImportCode], [SourceTableName], [DestinationTable], [DestinationSchema], [TableType], [FillTable], [IdentityColumns], [Description], [FileType], [AllowDuplicate], [RowStart], [OrderNo], [QueryToExecute], [QueryType], [QueryParameters], [SystemCode], [ImportType], [BulkInsertCmd], [FixQryFilter], [Delimiter], [FileExtension], [SystemModuleId], [ImportOption], [HeaderRow], [ParentSource], [ParentChildKey], [RequireChild], [ValidationFormula], [ValidationMessage], [TransactionIdColumnName], [InvalidTransactionMsg], [Status]) VALUES (N'Scope', N'Scope', N'UserSecurity_Scope', N'security', 0, NULL, N'', N'Scope', 1, 0, 2,2, NULL, 0, NULL, NULL, 1, NULL, NULL, NULL, NULL, NULL, 3, 1, NULL, NULL, 0, NULL, NULL, NULL, NULL, 2);
+	SET @FileImportCfgHdrId = SCOPE_IDENTITY();
+	INSERT [fileimport].[FileImportCfgDetail] ([FileImportCfgHdrId], [SourceColumn], [DestinationColumnField], [DataType], [SourceDataType], [MaxLength], [ValidateDataType], [AllowEmpty], [CheckDuplicate], [DefaultValue], [IsFormula], [FieldDescription], [SourceColNum], [SourceLinkTable], [SourceLinkTableDesc], [LinkTableFields], [GetValueField], [Position], [FixLength], [DataFormat]) VALUES (@FileImportCfgHdrId, N'User Name', N'UserSecurityId', N'bigint', NULL, 0, 1, 1, 1, NULL, NULL, N'UserSecurityId', 0, N'[security].[UserSecurity]', NULL, N'Username', N'UserSecurityId', NULL, NULL, NULL);
+	INSERT [fileimport].[FileImportCfgDetail] ([FileImportCfgHdrId], [SourceColumn], [DestinationColumnField], [DataType], [SourceDataType], [MaxLength], [ValidateDataType], [AllowEmpty], [CheckDuplicate], [DefaultValue], [IsFormula], [FieldDescription], [SourceColNum], [SourceLinkTable], [SourceLinkTableDesc], [LinkTableFields], [GetValueField], [Position], [FixLength], [DataFormat]) VALUES (@FileImportCfgHdrId, N'Scope', N'ScopeId', N'bigint', NULL, 0, 1, 1, 1, NULL, NULL, N'ScopeId', 0, N'[security].[Scope]', NULL, N'Scope', N'ScopeId', NULL, NULL, NULL);
+	INSERT [fileimport].[FileImportCfgDetail] ([FileImportCfgHdrId], [SourceColumn], [DestinationColumnField], [DataType], [SourceDataType], [MaxLength], [ValidateDataType], [AllowEmpty], [CheckDuplicate], [DefaultValue], [IsFormula], [FieldDescription], [SourceColNum], [SourceLinkTable], [SourceLinkTableDesc], [LinkTableFields], [GetValueField], [Position], [FixLength], [DataFormat], [SplitValueBy], [JoinSeparator], [ParamField]) VALUES (@FileImportCfgHdrId, N'Values', N'Values', N'varchar', NULL, -1, 1, 1, 0, NULL, NULL, N'Values', 3, N'[fileimport].[vwOrganizations]', NULL, N'@ScopeId|Code', N'Id', NULL, NULL, NULL, N'
+', N',','GroupId');
+END

@@ -1,0 +1,5 @@
+
+DELETE  FROM employee.CustomField WHERE CustomFieldType = 'Badge Number'
+INSERT INTO employee.CustomField (CustomFieldType, DataType, [DataLength], ControlType)
+VALUES
+('Badge Number','4','250','1')

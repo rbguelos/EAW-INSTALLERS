@@ -1,0 +1,6 @@
+IF COL_LENGTH('admin.FileGeneratorHeader','FileType') IS NULL
+BEGIN 
+ALTER TABLE admin.FileGeneratorHeader ADD FileType smallint
+END
+
+SELECT * FROM admin.FileGeneratorHeader

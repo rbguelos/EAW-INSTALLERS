@@ -1,0 +1,5 @@
+
+/*DEFAULT IMPORT CODES FROM UK*/
+UPDATE fileimport.FileImportCfgHdr SET SystemModuleId = 6 WHERE FileImportCode IN ('NewHire','ProfileChange','Resigned','DeputisingPay','OvertimeAllowance','OtherAllowance','Deductions','LeavePays','VHNTaxAnnualization')
+
+

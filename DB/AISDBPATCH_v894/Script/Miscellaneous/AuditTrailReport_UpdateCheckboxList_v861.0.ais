@@ -1,0 +1,2 @@
+UPDATE report.ReportParameter SET ConditionalOperator = 'IN' WHERE ReportCode = 'AuditTrailReport'
+AND ParameterName = '@EmployeeId'

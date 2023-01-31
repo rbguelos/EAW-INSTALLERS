@@ -1,0 +1,268 @@
+ALTER PROCEDURE [employee].[spEmployeeAssignmentDetail]
+(
+	@ProfileId BIGINT = 0
+)
+AS
+BEGIN
+SET NOCOUNT ON;
+
+SELECT
+    --EmployeeAssignmentId
+    EmployeeAssignmentId = EmployeeAssignment.EmployeeAssignmentId
+
+    --PrevEmployeeAssignmentId
+   ,PrevEmployeeAssignmentId = EmployeeAssignment.PrevEmployeeAssignmentId
+
+    --ProfileId
+   ,ProfileId = EmployeeAssignment.ProfileId
+
+    --EffectiveDate
+   ,EffectiveDate = EmployeeAssignment.EffectiveDate
+
+    --RefNo
+   ,RefNo = EmployeeAssignment.RefNo
+
+    --MovementTypeId
+   ,MovementTypeId = EmployeeAssignment.MovementTypeId
+
+    --AssignmentTypeId
+   ,AssignmentTypeId = EmployeeAssignment.AssignmentTypeId
+
+    --DurationStart
+   ,DurationStart = EmployeeAssignment.DurationStart
+
+    --DurationEnd
+   ,DurationEnd = EmployeeAssignment.DurationEnd
+
+    --AffectsSalary
+   ,AffectsSalary = EmployeeAssignment.AffectsSalary
+
+    --Remarks
+   ,Remarks = EmployeeAssignment.Remarks
+
+    --CompanyId
+   ,CompanyId = EmployeeAssignment.CompanyId
+
+    --CompanyDescription
+   ,CompanyDescription = COALESCE(Company.Code, '')--Company Code
+
+    --BranchId
+   ,BranchId = EmployeeAssignment.BranchId
+
+    --BrancDescription
+   ,BrancDescription = COALESCE(Branch.Code, '')--Branch Code
+
+    --DepartmentId
+   ,DepartmentId = EmployeeAssignment.DepartmentId
+
+    --DepartmentDesc
+   ,DepartmentDesc = COALESCE(Department.Code, '')--Department Code
+
+    --DivisionId
+   ,DivisionId = EmployeeAssignment.DivisionId
+
+    --DivisionDesc
+   ,DivisionDesc = COALESCE(Division.Code, '')--Division Code
+
+    --OfficeId
+   ,OfficeId = EmployeeAssignment.OfficeId
+
+    --OfficeDesc
+   ,OfficeDesc = COALESCE(Office.Code, '')--Office Code
+
+    --DistrictId
+   ,DistrictId = EmployeeAssignment.DistrictId
+
+    --DistrictDesc
+   ,DistrictDesc = COALESCE(District.Code, '')--District Code
+
+    --GroupId
+   ,GroupId = EmployeeAssignment.GroupId
+
+    --GroupDesc
+   ,GroupDesc = COALESCE(Groups.Code, '')--Groups Code
+
+    --TeamId
+   ,TeamId = EmployeeAssignment.TeamId
+
+    --TeamDesc
+   ,TeamDesc = COALESCE(Team.Code, '')--Team Code
+
+    --UnitId
+   ,UnitId = EmployeeAssignment.UnitId
+
+    --UnitDesc
+   ,UnitDesc = COALESCE(Unit.Code, '')--Unit Code
+
+    --LineId
+   ,LineId = EmployeeAssignment.LineId
+
+    --LineDesc
+   ,LineDesc = COALESCE(Line.Code, '')--Line Code
+
+    --CostCenterGroupId
+   ,CostCenterGroupId = EmployeeAssignment.CostCenterGroupId
+
+    --CostCenterGroupDesc
+   ,CostCenterGroupDesc = COALESCE(CostCenterGroup.Code, '')--CostCenterGroup Code
+
+    --CostCenterId
+   ,CostCenterId = EmployeeAssignment.CostCenterId
+
+    --CostCenterDesc
+   ,CostCenterDesc = COALESCE(CostCenter.Description, '')--CostCenter DESC
+
+    --ChargeCodeId
+   ,ChargeCodeId = EmployeeAssignment.ChargeCodeId
+
+    --ChargeCodeDesc
+   ,ChargeCodeDesc = COALESCE(ChargeCode.Code, '')--ChargeCode Code
+
+    --ProjectId
+   ,ProjectId = EmployeeAssignment.ProjectId
+
+    --ProjectDesc
+   ,ProjectDesc = EnumValues.DisplayText-- 'tmpProjectDesc'--ProjectDesc DESC
+
+    --EmployeeTypeId
+   ,EmployeeTypeId = EmployeeAssignment.EmployeeTypeId
+
+    --EmployeeTypeDesc
+   ,EmployeeTypeDesc = COALESCE(EmploymentType.Code, '')--EmploymentType Code
+
+    --PositionId
+   ,PositionId = EmployeeAssignment.PositionId
+
+    --PositionDesc
+   ,PositionDesc = COALESCE(JobPosition.Name, '')--JobPosition Name
+
+    --JobLevelId
+   ,JobLevelId = EmployeeAssignment.JobLevelId
+
+    --JobLevelDesc
+   ,JobLevelDesc = COALESCE(JobLevel.Code, '')--JobLevel Code
+
+    --JobGradeId
+   ,JobGradeId = EmployeeAssignment.JobGradeId
+
+    --JobGradeDesc
+   ,JobGradeDesc = COALESCE(JobGrade.Code, '')--JobGrade Code
+
+    --JobRankId
+   ,JobRankId = EmployeeAssignment.JobRankId
+
+    --JobRankDesc
+   ,JobRankDesc = COALESCE(JobRank.Code, '')--JobRank Code
+
+    --ManpowerClassificationId
+   ,ManpowerClassificationId = EmployeeAssignment.ManpowerClassificationId
+
+    --ManpowerClassificationDesc
+   ,ManpowerClassificationDesc = ManpowerClassification.Code --ManpowerClassification Code
+   
+    --EmployeeNo
+   ,EmployeeNo = 
+   (
+    CASE WHEN (MovementTypeId = 4 /*NEW*/)
+	   THEN employee.EmploymentInformation.CJI_EmployeeNo
+	   ELSE employee.EmployeeAssignment.EmployeeNo
+    END
+   )
+
+    --StatusId
+   ,StatusId = EmployeeAssignment.StatusId
+FROM employee.EmployeeAssignment
+
+--Profile
+LEFT JOIN employee.Profile
+    ON EmployeeAssignment.ProfileId = Profile.ProfileId
+
+--Company
+LEFT JOIN maintenance.Company
+    ON EmployeeAssignment.CompanyId = Company.CompanyId
+
+--Branch
+LEFT JOIN maintenance.Branch
+    ON EmployeeAssignment.BranchId = Branch.BranchId
+
+--Department
+LEFT JOIN maintenance.Department
+    ON EmployeeAssignment.DepartmentId = Department.DepartmentId
+
+--Division
+LEFT JOIN maintenance.Division
+    ON EmployeeAssignment.DivisionId = Division.DivisionId
+
+--Office
+LEFT JOIN maintenance.Office
+    ON EmployeeAssignment.OfficeId = Office.OfficeId
+
+--District
+LEFT JOIN maintenance.District
+    ON EmployeeAssignment.DistrictId = District.DistrictId
+
+--Groups
+LEFT JOIN maintenance.Groups
+    ON EmployeeAssignment.GroupId = Groups.GroupsId
+
+--Team
+LEFT JOIN maintenance.Team
+    ON EmployeeAssignment.TeamId = Team.TeamId
+
+--Unit
+LEFT JOIN maintenance.Unit
+    ON EmployeeAssignment.UnitId = Unit.UnitId
+
+--Line
+LEFT JOIN maintenance.Line
+    ON EmployeeAssignment.LineId = Line.LineId
+
+--CostCenterGroup
+LEFT JOIN maintenance.CostCenterGroup
+    ON EmployeeAssignment.CostCenterGroupId = CostCenterGroup.CostCenterGroupId
+
+--CostCenter
+LEFT JOIN maintenance.CostCenter
+    ON EmployeeAssignment.CostCenterId = CostCenter.CostCenterId
+
+--ChargeCode
+LEFT JOIN maintenance.ChargeCode
+    ON EmployeeAssignment.ChargeCodeId = ChargeCode.ChargeCodeId
+
+--EmploymentType
+LEFT JOIN maintenance.EmploymentType
+    ON EmployeeAssignment.EmployeeTypeId = EmploymentType.EmploymentTypeId
+
+--JobPosition
+LEFT JOIN maintenance.JobPosition
+    ON EmployeeAssignment.PositionId = JobPosition.JobPositionId
+
+--JobLevel
+LEFT JOIN maintenance.JobLevel
+    ON EmployeeAssignment.JobLevelId = JobLevel.JobLevelId
+
+--JobGrade
+LEFT JOIN maintenance.JobGrade
+    ON EmployeeAssignment.JobGradeId = JobGrade.JobGradeId
+
+--JobRank
+LEFT JOIN maintenance.JobRank
+    ON EmployeeAssignment.JobRankId = JobRank.JobRankId
+
+--ManpowerClassification
+LEFT JOIN maintenance.ManpowerClassification
+    ON EmployeeAssignment.ManpowerClassificationId = ManpowerClassification.ManpowerClassificationId
+
+--EmploymentInformation
+LEFT JOIN employee.EmploymentInformation
+    ON EmploymentInformation.ProfileId = Profile.ProfileId
+
+--TempData
+LEFT JOIN maintenance.EnumValues
+    ON EmployeeAssignment.ProjectId = (CAST(EnumValues.value AS BIGINT))
+	   AND EnumValues.SourceName = 'TempData'
+WHERE (COALESCE(@ProfileId, 0) = 0
+OR EmployeeAssignment.ProfileId = COALESCE(@ProfileId, 0))
+
+ORDER BY EmployeeAssignment.LastUpdateDate DESC
+END

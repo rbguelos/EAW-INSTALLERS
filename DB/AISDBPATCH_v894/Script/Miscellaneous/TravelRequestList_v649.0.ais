@@ -1,0 +1,29 @@
+EXEC [admin].[UpdateListColumns]
+	@ListName = 'Travel Request List',
+	@ListType = 'TravelRequestColumnList',
+	@DefaultColumn = 'RequestDate|Status|PassengerName|Origin|Destination|DepartureDateTime'
+
+EXEC [maintenance].[UpdateJQListColumns]
+	@ListType = 'TravelRequestColumnList', @ColumnType = 'date',
+	@Name = 'RequestDate', @Label = 'Request Date', @Width = '110',
+	@Align = '', @Formatter = '', @FormatterOption = '', @Others = ''
+
+EXEC [maintenance].[UpdateJQListColumns]
+	@ListType = 'TravelRequestColumnList', @ColumnType = 'label',
+	@Name = 'PassengerName', @Label = 'Passenger Name', @Width = '250',
+	@Align = '', @Formatter = '', @FormatterOption = '', @Others = ''
+
+EXEC [maintenance].[UpdateJQListColumns]
+	@ListType = 'TravelRequestColumnList', @ColumnType = 'label',
+	@Name = 'Origin', @Label = 'Origin', @Width = '250',
+	@Align = 'right', @Formatter = '', @FormatterOption = '', @Others = ''
+
+EXEC [maintenance].[UpdateJQListColumns]
+	@ListType = 'TravelRequestColumnList', @ColumnType = 'label',
+	@Name = 'Destination', @Label = 'Destination', @Width = '250',
+	@Align = '', @Formatter = '', @FormatterOption = '', @Others = ''
+
+EXEC [maintenance].[UpdateJQListColumns]
+	@ListType = 'TravelRequestColumnList', @ColumnType = 'datetime',
+	@Name = 'DepartureDateTime', @Label = 'Departure Date/Time', @Width = '130',
+	@Align = '', @Formatter = '', @FormatterOption = '', @Others = ''

@@ -1,0 +1,71 @@
+EXEC [admin].[UpdateListColumns]
+	@ListName = 'PA Schedule List',
+	@ListType = 'PAScheduleColumnList',
+	@DefaultColumn = 'EmployeeName|EmployeeHireDate|EmployeeRegularizationDate|Domain|StatusName|PAType|PeriodCovered_String|PAScheduleDate_String|PAScheduleEndDate'
+
+EXEC [maintenance].[UpdateJQListColumns]
+	@ListType = 'PAScheduleColumnList', @ColumnType = 'label', @Name = 'EmployeeName',
+	@Label = 'Employee', @Width = '180', @Align = '', @Formatter = '', @FormatterOption = '',
+	@Others = 'formatter: jsFunction.FormatEmployeeName, cellattr: jsFunction.FormatEmployeeTooltip', @Clients = ''
+
+EXEC [maintenance].[UpdateJQListColumns]
+	@ListType = 'PAScheduleColumnList', @ColumnType = 'label', @Name = 'PAType',
+	@Label = 'Type', @Width = '150', @Align = '', @Formatter = '', @FormatterOption = '',
+	@Others = 'formatter: jsFunction.FormatPAType, cellattr: jsFunction.FormatPATypeTooltip', @Clients = ''
+
+EXEC [admin].[UpdateListColumns]
+	@ListName = 'Performance Appraisal List',
+	@ListType = 'PerformanceAppraisalColumnList',
+	@DefaultColumn = 'EmployeeName|EmployeeHireDate|EmployeeRegularizationDate|Domain|StatusName|PAType|PeriodCovered_String|PAScheduleDate_String|PAScheduleEndDate'
+
+EXEC [maintenance].[UpdateJQListColumns]
+	@ListType = 'PerformanceAppraisalColumnList', @ColumnType = 'label', @Name = 'EmployeeName',
+	@Label = 'Employee', @Width = '180', @Align = '', @Formatter = '', @FormatterOption = '',
+	@Others = 'formatter: jsFunction.FormatEmployeeName, cellattr: jsFunction.FormatEmployeeTooltip', @Clients = ''
+
+EXEC [maintenance].[UpdateJQListColumns]
+	@ListType = 'PerformanceAppraisalColumnList', @ColumnType = 'label', @Name = 'PAType',
+	@Label = 'Type', @Width = '150', @Align = '', @Formatter = '', @FormatterOption = '',
+	@Others = 'formatter: jsFunction.FormatPAType, cellattr: jsFunction.FormatPATypeTooltip', @Clients = ''
+
+EXEC [admin].[UpdateListColumns]
+	@ListName = 'PA Template List',
+	@ListType = 'PATemplateColumnList',
+	@DefaultColumn = 'Name|EffectiveDate|IsActive|Company|EvaluatorType|CriteriaSource|Domain'
+
+EXEC [maintenance].[UpdateJQListColumns]
+	@ListType = 'PATemplateColumnList', @ColumnType = 'date', @Name = 'EffectiveDate', @Label = 'Effective Date',
+	@Width = '100', @Align = '', @Formatter = '', @FormatterOption = '', @Others = '', @Clients = ''
+
+EXEC [maintenance].[UpdateJQListColumns]
+	@ListType = 'PATemplateColumnList', @ColumnType = 'status', @Name = 'IsActive', @Label = 'Status',
+	@Width = '110', @Align = '', @Formatter = '', @FormatterOption = '', @Others = '', @Clients = ''
+
+EXEC [maintenance].[UpdateJQListColumns]
+	@ListType = 'PATemplateColumnList', @ColumnType = 'label', @Name = 'Name', @Label = 'Template Name',
+	@Width = '200', @Align = '', @Formatter = '', @FormatterOption = '', @Others = '', @Clients = ''
+
+UPDATE admin.MenuMenu SET MenuName = 'Evaluation Set Up' WHERE MenuModuleId = 7 AND MenuName = 'Appraisal Set Up'
+UPDATE admin.MenuSubMenu SET SubMenuName = 'Evaluation Configuration' WHERE MenuMenuId = 25 AND SubMenuName = 'Appraisal Configuration'
+UPDATE admin.MenuSubMenu SET SubMenuName = 'Evaluation Template' WHERE MenuMenuId = 25 AND SubMenuName = 'Appraisal Template'
+UPDATE admin.MenuSubMenu SET SubMenuName = 'Evaluation Score Ranking' WHERE MenuMenuId = 25 AND SubMenuName = 'Appraisal Score Ranking'
+UPDATE admin.MenuMenu SET MenuName = 'Generate Evaluation Schedule' WHERE MenuModuleId = 7 AND MenuName = 'Generate Appraisal Schedule'
+UPDATE admin.MenuMenu SET MenuName = 'Evaluation Schedule' WHERE MenuModuleId = 7 AND MenuName = 'Appraisal Schedule'
+UPDATE admin.MenuMenu SET MenuName = 'Performance Evaluation' WHERE MenuModuleId = 7 AND MenuName = 'Performance/Ability Appraisal'
+UPDATE admin.MenuMenu SET MenuName = 'Evaluation Summary' WHERE MenuModuleId = 7 AND MenuName = 'Appraisal Summary'
+UPDATE admin.MenuMenu SET MenuName = 'Normalize Evaluation Scores' WHERE MenuModuleId = 7 AND MenuName = 'Normalize Appraisal Scores'
+
+UPDATE security.Module_Forms SET Name = 'Evaluation Configuration', Form = 'Evaluation Configuration' WHERE ModuleFormId = 38
+UPDATE security.Module_Forms SET Name = 'Evaluation Template List', Form = 'Evaluation Template List' WHERE ModuleFormId = 39
+UPDATE security.Module_Forms SET Name = 'Evaluation Score Ranking', Form = 'Evaluation Score Ranking' WHERE ModuleFormId = 221
+UPDATE security.Module_Forms SET Name = 'Generate Evaluation Schedule', Form = 'Generate Evaluation Schedule' WHERE ModuleFormId = 43
+UPDATE security.Module_Forms SET Name = 'Generate Evaluation Schedule', Form = 'Generate Evaluation Schedule' WHERE ModuleFormId = 193
+UPDATE security.Module_Forms SET Name = 'Evaluation Schedule List', Form = 'Evaluation Schedule List' WHERE ModuleFormId = 44
+UPDATE security.Module_Forms SET Name = 'Performance Evaluation Schedule', Form = 'Performance Evaluation Schedule' WHERE ModuleFormId = 285
+UPDATE security.Module_Forms SET Name = 'Performance Evaluation List', Form = 'Performance Evaluation List' WHERE ModuleFormId = 45
+UPDATE security.Module_Forms SET Name = 'Performance Evaluation', Form = 'Performance Evaluation' WHERE ModuleFormId = 286
+UPDATE security.Module_Forms SET Name = 'Performance Evaluation', Form = 'Performance Evaluation' WHERE ModuleFormId = 194
+UPDATE security.Module_Forms SET Name = 'Evaluation Summary', Form = 'Evaluation Summary' WHERE ModuleFormId = 46
+UPDATE security.Module_Forms SET Name = 'Normalize Evaluation Scores', Form = 'Normalize Evaluation Scores' WHERE ModuleFormId = 219
+
+UPDATE performanceappraisal.PATemplate SET EffectiveDate = CAST(CONCAT(EffectiveYear, '-01-01') AS DATETIME), IsActive = 1 WHERE EffectiveDate IS NULL

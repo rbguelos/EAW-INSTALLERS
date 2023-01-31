@@ -1,0 +1,7 @@
+UPDATE maintenance.EnumValues SET OrderNumber = 8 WHERE SourceName = 'AccrualFrequency' AND DisplayText = 'None'
+UPDATE maintenance.EnumValues SET OrderNumber = 5 WHERE SourceName = 'AccrualFrequency' AND DisplayText = 'Every Period'
+UPDATE maintenance.EnumValues SET OrderNumber = 4 WHERE SourceName = 'AccrualFrequency' AND DisplayText = 'End Of Month'
+UPDATE maintenance.EnumValues SET OrderNumber = 1 WHERE SourceName = 'AccrualFrequency' AND DisplayText = 'Annual Company Date'
+UPDATE maintenance.EnumValues SET OrderNumber = 3 WHERE SourceName = 'AccrualFrequency' AND DisplayText = 'Annual Start Date'
+UPDATE maintenance.EnumValues SET OrderNumber = 2 WHERE SourceName = 'AccrualFrequency' AND DisplayText = 'Annual Regularization Date'
+UPDATE maintenance.EnumValues SET OrderNumber = 6 WHERE SourceName = 'AccrualFrequency' AND DisplayText = 'Every Quarter'

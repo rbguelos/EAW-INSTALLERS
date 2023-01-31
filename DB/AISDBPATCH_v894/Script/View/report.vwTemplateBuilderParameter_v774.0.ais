@@ -1,0 +1,185 @@
+/*===========================================*\
+**	   Last Update Date: 10/15/2019
+**	   Last Update By: Abdiel
+**	   Last DBVersion executed: v
+\*===========================================*/
+
+ALTER VIEW [report].[vwTemplateBuilderParameter]
+AS
+
+SELECT [ReportParameterId] = ROW_NUMBER() OVER (ORDER BY SourceId)
+	  ,DocumentRequestId
+      ,[TemplateBuilderId] = SourceId
+      ,[ParameterName]
+      ,[LabelName] = [ParameterName]
+      ,[Type] = CASE [ParameterName] 
+			  WHEN 'ProfileId'	 THEN 'textbox'
+			  WHEN 'ParameterId'	 THEN 'textbox'
+			  WHEN 'DateStart'	 THEN 'date'
+			  WHEN 'DateEnd'	 THEN 'date'
+			  WHEN 'DateRequested'	 THEN 'date'
+			  WHEN 'Remark'	 THEN 'textbox'
+			  WHEN 'ReceivedBy'	 THEN 'textbox'
+			  WHEN 'Signatory1'	 THEN 'textbox'
+			  WHEN 'Designation1'	 THEN 'textbox'
+			  WHEN 'Signatory2'	 THEN 'textbox'
+			  WHEN 'Designation2'	 THEN 'textbox'
+			  ELSE '' END
+      ,[Source] = CASE [ParameterName] 
+			  WHEN 'ProfileId'	 THEN ''
+			  WHEN 'ParameterId'	 THEN ''
+			  WHEN 'DateStart'	 THEN ''
+			  WHEN 'DateEnd'	 THEN ''
+			  WHEN 'DateRequested'	 THEN ''
+			  WHEN 'Remark'	 THEN ''
+			  WHEN 'ReceivedBy'	 THEN ''
+			  WHEN 'Signatory1'	 THEN ''
+			  WHEN 'Designation1'	 THEN ''
+			  WHEN 'Signatory2'	 THEN ''
+			  WHEN 'Designation2'	 THEN ''
+			  ELSE '' END
+      ,[ChildSource] = ''
+      ,[SortOrder] = CASE [ParameterName] 
+			  WHEN 'ProfileId'	 THEN 1
+			  WHEN 'ParameterId'	 THEN 2
+			  WHEN 'DateStart'	 THEN 3
+			  WHEN 'DateEnd'	 THEN 4
+			  WHEN 'DateRequested'	 THEN 5
+			  WHEN 'Remark'	 THEN 6
+			  WHEN 'ReceivedBy'	 THEN 7
+			  WHEN 'Signatory1'	 THEN 8
+			  WHEN 'Designation1'	 THEN 9
+			  WHEN 'Signatory2'	 THEN 10
+			  WHEN 'Designation2'	 THEN 11
+			  ELSE '' END
+      ,[Alignment] = 'horizontal'
+      ,[ReferenceField] = CASE [ParameterName] 
+			  WHEN 'ProfileId'	 THEN ''
+			  WHEN 'ParameterId'	 THEN ''
+			  WHEN 'DateStart'	 THEN ''
+			  WHEN 'DateEnd'	 THEN ''
+			  WHEN 'DateRequested'	 THEN ''
+			  WHEN 'Remark'	 THEN ''
+			  WHEN 'ReceivedBy'	 THEN ''
+			  WHEN 'Signatory1'	 THEN ''
+			  WHEN 'Designation1'	 THEN ''
+			  WHEN 'Signatory2'	 THEN ''
+			  WHEN 'Designation2'	 THEN ''
+			  ELSE '' END
+      ,[ParameterType] = 'Stored'
+      ,[ConditionalOperator] = CASE [ParameterName] 
+			  WHEN 'ProfileId'	 THEN '='
+			  WHEN 'ParameterId'	 THEN '='
+			  WHEN 'DateStart'	 THEN '<='
+			  WHEN 'DateEnd'	 THEN '>='
+			  WHEN 'DateRequested'	 THEN '='
+			  WHEN 'Remark'	 THEN '='
+			  WHEN 'ReceivedBy'	 THEN '='
+			  WHEN 'Signatory1'	 THEN '='
+			  WHEN 'Designation1'	 THEN '='
+			  WHEN 'Signatory2'	 THEN '='
+			  WHEN 'Designation2'	 THEN '='
+			  ELSE '' END
+      ,[DataType] = CASE [ParameterName] 
+			  WHEN 'ProfileId'	 THEN 'number'
+			  WHEN 'ParameterId'	 THEN 'number'
+			  WHEN 'DateStart'	 THEN 'date'
+			  WHEN 'DateEnd'	 THEN 'date'
+			  WHEN 'DateRequested'	 THEN 'date'
+			  WHEN 'Remark'	 THEN ''
+			  WHEN 'ReceivedBy'	 THEN ''
+			  WHEN 'Signatory1'	 THEN ''
+			  WHEN 'Designation1'	 THEN ''
+			  WHEN 'Signatory2'	 THEN ''
+			  WHEN 'Designation2'	 THEN ''
+			  ELSE '' END
+		,[Hidden] = 1
+		,ParameterValue
+		,ModuleFormId
+FROM
+(
+SELECT
+	dt.SourceId
+	,dr.DocumentRequestId
+	,dt.DocumentName
+	,ProfileId = cast(dr.ProfileId as varchar(1000))
+	,DateStart = cast(convert(varchar,dr.DateStart,101) as varchar(1000))
+	,DateEnd = cast(convert(varchar,dr.DateEnd,101) as varchar(1000))
+	,DateRequested = cast(convert(varchar,dr.DateRequested,101) as varchar(1000))
+	,Remark = cast(dr.Remark as varchar(1000))
+	,ReceivedBy = cast(dr.RecievedBy as varchar(1000))
+	,ParameterId = cast(dr.ParameterId as varchar(1000))
+	,Signatory1 = cast(dr.Signatory1 as varchar(1000))
+	,Designation1 = cast(dr.Designation1 as varchar(1000))
+	,Signatory2 = cast(dr.Signatory2 as varchar(1000))
+	,Designation2 = cast(dr.Designation2 as varchar(1000))
+	,ModuleFormId = 188
+FROM employee.DocumentRequest dr
+INNER JOIN maintenance.DocumentType dt on dt.DocumentTypeId = dr.DocumentId
+WHERE dt.SourceTypeId = 2
+
+UNION ALL 
+
+SELECT 
+	SourceId = VTD.MemoTemplateId
+	,V.ViolationId
+	,DocumentName = TB.Name
+	,ProfileId = cast(V.ProfileId as varchar(1000))
+	,DateStart = cast(convert(varchar,V.ViolationDate,101) as varchar(1000))
+	,DateEnd = cast(convert(varchar,V.ViolationDate,101) as varchar(1000))
+	,DateRequested = cast(convert(varchar,V.CreateDate,101) as varchar(1000))
+	,Remark = isnull(cast(V.Remarks as varchar(1000)),'')
+	,ReceivedBy = isnull(cast(e.EmployeeFullName as varchar(1000)),'')
+	,ParameterId = isnull(cast(0 as varchar(1000)),'')
+	,Signatory1 = isnull(cast(v.NotedBy as varchar(1000)),'')
+	,Designation1 = isnull(cast(nb.Position as varchar(1000)),'')
+	,Signatory2 = isnull(cast(v.ApprovedBy as varchar(1000)),'')
+	,Designation2 = isnull(cast(ab.Position as varchar(1000)),'')
+	,ModuleFormId = 195
+FROM employeerelation.Violation V
+INNER JOIN employeerelation.ViolationType VT ON VT.ViolationTypeId = V.ViolationTypeId
+INNER JOIN employeerelation.ViolationTypeDetail VTD ON VTD.ViolationTypeId = VT.ViolationTypeId AND VTD.OffenseNo = V.OffenseCount
+CROSS APPLY(SELECT EmployeeFullName = concat(LastName,',',FirstName,case when len(MiddleName) > 0 THEN ' '+left(MiddleName,1) + '.' ELSE '' end) FROM employee.Profile WHERE ProfileId = V.ProfileId)E
+OUTER APPLY(select top 1 Position = maintenance.JobPosition.Name from employee.EmploymentInformation inner join maintenance.JobPosition on JobPositionId = CJI_Position where cast(ProfileId as varchar) = v.NotedBy)nb
+OUTER APPLY(select top 1 Position = maintenance.JobPosition.Name from employee.EmploymentInformation inner join maintenance.JobPosition on JobPositionId = CJI_Position where cast(ProfileId as varchar) = v.ApprovedBy)ab
+CROSS APPLY
+(
+	SELECT
+	TemplateId = (CASE WHEN ISNULL(VTD.MemoTemplateId,0) <> 0 THEN VTD.MemoTemplateId ELSE V.MemoTemplateId END)
+)Cols
+/*INNER JOIN maintenance.TemplateBuilder TB ON TB.TemplateBuilderId = VTD.MemoTemplateId*/
+INNER JOIN maintenance.TemplateBuilder TB ON TB.TemplateBuilderId = Cols.TemplateId
+
+
+
+UNION ALL
+
+SELECT
+    SourceId = T.MemoTemplateId
+    ,TR.TrainingScheduleId
+    ,DocumentName = TB.Name
+    ,ProfileId = cast(TR.ProfileId as varchar(1000))
+    ,DateStart = cast(convert(varchar,T.StartDate,101) as varchar(1000))
+    ,DateEnd = cast(convert(varchar,T.EndDate,101) as varchar(1000))
+    ,DateRequested = cast(convert(varchar,TR.DateFiled,101) as varchar(1000))
+    ,Remark = isnull(cast(TR.Remarks as varchar(1000)),'')
+    ,ReceivedBy = isnull(cast(e.EmployeeFullName as varchar(1000)),'')
+    ,ParameterId = isnull(cast(0 as varchar(1000)),'')
+    ,Signatory1 = ''--isnull(cast(v.NotedBy as varchar(1000)),'')
+    ,Designation1 = ''--isnull(cast(nb.Position as varchar(1000)),'')
+    ,Signatory2 = ''--isnull(cast(v.ApprovedBy as varchar(1000)),'')
+    ,Designation2 = ''--isnull(cast(ab.Position as varchar(1000)),'')
+    ,ModuleFormId = 26
+FROM perdev.TrainingScheduleRequest TR
+INNER JOIN perdev.TrainingSchedule T ON T.TrainingScheduleId = TR.TrainingScheduleId
+INNER JOIN maintenance.TemplateBuilder TB ON TB.TemplateBuilderId = T.MemoTemplateId
+CROSS APPLY(SELECT EmployeeFullName = concat(LastName,',',FirstName,case when len(MiddleName) > 0 THEN ' '+left(MiddleName,1) + '.' ELSE '' end) FROM employee.Profile WHERE ProfileId =TR.ProfileId)E
+
+
+)T
+UNPIVOT (ParameterValue FOR ParameterName in (ProfileId,ParameterId,DateStart,DateEnd,DateRequested,Remark,ReceivedBy,Signatory1,Designation1,Signatory2,Designation2)) AS upt
+
+
+GO
+
+

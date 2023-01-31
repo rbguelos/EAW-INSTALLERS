@@ -1,0 +1,9 @@
+﻿  --  INSERT NEW ATTENDANCE POLICY OPTION
+
+  DELETE FROM maintenance.ConfigSetupDetail 
+  WHERE PropertyName = 'Auto_Calculation_Of_OB_Allowances'
+
+  INSERT INTO maintenance.ConfigSetupDetail (ConfigSetupHeaderId, PropertyName, LabelName, 
+    PropertyValue, Type, Source, [Group], SubGroup, SortOrder, Alignment)
+  VALUES (1, 'Auto_Calculation_Of_OB_Allowances', 'Auto-calculation of OB Allowances',
+    '', 'checkbox', '', 6, 0, 2, '')

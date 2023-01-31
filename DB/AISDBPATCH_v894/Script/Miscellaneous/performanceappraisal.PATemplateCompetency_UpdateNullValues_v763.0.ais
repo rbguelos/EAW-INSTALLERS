@@ -1,0 +1,3 @@
+UPDATE performanceappraisal.PATemplateCompetency SET CriteriaId = 0 WHERE CriteriaId IS NULL
+UPDATE performanceappraisal.PATemplateCompetency SET ApplicableTo = 0 WHERE ApplicableTo IS NULL
+UPDATE performanceappraisal.PATemplateCompetency SET ApplicableToId =0 WHERE ApplicableToId IS NULL
