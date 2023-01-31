@@ -1,0 +1,5 @@
+SQL Server 2012 Native Client - QFE
+Source: https://www.microsoft.com/en-us/download/details.aspx?id=50402
+Download: ENU\x64\sqlncli.msi
+
+Notes: As per Dev Jomari Rimbao, need to install this if the app and db server si separate from one another.
