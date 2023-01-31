@@ -1,0 +1,42 @@
+Install Operating System
+Setup IIS
+Install web platform (https://www.microsoft.com/web/downloads/platform.aspx)
+.NET Framework 4.8 (https://dotnet.microsoft.com/en-us/download/dotnet-framework/thank-you/net48-web-installer)
+IIS Rewrite 2.0 RTW_x64 (https://www.iis.net/downloads/microsoft/url-rewrite)
+Install Application Routing (https://www.iis.net/downloads/microsoft/application-request-routing)
+Install .Net Core 3.1 (https://dotnet.microsoft.com/en-us/download/dotnet/3.1)
+Install Microsoft Excel (portal.azure.com > Storage Account > aisonprem > Blobs > eaw-installation > APPLICATION SERVER.rar > Download and look for MS Excel)
+Install Chrome Browser (https://www.google.com/intl/en_us/chrome)
+Install Notepad++ (https://notepad-plus-plus.org/downloads/)
+Install WinRar (https://www.win-rar.com/download.html?&L=0)
+Setup EAW Service Handler
+
+OTHER SETUP
+Setup Server's wallpaper (portal.azure.com > Storage Account > aisonprem > Blobs > eaw-installation > APPLICATION SERVER.rar > Download and look for SERVER WALLPAPER)
+EAW_Appsetting (with domain only)
+EAW Vulnerability Security Fix
+EAW Components System.Runtime.DLLs (optional)
+
+  
+--------------------------------------------------------------------
+ ** DB SERVER **
+  Access Database Engine
+  AIS DB Patch (version 894)
+  Chrome BrowserClean DB Backup
+  Crystal Report
+  Dot Net Runtime (dotnet-runtime-3.1.8-win-x64.exe) 
+  Notepad++
+  SQL Backup Master (version 4)
+  SQL Restore
+  SQL Server with Latin CPS setting
+  SQL Server 2012 Native Client
+  SQL Server 2012 Native Client - CFE (dual server)
+  .NET Framework 4.8
+  
+3.) Install IIS
+	See excel: EAW Manual Installation for setting up IIS
+4.) Install Azure Agent
+	See word doc: Azure Agent Installation
+5.) Restore Clean DB
+6.) Install EAW
+	See word doc: EAW IINSTALLATION CLOUD or EAW INSTALLATION ON-PREMISE

@@ -1,0 +1,64 @@
+INSTALL .NET CORE RUNTIME 3.1.8 - WINDOWS (x64)
+ > https://dotnet.microsoft.com/download/dotnet-core/thank-you/runtime-3.1.8-windows-x64-installer
+
+CREATE CLIENT AGENT POOL
+ > Go to Azure Devops > EverythingAtWork > Project Settings > Agent Pool
+ > Create Client Pool > Copy Installer
+
+DOWNLOAD THE AZURE AGENT INSTALLER
+ > Go to Agent Pools
+ > Click New agent and select the appropriate Operating System then click Download
+ > Go to Client's server and paste the link in a browser
+ > Create folder in C: > folder name: azbuild
+ > Cut the downloaded installer and paste it in the azbuild folder
+ > Extract the installer
+
+INSTALL AZURE AGENT
+ > Click start > type cmd > run as admin
+ > On the command screen > type cd C:\azbuild and hit enter
+ > Type .\config and hit enter 
+ > Enter URL: https://dev.azure.com/algarinformationsystems and hit enter.
+ > Enter PAT: hit enter 
+ > Enter token: 
+   >> Go to azure devops > click user profile > token > new or regenerate existing) copy and paste it in the command screen of the server you are configuring
+ > Enter agent pool:
+   >> Go to Azure DevOps > Project Settings > Agent Pools
+   >> Go back to the command screen and type the exact Agent Pool of the client (case sensitive)
+enter agent name: (enter different name)
+enter work folder (press enter for _work)
+enter Perform an unzip for tasks for each step. (press enter for N) (press enter)
+enter run agent as service?: Y
+Enter enable SERVICE_SID_TYPE_UNRESTRICTED for agent service (Y/N) (press enter for N) Y
+enter local administrator's username & password
+Enter whether to prevent service starting immediately after configuration is finished? (Y/N) (press entern for N) N
+Check status in agent pool > select pool or group pool where the server is > you should see the client
+
+CREATE DEPLOYMENT POOL
+Go to deployment pool > Select the pool > Click Register
+Go to VM or server you are working on and open powershell run as admin and paste the value, hit enter
+Enter authentication type (press enter)
+Enter personal access token
+Enter deployment group tags for agent? (Y/N) (press enter for N)
+Enter enable SERVICE_SID_TYPE_UNRESTRICTED for agent service (Y/N) (press enter for N): Y
+Enter local administrator's credentials
+Enter whether to prevent service starting immediately after configuration is finished? (Y/N) (press entern for N) N
+
+Restart services of azure
+Check status should be in the list of Healthy
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
